@@ -1,0 +1,1 @@
+/OUT:test\mollusk.exe /SUBSYSTEM:CONSOLE /ENTRY:main msvcrt.lib kernel32.lib opengl32.lib glu32.lib user32.lib gdi32.lib winmm.lib test\mollusk\song.obj test\mollusk\bp4k.obj

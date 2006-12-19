@@ -1,0 +1,3 @@
+/OUT:test\test.exe /SUBSYSTEM:WINDOWS
+/LIBPATH:"C:\Program Files\Microsoft Visual Studio .NET 2003\VC7\ATLMFC\LIB;C:\Program Files\Microsoft Visual Studio .NET 2003\VC7\LIB;C:\Program Files\Microsoft Visual Studio .NET 2003\VC7\PlatformSDK\lib\prerelease;C:\Program Files\Microsoft Visual Studio .NET 2003\VC7\PlatformSDK\lib;C:\Program Files\Microsoft Visual Studio .NET 2003\SDK\v1.1\lib;C:\Program Files\Intel\Compiler\C++\9.1\IA32\Lib"
+kernel32.lib user32.lib gdi32.lib opengl32.lib glu32.lib winmm.lib test\als\main.obj test\als\midi.obj test\als\miniglsl.obj

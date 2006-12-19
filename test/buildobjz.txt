@@ -1,0 +1,1 @@
+/OUT:test\objz.exe /SUBSYSTEM:CONSOLE /ENTRY:main /LIBPATH:"C:\Program files\Microsoft DirectX SDK (April 2006)\Lib\x86" msvcrt.lib user32.lib kernel32.lib d3d9.lib d3dx9.lib winmm.lib test\objz\asm4k.obj test\objz\bass.asm.obj test\objz\bumpshader.obj test\objz\geom.obj test\objz\scene.obj test\objz\texgen.obj
