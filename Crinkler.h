@@ -34,6 +34,7 @@ class Crinkler {
 	bool					m_useSafeImporting;
 	CompressionType			m_compressionType;
 	std::list<std::string>	m_rangeDlls;
+	bool					m_showProgressBar;
 	
 	Symbol* getEntrySymbol() const;
 	Symbol* findUndecoratedSymbol(const char* name) const;
@@ -57,7 +58,7 @@ public:
 	Crinkler* addRangeDll(const char* dllname);
 	Crinkler* clearRangeDlls();
 	Crinkler* addRangeDlls(std::list<std::string>& dllnames);
-
+	Crinkler* showProgressBar(bool show);
 };
 
 #endif

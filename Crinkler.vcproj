@@ -528,6 +528,7 @@
 					>
 					<Tool
 						Name="VCCustomBuildTool"
+						Description="Assembling data.."
 						CommandLine="nasmw -f win32 $(InputPath) -o $(TargetDir)\$(InputName).obj&#x0D;&#x0A;"
 						Outputs="$(TargetDir)\$(InputName).obj"
 					/>
@@ -537,6 +538,7 @@
 					>
 					<Tool
 						Name="VCCustomBuildTool"
+						Description="Assembling data.."
 						CommandLine="nasmw -f win32 $(InputPath) -o $(TargetDir)\$(InputName).obj&#x0D;&#x0A;"
 						Outputs="$(TargetDir)\$(InputName).obj"
 					/>
