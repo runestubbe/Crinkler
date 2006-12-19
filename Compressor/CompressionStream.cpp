@@ -200,7 +200,7 @@ int CompressionStream::EvaluateSize(const unsigned char* d, int size, const Mode
 	delete[] data;
 	delete[] sums;
 
-	return totalsize / (BITPREC_TABLE / BITPREC);
+	return (int) (totalsize / (BITPREC_TABLE / BITPREC));
 }
 
 CompressionStream::CompressionStream(unsigned char* data, int* sizefill, int maxsize) :

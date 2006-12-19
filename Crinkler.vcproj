@@ -517,6 +517,36 @@
 				>
 			</File>
 		</Filter>
+		<Filter
+			Name="data"
+			>
+			<File
+				RelativePath=".\data.asm"
+				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCustomBuildTool"
+						CommandLine="nasmw -f win32 $(InputPath) -o $(TargetDir)\$(InputName).obj&#x0D;&#x0A;"
+						Outputs="$(TargetDir)\$(InputName).obj"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCustomBuildTool"
+						CommandLine="nasmw -f win32 $(InputPath) -o $(TargetDir)\$(InputName).obj&#x0D;&#x0A;"
+						Outputs="$(TargetDir)\$(InputName).obj"
+					/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\data.h"
+				>
+			</File>
+		</Filter>
 		<File
 			RelativePath=".\Crinkler.rc"
 			>
