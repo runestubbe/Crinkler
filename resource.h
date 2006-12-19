@@ -7,9 +7,9 @@
 #define IDC_PROGRESS1                   1001
 #define ID_KILL                         1002
 #define IDC_ELAPSED_TIME                1004
-#define IDOK                            1006
-#define IDCANCEL                        1007
-#define IDC_LIST2                       1010
+#define ID_OK							1010
+#define ID_CANCEL						1011
+#define IDC_LIST2						1012
 
 // Next default values for new objects
 // 

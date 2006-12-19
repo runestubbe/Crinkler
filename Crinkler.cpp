@@ -18,6 +18,7 @@
 #include "WindowProgressBar.h"
 #include "CompositeProgressBar.h"
 #include "CompressionSummary.h"
+#include "data.h"
 
 using namespace std;
 const int CRINKLER_VERSION = 0x3630;
@@ -150,7 +151,10 @@ void Crinkler::link(const char* filename) {
 	entry->hunk->fixate();
 
 	//do imports
-	load(m_useSafeImporting ? "modules/import5-safe.obj" : "modules/import5.obj");
+	if(m_useSafeImporting)
+		load(importSafeObj, importSafeObj_end - importSafeObj, "crinkler import");
+	else
+		load(importObj, importObj_end - importObj, "crinkler import");
 
 	Symbol* import = findUndecoratedSymbol("Import");
 	m_hunkPool.removeHunk(import->hunk);
@@ -166,7 +170,7 @@ void Crinkler::link(const char* filename) {
 	}
 
 	//handle imports
-	HunkList* headerHunks = m_hunkLoader.loadFromFile("modules/header5.obj");
+	HunkList* headerHunks = m_hunkLoader.load(headerObj, headerObj_end - headerObj, "crinkler header");//m_hunkLoader.loadFromFile("modules/header5.obj");
 	Hunk* header = headerHunks->findSymbol("_header")->hunk;
 	headerHunks->removeHunk(header);
 	{	//add imports

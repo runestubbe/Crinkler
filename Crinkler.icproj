@@ -133,6 +133,18 @@
 	</Configurations>
 	<Files>
 		<File 
+			RelativePath=".\modules\calltrans.asm"/>
+		<File 
+			RelativePath=".\modules\header4.asm"/>
+		<File 
+			RelativePath=".\modules\header5.asm"/>
+		<File 
+			RelativePath=".\modules\import4.asm"/>
+		<File 
+			RelativePath=".\modules\import5-safe.asm"/>
+		<File 
+			RelativePath=".\modules\import5.asm"/>
+		<File 
 			RelativePath=".\CompressionSummary.h"/>
 		<File 
 			RelativePath=".\Crinkler.h"/>
@@ -167,21 +179,24 @@
 		<File 
 			RelativePath=".\HeuristicHunkSorter.h"/>
 		<File 
-			RelativePath=".\modules\calltrans.asm"/>
+			RelativePath=".\data.asm">
+			<FileConfiguration 
+				Name="Debug|Win32">
+				<Tool 
+					Name="CustomTool"
+					CommandLine="nasmw -f win32 $(InputPath) -o $(TargetDir)\$(InputName).obj"
+					Outputs="$(TargetDir)\$(InputName).obj"/>
+			</FileConfiguration>
+			<FileConfiguration 
+				Name="Release|Win32">
+				<Tool 
+					Name="CustomTool"
+					CommandLine="nasmw -f win32 $(InputPath) -o $(TargetDir)\$(InputName).obj"
+					Outputs="$(TargetDir)\$(InputName).obj"/>
+			</FileConfiguration>
+		</File>
 		<File 
-			RelativePath=".\modules\header4.asm"/>
-		<File 
-			RelativePath=".\modules\header5.asm"/>
-		<File 
-			RelativePath=".\modules\import4.asm"/>
-		<File 
-			RelativePath=".\modules\import5-safe.asm"/>
-		<File 
-			RelativePath=".\modules\import5.asm"/>
-		<File 
-			RelativePath=".\CallTransform.cpp"/>
-		<File 
-			RelativePath=".\CallTransform.h"/>
+			RelativePath=".\data.h"/>
 		<File 
 			RelativePath=".\CompositeProgressBar.cpp"/>
 		<File 
@@ -219,6 +234,10 @@
 			RelativePath=".\MultiLoader.cpp"/>
 		<File 
 			RelativePath=".\Symbol.cpp"/>
+		<File 
+			RelativePath=".\CallTransform.cpp"/>
+		<File 
+			RelativePath=".\CallTransform.h"/>
 		<File 
 			RelativePath=".\CmdLineInterface.cpp"/>
 		<File 
