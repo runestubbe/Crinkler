@@ -1,0 +1,6 @@
+Manual:
+Set date (in two places)
+Setting executable path
+More options in example?
+New options
+Detailed comparisons: mention ORDERTRIES?

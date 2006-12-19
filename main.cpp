@@ -1,6 +1,3 @@
-#ifdef _DEBUG
-#include <vld.h>
-#endif
 #include <cstdio>
 #include <windows.h>
 #include <iostream>
