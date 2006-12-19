@@ -184,6 +184,7 @@
 				Name="Debug|Win32">
 				<Tool 
 					Name="CustomTool"
+					Description="Assembling data.."
 					CommandLine="nasmw -f win32 $(InputPath) -o $(TargetDir)\$(InputName).obj"
 					Outputs="$(TargetDir)\$(InputName).obj"/>
 			</FileConfiguration>
@@ -191,6 +192,7 @@
 				Name="Release|Win32">
 				<Tool 
 					Name="CustomTool"
+					Description="Assembling data.."
 					CommandLine="nasmw -f win32 $(InputPath) -o $(TargetDir)\$(InputName).obj"
 					Outputs="$(TargetDir)\$(InputName).obj"/>
 			</FileConfiguration>

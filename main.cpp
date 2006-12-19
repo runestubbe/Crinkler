@@ -152,6 +152,7 @@ int main(int argc, char* argv[]) {
 	CmdParamString outArg("OUT", "output filename", "filename", 0, "out.exe");
 	CmdParamSwitch crinklerFlag("CRINKLER", "enables crinkler", 0);
 	CmdParamSwitch safeImportArg("SAFEIMPORT", "emit an error if a dll is missing", 0);
+	CmdParamSwitch showProgressArg("PROGRESSGUI", "shows a progressbar", 0);
 	CmdParamEnum subsystemArg("SUBSYSTEM", "select subsystem", 0, SUBSYSTEM_CONSOLE, 
 						"WINDOWS", SUBSYSTEM_WINDOWS, "CONSOLE", SUBSYSTEM_CONSOLE, NULL);
 	CmdParamEnum priorityArg("PRIORITY", "select priority", 0, BELOW_NORMAL_PRIORITY_CLASS, 
@@ -172,9 +173,8 @@ int main(int argc, char* argv[]) {
 
 	cmdline.addParams(&crinklerFlag, &hashsizeArg, &hashtriesArg, &hunktriesArg, &entryArg, &outArg, &safeImportArg,
 						&subsystemArg, &compmodeArg, &verboseArg, &transformArg, &libpathArg, 
-						&rangeImportArg, &replaceDllArg, &filesArg, &priorityArg, NULL);
+						&rangeImportArg, &replaceDllArg, &filesArg, &priorityArg, &showProgressArg, NULL);
 	cmdline.setCmdParameters(argc, argv);
-	cmdline.printHeader();
 
 	//print syntax?
 	if(argc == 1) {
@@ -182,6 +182,7 @@ int main(int argc, char* argv[]) {
 		return 0;
 	}
 
+	cmdline.printHeader();
 	cmdline.parse();
 
 	//Run default linker or crinkler?
@@ -203,6 +204,7 @@ int main(int argc, char* argv[]) {
 	crinkler.setCompressionType((CompressionType)compmodeArg.getValue());
 	crinkler.setHashtries(hashtriesArg.getValue());
 	crinkler.setVerboseFlags(verboseArg.getValue());
+	crinkler.showProgressBar(showProgressArg.getValue());
 	{
 		list<string> lst = rangeImportArg.getList();
 		crinkler.addRangeDlls(lst);

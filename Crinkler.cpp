@@ -31,6 +31,7 @@ Crinkler::Crinkler() {
 	m_useSafeImporting = false;
 	m_hashtries = 10;
 	m_verboseFlags = 0;
+	m_showProgressBar = false;
 }
 
 
@@ -121,7 +122,12 @@ void verboseLabels(CompressionSummaryRecord* csr) {
 }
 
 void Crinkler::link(const char* filename) {
-	int best_hashsize = m_hashsize;
+	FILE* outfile;
+	if(fopen_s(&outfile, filename, "wb")) {
+		Log::error(0, "", "could not open %s for writing", filename);
+		return;
+	}
+
 	//place entry point in the beginning
 	Symbol* entry = getEntrySymbol();
 	if(entry == NULL) {
@@ -135,6 +141,7 @@ void Crinkler::link(const char* filename) {
 		entry->hunk->setAlignmentBits(0);
 	}
 	
+	int best_hashsize = m_hashsize;
 	//add a jump to the entry point, if the entry point is not at the beginning of a hunk
 	if(entry->value > 0) {
 		Log::warning(0, "", "Could not move entry point to beginning of code, inserted jump");
@@ -208,7 +215,8 @@ void Crinkler::link(const char* filename) {
 		WindowProgressBar windowBar;
 		CompositeProgressBar progressBar;
 		progressBar.addProgressBar(&consoleBar);
-		progressBar.addProgressBar(&windowBar);
+		if(m_showProgressBar)
+			progressBar.addProgressBar(&windowBar);
 
 		progressBar.init();
 
@@ -335,11 +343,6 @@ void Crinkler::link(const char* filename) {
 	phase2->relocate(m_imageBase);
 
 	//TODO: safe open this at the very beginning
-	FILE* outfile;
-	if(fopen_s(&outfile, filename, "wb")) {
-		Log::error(0, "", "could not open %s for writing", filename);
-		return;
-	}
 	fwrite(phase2->getPtr(), 1, phase2->getRawSize(), outfile);
 	fclose(outfile);
 
@@ -397,5 +400,10 @@ Crinkler* Crinkler::setHashtries(int hashtries) {
 
 Crinkler* Crinkler::setVerboseFlags(int verboseFlags) {
 	m_verboseFlags = verboseFlags;
+	return this;
+}
+
+Crinkler* Crinkler::showProgressBar(bool show) {
+	m_showProgressBar = show;
 	return this;
 }
