@@ -1,0 +1,1 @@
+/OUT:test\parsec.exe /SUBSYSTEM:CONSOLE /LIBPATH:"C:\Program files\Microsoft DirectX SDK (April 2006)\Lib\x86" d3d9.lib gdi32.lib winmm.lib user32.lib d3dx9.lib kernel32.lib test\parsec\intro.obj

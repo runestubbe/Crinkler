@@ -1,0 +1,16 @@
+/OUT:test\benitoite.exe /SUBSYSTEM:CONSOLE /ENTRY:tinyentry /LIBPATH:"C:\Program files\Microsoft DirectX SDK (April 2006)\Lib\x86"
+kernel32.lib
+gdi32.lib
+user32.lib
+d3d9.lib
+d3dx9.lib
+winmm.lib
+test\benitoite\comcall.obj
+test\benitoite\data.obj
+test\benitoite\DXInit.obj
+test\benitoite\main.obj
+test\benitoite\meshasm.obj
+test\benitoite\misc.obj
+test\benitoite\resources.obj
+test\benitoite\SimpleEdgeBreaker.obj
+test\benitoite\texturegen2.obj
