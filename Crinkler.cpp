@@ -150,15 +150,19 @@ void Crinkler::link(const char* filename) {
 		Log::warning(0, "", "Could not move entry point to beginning of code, inserted jump");
 		unsigned char jumpCode[5] = {0xE9, 0x00, 0x00, 0x00, 0x00};
 		Hunk* jumpHunk = new Hunk("jump_to_entry_point", (char*)jumpCode, HUNK_IS_CODE, 0, 5, 5);
+		Symbol* newEntry = new Symbol("jumpEntry", 0, SYMBOL_IS_RELOCATEABLE, jumpHunk);
+		jumpHunk->addSymbol(newEntry);
 		m_hunkPool.addHunkFront(jumpHunk);
 		relocation r = {entry->name.c_str(), 1, RELOCTYPE_REL32};
 		jumpHunk->addRelocation(r);
 		jumpHunk->fixate();
+		entry = newEntry;	//jumphunk is the new entry :)
+	} else {
+		m_hunkPool.removeHunk(entry->hunk);
+		m_hunkPool.addHunkFront(entry->hunk);
+		entry->hunk->fixate();
 	}
 
-	m_hunkPool.removeHunk(entry->hunk);
-	m_hunkPool.addHunkFront(entry->hunk);
-	entry->hunk->fixate();
 
 	//do imports
 	if(m_useSafeImporting)
