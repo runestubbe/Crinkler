@@ -77,10 +77,13 @@ void runOriginalLinker(const char* crinklerCanonicalName, const char* linkerName
 	//Crinkler not enabled. Search for linker
 	printf("Crinkler not enabled\n");
 
+	printf("crinkler path: %s\n", crinklerCanonicalName);
 	string path = ".;" + getEnv("PATH");
 	list<string> res = findFileInPath(linkerName, path.c_str());
 	for(list<string>::const_iterator it = res.begin(); it != res.end(); it++) {
+		printf("compare with: %s ", it->c_str());
 		if(it->compare(crinklerCanonicalName) != 0) {
+			printf("equal\n");
 			printf("Launching default linker at '%s'\n\n", it->c_str());
 			char args[MAX_PATH];
 			strcpy_s(args, GetCommandLine());
@@ -112,6 +115,8 @@ void runOriginalLinker(const char* crinklerCanonicalName, const char* linkerName
 			CloseHandle(piProcessInfo.hThread);
 			CloseHandle(piProcessInfo.hProcess);
 			return;
+		} else {
+			printf("\n");
 		}
 	}
 
@@ -134,7 +139,12 @@ int main(int argc, char* argv[]) {
 
 	//find canonical name of the crinkler executable
 	char crinklerCanonicalName[1024];
-	GetModuleFileName(NULL, crinklerCanonicalName, sizeof(crinklerCanonicalName));
+	{
+		char tmp[1024];
+		GetModuleFileName(NULL, tmp, sizeof(tmp));
+		GetFullPathName(tmp, sizeof(crinklerCanonicalName), crinklerCanonicalName, NULL);
+	}
+	
 	string crinklerFilename = stripPath(crinklerCanonicalName);
 	
 	//cmdline parameters
