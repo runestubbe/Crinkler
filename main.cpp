@@ -75,16 +75,12 @@ string getEnv(const char* varname) {
 
 void runOriginalLinker(const char* crinklerCanonicalName, const char* linkerName) {
 	//Crinkler not enabled. Search for linker
-	printf("Crinkler not enabled\n");
-
-	printf("crinkler path: %s\n", crinklerCanonicalName);
 	string path = ".;" + getEnv("PATH");
 	list<string> res = findFileInPath(linkerName, path.c_str());
 	for(list<string>::const_iterator it = res.begin(); it != res.end(); it++) {
-		printf("compare with: %s ", it->c_str());
 		if(toUpper(*it).compare(toUpper(crinklerCanonicalName)) != 0) {
-			printf("equal\n");
 			printf("Launching default linker at '%s'\n\n", it->c_str());
+			fflush(stdout);
 			char args[MAX_PATH];
 			strcpy_s(args, GetCommandLine());
 
@@ -190,15 +186,17 @@ int main(int argc, char* argv[]) {
 	}
 
 	cmdline.printHeader();
-	if(!cmdline.parse()) {
-		return 1;
-	}
 
 	//Run default linker or crinkler?
 	if(!cmdline.removeToken("/CRINKLER") && toUpper(crinklerFilename).compare("CRINKLER.EXE") != 0) {
 		runOriginalLinker(crinklerCanonicalName, crinklerFilename.c_str());
 		return 0;
 	}
+
+	if(!cmdline.parse()) {
+		return 1;
+	}
+
 
 	//set priority
 	SetPriorityClass(GetCurrentProcess(), priorityArg.getValue());
