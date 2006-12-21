@@ -91,11 +91,13 @@ int main(int argc, char* argv[]) {
 
 	cls();
 	printf("      name                size\n");
+	int total = 0;
 	for(vector<string>::const_iterator it = exeFiles.begin(); it != exeFiles.end(); it++) {
 		printf("%20s: ", it->c_str());
 		WIN32_FIND_DATA findData;
 		HANDLE fileHandle = FindFirstFile(it->c_str(), &findData);
 		if(fileHandle != INVALID_HANDLE_VALUE) {
+			total += findData.nFileSizeLow;
 			printf("% 5d bytes", findData.nFileSizeLow);
 			FindClose(fileHandle);
 		} else {
@@ -103,8 +105,8 @@ int main(int argc, char* argv[]) {
 		}
 		
 		printf("\n");
-
 	}
+	printf("total:             %8d bytes\n\n", total);
 
 	int secs = (clock() - stime) / CLOCKS_PER_SEC;
 	printf("time spent %3dm%02ds\n", secs/60, secs%60);

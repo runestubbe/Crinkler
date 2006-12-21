@@ -150,12 +150,12 @@ bool CmdLineInterface::parse() {
 			int hr = param->parse(argument.c_str(), errorMsg, sizeof(errorMsg));
 			if(hr == CMD_PARAM_PARSE_OK) {
 				if(param->m_numMatches && !(param->getFlags() & CMD_PARAM_ALLOW_MULTIPLE_DEFINITIONS)) {
-					cerr << "error parsing token: '" << token << "'\n  " << "parameter cannot be defined more than once" << endl;
+					Log::warning(0, "", "parameter cannot be defined more than once '%s'", token.c_str());
 				}
 				param->m_numMatches++;
 				nMatches++;
 			} else if(hr == CMD_PARAM_INVALID) {
-				cerr << "error parsing token: '" << token << "'\n  " << errorMsg << endl;
+				Log::error(0, "", "cannot parse token '%s': %s", token.c_str(), errorMsg);
 				return false;
 			}
 		}

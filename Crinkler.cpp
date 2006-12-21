@@ -136,13 +136,14 @@ void Crinkler::link(const char* filename) {
 		return;
 	}
 
-	//ensure 1byte aligned entry point
+	//1byte aligned entry point
 	if(entry->hunk->getAlignmentBits() > 0) {
 		Log::warning(0, "", "entry point hunk has alignment greater than 1, forcing alignment of 1");
 		entry->hunk->setAlignmentBits(0);
 	}
 	
-	int best_hashsize = m_hashsize;
+
+	
 	//add a jump to the entry point, if the entry point is not at the beginning of a hunk
 	if(entry->value > 0) {
 		Log::warning(0, "", "Could not move entry point to beginning of code, inserted jump");
@@ -190,12 +191,8 @@ void Crinkler::link(const char* filename) {
 	HeuristicHunkSorter::sortHunkList(&m_hunkPool);
 	int sectionSize = 0x10000;
 
-
 	//create phase 1 data hunk
-
 	int splittingPoint;
-//	Hunk* phase1 = m_hunkPool.toHunk("linkedHunk", &splittingPoint);
-//	phase1->relocate(m_imageBase+sectionSize*2);
 	Hunk* phase1 = m_transform.linkAndTransform(&m_hunkPool, m_imageBase+sectionSize*2, &splittingPoint);
 
 
@@ -205,12 +202,13 @@ void Crinkler::link(const char* filename) {
 	for(int i = 0; i < 8; i++)
 		baseprobs[i] = baseprob;	//flat baseprob
 
+	int best_hashsize = previousPrime(m_hashsize/2)*2;
 	int modelskip = 0;
 	Hunk* phase1Compressed, *models;
 	{
 		int maxsize = phase1->getRawSize()*10;	//allocate plenty of memory
 		unsigned char* data = new unsigned char[maxsize];
-		int* sizefill = new int[phase1->getRawSize()+1];
+		int* sizefill = new int[phase1->getRawSize()*2];
 		int size;
 
 		//Construct composite progress bar
@@ -221,22 +219,34 @@ void Crinkler::link(const char* filename) {
 		if(m_showProgressBar)
 			progressBar.addProgressBar(&windowBar);
 
-		progressBar.init();
-
-		progressBar.beginTask("Estimating models for code");
-		ModelList ml1 = ApproximateModels((unsigned char*)phase1->getPtr(), splittingPoint, baseprobs, &size, &progressBar, false, m_compressionType);
-		progressBar.endTask();
-		ml1.print();
+		ModelList ml1, ml2;
+		if(m_compressionType != COMPRESSION_INSTANT) {
+			progressBar.init();
+			progressBar.beginTask("Estimating models for code");
+			ml1 = ApproximateModels((unsigned char*)phase1->getPtr(), splittingPoint, baseprobs, &size, &progressBar, false, m_compressionType);
+			progressBar.endTask();
+		} else {
+			ml1 = ApproximateModels((unsigned char*)phase1->getPtr(), splittingPoint, baseprobs, &size, &progressBar, false, m_compressionType);
+		}
+		
+		if(m_verboseFlags & VERBOSE_MODELS)
+			ml1.print();
+		
 		int idealsize = size;
 
-		progressBar.beginTask("Estimating models for data");
-		ModelList ml2 = ApproximateModels((unsigned char*)phase1->getPtr()+splittingPoint, phase1->getRawSize() - splittingPoint, baseprobs, &size, &progressBar, false, m_compressionType);
-		progressBar.endTask();
-		ml2.print();
-		idealsize += size;
-		
-		printf("ideal compressed total size: %d\n", idealsize / BITPREC / 8);
+		if(m_compressionType != COMPRESSION_INSTANT) {
+			progressBar.beginTask("Estimating models for data");
+			ml2 = ApproximateModels((unsigned char*)phase1->getPtr()+splittingPoint, phase1->getRawSize() - splittingPoint, baseprobs, &size, &progressBar, false, m_compressionType);
+			progressBar.endTask();
+			idealsize += size;
+			printf("Ideal compressed total size: %d\n", idealsize / BITPREC / 8);
+		} else {
+			ml2 = ApproximateModels((unsigned char*)phase1->getPtr()+splittingPoint, phase1->getRawSize() - splittingPoint, baseprobs, &size, &progressBar, false, m_compressionType);
+		}
 
+		if(m_verboseFlags & VERBOSE_MODELS)
+			ml2.print();
+	
 		/*
 		{
 			EmpiricalHunkSorter::sortHunkList(&m_hunkPool, ml1, ml2, baseprobs);
@@ -260,11 +270,11 @@ void Crinkler::link(const char* filename) {
 		*/
 
 		//hashing time
-		progressBar.beginTask("Optimizing hashsize");
-		{
+		if(m_compressionType != COMPRESSION_INSTANT) {
 			int bestsize = INT_MAX;
-			int hashsize = m_hashsize;
-			
+			int hashsize = best_hashsize;
+			progressBar.beginTask("Optimizing hashsize");
+
 			for(int i = 0; i < m_hashtries; i++) {
 				CompressionStream cs(data, sizefill, maxsize);
 				hashsize = previousPrime(hashsize/2)*2;
@@ -276,20 +286,25 @@ void Crinkler::link(const char* filename) {
 					best_hashsize = hashsize;
 				}
 				
-				progressBar.update(i+1, m_hashtries+1);
+				progressBar.update(i+1, m_hashtries);
+				progressBar.endTask();
 			}
+		}
 
+		{
 			CompressionStream cs(data, NULL, maxsize);
 			cs.Compress((unsigned char*)phase1->getPtr(), splittingPoint, ml1, baseprobs, best_hashsize, false);
 			cs.Compress((unsigned char*)phase1->getPtr() + splittingPoint, phase1->getRawSize() - splittingPoint, ml2, baseprobs, best_hashsize, true);
 			size = cs.close();
-			progressBar.update(m_hashtries+1, m_hashtries+1);
-			progressBar.endTask();
-			printf("real compressed total size: %d\nbytes lost to hashing: %d\n", size, size - idealsize / BITPREC / 8);
+			if(m_compressionType != COMPRESSION_INSTANT)
+				printf("Real compressed total size: %d\nBytes lost to hashing: %d\n", size, size - idealsize / BITPREC / 8);
 		}
+
 		CompressionSummaryRecord* csr = phase1->getCompressionSummary(sizefill, splittingPoint);
+		delete[] sizefill;
 		if(m_verboseFlags & VERBOSE_LABELS)
 			verboseLabels(csr);
+		
 
 
 		delete csr;
@@ -348,6 +363,8 @@ void Crinkler::link(const char* filename) {
 
 	fwrite(phase2->getPtr(), 1, phase2->getRawSize(), outfile);
 	fclose(outfile);
+
+	printf("\nFinal file size: %d\n", phase2->getRawSize());
 
 	delete headerHunks;
 	delete phase1;
