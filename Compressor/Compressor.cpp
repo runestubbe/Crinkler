@@ -44,7 +44,7 @@ unsigned int optimizeWeights(CompressionState& cs, ModelList& models) {
 	int dir = 1;
 	int lastindex = index;
 	unsigned int size;
-	unsigned int bestsize = cs.setModels(models);
+	unsigned int bestsize = approximateWeights(cs, models);
 	do {
 		int skip = 0;
 		for (int i = 0 ; i < models.nmodels; i++) {
