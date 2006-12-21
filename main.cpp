@@ -202,6 +202,7 @@ int main(int argc, char* argv[]) {
 	crinkler.setSubsystem((SubsystemType)subsystemArg.getValue());
 	crinkler.setCompressionType((CompressionType)compmodeArg.getValue());
 	crinkler.setHashtries(hashtriesArg.getValue());
+	crinkler.setHunktries(hunktriesArg.getValue());
 	crinkler.setVerboseFlags(verboseArg.getValue());
 	crinkler.showProgressBar(showProgressArg.getValue());
 	//transforms
