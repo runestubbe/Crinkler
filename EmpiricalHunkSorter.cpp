@@ -34,9 +34,9 @@ int EmpiricalHunkSorter::tryHunkCombination(HunkList* hunklist, ModelList& codeM
 	#pragma omp parallel for
 	for(int i = 0; i < 2; i++) {
 		if(i == 0)
-			codesize = cs.EvaluateSize((unsigned char*)phase1->getPtr(), splittingPoint, codeModels, baseprobs, contexts[0]);
+			codesize = cs.EvaluateSizeQuick((unsigned char*)phase1->getPtr(), splittingPoint, codeModels, baseprobs, contexts[0]);
 		else
-			datasize = cs.EvaluateSize((unsigned char*)phase1->getPtr()+splittingPoint, phase1->getRawSize()-splittingPoint, dataModels, baseprobs, contexts[1]);
+			datasize = cs.EvaluateSizeQuick((unsigned char*)phase1->getPtr()+splittingPoint, phase1->getRawSize()-splittingPoint, dataModels, baseprobs, contexts[1]);
 	}
 	delete phase1;
 

@@ -124,12 +124,12 @@ void runOriginalLinker(const char* crinklerCanonicalName, const char* linkerName
 
 int main(int argc, char* argv[]) {
 /*
-	argc = 3;
+	argc = 4;
 	char* argv[] = {
 		argv2[0],
 		"@test\\buildtest.txt",
 		"/CRINKLER",
-		"/COMPMODE:SLOW"
+		"/ORDERTRIES:100"
 	};
 */
 
@@ -186,6 +186,7 @@ int main(int argc, char* argv[]) {
 	}
 
 	cmdline.printHeader();
+	fflush(stdout);
 
 	//Run default linker or crinkler?
 	if(!cmdline.removeToken("/CRINKLER") && toUpper(crinklerFilename).compare("CRINKLER.EXE") != 0) {

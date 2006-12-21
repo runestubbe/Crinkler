@@ -21,6 +21,7 @@ public:
 
 	void Compress(const unsigned char* data, int size, const ModelList& models, int baseprobs[8], int hashsize, bool finish);
 	int EvaluateSize(const unsigned char* d, int size, const ModelList& models, int baseprobs[8], char* context);
+	int EvaluateSizeQuick(const unsigned char* d, int size, const ModelList& models, int baseprobs[8], char* context);
 	int close();
 };
 

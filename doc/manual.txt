@@ -414,6 +414,7 @@ An example commandline for linking and compressing an intro could look
 like this (split on multiple lines for readability):
 
 crinkler.exe /OUT:micropolis.exe /SUBSYSTEM:WINDOWS /RANGE:opengl32
+ /COMPMODE:SLOW /ORDERTRIES:1000 /VERBOSE:IMPORTS /VERBOSE:LABELS
  kernel32.lib user32.lib gdi32.lib opengl32.lib glu32.lib winmm.lib
  micropolis\startup.obj micropolis\render.obj
  micropolis\render-asm.obj micropolis\sound.obj
@@ -447,8 +448,9 @@ gives some advice on these.
   possible. This gives Crinkler more opportunities to select the
   ordering of the sections to optimize the compression ratio.
 
-- If you are using OpenGL, use ordinal range import for opengl32. This
-  drastically reduces the space needed for OpenGL function hash codes.
+- If you are using OpenGL, use ordinal range import for opengl32. If
+  you are using Direct3D, use ordinal range import for d3dx_??. This
+  drastically reduces the space needed for function hash codes.
 
 - Avoid large blocks of data, even if they are all zero. Use
   uninitialized (bss) sections instead. Crinkler does not cope well
@@ -457,20 +459,37 @@ gives some advice on these.
   size (whichever is largest).
 
 - When you perform detailed size comparisons, always use the SLOW
-  compression mode with plenty of HASHTRIES. The FAST mode is only
-  intended for use during testing and to give a rough estimate of the
-  compressed size. Also note that the compression is tuned for the 4k
-  size target, so any size comparisons you perform on smaller files
-  might turn out to behave differently when you get nearer to 4k.
+  compression mode with plenty of HASHTRIES. The INSTANT and FAST
+  modes are only intended for use during testing and to give a rough
+  estimate of the compressed size. Also note that the compression is
+  tuned for the 4k size target, so any size comparisons you perform on
+  smaller files might turn out to behave differently when you get
+  nearer to 4k.
 
-- As a matter of good conduct, do not set HASHSIZE higher than you
-  need. In other words, if your final intro is well below the size
-  limit, lower HASHSIZE in order not to waste memory unnecessarily.
+- As a matter of good conduct, always use SAFEIMPORT if you can spare
+  the space, and do not set HASHSIZE higher than you need. In other
+  words, if your final intro is well below the size limit, enable
+  SAFEIMPORT and then lower HASHSIZE in order not to waste memory
+  unnecessarily.
 
 
 
-KNOWN BUGS AND LIMITATIONS
---------------------------
+COMMON PROBLEMS, KNOWN BUGS AND LIMITATIONS
+-------------------------------------------
+
+Any DLL that is needed by a program that Crinkler compresses must be
+available to Crinkler itself. If you get the error message '', it
+means that Crinkler needed the DLL but could not find it. You must
+place it either in the same directory as the Crinkler executable or
+somewhere in the DLL path, such as C:\WINDOWS\system32. Alternatively,
+you can use the REPLACEDLL option to replace it by one that is
+available.
+
+If you launch your Crinkler-compressed program from within Visual
+Studio, use Start Without Debugging (Ctrl+F5) rather than Start
+Debugging (F5). The debugger cannot handle Crinkler-compressed
+executables. If the program crashes, you can still attach the debugger
+in the normal way.
 
 When running inside Visual Studio, the progress bars are not updated
 correctly, since the Visual Studio console does not flush the output
@@ -490,11 +509,6 @@ horribly. You shouldn't use it for such big files anyway.
 
 Crinkler does not support the whole program optimization feature of
 Visual Studio (General/Whole Program Optimization). Do not turn it on.
-
-If a program compressed using Crinkler fails to load some needed DLL,
-it will simply crash, rather than put up a dialog. If your program
-needs any non-standard DLLs, it will be a good idea to specify this in
-the accompanying documentation.
 
 
 
@@ -525,8 +539,9 @@ The import code is loosely based on the hashed imports code by Peci.
 
 Many thanks to all the people who have given us comments, bug reports
 and test material, especially to Rambo, Kusma, Polaris, Gargaj,
-Frenetic, Buzzie, Shash, Auld and Minas. Also thanks to Dwarf,
-Polygon7 and Gargaj for suggestions for our web design.
+Frenetic, Buzzie, Shash, Auld, Minas, Skarab, Hunta, Snq and
+Darkblade. Also thanks to Dwarf, Polygon7 and Gargaj for suggestions
+for our web design.
 
 Our special thanks to the many people who have demostrated the
 usefulness of Crinkler by using it for their own productions.
