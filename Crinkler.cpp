@@ -358,7 +358,7 @@ void Crinkler::link(const char* filename) {
 	fwrite(phase2->getPtr(), 1, phase2->getRawSize(), outfile);
 	fclose(outfile);
 
-	printf("\nFinal file size: %d\n", phase2->getRawSize());
+	printf("\nFinal file size: %d\n\n", phase2->getRawSize());
 
 	delete headerHunks;
 	delete phase1;

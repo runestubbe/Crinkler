@@ -11,10 +11,16 @@
 
 using namespace std;
 
+char *LoadDLL(const char *name) {
+	char* module = (char*)LoadLibrary(name);
+	if(module == 0) {
+		Log::error(0, "", "Could not open DLL '%s'", name);
+	}
+	return module;
+}
+
 int getOrdinal(const char* function, const char* dll) {
-	char* module = (char*)LoadLibrary(dll);
-	if(module == 0)
-		return -1;
+	char* module = LoadDLL(dll);
 
 	IMAGE_DOS_HEADER* dh = (IMAGE_DOS_HEADER*)module;
 	IMAGE_FILE_HEADER* coffHeader = (IMAGE_FILE_HEADER*)(module + dh->e_lfanew+4);
@@ -31,12 +37,12 @@ int getOrdinal(const char* function, const char* dll) {
 		}
 	}
 
-	//TODO: should I free the module?
+	Log::error(0, "", "import %s could not be found in %s", function, dll);
 	return -1;
 }
 
 bool isForwardRVA(const char* dll, const char* function) {
-	char* module = (char*)LoadLibrary(dll);
+	char* module = LoadDLL(dll);
 	IMAGE_DOS_HEADER* pDH = (PIMAGE_DOS_HEADER)module;
 	IMAGE_NT_HEADERS* pNTH = (PIMAGE_NT_HEADERS)(module + pDH->e_lfanew);
 	IMAGE_EXPORT_DIRECTORY* pIED = (PIMAGE_EXPORT_DIRECTORY)(module + pNTH->OptionalHeader.DataDirectory[0].VirtualAddress);
@@ -59,7 +65,6 @@ bool isForwardRVA(const char* dll, const char* function) {
 	}
 
 	Log::error(0, "", "import %s could not be found in %s", function, dll);
-
 	return false;
 }
 

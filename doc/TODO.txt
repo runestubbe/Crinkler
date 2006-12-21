@@ -1,21 +1,29 @@
 Manual:
 Set date (in two places)
-Setting executable path
-More options in example?
-New options
-Detailed comparisons: mention ORDERTRIES?
+ Setting executable path
+ More options in example?
+ New options
+ Detailed comparisons: mention ORDERTRIES?
+ Error message for not found DLL
+ Range is after replace
+
 
 Code:
-new faster hashing
+ new faster hashing
 review
-test vs.net integration
+ test vs.net integration
 set date
-VERBOSE: models
+ VERBOSE: models
 VERBOSE: functions
 Hunk destructor bug i (benitoite, fast, safeimport)
+Sanity check of REPLACEDLL: check that all functions exist
+ INSTANT
 replacedll
  warn if rangedlls are not used
 cleanup cmdline library
 strip extension from rangedll/dllreplace
-fix range and dllreplace output
+ fix range and dllreplace output
+
+Check:
+Dev-C++ object files
 rambo?

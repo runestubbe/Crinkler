@@ -163,7 +163,7 @@ void EmpiricalHunkSorter::sortHunkList(HunkList* hunklist, ModelList& codeModels
 
 		int size = tryHunkCombination(hunklist, codeModels, dataModels, baseprobs);
 		if(size < bestsize) {
-			printf("  Iteration: %5d  Size: %5.2f\n", i, size / BITPREC / 8.0f);
+			printf("  Iteration: %5d  Size: %5.2f\n", i, size / (BITPREC * 8.0f));
 			fflush(stdout);
 			bestsize = size;
 			fails = 0;
@@ -180,5 +180,6 @@ void EmpiricalHunkSorter::sortHunkList(HunkList* hunklist, ModelList& codeModels
 		progress->endTask();
 
 	delete[] backup;
-	printf("Time spent: %d\n", clock() - stime);
+	int timespent = (clock() - stime)/CLOCKS_PER_SEC;
+	printf("Time spent: %dm%02ds\n", timespent/60, timespent%60);
 }

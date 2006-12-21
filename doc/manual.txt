@@ -349,7 +349,8 @@ Linker/Command Line/Additional Options:
     have the version of the DLL that you are linking to. Typical
     examples are replacing msvcr70, msvcr71 or msvcr80 by msvcrt and
     replacing one version of d3dx_?? by another. Only use this option
-    if you know that the two DLLs are compatible.
+    if you know that the two DLLs are compatible. When REPLACEDLL and
+    RANGE are used together, RANGE must refer to the new DLL.
 
 /SAFEIMPORT
 
@@ -478,12 +479,12 @@ COMMON PROBLEMS, KNOWN BUGS AND LIMITATIONS
 -------------------------------------------
 
 Any DLL that is needed by a program that Crinkler compresses must be
-available to Crinkler itself. If you get the error message '', it
-means that Crinkler needed the DLL but could not find it. You must
-place it either in the same directory as the Crinkler executable or
-somewhere in the DLL path, such as C:\WINDOWS\system32. Alternatively,
-you can use the REPLACEDLL option to replace it by one that is
-available.
+available to Crinkler itself. If you get the error message 'Could not
+open DLL ...', it means that Crinkler needed the DLL but could not
+find it. You must place it either in the same directory as the
+Crinkler executable or somewhere in the DLL path, such as
+C:\WINDOWS\system32. Alternatively, you can use the REPLACEDLL option
+to replace it by one that is available.
 
 If you launch your Crinkler-compressed program from within Visual
 Studio, use Start Without Debugging (Ctrl+F5) rather than Start

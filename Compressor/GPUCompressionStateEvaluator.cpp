@@ -279,7 +279,8 @@ bool GPUCompressionStateEvaluator::init(ModelPredictions* models, int length, in
 		//m_device->SetSamplerState(i, D3DSAMP_ADDRESSV, D3DTADDRESS_BORDER);
 	}
 	
-	printf("time spent: %d\n", clock() - stime);
+	int timespent = (clock() - stime)/CLOCKS_PER_SEC;
+	printf("Time spent: %dm%02ds\n", timespent/60, timespent%60);
 
 	return true;
 }
