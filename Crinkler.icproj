@@ -19,48 +19,62 @@
 				OutputDirectory="Debug"
 				IntermediateDirectory="Debug"
 				ConfigurationType="1"
+				InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
 				CharacterSet="2"/>
 			<Tool 
-				Name="DebugTool"/>
+				Name="PreBuildEventTool"/>
+			<Tool 
+				Name="CustomTool"/>
+			<Tool 
+				Name="VCXMLDataGeneratorTool"/>
+			<Tool 
+				Name="VCWebServiceProxyGeneratorTool"/>
+			<Tool 
+				Name="MidlCmplrTool"/>
 			<Tool 
 				Name="CppCmplrTool"
 				Optimization="0"
 				PreprocessorDefinitions="WIN32;_DEBUG;_CONSOLE;D3D_DEBUG_INFO"
-				MinimalRebuild="1"
+				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="1"
 				UsePrecompiledHeader="0"
 				WarningLevel="3"
-				Detect64BitPortabilityProblems="1"
+				Detect64BitPortabilityProblems="true"
 				DebugInformationFormat="4"/>
 			<Tool 
+				Name="VCManagedResourceCompilerTool"/>
+			<Tool 
+				Name="ResCmplrTool"/>
+			<Tool 
+				Name="PreLinkEventTool"/>
+			<Tool 
 				Name="LinkerTool"
-				DelayImpLib=""
 				AdditionalDependencies="Dbghelp.lib Compressor\debug\Compressor.lib"
 				OutputFile="$(OutDir)/Crinkler.exe"
 				LinkIncremental="2"
-				GenerateDebugInformation="1"
+				GenerateDebugInformation="true"
 				ProgramDatabaseFile="$(OutDir)/Crinkler.pdb"
 				SubSystem="1"
 				TargetMachine="1"/>
 			<Tool 
-				Name="LibrarianTool"/>
+				Name="VCALinkTool"/>
 			<Tool 
-				Name="ResCmplrTool"/>
+				Name="VCManifestTool"/>
 			<Tool 
-				Name="MidlCmplrTool"/>
+				Name="VCXDCMakeTool"/>
 			<Tool 
 				Name="BscMakeTool"/>
 			<Tool 
-				Name="PreBuildEventTool"/>
+				Name="VCFxCopTool"/>
 			<Tool 
-				Name="PreLinkEventTool"/>
+				Name="VCAppVerifierTool"/>
+			<Tool 
+				Name="VCWebDeploymentTool"/>
 			<Tool 
 				Name="PostBuildEventTool"/>
 			<Tool 
-				Name="CustomTool"/>
-			<Tool 
-				Name="CustomNodeTool"/>
+				Name="DebugTool"/>
 		</Configuration>
 		<Configuration 
 			Name="Release|Win32">
@@ -69,239 +83,365 @@
 				OutputDirectory="Release"
 				IntermediateDirectory="Release"
 				ConfigurationType="1"
-				CharacterSet="2"/>
+				InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
+				CharacterSet="2"
+				WholeProgramOptimization="0"/>
 			<Tool 
-				Name="DebugTool"/>
+				Name="PreBuildEventTool"/>
+			<Tool 
+				Name="CustomTool"/>
+			<Tool 
+				Name="VCXMLDataGeneratorTool"/>
+			<Tool 
+				Name="VCWebServiceProxyGeneratorTool"/>
+			<Tool 
+				Name="MidlCmplrTool"/>
 			<Tool 
 				Name="CppCmplrTool"
-				UseUnicodeResponseFiles="0"
+				UseUnicodeResponseFiles="false"
+				AdditionalOptions=""
 				Optimization="2"
 				InlineFunctionExpansion="1"
-				EnableIntrinsicFunctions="1"
+				EnableIntrinsicFunctions="true"
 				FavorSizeOrSpeed="1"
-				OmitFramePointers="1"
+				OmitFramePointers="true"
+				WholeProgramOptimization="false"
 				PreprocessorDefinitions="WIN32;NDEBUG;_CONSOLE"
-				StringPooling="1"
+				StringPooling="true"
 				ExceptionHandling="0"
 				RuntimeLibrary="0"
-				BufferSecurityCheck="0"
-				ForceConformanceInForLoopScope="1"
-				RuntimeTypeInfo="0"
+				BufferSecurityCheck="false"
+				FloatingPointModel="2"
+				FloatingPointExceptions="false"
+				ForceConformanceInForLoopScope="true"
+				RuntimeTypeInfo="false"
+				OpenMP="true"
 				UsePrecompiledHeader="0"
 				WarningLevel="3"
-				Detect64BitPortabilityProblems="0"
+				Detect64BitPortabilityProblems="false"
 				DebugInformationFormat="4"
-				AdditionalOptions=""
-				OpenMP="1"
+				CallingConvention="0"
 				RecognizeRestrictKeyword="1"/>
 			<Tool 
+				Name="VCManagedResourceCompilerTool"/>
+			<Tool 
+				Name="ResCmplrTool"/>
+			<Tool 
+				Name="PreLinkEventTool"/>
+			<Tool 
 				Name="LinkerTool"
-				DelayImpLib=""
+				IgnoreImportLibrary="false"
 				AdditionalDependencies="Dbghelp.lib Compressor\Release\Compressor.lib"
 				OutputFile="$(OutDir)/Crinkler.exe"
 				LinkIncremental="1"
-				GenerateDebugInformation="1"
-				GenerateMapFile="1"
+				GenerateManifest="false"
+				ManifestFile=""
+				IgnoreAllDefaultLibraries="false"
+				GenerateDebugInformation="true"
+				GenerateMapFile="true"
 				SubSystem="1"
 				OptimizeReferences="2"
 				EnableCOMDATFolding="2"
 				OptimizeForWindows98="1"
 				EntryPointSymbol=""
-				TargetMachine="1"
-				LinkDependentLibs="1"
-				GenerateManifest="0"
-				ManifestFile=""/>
+				TargetMachine="1"/>
 			<Tool 
-				Name="LibrarianTool"/>
+				Name="VCALinkTool"/>
 			<Tool 
-				Name="ResCmplrTool"/>
+				Name="VCManifestTool"
+				EmbedManifest="true"/>
 			<Tool 
-				Name="MidlCmplrTool"/>
+				Name="VCXDCMakeTool"/>
 			<Tool 
 				Name="BscMakeTool"/>
 			<Tool 
-				Name="PreBuildEventTool"/>
+				Name="VCFxCopTool"/>
 			<Tool 
-				Name="PreLinkEventTool"/>
+				Name="VCAppVerifierTool"/>
+			<Tool 
+				Name="VCWebDeploymentTool"/>
 			<Tool 
 				Name="PostBuildEventTool"/>
 			<Tool 
-				Name="CustomTool"/>
-			<Tool 
-				Name="CustomNodeTool"/>
+				Name="DebugTool"/>
 		</Configuration>
 	</Configurations>
 	<Files>
+		<Filter 
+			Name="Source Files"
+			Filter="cpp;c;cxx;def;odl;idl;hpj;bat;asm;asmx"
+			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}">
+			<File 
+				RelativePath=".\CompressionSummary.cpp">
+			</File>
+			<File 
+				RelativePath=".\Crinkler.cpp">
+				<FileConfiguration 
+					Name="Release|Win32">
+					<Tool 
+						Name="CppCmplrTool"
+						Optimization="2"/>
+				</FileConfiguration>
+			</File>
+			<File 
+				RelativePath=".\Hunk.cpp">
+			</File>
+			<File 
+				RelativePath=".\HunkList.cpp">
+			</File>
+			<File 
+				RelativePath=".\HunkLoader.cpp">
+			</File>
+			<File 
+				RelativePath=".\ImportHandler.cpp">
+			</File>
+			<File 
+				RelativePath=".\main.cpp">
+			</File>
+			<File 
+				RelativePath=".\MultiLoader.cpp">
+			</File>
+			<File 
+				RelativePath=".\Symbol.cpp">
+			</File>
+		</Filter>
+		<Filter 
+			Name="Header Files"
+			Filter="h;hpp;hxx;hm;inl;inc;xsd"
+			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}">
+			<File 
+				RelativePath=".\CompressionSummary.h">
+			</File>
+			<File 
+				RelativePath=".\Crinkler.h">
+			</File>
+			<File 
+				RelativePath=".\Hunk.h">
+			</File>
+			<File 
+				RelativePath=".\HunkList.h">
+			</File>
+			<File 
+				RelativePath=".\HunkLoader.h">
+			</File>
+			<File 
+				RelativePath=".\ImportHandler.h">
+			</File>
+			<File 
+				RelativePath=".\MultiLoader.h">
+			</File>
+			<File 
+				RelativePath=".\resource.h">
+			</File>
+			<File 
+				RelativePath=".\Symbol.h">
+			</File>
+		</Filter>
+		<Filter 
+			Name="Utility">
+			<File 
+				RelativePath=".\Log.cpp">
+			</File>
+			<File 
+				RelativePath=".\Log.h">
+			</File>
+			<File 
+				RelativePath=".\MemoryFile.cpp">
+			</File>
+			<File 
+				RelativePath=".\MemoryFile.h">
+			</File>
+			<File 
+				RelativePath=".\misc.cpp">
+			</File>
+			<File 
+				RelativePath=".\misc.h">
+			</File>
+			<File 
+				RelativePath=".\NameMangling.cpp">
+			</File>
+			<File 
+				RelativePath=".\NameMangling.h">
+			</File>
+			<File 
+				RelativePath=".\StringMisc.cpp">
+			</File>
+			<File 
+				RelativePath=".\StringMisc.h">
+			</File>
+			<Filter 
+				Name="CmdLineInterface">
+				<File 
+					RelativePath=".\CmdLineInterface.cpp">
+				</File>
+				<File 
+					RelativePath=".\CmdLineInterface.h">
+				</File>
+				<File 
+					RelativePath=".\CmdParam.cpp">
+				</File>
+				<File 
+					RelativePath=".\CmdParam.h">
+				</File>
+				<File 
+					RelativePath=".\CmdParamEnum.cpp">
+				</File>
+				<File 
+					RelativePath=".\CmdParamEnum.h">
+				</File>
+				<File 
+					RelativePath=".\CmdParamFlags.cpp">
+				</File>
+				<File 
+					RelativePath=".\CmdParamFlags.h">
+				</File>
+				<File 
+					RelativePath=".\CmdParamInt.cpp">
+				</File>
+				<File 
+					RelativePath=".\CmdParamInt.h">
+				</File>
+				<File 
+					RelativePath=".\CmdParamMultiString.cpp">
+				</File>
+				<File 
+					RelativePath=".\CmdParamMultiString.h">
+				</File>
+				<File 
+					RelativePath=".\CmdParamString.cpp">
+				</File>
+				<File 
+					RelativePath=".\CmdParamString.h">
+				</File>
+				<File 
+					RelativePath=".\CmdParamSwitch.cpp">
+				</File>
+				<File 
+					RelativePath=".\CmdParamSwitch.h">
+				</File>
+			</Filter>
+		</Filter>
+		<Filter 
+			Name="HunkLoaders">
+			<File 
+				RelativePath=".\CoffLibraryLoader.cpp">
+			</File>
+			<File 
+				RelativePath=".\CoffLibraryLoader.h">
+			</File>
+			<File 
+				RelativePath=".\CoffObjectLoader.cpp">
+			</File>
+			<File 
+				RelativePath=".\CoffObjectLoader.h">
+			</File>
+		</Filter>
+		<Filter 
+			Name="Modules">
+			<File 
+				RelativePath=".\modules\calltrans.asm">
+			</File>
+			<File 
+				RelativePath=".\modules\header10.asm">
+			</File>
+			<File 
+				RelativePath=".\modules\header4.asm">
+			</File>
+			<File 
+				RelativePath=".\modules\import10-safe.asm">
+			</File>
+			<File 
+				RelativePath=".\modules\import10.asm">
+			</File>
+			<File 
+				RelativePath=".\modules\import4.asm">
+			</File>
+		</Filter>
+		<Filter 
+			Name="ProgressBars">
+			<File 
+				RelativePath=".\CompositeProgressBar.cpp">
+			</File>
+			<File 
+				RelativePath=".\CompositeProgressBar.h">
+			</File>
+			<File 
+				RelativePath=".\ConsoleProgressBar.cpp">
+			</File>
+			<File 
+				RelativePath=".\ConsoleProgressBar.h">
+			</File>
+			<File 
+				RelativePath=".\WindowProgressBar.cpp">
+			</File>
+			<File 
+				RelativePath=".\WindowProgressBar.h">
+			</File>
+		</Filter>
+		<Filter 
+			Name="HunkSorters">
+			<File 
+				RelativePath=".\EmpiricalHunkSorter.cpp">
+			</File>
+			<File 
+				RelativePath=".\EmpiricalHunkSorter.h">
+			</File>
+			<File 
+				RelativePath=".\HeuristicHunkSorter.cpp">
+			</File>
+			<File 
+				RelativePath=".\HeuristicHunkSorter.h">
+			</File>
+		</Filter>
+		<Filter 
+			Name="Transforms">
+			<File 
+				RelativePath=".\CallTransform.cpp">
+			</File>
+			<File 
+				RelativePath=".\CallTransform.h">
+			</File>
+			<File 
+				RelativePath=".\CompositeTransform.cpp">
+			</File>
+			<File 
+				RelativePath=".\CompositeTransform.h">
+			</File>
+			<File 
+				RelativePath=".\Transform.cpp">
+			</File>
+			<File 
+				RelativePath=".\Transform.h">
+			</File>
+		</Filter>
+		<Filter 
+			Name="data">
+			<File 
+				RelativePath=".\data.asm">
+				<FileConfiguration 
+					Name="Debug|Win32">
+					<Tool 
+						Name="CustomTool"
+						Description="Assembling data.."
+						CommandLine="nasmw -f win32 $(InputPath) -o $(TargetDir)\$(InputName).obj&#xA;"
+						Outputs="$(TargetDir)\$(InputName).obj"/>
+				</FileConfiguration>
+				<FileConfiguration 
+					Name="Release|Win32">
+					<Tool 
+						Name="CustomTool"
+						Description="Assembling data.."
+						CommandLine="nasmw -f win32 $(InputPath) -o $(TargetDir)\$(InputName).obj&#xA;"
+						Outputs="$(TargetDir)\$(InputName).obj"/>
+				</FileConfiguration>
+			</File>
+			<File 
+				RelativePath=".\data.h">
+			</File>
+		</Filter>
 		<File 
-			RelativePath=".\data.asm">
-			<FileConfiguration 
-				Name="Debug|Win32">
-				<Tool 
-					Name="CustomTool"
-					Description="Assembling data.."
-					CommandLine="nasmw -f win32 $(InputPath) -o $(TargetDir)\$(InputName).obj"
-					Outputs="$(TargetDir)\$(InputName).obj"/>
-			</FileConfiguration>
-			<FileConfiguration 
-				Name="Release|Win32">
-				<Tool 
-					Name="CustomTool"
-					Description="Assembling data.."
-					CommandLine="nasmw -f win32 $(InputPath) -o $(TargetDir)\$(InputName).obj"
-					Outputs="$(TargetDir)\$(InputName).obj"/>
-			</FileConfiguration>
+			RelativePath=".\Crinkler.rc">
 		</File>
-		<File 
-			RelativePath=".\data.h"/>
-		<File 
-			RelativePath=".\CompressionSummary.h"/>
-		<File 
-			RelativePath=".\Crinkler.h"/>
-		<File 
-			RelativePath=".\Hunk.h"/>
-		<File 
-			RelativePath=".\HunkList.h"/>
-		<File 
-			RelativePath=".\HunkLoader.h"/>
-		<File 
-			RelativePath=".\ImportHandler.h"/>
-		<File 
-			RelativePath=".\MultiLoader.h"/>
-		<File 
-			RelativePath=".\resource.h"/>
-		<File 
-			RelativePath=".\Symbol.h"/>
-		<File 
-			RelativePath=".\CoffLibraryLoader.cpp"/>
-		<File 
-			RelativePath=".\CoffLibraryLoader.h"/>
-		<File 
-			RelativePath=".\CoffObjectLoader.cpp"/>
-		<File 
-			RelativePath=".\CoffObjectLoader.h"/>
-		<File 
-			RelativePath=".\EmpiricalHunkSorter.cpp"/>
-		<File 
-			RelativePath=".\EmpiricalHunkSorter.h"/>
-		<File 
-			RelativePath=".\HeuristicHunkSorter.cpp"/>
-		<File 
-			RelativePath=".\HeuristicHunkSorter.h"/>
-		<File 
-			RelativePath=".\modules\calltrans.asm"/>
-		<File 
-			RelativePath=".\modules\header10.asm"/>
-		<File 
-			RelativePath=".\modules\header4.asm"/>
-		<File 
-			RelativePath=".\modules\import10-safe.asm"/>
-		<File 
-			RelativePath=".\modules\import10.asm"/>
-		<File 
-			RelativePath=".\modules\import4.asm"/>
-		<File 
-			RelativePath=".\CompositeProgressBar.cpp"/>
-		<File 
-			RelativePath=".\CompositeProgressBar.h"/>
-		<File 
-			RelativePath=".\ConsoleProgressBar.cpp"/>
-		<File 
-			RelativePath=".\ConsoleProgressBar.h"/>
-		<File 
-			RelativePath=".\WindowProgressBar.cpp"/>
-		<File 
-			RelativePath=".\WindowProgressBar.h"/>
-		<File 
-			RelativePath=".\CompressionSummary.cpp"/>
-		<File 
-			RelativePath=".\Crinkler.cpp">
-			<FileConfiguration 
-				Name="Release|Win32">
-				<Tool 
-					Name="CppCmplrTool"
-					Optimization="2"/>
-			</FileConfiguration>
-		</File>
-		<File 
-			RelativePath=".\Hunk.cpp"/>
-		<File 
-			RelativePath=".\HunkList.cpp"/>
-		<File 
-			RelativePath=".\HunkLoader.cpp"/>
-		<File 
-			RelativePath=".\ImportHandler.cpp"/>
-		<File 
-			RelativePath=".\main.cpp"/>
-		<File 
-			RelativePath=".\MultiLoader.cpp"/>
-		<File 
-			RelativePath=".\Symbol.cpp"/>
-		<File 
-			RelativePath=".\CallTransform.cpp"/>
-		<File 
-			RelativePath=".\CallTransform.h"/>
-		<File 
-			RelativePath=".\CompositeTransform.cpp"/>
-		<File 
-			RelativePath=".\CompositeTransform.h"/>
-		<File 
-			RelativePath=".\Transform.cpp"/>
-		<File 
-			RelativePath=".\Transform.h"/>
-		<File 
-			RelativePath=".\CmdLineInterface.cpp"/>
-		<File 
-			RelativePath=".\CmdLineInterface.h"/>
-		<File 
-			RelativePath=".\CmdParam.cpp"/>
-		<File 
-			RelativePath=".\CmdParam.h"/>
-		<File 
-			RelativePath=".\CmdParamEnum.cpp"/>
-		<File 
-			RelativePath=".\CmdParamEnum.h"/>
-		<File 
-			RelativePath=".\CmdParamFlags.cpp"/>
-		<File 
-			RelativePath=".\CmdParamFlags.h"/>
-		<File 
-			RelativePath=".\CmdParamInt.cpp"/>
-		<File 
-			RelativePath=".\CmdParamInt.h"/>
-		<File 
-			RelativePath=".\CmdParamMultiString.cpp"/>
-		<File 
-			RelativePath=".\CmdParamMultiString.h"/>
-		<File 
-			RelativePath=".\CmdParamString.cpp"/>
-		<File 
-			RelativePath=".\CmdParamString.h"/>
-		<File 
-			RelativePath=".\CmdParamSwitch.cpp"/>
-		<File 
-			RelativePath=".\CmdParamSwitch.h"/>
-		<File 
-			RelativePath=".\Log.cpp"/>
-		<File 
-			RelativePath=".\Log.h"/>
-		<File 
-			RelativePath=".\MemoryFile.cpp"/>
-		<File 
-			RelativePath=".\MemoryFile.h"/>
-		<File 
-			RelativePath=".\misc.cpp"/>
-		<File 
-			RelativePath=".\misc.h"/>
-		<File 
-			RelativePath=".\NameMangling.cpp"/>
-		<File 
-			RelativePath=".\NameMangling.h"/>
-		<File 
-			RelativePath=".\StringMisc.cpp"/>
-		<File 
-			RelativePath=".\StringMisc.h"/>
-		<File 
-			RelativePath=".\Crinkler.rc"/>
 	</Files>
 </VisualStudioProject>
 

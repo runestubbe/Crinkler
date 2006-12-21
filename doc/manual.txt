@@ -15,6 +15,7 @@ VERSION HISTORY
                 Compression tweak for greatly improved compression ratio.
                 Much faster compression.
                 Automatically takes advantage of multiple processors.
+		/COMPMODE:INSTANT option for very quick compression.
                 /ORDERTRIES option to try out different section orderings.
 		/SAFEIMPORT option to insert a check for nonexisting DLLs.
 		/PROGRESSGUI option for a graphical progress bar.
@@ -190,6 +191,11 @@ following:
   name, such as the one used with the Intel C++ compiler, call it
   whatever the name of the linker is.
 
+- If you are using Visual Studio 2005, select Tools/Options... and go
+  to Projects and Solutions/VC++ Directories. At the top of the list
+  for Executable files, add $(SolutionDir). This will make sure that
+  the project directory is searched for the linker executable.
+
 - In the Release configuration (or whichever configuration you want to
   enable compression), under Linker/Command Line/Additional Options,
   type in /CRINKLER, along with any other Crinkler options you want to
@@ -283,13 +289,16 @@ Linker/Command Line/Additional Options:
     want Crinkler to disturb you as little as possible. Use NORMAL if
     you don't need your machine for anything else while compressing.
 
+/COMPMODE:INSTANT
 /COMPMODE:FAST
 /COMPMODE:SLOW
 
-    Choose between two different compression modes. The fast mode
-    usually compresses in a couple of seconds, while the slow one
-    takes some minutes to complete. The slow one usually compresses
-    about 10-40 bytes better on a 4k executable. The default
+    Choose between three different compression modes. The FAST mode
+    usually compresses in a couple of seconds, while the SLOW one can
+    take up to a few minutes to complete. The slow one usually
+    compresses about 10-40 bytes better on a 4k executable. Use
+    INSTANT if you just want to check that your program works in
+    compressed form and don't care about the size. The default
     compression mode is FAST.
 
 /HASHSIZE:[memory size]
@@ -302,7 +311,7 @@ Linker/Command Line/Additional Options:
     into memory) will be the maximum of this value and the original
     image size. The memory will not be deallocated until the program
     terminates, and any heap allocation the program performs will add
-    to this memory usage. The default value is 50, which is usually a
+    to this memory usage. The default value is 100, which is usually a
     good compromise.
 
 /HASHTRIES:[number of retries]
@@ -313,15 +322,40 @@ Linker/Command Line/Additional Options:
     default value is 20. Higher values rarely improve the size by more
     than a few bytes.
 
+/ORDERTRIES:[number of retries]
+
+    Specify the number of section reordering iterations that the
+    linker will try out in search for the ordering that gives the best
+    compression ratio. The default is not to do any reordering.
+    Specifying this option drastically increases the compression time,
+    since Crinkler has to calculate the compressed size anew on every
+    reordering. Usually, the size does not improve noticeably after a
+    few thousand iterations.
+
 /RANGE:[DLL name]
 
     Import functions from the given DLL (without the .dll suffix)
     using ordinal range import. Ordinal range import imports the first
     used function by hash and the rest by ordinal relative to the
     first one. Ordinal range import is safe to use on DLLs in which
-    the ordinals are fixed relative to each other, such as
-    opengl32. This option can be specified multiple times, for
+    the ordinals are fixed relative to each other, such as opengl32 or
+    d3dx9_??. This option can be specified multiple times, for
     different DLLs.
+
+/REPLACEDLL:[oldDLL=newDLL]
+
+    Whenever a function is imported from oldDLL, import it from newDLL
+    instead. DLL replacement is useful when the end user might not
+    have the version of the DLL that you are linking to. Typical
+    examples are replacing msvcr70, msvcr71 or msvcr80 by msvcrt and
+    replacing one version of d3dx_?? by another. Only use this option
+    if you know that the two DLLs are compatible.
+
+/SAFEIMPORT
+
+    If the executable fails to load some DLL, it will pop up a message
+    box with the DLL name rather than crash. This will increase the
+    file size by around 20 bytes.
 
 /TRANSFORM:CALLS
 
@@ -370,6 +404,10 @@ specified under Linker/Command Line/Additional Options:
 
     List the model masks and weights selected by the compressor. This
     is mostly for internal use.
+
+/PROGRESSGUI
+
+    Open a window showing a graphical progress indicator.
 
 
 An example commandline for linking and compressing an intro could look
