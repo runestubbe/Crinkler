@@ -170,7 +170,7 @@ int main(int argc, char* argv[]) {
 							"CALLS", TRANSFORM_CALLS, NULL);
 	CmdParamMultiString libpathArg("LIBPATH", "adds a path to the library search path", "dirs", CMD_PARAM_IS_SWITCH, 0);
 	CmdParamMultiString rangeImportArg("RANGE", "use range importing for this dll", "dllname", CMD_PARAM_IS_SWITCH, 0);
-	CmdParamMultiString replaceDllArg("REPLACEDLL", "replace a dll with another", "oldDLL=newDLL", CMD_PARAM_IS_SWITCH, 0);
+	CmdParamMultiAssign replaceDllArg("REPLACEDLL", "replace a dll with another", "oldDLL=newDLL", CMD_PARAM_IS_SWITCH);
 	CmdParamMultiString filesArg("FILES", "list of filenames", "", CMD_PARAM_HIDE_IN_PARAM_LIST, 0);
 	CmdLineInterface cmdline(CRINKLER_TITLE, CMDI_PARSE_FILES);
 
@@ -196,7 +196,6 @@ int main(int argc, char* argv[]) {
 	if(!cmdline.parse()) {
 		return 1;
 	}
-
 
 	//set priority
 	SetPriorityClass(GetCurrentProcess(), priorityArg.getValue());
@@ -243,6 +242,12 @@ int main(int argc, char* argv[]) {
 	printf("Hash tries: %d\n", hashtriesArg.getValue());
 	printf("Order tries: %d\n", hunktriesArg.getValue());
 	printf("Transforms: %s\n", (transformArg.getValue() & TRANSFORM_CALLS) ? "CALLS" : "NONE");
+	{
+		StringPair* sp;
+		while(sp = replaceDllArg.getValue()) {
+			printf("Replace DLL '%s' by '%s'\n", sp->first.c_str(), sp->second.c_str());
+		}
+	}
 	printf("\n");
 
 	//build search library+object search path

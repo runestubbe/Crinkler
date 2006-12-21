@@ -7,6 +7,7 @@
 #include "CmdParamEnum.h"
 #include "CmdParamFlags.h"
 #include "CmdParamMultiString.h"
+#include "CmdParamMultiAssign.h"
 
 #include <list>
 #include <string>
