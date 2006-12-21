@@ -15,6 +15,7 @@ MemoryFile::MemoryFile(const char* filename) {
 		m_data[filesize+1] = 0;
 		fread(m_data, 1, filesize, file);
 		fclose(file);
+		m_size = filesize;
 	} else {
 		m_data = NULL;
 		m_size = 0;

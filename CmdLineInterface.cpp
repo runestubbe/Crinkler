@@ -85,6 +85,7 @@ bool CmdLineInterface::setCmdParameters(int argc, char* argv[]) {
 
 			//add tokens from file
 			//TODO: test unicode support
+
 			if(mf.getSize() >= 2 && (*(unsigned short*) mf.getPtr()) == 0xFEFF) {	//UNICODE
 				char* tmp = new char[mf.getSize()+2];
 				printf("ret: %d\n", WideCharToMultiByte(CP_ACP, 0, (LPCWSTR)(mf.getPtr()+2), -1, tmp, mf.getSize()+2, NULL, NULL));
