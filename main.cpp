@@ -82,7 +82,7 @@ void runOriginalLinker(const char* crinklerCanonicalName, const char* linkerName
 	list<string> res = findFileInPath(linkerName, path.c_str());
 	for(list<string>::const_iterator it = res.begin(); it != res.end(); it++) {
 		printf("compare with: %s ", it->c_str());
-		if(it->compare(crinklerCanonicalName) != 0) {
+		if(toUpper(*it).compare(toUpper(crinklerCanonicalName)) != 0) {
 			printf("equal\n");
 			printf("Launching default linker at '%s'\n\n", it->c_str());
 			char args[MAX_PATH];
