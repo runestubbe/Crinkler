@@ -123,7 +123,7 @@ void runOriginalLinker(const char* crinklerCanonicalName, const char* linkerName
 #define TRANSFORM_CALLS		0x01
 
 int main(int argc, char* argv[]) {
-/*
+	/*
 	argc = 4;
 	char* argv[] = {
 		argv2[0],

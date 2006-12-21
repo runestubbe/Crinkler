@@ -251,7 +251,7 @@ void Crinkler::link(const char* filename) {
 			progressBar.beginTask("Estimating models for code");
 			ModelList ml1 = ApproximateModels((unsigned char*)phase1->getPtr(), splittingPoint, baseprobs, &size, &progressBar, m_verboseFlags & VERBOSE_MODELS, m_compressionType);
 			progressBar.endTask();
-			int idealsize = size;
+			idealsize = size;
 
 			progressBar.beginTask("Estimating models for data");
 			ModelList ml2 = ApproximateModels((unsigned char*)phase1->getPtr()+splittingPoint, phase1->getRawSize() - splittingPoint, baseprobs, &size, &progressBar, m_verboseFlags & VERBOSE_MODELS, m_compressionType);

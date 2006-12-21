@@ -140,6 +140,7 @@ void EmpiricalHunkSorter::sortHunkList(HunkList* hunklist, ModelList& codeModels
 	int nHunks = hunklist->getNumHunks();
 
 	printf("\n\nReordering sections...\n");
+	fflush(stdout);
 
 	while(fixedHunks < nHunks && (*hunklist)[fixedHunks]->getFlags() & HUNK_IS_FIXED)
 		fixedHunks++;
@@ -163,6 +164,7 @@ void EmpiricalHunkSorter::sortHunkList(HunkList* hunklist, ModelList& codeModels
 		int size = tryHunkCombination(hunklist, codeModels, dataModels, baseprobs);
 		if(size < bestsize) {
 			printf("  Iteration: %5d  Size: %5.2f\n", i, size / BITPREC / 8.0f);
+			fflush(stdout);
 			bestsize = size;
 			fails = 0;
 		} else {
