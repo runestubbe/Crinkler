@@ -101,7 +101,10 @@ const int hashCode(const char* str) {
 }
 
 //TODO: report unused range dlls
-HunkList* ImportHandler::createImportHunks(HunkList* hunklist, Hunk* hashHunk, const list<string>& rangeDlls, bool verbose) {
+HunkList* ImportHandler::createImportHunks(HunkList* hunklist, Hunk* hashHunk, const vector<string>& rangeDlls, bool verbose) {
+	bool* usedRangeDlls = new bool[rangeDlls.size()];
+	memset(usedRangeDlls, 0, rangeDlls.size()*sizeof(bool));
+
 	if(verbose)
 		printf("\n-Imports----------------------------------\n");
 
@@ -134,14 +137,14 @@ HunkList* ImportHandler::createImportHunks(HunkList* hunklist, Hunk* hashHunk, c
 		bool useRange = false;
 
 		//is the dll a range dll?
-		for(list<string>::const_iterator jt = rangeDlls.begin(); jt != rangeDlls.end(); jt++) {
-			if(toUpper(*jt) == toUpper(importHunk->getImportDll())) {
+		for(int i = 0; i < rangeDlls.size(); i++) {
+			if(toUpper(rangeDlls[i]) == toUpper(importHunk->getImportDll())) {
+				usedRangeDlls[i] = true;
 				useRange = true;
 				break;
 			}
 		}
 
-		
 		//skip non hashes
 		while(*hashptr != 0x48534148) {
 			*dllNamesPtr++ = 1;
@@ -219,6 +222,16 @@ HunkList* ImportHandler::createImportHunks(HunkList* hunklist, Hunk* hashHunk, c
 	Hunk* dllNamesHunk = new Hunk("DllNames", dllNames, HUNK_IS_WRITEABLE, 0, dllNamesPtr - dllNames, dllNamesPtr - dllNames);
 	dllNamesHunk->addSymbol(new Symbol("_DLLNames", 0, SYMBOL_IS_RELOCATEABLE, dllNamesHunk));
 	newHunks->addHunkBack(dllNamesHunk);
+
+	//warn about unused range dlls
+	{
+		for(int i = 0; i < rangeDlls.size(); i++) {
+			if(!usedRangeDlls[i]) {
+				Log::warning(0, "", "no functions were imported from range dll '%s'", rangeDlls[i].c_str());
+			}
+		}
+		delete[] usedRangeDlls;
+	}
 
 	return newHunks;
 }

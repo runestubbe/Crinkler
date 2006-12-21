@@ -266,7 +266,7 @@ void Crinkler::link(const char* filename) {
 		if(m_compressionType != COMPRESSION_INSTANT && m_hashtries > 0) {
 			int bestsize = INT_MAX;
 			int hashsize = best_hashsize;
-			progressBar.beginTask("Optimizing hashsize");
+			progressBar.beginTask("Optimizing hash table size");
 
 			for(int i = 0; i < m_hashtries; i++) {
 				CompressionStream cs(data, sizefill, maxsize);
@@ -394,7 +394,8 @@ Crinkler* Crinkler::addRangeDll(const char* dllname) {
 }
 
 Crinkler* Crinkler::addRangeDlls(list<string>& dllnames) {
-	m_rangeDlls.splice(m_rangeDlls.end(), dllnames);
+	for(list<string>::iterator it = dllnames.begin(); it != dllnames.end(); it++)
+		m_rangeDlls.push_back(*it);
 	return this;
 }
 

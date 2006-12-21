@@ -34,7 +34,7 @@ class Crinkler {
 	int						m_verboseFlags;
 	bool					m_useSafeImporting;
 	CompressionType			m_compressionType;
-	std::list<std::string>	m_rangeDlls;
+	std::vector<std::string>	m_rangeDlls;
 	bool					m_showProgressBar;
 	CompositeTransform		m_transform;
 
@@ -60,6 +60,7 @@ public:
 	Crinkler* setImportingType(bool safe);
 	Crinkler* setHashtries(int hashtries);
 	Crinkler* addRangeDll(const char* dllname);
+	Crinkler* replaceDll(const char* dll1, const char* dll2);
 	Crinkler* clearRangeDlls();
 	Crinkler* addRangeDlls(std::list<std::string>& dllnames);
 	Crinkler* showProgressBar(bool show);

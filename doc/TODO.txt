@@ -10,6 +10,10 @@ new faster hashing
 review
 test vs.net integration
 set date
-VERBOSE: models, functions
+VERBOSE: models
+VERBOSE: functions
 Hunk destructor bug i (benitoite, fast, safeimport)
 replacedll
+ warn if rangedlls are not used
+cleanup cmdline library
+strip extension from rangedll/dllreplace
