@@ -29,7 +29,8 @@ Crinkler::Crinkler() {
 	m_hashsize = 50*1024*1024;
 	m_compressionType = COMPRESSION_FAST;
 	m_useSafeImporting = false;
-	m_hashtries = 10;
+	m_hashtries = 0;
+	m_hunktries = 0;
 	m_verboseFlags = 0;
 	m_showProgressBar = false;
 }
@@ -223,54 +224,46 @@ void Crinkler::link(const char* filename) {
 		if(m_compressionType != COMPRESSION_INSTANT) {
 			progressBar.init();
 			progressBar.beginTask("Estimating models for code");
-			ml1 = ApproximateModels((unsigned char*)phase1->getPtr(), splittingPoint, baseprobs, &size, &progressBar, false, m_compressionType);
+			ml1 = ApproximateModels((unsigned char*)phase1->getPtr(), splittingPoint, baseprobs, &size, &progressBar, m_verboseFlags & VERBOSE_MODELS, m_compressionType);
 			progressBar.endTask();
 		} else {
-			ml1 = ApproximateModels((unsigned char*)phase1->getPtr(), splittingPoint, baseprobs, &size, &progressBar, false, m_compressionType);
+			ml1 = ApproximateModels((unsigned char*)phase1->getPtr(), splittingPoint, baseprobs, &size, &progressBar, m_verboseFlags & VERBOSE_MODELS, m_compressionType);
 		}
-		
-		if(m_verboseFlags & VERBOSE_MODELS)
-			ml1.print();
 		
 		int idealsize = size;
 
 		if(m_compressionType != COMPRESSION_INSTANT) {
 			progressBar.beginTask("Estimating models for data");
-			ml2 = ApproximateModels((unsigned char*)phase1->getPtr()+splittingPoint, phase1->getRawSize() - splittingPoint, baseprobs, &size, &progressBar, false, m_compressionType);
+			ml2 = ApproximateModels((unsigned char*)phase1->getPtr()+splittingPoint, phase1->getRawSize() - splittingPoint, baseprobs, &size, &progressBar, m_verboseFlags & VERBOSE_MODELS, m_compressionType);
 			progressBar.endTask();
 			idealsize += size;
-			printf("Ideal compressed total size: %d\n", idealsize / BITPREC / 8);
+			printf("\nIdeal compressed total size: %d\n", idealsize / BITPREC / 8);
 		} else {
-			ml2 = ApproximateModels((unsigned char*)phase1->getPtr()+splittingPoint, phase1->getRawSize() - splittingPoint, baseprobs, &size, &progressBar, false, m_compressionType);
+			ml2 = ApproximateModels((unsigned char*)phase1->getPtr()+splittingPoint, phase1->getRawSize() - splittingPoint, baseprobs, &size, &progressBar, m_verboseFlags & VERBOSE_MODELS, m_compressionType);
 		}
 
-		if(m_verboseFlags & VERBOSE_MODELS)
-			ml2.print();
-	
-		/*
-		{
-			EmpiricalHunkSorter::sortHunkList(&m_hunkPool, ml1, ml2, baseprobs);
+		if(m_compressionType != COMPRESSION_INSTANT && m_hunktries > 0) {
+			EmpiricalHunkSorter::sortHunkList(&m_hunkPool, ml1, ml2, baseprobs, m_hunktries, m_showProgressBar ? &windowBar : NULL);
 			delete phase1;
-			Hunk* phase1 = m_hunkPool.toHunk("linkedHunk", &splittingPoint);
-			phase1->relocate(m_imageBase+sectionSize*2);
+			Hunk* phase1 = m_transform.linkAndTransform(&m_hunkPool, m_imageBase+sectionSize*2, &splittingPoint);
+
+			//reestimate models
 			progressBar.beginTask("Estimating models for code");
-			ModelList ml1 = ApproximateModels((unsigned char*)phase1->getPtr(), splittingPoint, baseprobs, &size, &progressBar, false, m_compressionType);
+			ModelList ml1 = ApproximateModels((unsigned char*)phase1->getPtr(), splittingPoint, baseprobs, &size, &progressBar, m_verboseFlags & VERBOSE_MODELS, m_compressionType);
 			progressBar.endTask();
-			ml1.print();
 			int idealsize = size;
 
 			progressBar.beginTask("Estimating models for data");
-			ModelList ml2 = ApproximateModels((unsigned char*)phase1->getPtr()+splittingPoint, phase1->getRawSize() - splittingPoint, baseprobs, &size, &progressBar, false, m_compressionType);
+			ModelList ml2 = ApproximateModels((unsigned char*)phase1->getPtr()+splittingPoint, phase1->getRawSize() - splittingPoint, baseprobs, &size, &progressBar, m_verboseFlags & VERBOSE_MODELS, m_compressionType);
 			progressBar.endTask();
-			ml2.print();
 			idealsize += size;
 
-			printf("ideal compressed total size: %d\n", idealsize / BITPREC / 8);
+			printf("\nIdeal compressed total size: %d\n", idealsize / BITPREC / 8);
 		}
-		*/
+		
 
 		//hashing time
-		if(m_compressionType != COMPRESSION_INSTANT) {
+		if(m_compressionType != COMPRESSION_INSTANT && m_hashtries > 0) {
 			int bestsize = INT_MAX;
 			int hashsize = best_hashsize;
 			progressBar.beginTask("Optimizing hashsize");
@@ -305,10 +298,7 @@ void Crinkler::link(const char* filename) {
 		if(m_verboseFlags & VERBOSE_LABELS)
 			verboseLabels(csr);
 		
-
-
 		delete csr;
-
 		
 		phase1Compressed = new Hunk("compressed data", (char*)data, 0, 1, size, size);
 		delete[] data;
@@ -430,5 +420,10 @@ Crinkler* Crinkler::showProgressBar(bool show) {
 
 Crinkler* Crinkler::addTransform(Transform* transform) {
 	m_transform.addTransform(transform);
+	return this;
+}
+
+Crinkler* Crinkler::setHunktries(int hunktries) {
+	m_hunktries = hunktries;
 	return this;
 }

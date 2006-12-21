@@ -87,7 +87,8 @@ bool CmdLineInterface::setCmdParameters(int argc, char* argv[]) {
 			//TODO: test unicode support
 			if(mf.getSize() >= 2 && (*(unsigned short*) mf.getPtr()) == 0xFEFF) {	//UNICODE
 				char* tmp = new char[mf.getSize()+2];
-				WideCharToMultiByte(CP_ACP, 0, (LPCWSTR)(mf.getPtr()+2), -1, tmp, mf.getSize(), NULL, NULL);
+				printf("ret: %d\n", WideCharToMultiByte(CP_ACP, 0, (LPCWSTR)(mf.getPtr()+2), -1, tmp, mf.getSize()+2, NULL, NULL));
+				printf("unicode magic: %s\n", tmp);
 				addTokens(tmp);
 				delete[] tmp;
 			} else {	//ASCII

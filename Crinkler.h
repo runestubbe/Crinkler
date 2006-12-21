@@ -30,6 +30,7 @@ class Crinkler {
 	int						m_imageBase;
 	int						m_hashsize;
 	int						m_hashtries;
+	int						m_hunktries;
 	int						m_verboseFlags;
 	bool					m_useSafeImporting;
 	CompressionType			m_compressionType;
@@ -54,6 +55,7 @@ public:
 	Crinkler* setVerboseFlags(int verboseFlags);
 	Crinkler* setSubsystem(SubsystemType subsystem);
 	Crinkler* setHashsize(int hashsize);
+	Crinkler* setHunktries(int hunktries);
 	Crinkler* setCompressionType(CompressionType compressionType);
 	Crinkler* setImportingType(bool safe);
 	Crinkler* setHashtries(int hashtries);

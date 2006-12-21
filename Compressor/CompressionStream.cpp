@@ -118,10 +118,10 @@ void CompressionStream::Compress(const unsigned char* d, int size, const ModelLi
 	delete[] data;
 }
 
-int CompressionStream::EvaluateSize(const unsigned char* d, int size, const ModelList& models, int baseprobs[8]) {
+int CompressionStream::EvaluateSize(const unsigned char* d, int size, const ModelList& models, int baseprobs[8], char* context) {
 	int bitlength = size*8;
 	unsigned char* data = new unsigned char[size+MAX_CONTEXT_LENGTH];
-	memcpy(data, m_context, MAX_CONTEXT_LENGTH);
+	memcpy(data, context, MAX_CONTEXT_LENGTH);
 	data += MAX_CONTEXT_LENGTH;
 	memcpy(data, d, size);
 
@@ -190,11 +190,6 @@ int CompressionStream::EvaluateSize(const unsigned char* d, int size, const Mode
 	}
 
 	delete[] hashtable;
-	{	//save context for next call
-		int s = min(size, MAX_CONTEXT_LENGTH);
-		if(s > 0)
-			memcpy(m_context+8-s, data+size-s, s);
-	}
 
 	data -= MAX_CONTEXT_LENGTH;
 	delete[] data;
