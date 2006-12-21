@@ -3,6 +3,8 @@
 
 #include <string>
 
+typedef std::pair<std::string, std::string> StringPair;
+
 std::string toUpper(const std::string& s);
 std::string stripPath(const std::string& s);
 

@@ -393,10 +393,9 @@ Crinkler* Crinkler::addRangeDll(const char* dllname) {
 	return this;
 }
 
-Crinkler* Crinkler::addRangeDlls(list<string>& dllnames) {
-	for(list<string>::iterator it = dllnames.begin(); it != dllnames.end(); it++)
-		m_rangeDlls.push_back(*it);
-	return this;
+Crinkler* Crinkler::replaceDll(const char* dll1, const char* dll2) {
+	StringPair sp(dll1, dll2);
+	m_replaceDlls.push_back(sp);
 }
 
 Crinkler* Crinkler::clearRangeDlls() {
