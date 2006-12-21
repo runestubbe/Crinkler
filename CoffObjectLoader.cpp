@@ -22,7 +22,6 @@ string CoffObjectLoader::getSectionName(const IMAGE_SECTION_HEADER* section, con
 	}
 }
 
-
 string CoffObjectLoader::getSymbolName(const IMAGE_SYMBOL* symbol, const char* stringTable) {
 	if(symbol->N.Name.Short == 0) {	//long name
 		return string(&stringTable[symbol->N.Name.Long]);
@@ -33,16 +32,13 @@ string CoffObjectLoader::getSymbolName(const IMAGE_SYMBOL* symbol, const char* s
 	}
 }
 
-
 CoffObjectLoader::~CoffObjectLoader() {
 }
-
 
 bool CoffObjectLoader::clicks(const char* data, int size) {
 	//TODO: implement a more safe check
 	return *(unsigned short*)data == IMAGE_FILE_MACHINE_I386;
 }
-
 
 HunkList* CoffObjectLoader::load(const char* data, int size, const char* module) {
 	//TODO: insert sanity checks

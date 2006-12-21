@@ -5,6 +5,8 @@
 #include "MultiLoader.h"
 #include "HunkList.h"
 #include "Compressor/Compressor.h"
+#include "CompositeTransform.h"
+
 
 #include <string>
 
@@ -20,8 +22,6 @@ enum SubsystemType {SUBSYSTEM_CONSOLE, SUBSYSTEM_WINDOWS};
 #define CRINKLER_TITLE			"Crinkler 0.6 (" __DATE__ ") (c) Aske Simonsen & Rune Stubbe 2005-2006"
 #define CRINKLER_LINKER_VERSION	"06"
 
-#define TRANSFORM_CALLS		0x01
-
 class Crinkler {
 	MultiLoader				m_hunkLoader;
 	HunkList				m_hunkPool;
@@ -35,6 +35,8 @@ class Crinkler {
 	CompressionType			m_compressionType;
 	std::list<std::string>	m_rangeDlls;
 	bool					m_showProgressBar;
+	CompositeTransform		m_transform;
+
 	
 	Symbol* getEntrySymbol() const;
 	Symbol* findUndecoratedSymbol(const char* name) const;
@@ -59,6 +61,8 @@ public:
 	Crinkler* clearRangeDlls();
 	Crinkler* addRangeDlls(std::list<std::string>& dllnames);
 	Crinkler* showProgressBar(bool show);
+
+	Crinkler* addTransform(Transform* transform);
 };
 
 #endif

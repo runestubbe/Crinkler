@@ -1,10 +1,22 @@
 #include "CallTransform.h"
 #include "Hunk.h"
-/*
-int CallTransform::transform(Hunk* hunk, int splittingPoint, int max_num) {
-	int num = 0;
-	unsigned char* data = (unsigned char*) hunk->getPtr();
+#include "CoffObjectLoader.h"
+#include "data.h"
+#include "HunkList.h"
+
+Hunk* CallTransform::getDetransformer() {
+	CoffObjectLoader loader;
+	HunkList* hl = loader.load(calltransObj, calltransObj_end - calltransObj, "call detransform");
+	Hunk* h = hl->toHunk("call detransformer");
+	delete hl;
+	return h;
+}
+
+void CallTransform::transform(Hunk* hunk, int splittingPoint) {
+	unsigned char* data = (unsigned char*)hunk->getPtr();
 	int size = splittingPoint;
+
+	int num = 0;
 	for (int i = 0 ; i < size-4 ; i++) {
 		if (data[i] == 0xe8) {
 			int *offset = (int *)&data[i+1];
@@ -12,9 +24,9 @@ int CallTransform::transform(Hunk* hunk, int splittingPoint, int max_num) {
 				*offset = (int)(short)(*offset + i+1);
 				i += 4;
 				num++;
-				if (num == max_num) break;
+				if (num == 255) break;
 			}
 		}
 	}
-	return num;
-}*/
+	*(hunk->getPtr() + hunk->findSymbol("_NumCallTransPtr")->value) = num;
+}

@@ -36,7 +36,7 @@
 			<Tool 
 				Name="LinkerTool"
 				DelayImpLib=""
-				AdditionalDependencies="d3d9.lib d3dx9d.lib Dbghelp.lib Compressor\debug\Compressor.lib"
+				AdditionalDependencies="Dbghelp.lib Compressor\debug\Compressor.lib"
 				OutputFile="$(OutDir)/Crinkler.exe"
 				LinkIncremental="2"
 				GenerateDebugInformation="1"
@@ -97,7 +97,7 @@
 			<Tool 
 				Name="LinkerTool"
 				DelayImpLib=""
-				AdditionalDependencies="d3d9.lib d3dx9.lib Dbghelp.lib Compressor\Release\Compressor.lib"
+				AdditionalDependencies="Dbghelp.lib Compressor\Release\Compressor.lib"
 				OutputFile="$(OutDir)/Crinkler.exe"
 				LinkIncremental="1"
 				GenerateDebugInformation="1"
@@ -133,17 +133,26 @@
 	</Configurations>
 	<Files>
 		<File 
-			RelativePath=".\modules\calltrans.asm"/>
+			RelativePath=".\data.asm">
+			<FileConfiguration 
+				Name="Debug|Win32">
+				<Tool 
+					Name="CustomTool"
+					Description="Assembling data.."
+					CommandLine="nasmw -f win32 $(InputPath) -o $(TargetDir)\$(InputName).obj"
+					Outputs="$(TargetDir)\$(InputName).obj"/>
+			</FileConfiguration>
+			<FileConfiguration 
+				Name="Release|Win32">
+				<Tool 
+					Name="CustomTool"
+					Description="Assembling data.."
+					CommandLine="nasmw -f win32 $(InputPath) -o $(TargetDir)\$(InputName).obj"
+					Outputs="$(TargetDir)\$(InputName).obj"/>
+			</FileConfiguration>
+		</File>
 		<File 
-			RelativePath=".\modules\header4.asm"/>
-		<File 
-			RelativePath=".\modules\header5.asm"/>
-		<File 
-			RelativePath=".\modules\import4.asm"/>
-		<File 
-			RelativePath=".\modules\import5-safe.asm"/>
-		<File 
-			RelativePath=".\modules\import5.asm"/>
+			RelativePath=".\data.h"/>
 		<File 
 			RelativePath=".\CompressionSummary.h"/>
 		<File 
@@ -179,26 +188,17 @@
 		<File 
 			RelativePath=".\HeuristicHunkSorter.h"/>
 		<File 
-			RelativePath=".\data.asm">
-			<FileConfiguration 
-				Name="Debug|Win32">
-				<Tool 
-					Name="CustomTool"
-					Description="Assembling data.."
-					CommandLine="nasmw -f win32 $(InputPath) -o $(TargetDir)\$(InputName).obj"
-					Outputs="$(TargetDir)\$(InputName).obj"/>
-			</FileConfiguration>
-			<FileConfiguration 
-				Name="Release|Win32">
-				<Tool 
-					Name="CustomTool"
-					Description="Assembling data.."
-					CommandLine="nasmw -f win32 $(InputPath) -o $(TargetDir)\$(InputName).obj"
-					Outputs="$(TargetDir)\$(InputName).obj"/>
-			</FileConfiguration>
-		</File>
+			RelativePath=".\modules\calltrans.asm"/>
 		<File 
-			RelativePath=".\data.h"/>
+			RelativePath=".\modules\header10.asm"/>
+		<File 
+			RelativePath=".\modules\header4.asm"/>
+		<File 
+			RelativePath=".\modules\import10-safe.asm"/>
+		<File 
+			RelativePath=".\modules\import10.asm"/>
+		<File 
+			RelativePath=".\modules\import4.asm"/>
 		<File 
 			RelativePath=".\CompositeProgressBar.cpp"/>
 		<File 
@@ -240,6 +240,14 @@
 			RelativePath=".\CallTransform.cpp"/>
 		<File 
 			RelativePath=".\CallTransform.h"/>
+		<File 
+			RelativePath=".\CompositeTransform.cpp"/>
+		<File 
+			RelativePath=".\CompositeTransform.h"/>
+		<File 
+			RelativePath=".\Transform.cpp"/>
+		<File 
+			RelativePath=".\Transform.h"/>
 		<File 
 			RelativePath=".\CmdLineInterface.cpp"/>
 		<File 
