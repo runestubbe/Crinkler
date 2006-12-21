@@ -34,13 +34,13 @@ _header:
 ;dos header
 db 'M','Z'
 DepackInit:
-	mov	eax, _UnpackedData
-	xor	ebx, ebx
-	inc	ebx
-	jmp	short DepackInit2
+	push	dword _UnpackedData
+	xor		eax, eax
+	inc		eax
+	jmp		short DepackInit2
 	
 ;coff header
-db 'P', 'E', 0, 0		;PE signature
+db 'P', 'E', 0, 0	;PE signature
 dw 014Ch			;Machine, 386+
 dw 01h				;Number of sections
 db "HASH"			;Timestamp
@@ -57,39 +57,40 @@ dw 0h				;Major/Minor linker version
 db "HASH"			;Size of code
 db "HASH"			;Size of initialized data
 db "HASH"			;Size of uninitialized data
-dd HeaderOffset(DepackInit)	;Address of entry point
+dd HeaderOffset(DepackInit);Address of entry point
 db "HASH"			;Base of code
-dd 0000000Ch			;Base of data (and PE header offset)
-dd _ImageBase			;Image base
-dd 00010000h			;Section alignment (in memory)
-dd 00000200h			;File alignment (on disk)
+dd 0000000Ch		;Base of data (and PE header offset)
+dd _ImageBase		;Image base
+dd 00010000h		;Section alignment (in memory)
+dd 00000200h		;File alignment (on disk)
 db "HASH"			;Major/minor OS version
 db "HASH"			;Major/minor image version
 
 DummyImport:
 dw 4,8000h			;Major/minor subsystem version
 dd 0h				;Reserved
-dd _VirtualSize+20000h		;Size of image (= Section size + Section alignment)
-dd 00010000h			;Size of headers (= Section alignment)
-;Checksum
+dd _VirtualSize+20000h;Size of image (= Section size + Section alignment)
+dd 00010000h		;Size of headers (= Section alignment)
+
+	;Checksum
 DepackInit2:
-	xor	edi, edi
-	xor	ebp, ebp
+	xor		edi, edi
+	push	edi
+	db		0xbb ; mov ebx, const
 _SubsystemTypePtr:
-dw 0002h			;Subsystem
-	;DLL characteristics
+	dw		0002h	;Subsystem
+	dw		0h		;DLL characteristics
 	;Size of stack reserve
 	;Size of stack commit
 	;Size of heap reserve
 	;Size of heap commit
-	xchg	eax, ebx
-	mov	esi, _Models
-	xor	ecx, ecx
-	add	al, 0
-	push	ebx
-	jmp	_DepackEntry
-	dw	0
-	
+	pop		ebp
+	mov		esi, _Models
+	push	byte 0
+	pop		ecx
+	jmp		_DepackEntry
+	dw		0
+
 LoaderFlags:
 DummyImportTable equ LoaderFlags-4
 db "HASH"			;Loader flags
@@ -110,14 +111,14 @@ dd 0h				;Size
 ;Name
 DummyDLL:
 db "lz32.dll"
-dd _VirtualSize+10000h		;Virtual size (= Section size)
-dd 00010000h			;Virtual address (= Section alignment)
+dd _VirtualSize+10000h;Virtual size (= Section size)
+dd 00010000h		;Virtual address (= Section alignment)
 dd 200h				;Size of raw data
 dd 1h				;Pointer to raw data
 db "HASH"			;Pointer to relocations
 dd 0h				;Pointer to line numbers
 db "HASH"			;Number of relocations/line numbers
-dd 0F00000E0h			;Characteristics (contains everything, is executable, readable, writable and sharable)
+dd 0E00000E0h		;Characteristics (contains everything, is executable, readable and writable)
 
 times	1000	db "HASH"
 

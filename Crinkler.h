@@ -19,8 +19,8 @@ enum SubsystemType {SUBSYSTEM_CONSOLE, SUBSYSTEM_WINDOWS};
 #define VERBOSE_MODELS		4
 #define VERBOSE_FUNCTIONS	8
 
-#define CRINKLER_TITLE			"Crinkler 0.6 (" __DATE__ ") (c) Aske Simonsen & Rune Stubbe 2005-2006"
-#define CRINKLER_LINKER_VERSION	"06"
+#define CRINKLER_TITLE			"Crinkler 1.0 (" __DATE__ ") (c) 2005-2006 Aske Simon Christensen & Rune Stubbe"
+#define CRINKLER_LINKER_VERSION	"10"
 
 class Crinkler {
 	MultiLoader				m_hunkLoader;

@@ -1,9 +1,10 @@
 Manual:
 Set date (in two places)
-Setting executable path
+ Setting executable path
 More options in example?
-New options
+ New options
 Detailed comparisons: mention ORDERTRIES?
+
 
 Code:
 transforms
@@ -13,3 +14,5 @@ test vs.net integration
 set date
 VERBOSE: models, functions
 Hunk destructor bug i (benitoite, fast, safeimport)
+Sanity check of REPLACEDLL: check that all functions exist
+ INSTANT

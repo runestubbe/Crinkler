@@ -1,5 +1,3 @@
-#include <vld.h>
-
 #include <cstdio>
 #include <windows.h>
 #include <iostream>
