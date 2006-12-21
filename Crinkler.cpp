@@ -122,6 +122,7 @@ void verboseLabels(CompressionSummaryRecord* csr) {
 }
 
 void Crinkler::link(const char* filename) {
+	//open output file now, just to be sure :)
 	FILE* outfile;
 	if(fopen_s(&outfile, filename, "wb")) {
 		Log::error(0, "", "could not open %s for writing", filename);
@@ -191,9 +192,11 @@ void Crinkler::link(const char* filename) {
 
 
 	//create phase 1 data hunk
+
 	int splittingPoint;
-	Hunk* phase1 = m_hunkPool.toHunk("linkedHunk", &splittingPoint);
-	phase1->relocate(m_imageBase+sectionSize*2);
+//	Hunk* phase1 = m_hunkPool.toHunk("linkedHunk", &splittingPoint);
+//	phase1->relocate(m_imageBase+sectionSize*2);
+	Hunk* phase1 = m_transform.linkAndTransform(&m_hunkPool, m_imageBase+sectionSize*2, &splittingPoint);
 
 
 	//calculate baseprobs
@@ -233,7 +236,8 @@ void Crinkler::link(const char* filename) {
 		idealsize += size;
 		
 		printf("ideal compressed total size: %d\n", idealsize / BITPREC / 8);
-/*
+
+		/*
 		{
 			EmpiricalHunkSorter::sortHunkList(&m_hunkPool, ml1, ml2, baseprobs);
 			delete phase1;
@@ -253,7 +257,7 @@ void Crinkler::link(const char* filename) {
 
 			printf("ideal compressed total size: %d\n", idealsize / BITPREC / 8);
 		}
-*/
+		*/
 
 		//hashing time
 		progressBar.beginTask("Optimizing hashsize");
@@ -342,7 +346,6 @@ void Crinkler::link(const char* filename) {
 	}
 	phase2->relocate(m_imageBase);
 
-	//TODO: safe open this at the very beginning
 	fwrite(phase2->getPtr(), 1, phase2->getRawSize(), outfile);
 	fclose(outfile);
 
@@ -405,5 +408,10 @@ Crinkler* Crinkler::setVerboseFlags(int verboseFlags) {
 
 Crinkler* Crinkler::showProgressBar(bool show) {
 	m_showProgressBar = show;
+	return this;
+}
+
+Crinkler* Crinkler::addTransform(Transform* transform) {
+	m_transform.addTransform(transform);
 	return this;
 }

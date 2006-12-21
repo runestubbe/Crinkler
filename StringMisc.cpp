@@ -8,3 +8,9 @@ string toUpper(const string& s) {
 	transform(d.begin(), d.end(), d.begin(), (int(*)(int))toupper);
 	return d;
 }
+
+std::string stripPath(const std::string& s) {
+	int idx = s.size()-1;
+	while(idx >= 0 && s[idx] != ':' && s[idx] != '/' && s[idx] != '\\') idx--;
+	return s.substr(idx+1, s.size() - idx+1);
+}

@@ -133,7 +133,7 @@ void EmpiricalHunkSorter::sortHunkList(HunkList* hunklist, ModelList& codeModels
 	
 	Hunk** backup = new Hunk*[nHunks];
 	int fails = 0;
-	for(int i = 0; i < 500; i++) {
+	for(int i = 0; i < 1000; i++) {
 		for(int j = 0; j < nHunks; j++)
 			backup[j] = (*hunklist)[j+fixedHunks];
 

@@ -1,14 +1,14 @@
 #ifndef _CALL_TRANSFORM_H_
 #define _CALL_TRANSFORM_H_
 
+#include "Transform.h"
+
 class Hunk;
-class CallTransform {
+class CallTransform : public Transform {
 public:
-	Hunk* getDetransformHunk();
-
-	int transform(unsigned char* data, int size);
-
-	//Hunk* linkWithTransforms(HunkList& hunks);
+	Hunk* getDetransformer();
+	int getFlags();
+	void transform(Hunk* hunk, int splittingPoint);
 };
 
 #endif

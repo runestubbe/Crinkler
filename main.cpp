@@ -12,6 +12,7 @@
 #include "CmdLineInterface.h"
 #include "Log.h"
 #include "StringMisc.h"
+#include "CallTransform.h"
 
 using namespace std;
 
@@ -72,12 +73,12 @@ string getEnv(const char* varname) {
 	}
 }
 
-void runOriginalLinker(const char* crinklerCanonicalName) {
+void runOriginalLinker(const char* crinklerCanonicalName, const char* linkerName) {
 	//Crinkler not enabled. Search for linker
 	printf("Crinkler not enabled\n");
 
 	string path = ".;" + getEnv("PATH");
-	list<string> res = findFileInPath("link.exe", path.c_str());
+	list<string> res = findFileInPath(linkerName, path.c_str());
 	for(list<string>::const_iterator it = res.begin(); it != res.end(); it++) {
 		if(it->compare(crinklerCanonicalName) != 0) {
 			printf("Launching default linker at '%s'\n\n", it->c_str());
@@ -115,12 +116,12 @@ void runOriginalLinker(const char* crinklerCanonicalName) {
 	}
 
 	//Linker not found
-	Log::error(0, "", "could not find default linker in path");
+	Log::error(0, "", "could not find default linker (%s) in path", linkerName);
 }
 
-//TODO: report an error, if no files were specified
+#define TRANSFORM_CALLS		0x01
+
 int main(int argc, char* argv[]) {
-	//TODO: remove - hack for testing purposes
 /*
 	argc = 3;
 	char* argv[] = {
@@ -133,17 +134,15 @@ int main(int argc, char* argv[]) {
 
 	//find canonical name of the crinkler executable
 	char crinklerCanonicalName[1024];
-	GetFullPathName(argv[0], sizeof(crinklerCanonicalName), crinklerCanonicalName, NULL);
-	char crinklerFilename[1024];
-	_splitpath_s(crinklerCanonicalName, NULL, 0, NULL, 0, crinklerFilename, sizeof(crinklerFilename), NULL, 0);
+	GetModuleFileName(NULL, crinklerCanonicalName, sizeof(crinklerCanonicalName));
+	string crinklerFilename = stripPath(crinklerCanonicalName);
 	
-
 	//cmdline parameters
 	CmdParamInt hashsizeArg("HASHSIZE", "number of megabytes for hashing", "size in mb", CMD_PARAM_SHOW_RESTRICTION,
 							10, 1024, 50);
 	CmdParamInt hashtriesArg("HASHTRIES", "number of hashing tries", "number of hashing tries", 0,
 							0, 1000, 10);
-	CmdParamInt hunktriesArg("HUNKTRIES", "number of hashing tries", "number of hunk reordering tries", 0,
+	CmdParamInt hunktriesArg("ORDERTRIES", "", "number of section reordering tries", 0,
 							0, 10000, 1000);
 	CmdParamString entryArg("ENTRY", "name of the entrypoint", "symbol", 0, "");
 	CmdParamString outArg("OUT", "output filename", "filename", 0, "out.exe");
@@ -183,8 +182,8 @@ int main(int argc, char* argv[]) {
 	cmdline.parse();
 
 	//Run default linker or crinkler?
-	if(!cmdline.removeToken("/CRINKLER") && toUpper(crinklerFilename).compare("CRINKLER") != 0) {
-		runOriginalLinker(crinklerCanonicalName);
+	if(!cmdline.removeToken("/CRINKLER") && toUpper(crinklerFilename).compare("CRINKLER.EXE") != 0) {
+		runOriginalLinker(crinklerCanonicalName, crinklerFilename.c_str());
 		return 0;
 	}
 
@@ -202,6 +201,12 @@ int main(int argc, char* argv[]) {
 	crinkler.setHashtries(hashtriesArg.getValue());
 	crinkler.setVerboseFlags(verboseArg.getValue());
 	crinkler.showProgressBar(showProgressArg.getValue());
+	//transforms
+	CallTransform callTransform;
+	if(transformArg.getValue())
+		crinkler.addTransform(&callTransform);
+
+	//range
 	{
 		list<string> lst = rangeImportArg.getList();
 		crinkler.addRangeDlls(lst);
@@ -214,6 +219,7 @@ int main(int argc, char* argv[]) {
 	printf("Hash size: %d MB\n", hashsizeArg.getValue());
 	printf("Hash tries: %d\n", hashtriesArg.getValue());
 	printf("Hunk tries: %d\n", hunktriesArg.getValue());
+	printf("Transforms: %s\n", (transformArg.getValue() & TRANSFORM_CALLS) ? "CALLS" : "NONE");
 	printf("\n");
 
 	//build search library+object search path

@@ -4,3 +4,12 @@ Setting executable path
 More options in example?
 New options
 Detailed comparisons: mention ORDERTRIES?
+
+Code:
+transforms
+new faster hashing
+review
+test vs.net integration
+set date
+VERBOSE: models, functions
+Hunk destructor bug i (benitoite, fast, safeimport)
