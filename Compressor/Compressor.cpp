@@ -115,6 +115,22 @@ ModelList ApproximateModels(const unsigned char* data, int datasize, int basepro
 	int maski;
 
 	ModelList models;
+	if(compressionType == COMPRESSION_INSTANT) {
+		models[0].mask = 0x00;	models[0].weight = 0;
+		models[1].mask = 0x80;	models[1].weight = 2;
+		models[2].mask = 0x40;	models[2].weight = 1;
+		models[3].mask = 0xC0;	models[3].weight = 3;
+		models[4].mask = 0x20;	models[4].weight = 0;
+		models[5].mask = 0xA0;	models[5].weight = 2;
+		models[6].mask = 0x60;	models[6].weight = 2;
+		models[7].mask = 0x90;	models[7].weight = 2;
+		models[8].mask = 0xFF;	models[8].weight = 7;
+		models[9].mask = 0x51;	models[9].weight = 2;
+		models[10].mask = 0xB0;	models[10].weight = 3;
+		models.nmodels = 11;
+		return models;
+	}
+
 	SoftwareCompressionStateEvaluator evaluator;
 
 	CompressionState cs(data, datasize, baseprobs, &evaluator);

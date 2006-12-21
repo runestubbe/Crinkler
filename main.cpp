@@ -1,3 +1,5 @@
+#include <vld.h>
+
 #include <cstdio>
 #include <windows.h>
 #include <iostream>
@@ -139,11 +141,11 @@ int main(int argc, char* argv[]) {
 	
 	//cmdline parameters
 	CmdParamInt hashsizeArg("HASHSIZE", "number of megabytes for hashing", "size in mb", CMD_PARAM_SHOW_RESTRICTION,
-							10, 1024, 50);
+							10, 1000, 100);
 	CmdParamInt hashtriesArg("HASHTRIES", "number of hashing tries", "number of hashing tries", 0,
-							0, 1000, 10);
+							0, 10000, 20);
 	CmdParamInt hunktriesArg("ORDERTRIES", "", "number of section reordering tries", 0,
-							0, 10000, 1000);
+							0, 10000, 0);
 	CmdParamString entryArg("ENTRY", "name of the entrypoint", "symbol", 0, "");
 	CmdParamString outArg("OUT", "output filename", "filename", 0, "out.exe");
 	CmdParamSwitch crinklerFlag("CRINKLER", "enables crinkler", 0);
@@ -154,6 +156,7 @@ int main(int argc, char* argv[]) {
 	CmdParamEnum priorityArg("PRIORITY", "select priority", 0, BELOW_NORMAL_PRIORITY_CLASS, 
 						"IDLE", IDLE_PRIORITY_CLASS, "BELOWNORMAL", BELOW_NORMAL_PRIORITY_CLASS, "NORMAL", NORMAL_PRIORITY_CLASS, NULL);
 	CmdParamEnum compmodeArg("COMPMODE", "compression mode", 0, COMPRESSION_FAST,
+						"INSTANT", COMPRESSION_INSTANT, 
 						"FAST", COMPRESSION_FAST, 
 						"SLOW", COMPRESSION_SLOW, NULL);
 	CmdParamFlags verboseArg("VERBOSE", "selects verbose modes", 0, 0, 
@@ -179,7 +182,9 @@ int main(int argc, char* argv[]) {
 	}
 
 	cmdline.printHeader();
-	cmdline.parse();
+	if(!cmdline.parse()) {
+		return 1;
+	}
 
 	//Run default linker or crinkler?
 	if(!cmdline.removeToken("/CRINKLER") && toUpper(crinklerFilename).compare("CRINKLER.EXE") != 0) {
@@ -215,10 +220,21 @@ int main(int argc, char* argv[]) {
 	//print some info
 	printf("Target: %s\n", outArg.getValue());
 	printf("Subsystem type: %s\n", subsystemArg.getValue() == SUBSYSTEM_CONSOLE ? "CONSOLE" : "WINDOWS");
-	printf("Compression mode: %s\n", compmodeArg.getValue() == COMPRESSION_SLOW ? "SLOW" : "FAST");
+	printf("Compression mode: ");
+	switch(compmodeArg.getValue()) {
+		case COMPRESSION_INSTANT:
+			printf("INSTANT\n");
+			break;
+		case COMPRESSION_FAST:
+			printf("FAST\n");
+			break;
+		case COMPRESSION_SLOW:
+			printf("SLOW\n");
+			break;
+	}
 	printf("Hash size: %d MB\n", hashsizeArg.getValue());
 	printf("Hash tries: %d\n", hashtriesArg.getValue());
-	printf("Hunk tries: %d\n", hunktriesArg.getValue());
+	printf("Order tries: %d\n", hunktriesArg.getValue());
 	printf("Transforms: %s\n", (transformArg.getValue() & TRANSFORM_CALLS) ? "CALLS" : "NONE");
 	printf("\n");
 

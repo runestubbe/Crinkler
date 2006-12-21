@@ -253,8 +253,6 @@
 		<File 
 			RelativePath=".\CmdLineInterface.h"/>
 		<File 
-			RelativePath=".\CmdLineInterfaceManual.txt"/>
-		<File 
 			RelativePath=".\CmdParam.cpp"/>
 		<File 
 			RelativePath=".\CmdParam.h"/>

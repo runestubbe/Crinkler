@@ -348,10 +348,6 @@
 					>
 				</File>
 				<File
-					RelativePath=".\CmdLineInterfaceManual.txt"
-					>
-				</File>
-				<File
 					RelativePath=".\CmdParam.cpp"
 					>
 				</File>
