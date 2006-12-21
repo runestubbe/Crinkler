@@ -122,6 +122,8 @@ void runOriginalLinker(const char* crinklerCanonicalName, const char* linkerName
 
 #define TRANSFORM_CALLS		0x01
 
+DWORD WINAPI ThreadProc( LPVOID lpParam );
+
 int main(int argc, char* argv[]) {
 	/*
 	argc = 4;
@@ -132,7 +134,6 @@ int main(int argc, char* argv[]) {
 		"/ORDERTRIES:100"
 	};
 */
-
 	//find canonical name of the crinkler executable
 	char crinklerCanonicalName[1024];
 	{

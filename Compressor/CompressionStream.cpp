@@ -203,12 +203,13 @@ inline unsigned int QuickHash(const byte *data, int bitpos, __m64 mask) {
 	int bytepos = bitpos >> 3;
 	int subbit = bitpos & 7;
 	__m64 contextdata = *(__m64 *)&data[bytepos-8];
-	__m64 scrambler = _mm_set_pi8(3,5,7,11,13,17,19,23);
+	__m64 scrambler = _mm_set_pi8(23,5,17,13,11,7,19,3);
 	__m64 sample = _mm_mullo_pi16(_mm_and_si64(contextdata, mask), scrambler);
 	unsigned int contexthash1 = _mm_cvtsi64_si32(sample);
 	unsigned int contexthash2 = _mm_cvtsi64_si32(_mm_srli_si64(sample, 32));
+	unsigned int contexthash = contexthash1 ^ contexthash2;
 	unsigned char databyte = (unsigned char)(data[bytepos] & (0xff00 >> subbit));
-	unsigned int hash = (contexthash1 ^ contexthash2) + ((((unsigned int)databyte)+1) << subbit) + subbit;
+	unsigned int hash = contexthash + (contexthash << subbit) + ((((unsigned int)databyte)+1) << subbit) + subbit;
 	//if (contexthash1 != 0 && subbit == 0) printf("(%d %d %d) ", bitpos, contexthash1, contexthash2);
 	return hash;
 }
@@ -246,6 +247,9 @@ int CompressionStream::EvaluateSizeQuick(const unsigned char* d, int size, const
 	}
 
 	unsigned int tinyhashsize = previousPowerOf2(bitlength*2);
+	unsigned int recths = ((1<<31)/tinyhashsize-1)*2+1;
+	unsigned int recthslog = 0;
+	while((1<<recthslog) <= recths) recthslog++;
 	TinyHashEntry* hashtable = new TinyHashEntry[tinyhashsize];
 
 	for(int modeli = 0; modeli < nmodels; modeli++) {
@@ -263,7 +267,8 @@ int CompressionStream::EvaluateSizeQuick(const unsigned char* d, int size, const
 			int bit = GetBit(data, bitpos);
 
 			unsigned int hash = QuickHash(data, bitpos, mask);
-			unsigned int tinyHash = hash & (tinyhashsize-1);
+			unsigned int tinyHash = (hash*recths)>>recthslog;
+			//unsigned int tinyHash = hash & (tinyhashsize-1);
 			TinyHashEntry *he = &hashtable[tinyHash];
 			while(he->hash != hash && he->used == 1) {
 				tinyHash++;
@@ -298,6 +303,8 @@ int CompressionStream::EvaluateSizeQuick(const unsigned char* d, int size, const
 	data -= MAX_CONTEXT_LENGTH;
 	delete[] data;
 	delete[] sums;
+
+	//printf("%d ", (int) (totalsize / (BITPREC_TABLE / BITPREC)) - EvaluateSize(d, size, models, baseprobs, context));
 
 	return (int) (totalsize / (BITPREC_TABLE / BITPREC));
 }
