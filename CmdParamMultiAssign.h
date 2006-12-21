@@ -2,10 +2,8 @@
 #define _CMD_PARAM_MULTI_ASSIGN_H_
 
 #include "CmdParam.h"
+#include "StringMisc.h"
 #include <list>
-
-
-typedef std::pair<std::string, std::string> StringPair;
 
 class CmdParamMultiAssign : public CmdParam {
 	std::list<StringPair> m_strings;

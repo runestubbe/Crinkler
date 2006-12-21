@@ -6,6 +6,7 @@
 #include "HunkList.h"
 #include "Compressor/Compressor.h"
 #include "CompositeTransform.h"
+#include "StringMisc.h"
 
 
 #include <string>
@@ -35,6 +36,7 @@ class Crinkler {
 	bool					m_useSafeImporting;
 	CompressionType			m_compressionType;
 	std::vector<std::string>	m_rangeDlls;
+	std::vector<StringPair>	m_replaceDlls;
 	bool					m_showProgressBar;
 	CompositeTransform		m_transform;
 
@@ -62,7 +64,6 @@ public:
 	Crinkler* addRangeDll(const char* dllname);
 	Crinkler* replaceDll(const char* dll1, const char* dll2);
 	Crinkler* clearRangeDlls();
-	Crinkler* addRangeDlls(std::list<std::string>& dllnames);
 	Crinkler* showProgressBar(bool show);
 
 	Crinkler* addTransform(Transform* transform);

@@ -217,12 +217,6 @@ int main(int argc, char* argv[]) {
 	if(transformArg.getValue())
 		crinkler.addTransform(&callTransform);
 
-	//range
-	{
-		list<string> lst = rangeImportArg.getList();
-		crinkler.addRangeDlls(lst);
-	}
-
 	//print some info
 	printf("Target: %s\n", outArg.getValue());
 	printf("Subsystem type: %s\n", subsystemArg.getValue() == SUBSYSTEM_CONSOLE ? "CONSOLE" : "WINDOWS");
@@ -242,11 +236,39 @@ int main(int argc, char* argv[]) {
 	printf("Hash tries: %d\n", hashtriesArg.getValue());
 	printf("Order tries: %d\n", hunktriesArg.getValue());
 	printf("Transforms: %s\n", (transformArg.getValue() & TRANSFORM_CALLS) ? "CALLS" : "NONE");
+	//replace dll
 	{
-		StringPair* sp;
-		while(sp = replaceDllArg.getValue()) {
-			printf("Replace DLL '%s' by '%s'\n", sp->first.c_str(), sp->second.c_str());
+		printf("Replace DLLs: ");
+		StringPair* sp = replaceDllArg.getValue();
+		if(sp == NULL) {
+			printf("NONE");
+		} else {
+			printf("%s -> %s", sp->first.c_str(), sp->second.c_str());
+			crinkler.replaceDll(sp->first.c_str(), sp->second.c_str());
 		}
+		while(sp = replaceDllArg.getValue()) {
+			printf(", %s -> %s", sp->first.c_str(), sp->second.c_str());
+			crinkler.replaceDll(sp->first.c_str(), sp->second.c_str());
+		}
+		printf("\n");
+	}
+
+	//range
+	{
+		printf("Range DLLs: ");
+		const char* s = rangeImportArg.getValue();
+		if(s == NULL) {
+			printf("NONE");
+		} else {
+			printf("%s", s);
+			crinkler.addRangeDll(s);
+		}
+
+		while(s = rangeImportArg.getValue()) {
+			printf(", %s", s);
+			crinkler.addRangeDll(s);
+		}
+		printf("\n");
 	}
 	printf("\n");
 
