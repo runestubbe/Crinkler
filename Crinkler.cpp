@@ -323,7 +323,7 @@ void Crinkler::link(const char* filename) {
 		}
 	}
 
-	CompressionStream cs(data, NULL, maxsize);
+	CompressionStream cs(data, sizefill, maxsize);
 	cs.Compress((unsigned char*)phase1->getPtr(), splittingPoint, ml1, baseprobs, best_hashsize, false);
 	cs.Compress((unsigned char*)phase1->getPtr() + splittingPoint, phase1->getRawSize() - splittingPoint, ml2, baseprobs, best_hashsize, true);
 	size = cs.close();
