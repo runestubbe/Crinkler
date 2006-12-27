@@ -12,18 +12,18 @@ Set date (in two places)
 
 Code:
  new faster hashing
-review
+-review
  test vs.net integration
  set date
  VERBOSE: models
-VERBOSE: functions
-Hunk destructor bug i (benitoite, fast, safeimport)
+ VERBOSE: functions
+-Hunk destructor bug i (benitoite, fast, safeimport)
  Sanity check of REPLACEDLL: check that all functions exist
  INSTANT
  replacedll
  warn if rangedlls are not used
-cleanup cmdline library
-strip extension from rangedll/dllreplace
+-cleanup cmdline library
+-strip extension from rangedll/dllreplace
  fix range and dllreplace output
 -Count model bytes in ideal sizes?
  Calls transformed
@@ -32,6 +32,6 @@ strip extension from rangedll/dllreplace
  /FIX
 
 Check:
-Dev-C++ object files
-rambo?
-replace msvcrt
+-Dev-C++ object files
+-rambo?
+ replace msvcrt
