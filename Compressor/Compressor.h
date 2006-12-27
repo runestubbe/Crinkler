@@ -34,9 +34,8 @@ public:
 };
 
 //Approximates the models for a given data chunk
-//method: indicates the approximation method
-//flushes: a null terminated list of stream flush positions
-ModelList ApproximateModels(const unsigned char* data, int datasize, int baseprobs[8], int* compsize, ProgressBar* progressBar, bool verbose, CompressionType compressionType);
+ModelList ApproximateModels(const unsigned char* data, int datasize, int baseprobs[8], int* compsize, ProgressBar* progressBar, bool verbose, CompressionType compressionType, int modelbits);
+ModelList InstantModels();
 
 
 #endif

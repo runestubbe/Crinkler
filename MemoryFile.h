@@ -9,7 +9,8 @@ public:
 	~MemoryFile();
 
 	int getSize() const;
-	const char* getPtr() const;
+	char* getPtr() const;
+	bool write(const char *filename) const;
 };
 
 #endif

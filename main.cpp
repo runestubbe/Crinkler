@@ -14,6 +14,7 @@
 #include "Log.h"
 #include "StringMisc.h"
 #include "CallTransform.h"
+#include "Fix.h"
 
 using namespace std;
 
@@ -150,6 +151,8 @@ int main(int argc, char* argv[]) {
 							0, 10000, 20);
 	CmdParamInt hunktriesArg("ORDERTRIES", "", "number of section reordering tries", 0,
 							0, 10000, 0);
+	/*CmdParamInt modelbitsArg("MODELBITS", "", "internal", 0,
+							0, 100, 8);*/
 	CmdParamString entryArg("ENTRY", "name of the entrypoint", "symbol", 0, "");
 	CmdParamString outArg("OUT", "output filename", "filename", 0, "out.exe");
 	CmdParamSwitch crinklerFlag("CRINKLER", "enables crinkler", 0);
@@ -207,8 +210,8 @@ int main(int argc, char* argv[]) {
 				Log::error(0, "", "Crinkler fix takes exactly one file argument");
 				return 1;
 			}
-			//kald på askes kode
-			printf("fixing: %s out: %s\n", infilename, outArg.getValue());
+
+			FixFile(infilename, outArg.getValue());
 			return 0;
 		}
 
@@ -237,6 +240,8 @@ int main(int argc, char* argv[]) {
 	crinkler.setHunktries(hunktriesArg.getValue());
 	crinkler.setVerboseFlags(verboseArg.getValue());
 	crinkler.showProgressBar(showProgressArg.getValue());
+	//crinkler.setModelBits(modelbitsArg.getValue());
+
 	//transforms
 	CallTransform callTransform;
 	if(transformArg.getValue())

@@ -34,6 +34,7 @@ Crinkler::Crinkler() {
 	m_hunktries = 0;
 	m_verboseFlags = 0;
 	m_showProgressBar = false;
+	m_modelbits = 8;
 }
 
 
@@ -156,6 +157,8 @@ void verboseLabels(CompressionSummaryRecord* csr) {
 		verboseLabels(*it);
 }
 
+
+
 void Crinkler::link(const char* filename) {
 	//open output file now, just to be sure :)
 	FILE* outfile;
@@ -235,6 +238,9 @@ void Crinkler::link(const char* filename) {
 	int splittingPoint;
 	Hunk* phase1 = m_transform.linkAndTransform(&m_hunkPool, m_imageBase+sectionSize*2, &splittingPoint);
 
+	printf("\nUncompressed size of code: %5d\n", splittingPoint);
+	printf("Uncompressed size of data: %5d\n", phase1->getRawSize() - splittingPoint);
+
 	//calculate baseprobs
 	int baseprob = 10;
 	int baseprobs[8];
@@ -243,10 +249,16 @@ void Crinkler::link(const char* filename) {
 
 	int best_hashsize = previousPrime(m_hashsize/2)*2;
 	int modelskip = 0;
+	ModelList ml1, ml2;
 	Hunk* phase1Compressed, *models;
-	{
-		int size;
-
+	int maxsize = phase1->getRawSize()*10;	//allocate plenty of memory
+	unsigned char* data = new unsigned char[maxsize];
+	int* sizefill = new int[phase1->getRawSize()*2];
+	int size, idealsize = 0;
+	if (m_compressionType == COMPRESSION_INSTANT) {
+		ml1 = InstantModels();
+		ml2 = InstantModels();
+	} else {
 		//Construct composite progress bar
 		ConsoleProgressBar consoleBar;
 		WindowProgressBar windowBar;
@@ -255,41 +267,31 @@ void Crinkler::link(const char* filename) {
 		if(m_showProgressBar)
 			progressBar.addProgressBar(&windowBar);
 
-		ModelList ml1, ml2;
-		if(m_compressionType != COMPRESSION_INSTANT) {
-			progressBar.init();
-			progressBar.beginTask("Estimating models for code");
-			ml1 = ApproximateModels((unsigned char*)phase1->getPtr(), splittingPoint, baseprobs, &size, &progressBar, m_verboseFlags & VERBOSE_MODELS, m_compressionType);
-			progressBar.endTask();
-		} else {
-			ml1 = ApproximateModels((unsigned char*)phase1->getPtr(), splittingPoint, baseprobs, &size, &progressBar, m_verboseFlags & VERBOSE_MODELS, m_compressionType);
-		}
+		progressBar.init();
+		progressBar.beginTask("Estimating models for code");
+		ml1 = ApproximateModels((unsigned char*)phase1->getPtr(), splittingPoint, baseprobs, &size, &progressBar, m_verboseFlags & VERBOSE_MODELS, m_compressionType, m_modelbits);
+		progressBar.endTask();
 		
-		int idealsize = size;
+		idealsize = size;
 
-		if(m_compressionType != COMPRESSION_INSTANT) {
-			progressBar.beginTask("Estimating models for data");
-			ml2 = ApproximateModels((unsigned char*)phase1->getPtr()+splittingPoint, phase1->getRawSize() - splittingPoint, baseprobs, &size, &progressBar, m_verboseFlags & VERBOSE_MODELS, m_compressionType);
-			progressBar.endTask();
-			idealsize += size;
-			printf("\nIdeal compressed total size: %d\n", idealsize / BITPREC / 8);
-		} else {
-			ml2 = ApproximateModels((unsigned char*)phase1->getPtr()+splittingPoint, phase1->getRawSize() - splittingPoint, baseprobs, &size, &progressBar, m_verboseFlags & VERBOSE_MODELS, m_compressionType);
-		}
+		progressBar.beginTask("Estimating models for data");
+		ml2 = ApproximateModels((unsigned char*)phase1->getPtr()+splittingPoint, phase1->getRawSize() - splittingPoint, baseprobs, &size, &progressBar, m_verboseFlags & VERBOSE_MODELS, m_compressionType, m_modelbits);
+		progressBar.endTask();
+		idealsize += size;
+		printf("\nIdeal compressed total size: %d\n", idealsize / BITPREC / 8);
 
-		if(m_compressionType != COMPRESSION_INSTANT && m_hunktries > 0) {
+		if(m_hunktries > 0) {
 			EmpiricalHunkSorter::sortHunkList(&m_hunkPool, ml1, ml2, baseprobs, m_hunktries, m_showProgressBar ? &windowBar : NULL);
 			delete phase1;
 			phase1 = m_transform.linkAndTransform(&m_hunkPool, m_imageBase+sectionSize*2, &splittingPoint);
-			
 			//reestimate models
 			progressBar.beginTask("Reestimating models for code");
-			ml1 = ApproximateModels((unsigned char*)phase1->getPtr(), splittingPoint, baseprobs, &size, &progressBar, m_verboseFlags & VERBOSE_MODELS, m_compressionType);
+			ml1 = ApproximateModels((unsigned char*)phase1->getPtr(), splittingPoint, baseprobs, &size, &progressBar, m_verboseFlags & VERBOSE_MODELS, m_compressionType, m_modelbits);
 			progressBar.endTask();
 			idealsize = size;
 
 			progressBar.beginTask("Reestimating models for data");
-			ml2 = ApproximateModels((unsigned char*)phase1->getPtr()+splittingPoint, phase1->getRawSize() - splittingPoint, baseprobs, &size, &progressBar, m_verboseFlags & VERBOSE_MODELS, m_compressionType);
+			ml2 = ApproximateModels((unsigned char*)phase1->getPtr()+splittingPoint, phase1->getRawSize() - splittingPoint, baseprobs, &size, &progressBar, m_verboseFlags & VERBOSE_MODELS, m_compressionType, m_modelbits);
 			progressBar.endTask();
 			idealsize += size;
 
@@ -298,10 +300,7 @@ void Crinkler::link(const char* filename) {
 		
 
 		//hashing time
-		int* sizefill = new int[phase1->getRawSize()*2];
-		int maxsize = phase1->getRawSize()*10;	//allocate plenty of memory
-		unsigned char* data = new unsigned char[maxsize];
-		if(m_compressionType != COMPRESSION_INSTANT && m_hashtries > 0) {
+		if(m_hashtries > 0) {
 			int bestsize = INT_MAX;
 			int hashsize = best_hashsize;
 			progressBar.beginTask("Optimizing hash table size");
@@ -319,51 +318,48 @@ void Crinkler::link(const char* filename) {
 				}
 				
 				progressBar.update(i+1, m_hashtries);
-				progressBar.endTask();
 			}
+			progressBar.endTask();
 		}
-
-		{
-			CompressionStream cs(data, sizefill, maxsize);
-			cs.Compress((unsigned char*)phase1->getPtr(), splittingPoint, ml1, baseprobs, best_hashsize, false);
-			cs.Compress((unsigned char*)phase1->getPtr() + splittingPoint, phase1->getRawSize() - splittingPoint, ml2, baseprobs, best_hashsize, true);
-			size = cs.close();
-			if(m_compressionType != COMPRESSION_INSTANT)
-				printf("Real compressed total size: %d\nBytes lost to hashing: %d\n", size, size - idealsize / BITPREC / 8);
-		}
-
-		CompressionSummaryRecord* csr = phase1->getCompressionSummary(sizefill, splittingPoint);
-		delete[] sizefill;
-		if(m_verboseFlags & VERBOSE_LABELS)
-			verboseLabels(csr);
-		if(m_verboseFlags & VERBOSE_FUNCTIONS)
-			verboseFunctions(csr);
-
-		delete csr;
-		
-		phase1Compressed = new Hunk("compressed data", (char*)data, 0, 1, size, size);
-		delete[] data;
-		phase1Compressed->addSymbol(new Symbol("_PackedData", 0, SYMBOL_IS_RELOCATEABLE, phase1Compressed));
-		int modelsSize = 16 + ml1.nmodels + ml2.nmodels;
-		{
-			unsigned char masks1[256];
-			unsigned char masks2[256];
-			unsigned int w1 = ml1.getMaskList(masks1, false);
-			unsigned int w2 = ml2.getMaskList(masks2, true);
-			models = new Hunk("models", 0, 0, 1, modelsSize, modelsSize);
-			models->addSymbol(new Symbol("_Models", 0, SYMBOL_IS_RELOCATEABLE, models));
-			char* ptr = models->getPtr();
-			*(unsigned int*)ptr = splittingPoint*8;			ptr += sizeof(unsigned int);
-			*(unsigned int*)ptr = w1;						ptr += sizeof(unsigned int);
-			for(int m = 0; m < ml1.nmodels; m++)
-				*ptr++ = masks1[m];
-			*(unsigned int*)ptr = phase1->getRawSize()*8;	ptr += sizeof(unsigned int);
-			*(unsigned int*)ptr = w2;						ptr += sizeof(unsigned int);
-			for(int m = 0; m < ml2.nmodels; m++)
-				*ptr++ = masks2[m];
-		}
-		modelskip = ml1.nmodels+8;
 	}
+
+	CompressionStream cs(data, NULL, maxsize);
+	cs.Compress((unsigned char*)phase1->getPtr(), splittingPoint, ml1, baseprobs, best_hashsize, false);
+	cs.Compress((unsigned char*)phase1->getPtr() + splittingPoint, phase1->getRawSize() - splittingPoint, ml2, baseprobs, best_hashsize, true);
+	size = cs.close();
+	if(m_compressionType != COMPRESSION_INSTANT)
+		printf("Real compressed total size: %d\nBytes lost to hashing: %d\n", size, size - idealsize / BITPREC / 8);
+
+	CompressionSummaryRecord* csr = phase1->getCompressionSummary(sizefill, splittingPoint);
+	delete[] sizefill;
+	if(m_verboseFlags & VERBOSE_LABELS)
+		verboseLabels(csr);
+	if(m_verboseFlags & VERBOSE_FUNCTIONS)
+		verboseFunctions(csr);
+	delete csr;
+	
+	phase1Compressed = new Hunk("compressed data", (char*)data, 0, 1, size, size);
+	delete[] data;
+	phase1Compressed->addSymbol(new Symbol("_PackedData", 0, SYMBOL_IS_RELOCATEABLE, phase1Compressed));
+	int modelsSize = 16 + ml1.nmodels + ml2.nmodels;
+	{
+		unsigned char masks1[256];
+		unsigned char masks2[256];
+		unsigned int w1 = ml1.getMaskList(masks1, false);
+		unsigned int w2 = ml2.getMaskList(masks2, true);
+		models = new Hunk("models", 0, 0, 1, modelsSize, modelsSize);
+		models->addSymbol(new Symbol("_Models", 0, SYMBOL_IS_RELOCATEABLE, models));
+		char* ptr = models->getPtr();
+		*(unsigned int*)ptr = splittingPoint*8;			ptr += sizeof(unsigned int);
+		*(unsigned int*)ptr = w1;						ptr += sizeof(unsigned int);
+		for(int m = 0; m < ml1.nmodels; m++)
+			*ptr++ = masks1[m];
+		*(unsigned int*)ptr = phase1->getRawSize()*8;	ptr += sizeof(unsigned int);
+		*(unsigned int*)ptr = w2;						ptr += sizeof(unsigned int);
+		for(int m = 0; m < ml2.nmodels; m++)
+			*ptr++ = masks2[m];
+	}
+	modelskip = ml1.nmodels+8;
 
 
 	HunkList phase2list;
@@ -466,5 +462,10 @@ Crinkler* Crinkler::addTransform(Transform* transform) {
 
 Crinkler* Crinkler::setHunktries(int hunktries) {
 	m_hunktries = hunktries;
+	return this;
+}
+
+Crinkler* Crinkler::setModelBits(int modelbits) {
+	m_modelbits = modelbits;
 	return this;
 }
