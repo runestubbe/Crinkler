@@ -4,24 +4,24 @@ CRINKLER - Compressing linker for Windows specialized for 4k intros
 Aske Simon Christensen "Blueberry/Loonies"
 Rune L. H. Stubbe "Mentor/TBC"
 
-Version 1.0 (December ??, 2006)
+Version 1.0 (December 27, 2006)
 
 
 
 VERSION HISTORY
 ---------------
 
-??.12.06: 1.0:  Output EXE files are now Windows Vista compatible.
+27.12.06: 1.0:  Output EXE files are now Windows Vista compatible.
                 Compression tweak for greatly improved compression ratio.
                 Much faster compression.
                 Automatically takes advantage of multiple processors.
                 Improved Visual Studio 2005 integration.
-		/COMPMODE:INSTANT option for very quick compression.
+                /COMPMODE:INSTANT option for very quick compression.
                 /ORDERTRIES option to try out different section orderings.
-		/SAFEIMPORT option to insert a check for nonexisting DLLs.
-		/PROGRESSGUI option for a graphical progress bar.
-		/REPLACEDLL option to replace one DLL with another.
-		/FIX option to fix compatibility problems of older versions.
+                /SAFEIMPORT option to insert a check for nonexisting DLLs.
+                /PROGRESSGUI option for a graphical progress bar.
+                /REPLACEDLL option to replace one DLL with another.
+                /FIX option to fix compatibility problems of older versions.
 
 09.02.06: 0.4a: Fixed linker crash problem with blank member entries
                 in some library files (such as glut32).
