@@ -32,6 +32,7 @@ public:
 	void clear();
 
 	void trim();
+	void printHunks();
 };
 
 #endif

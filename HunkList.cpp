@@ -206,3 +206,8 @@ void HunkList::trim() {
 	for(vector<Hunk*>::iterator it = m_hunks.begin(); it != m_hunks.end(); it++)
 		(*it)->trim();
 }
+
+void HunkList::printHunks() {
+	for(vector<Hunk*>::iterator it = m_hunks.begin(); it != m_hunks.end(); it++)
+		(*it)->printSymbols();
+}
