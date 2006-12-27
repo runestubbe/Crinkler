@@ -1,0 +1,20 @@
+/OUT:test\galv.exe /SUBSYSTEM:CONSOLE /ENTRY:tinyentry 
+/LIBPATH:"C:\Program files\Microsoft DirectX SDK (April 2006)\Lib\x86;C:\Program Files\Microsoft Visual Studio .NET 2003\VC7\ATLMFC\LIB;C:\Program Files\Microsoft Visual Studio .NET 2003\VC7\LIB;C:\Program Files\Microsoft Visual Studio .NET 2003\VC7\PlatformSDK\lib\prerelease;C:\Program Files\Microsoft Visual Studio .NET 2003\VC7\PlatformSDK\lib;C:\Program Files\Microsoft Visual Studio .NET 2003\SDK\v1.1\lib;C:\Program Files\Intel\Compiler\C++\9.1\IA32\Lib"
+kernel32.lib
+gdi32.lib
+user32.lib
+d3d9.lib
+d3dx9.lib
+winmm.lib
+msvcrt_old.lib
+test\galv\comcall.obj
+test\galv\DXinit.obj
+test\galv\intro.obj
+test\galv\intro_asm.obj
+test\galv\font_asm.obj
+test\galv\texturegen2.obj
+test\galv\shader.obj
+test\galv\resources.obj
+test\galv\text.obj
+test\galv\beatdata.obj
+test\galv\timing.obj
