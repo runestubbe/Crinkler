@@ -4,13 +4,6 @@
 #define MAX_INPUT_SIZE	128000
 
 enum CompressionType {COMPRESSION_INSTANT, COMPRESSION_FAST, COMPRESSION_SLOW, COMPRESSION_VERYSLOW};
-/*
-TODO:
-look through warnings
-minimize scope of variables
-be sure to clear memory after new
-fix leaks in Compressor
-*/
 
 extern "C" {
 	#include "aritcode.h"

@@ -1,8 +1,6 @@
 #ifndef _COMPRESSION_STREAM_H_
 #define _COMPRESSION_STREAM_H_
 
-#define MAX_STREAM_SIZE 128000
-
 extern "C" {
 	#include "aritcode.h"
 }
@@ -21,7 +19,8 @@ public:
 
 	void Compress(const unsigned char* data, int size, const ModelList& models, int baseprobs[8], int hashsize, bool finish);
 	int EvaluateSize(const unsigned char* d, int size, const ModelList& models, int baseprobs[8], char* context);
-	int EvaluateSizeQuick(const unsigned char* d, int size, const ModelList& models, int baseprobs[8], char* context);
+	int EvaluateSizeQuick(const unsigned char* d, int size, const ModelList& models, int baseprobs[8], char* context, int bitpos);
+	int EvaluateSizeQuick_OLD(const unsigned char* d, int size, const ModelList& models, int baseprobs[8], char* context);
 	int close();
 };
 

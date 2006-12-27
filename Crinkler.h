@@ -2,6 +2,7 @@
 #define _CRINKLER_H_
 
 #include <list>
+#include <map>
 #include "MultiLoader.h"
 #include "HunkList.h"
 #include "Compressor/Compressor.h"
@@ -36,13 +37,14 @@ class Crinkler {
 	bool					m_useSafeImporting;
 	CompressionType			m_compressionType;
 	std::vector<std::string>	m_rangeDlls;
-	std::vector<StringPair>	m_replaceDlls;
+	std::map<std::string, std::string>	m_replaceDlls;
 	bool					m_showProgressBar;
 	CompositeTransform		m_transform;
 
 	
 	Symbol* getEntrySymbol() const;
 	Symbol* findUndecoratedSymbol(const char* name) const;
+	void replaceDlls(HunkList& hunkslist);
 
 public:
 	Crinkler();
@@ -62,7 +64,7 @@ public:
 	Crinkler* setImportingType(bool safe);
 	Crinkler* setHashtries(int hashtries);
 	Crinkler* addRangeDll(const char* dllname);
-	Crinkler* replaceDll(const char* dll1, const char* dll2);
+	Crinkler* addReplaceDll(const char* dll1, const char* dll2);
 	Crinkler* clearRangeDlls();
 	Crinkler* showProgressBar(bool show);
 

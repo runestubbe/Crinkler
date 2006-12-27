@@ -17,18 +17,25 @@ class Hunk;
 class HunkList;
 enum RelocationType {RELOCTYPE_ABS32, RELOCTYPE_REL32};
 
-enum CompressionSummaryRecordType {RECORD_ROOT, RECORD_SECTION, RECORD_PUBLIC, RECORD_LOCAL};
+#define RECORD_ROOT 0x01
+#define RECORD_SECTION 0x02
+#define RECORD_PUBLIC 0x04
+#define RECORD_FUNCTION 0x08
+
 
 struct CompressionSummaryRecord {
 	std::string name;
 	int pos;
 	int compressedPos;
-	CompressionSummaryRecordType type;
+	int type;
 	std::vector<CompressionSummaryRecord*> children;
 	int size;
 	int compressedSize;
+	int functionSize;
+	int compressedFunctionSize;
+	std::string functionName;
 
-	CompressionSummaryRecord(const char* name, CompressionSummaryRecordType type, int pos, int compressedPos) {
+	CompressionSummaryRecord(const char* name, int type, int pos, int compressedPos) {
 		this->name = name;
 		this->type = type;
 		this->pos = pos;
@@ -106,6 +113,7 @@ public:
 	int getNumReferences() const;
 	const char* getImportName() const;
 	const char* getImportDll() const;
+	void setImportDll(const char* dll);
 };
 
 #endif

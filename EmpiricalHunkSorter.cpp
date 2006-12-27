@@ -22,25 +22,27 @@ int EmpiricalHunkSorter::tryHunkCombination(HunkList* hunklist, ModelList& codeM
 	Hunk* phase1 = hunklist->toHunk("linkedHunk", &splittingPoint);
 	phase1->relocate(imageBase+sectionSize*2);
 	
-
 	char contexts[2][8];
 	memset(contexts[0], 0, 8);
 	assert(splittingPoint >= 8);
 	memcpy(contexts[1], phase1->getPtr()+splittingPoint-8, 8);
 
 	CompressionStream cs(NULL, NULL, 0);
-	int codesize = 0;
-	int datasize = 0;
+	int sizes[16];
 	#pragma omp parallel for
-	for(int i = 0; i < 2; i++) {
-		if(i == 0)
-			codesize = cs.EvaluateSizeQuick((unsigned char*)phase1->getPtr(), splittingPoint, codeModels, baseprobs, contexts[0]);
+	for(int i = 0; i < 16; i++) {
+		if(i < 8)
+			sizes[i] = cs.EvaluateSizeQuick((unsigned char*)phase1->getPtr(), splittingPoint, codeModels, baseprobs, contexts[0], i);
 		else
-			datasize = cs.EvaluateSizeQuick((unsigned char*)phase1->getPtr()+splittingPoint, phase1->getRawSize()-splittingPoint, dataModels, baseprobs, contexts[1]);
+			sizes[i] = cs.EvaluateSizeQuick((unsigned char*)phase1->getPtr()+splittingPoint, phase1->getRawSize()-splittingPoint, dataModels, baseprobs, contexts[1], i - 8);
 	}
 	delete phase1;
 
-	return codesize + datasize;
+	int size = 0;
+	for(int i = 0; i < 16; i++)
+		size += sizes[i];
+
+	return size;
 }
 
 void permuteHunklist(HunkList* hunklist) {
@@ -157,7 +159,6 @@ void EmpiricalHunkSorter::sortHunkList(HunkList* hunklist, ModelList& codeModels
 	for(int i = 0; i < numIterations; i++) {
 		for(int j = 0; j < nHunks; j++)
 			backup[j] = (*hunklist)[j+fixedHunks];
-
 
 		permuteHunklist(hunklist);
 

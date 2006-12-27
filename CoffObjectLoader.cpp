@@ -12,14 +12,17 @@ int CoffObjectLoader::getAlignmentBitsFromCharacteristics(int chars) {
 }
 
 string CoffObjectLoader::getSectionName(const IMAGE_SECTION_HEADER* section, const char* stringTable) {
-	int idx;
-	if(sscanf_s((char*)section->Name, "/%d", &idx)) { // long name
-		return string(&stringTable[idx]);
-	} else {	//short name
-		char tmp[9]; tmp[8] = 0;
-		memcpy(tmp, section->Name, 8);
-		return string(tmp);
+	char str[9];
+	memset(str, 0, 9*sizeof(char));
+	memcpy(str, section->Name, 8*sizeof(char));
+
+	if(section->Name[0] == '/') {
+		int offset = atoi(&str[1]);
+		return string(&stringTable[offset]);
+	} else {
+		return string(str);
 	}
+
 }
 
 string CoffObjectLoader::getSymbolName(const IMAGE_SYMBOL* symbol, const char* stringTable) {
@@ -110,17 +113,26 @@ HunkList* CoffObjectLoader::load(const char* data, int size, const char* module)
 	//symbols
 	for(int i = 0; i < (int)header->NumberOfSymbols; i++) {
 		IMAGE_SYMBOL* sym = &symbolTable[i];
-		
+	
 		//skip unknown symbol types
 		if(sym->StorageClass != IMAGE_SYM_CLASS_EXTERNAL &&
 			sym->StorageClass != IMAGE_SYM_CLASS_STATIC &&
-			sym->StorageClass != IMAGE_SYM_CLASS_LABEL)
+			sym->StorageClass != IMAGE_SYM_CLASS_LABEL) {
+				i += sym->NumberOfAuxSymbols;
 				continue;
+		}
 
 		Symbol* s = new Symbol(getSymbolName(sym, stringTable).c_str(), sym->Value, SYMBOL_IS_RELOCATEABLE, 0);
 
 		if(sym->SectionNumber > 0) {
 			s->hunk = (*hunklist)[sym->SectionNumber-1];
+
+			if(sym->StorageClass == IMAGE_SYM_CLASS_EXTERNAL && sym->Type == 0x20 && sym->NumberOfAuxSymbols > 0) {	//function definition
+				IMAGE_AUX_SYMBOL* aux = (IMAGE_AUX_SYMBOL*) (sym+1);
+				s->flags |= SYMBOL_IS_FUNCTION;
+				s->size = aux->Sym.Misc.TotalSize;
+			}
+
 			if(sym->StorageClass == IMAGE_SYM_CLASS_STATIC ||	//perform name mangling on local symbols
 				sym->StorageClass == IMAGE_SYM_CLASS_LABEL) {
 					char symname[256];
@@ -152,6 +164,7 @@ HunkList* CoffObjectLoader::load(const char* data, int size, const char* module)
 		} else {
 			delete s;
 		}
+		i += sym->NumberOfAuxSymbols;
 	}
 
 	//trim hunks
