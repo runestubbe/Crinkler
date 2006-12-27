@@ -1,3 +1,4 @@
+;; -*- tab-width: 4 -*-
 bits		32
 extern	_PackedData
 extern	_Models

@@ -81,13 +81,18 @@ LRESULT CALLBACK DlgProc(HWND hWndDlg, UINT Msg, WPARAM wParam, LPARAM lParam)
 
 DWORD WINAPI ThreadProc( LPVOID lpParam ) {
 	HINSTANCE hInstance = GetModuleHandle(NULL);
-	HWND hWnd = GetDesktopWindow();
 	DialogBox(hInstance, MAKEINTRESOURCE(IDD_PROGRESS_DIALOG),
-		hWnd, reinterpret_cast<DLGPROC>(DlgProc));
+		0, reinterpret_cast<DLGPROC>(DlgProc));
 	return 0;
 }
 
 void WindowProgressBar::init() {
+	INITCOMMONCONTROLSEX cc = {
+		sizeof(INITCOMMONCONTROLSEX),
+		ICC_PROGRESS_CLASS
+	};
+	InitCommonControlsEx(&cc);
+
 	g_WndDlg = NULL;
 
 	DWORD threadID;

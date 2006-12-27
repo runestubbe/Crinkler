@@ -91,8 +91,8 @@ void CompressionStream::Compress(const unsigned char* d, int size, const ModelLi
 
 			int fac = weights[m];
 			unsigned int shift = (1 - (((he->prob[0]+255)&(he->prob[1]+255)) >> 8))*2 + fac;
-			probs[0] += ((int)he->prob[0] << shift);
-			probs[1] += ((int)he->prob[1] << shift);
+			probs[0] += ((unsigned int)he->prob[0] << shift);
+			probs[1] += ((unsigned int)he->prob[1] << shift);
 		}
 
 		// Encode bit

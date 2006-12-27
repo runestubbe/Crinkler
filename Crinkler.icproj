@@ -36,7 +36,7 @@
 			<Tool 
 				Name="LinkerTool"
 				DelayImpLib=""
-				AdditionalDependencies="Dbghelp.lib Compressor\debug\Compressor.lib"
+				AdditionalDependencies="comctl32.lib Dbghelp.lib Compressor\debug\Compressor.lib"
 				OutputFile="$(OutDir)/Crinkler.exe"
 				LinkIncremental="2"
 				GenerateDebugInformation="1"
@@ -101,7 +101,7 @@
 				Name="LinkerTool"
 				DelayImpLib=""
 				IgnoreImportLibrary="0"
-				AdditionalDependencies="Dbghelp.lib Compressor\Release\Compressor.lib"
+				AdditionalDependencies="comctl32.lib Dbghelp.lib Compressor\Release\Compressor.lib"
 				OutputFile="$(OutDir)/Crinkler.exe"
 				LinkIncremental="1"
 				IgnoreAllDefaultLibraries="0"
@@ -163,6 +163,8 @@
 			RelativePath=".\CompressionSummary.h"/>
 		<File 
 			RelativePath=".\Crinkler.h"/>
+		<File 
+			RelativePath=".\Fix.h"/>
 		<File 
 			RelativePath=".\Hunk.h"/>
 		<File 
@@ -230,6 +232,8 @@
 					Optimization="2"/>
 			</FileConfiguration>
 		</File>
+		<File 
+			RelativePath=".\Fix.cpp"/>
 		<File 
 			RelativePath=".\Hunk.cpp"/>
 		<File 

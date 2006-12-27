@@ -12,7 +12,7 @@
 using namespace std;
 
 char *LoadDLL(const char *name) {
-	char* module = (char*)LoadLibrary(name);
+	char* module = (char *)((int)LoadLibraryEx(name, 0, DONT_RESOLVE_DLL_REFERENCES) & -4096);
 	if(module == 0) {
 		Log::error(0, "", "Could not open DLL '%s'", name);
 	}

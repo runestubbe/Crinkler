@@ -40,7 +40,7 @@ class Crinkler {
 	std::map<std::string, std::string>	m_replaceDlls;
 	bool					m_showProgressBar;
 	CompositeTransform		m_transform;
-
+	int						m_modelbits;
 	
 	Symbol* getEntrySymbol() const;
 	Symbol* findUndecoratedSymbol(const char* name) const;
@@ -67,6 +67,7 @@ public:
 	Crinkler* addReplaceDll(const char* dll1, const char* dll2);
 	Crinkler* clearRangeDlls();
 	Crinkler* showProgressBar(bool show);
+	Crinkler* setModelBits(int modelbits);
 
 	Crinkler* addTransform(Transform* transform);
 };

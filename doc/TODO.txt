@@ -6,24 +6,32 @@ Set date (in two places)
  Detailed comparisons: mention ORDERTRIES?
  Error message for not found DLL
  Range is after replace
+-bytes lost to hashing
+-HASHTRIES and ORDERTRIES ignored with INSTANT
 
 
 Code:
  new faster hashing
 review
  test vs.net integration
-set date
+ set date
  VERBOSE: models
 VERBOSE: functions
 Hunk destructor bug i (benitoite, fast, safeimport)
-Sanity check of REPLACEDLL: check that all functions exist
+ Sanity check of REPLACEDLL: check that all functions exist
  INSTANT
-replacedll
+ replacedll
  warn if rangedlls are not used
 cleanup cmdline library
 strip extension from rangedll/dllreplace
  fix range and dllreplace output
+-Count model bytes in ideal sizes?
+ Calls transformed
+ hashcrash with transform+ordertries
+ uncompressed sizes
+ /FIX
 
 Check:
 Dev-C++ object files
 rambo?
+replace msvcrt

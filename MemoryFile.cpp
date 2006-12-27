@@ -28,11 +28,20 @@ MemoryFile::~MemoryFile() {
 }
 
 
-const char* MemoryFile::getPtr() const {
+char* MemoryFile::getPtr() const {
 	return m_data;
 }
 
 
 int MemoryFile::getSize() const {
 	return m_size;
+}
+
+bool MemoryFile::write(const char *filename) const {
+	FILE *file;
+	fopen_s(&file, filename, "wb");
+	if (!file) return false;
+	fwrite(m_data, 1, m_size, file);
+	fclose(file);
+	return true;
 }

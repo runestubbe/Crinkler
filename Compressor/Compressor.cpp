@@ -92,7 +92,7 @@ unsigned int optimizeWeights(CompressionState& cs, ModelList& models) {
 	return bestsize;
 }
 
-unsigned int tryWeights(CompressionState& cs, ModelList& models, int bestsize, CompressionType compressionType) {
+unsigned int tryWeights(CompressionState& cs, ModelList& models, int bestsize, CompressionType compressionType, int modelbits) {
 	unsigned int size;
 	switch (compressionType) {
 	case COMPRESSION_FAST:
@@ -103,11 +103,28 @@ unsigned int tryWeights(CompressionState& cs, ModelList& models, int bestsize, C
 		size = optimizeWeights(cs, models);
 		break;
 	}
-	size += 8*BITPREC*models.nmodels;
+	size += modelbits*BITPREC*models.nmodels;
 	return size;
 }
 
-ModelList ApproximateModels(const unsigned char* data, int datasize, int baseprobs[8], int* compsize, ProgressBar* progressBar, bool verbose, CompressionType compressionType) {
+ModelList InstantModels() {
+	ModelList models;
+	models[0].mask = 0x00;	models[0].weight = 0;
+	models[1].mask = 0x80;	models[1].weight = 2;
+	models[2].mask = 0x40;	models[2].weight = 1;
+	models[3].mask = 0xC0;	models[3].weight = 3;
+	models[4].mask = 0x20;	models[4].weight = 0;
+	models[5].mask = 0xA0;	models[5].weight = 2;
+	models[6].mask = 0x60;	models[6].weight = 2;
+	models[7].mask = 0x90;	models[7].weight = 2;
+	models[8].mask = 0xFF;	models[8].weight = 7;
+	models[9].mask = 0x51;	models[9].weight = 2;
+	models[10].mask = 0xB0;	models[10].weight = 3;
+	models.nmodels = 11;
+	return models;
+}
+
+ModelList ApproximateModels(const unsigned char* data, int datasize, int baseprobs[8], int* compsize, ProgressBar* progressBar, bool verbose, CompressionType compressionType, int modelbits) {
 	unsigned char masks[256];
 	int i,m;
 	int mask;
@@ -115,22 +132,6 @@ ModelList ApproximateModels(const unsigned char* data, int datasize, int basepro
 	int maski;
 
 	ModelList models;
-	if(compressionType == COMPRESSION_INSTANT) {
-		models[0].mask = 0x00;	models[0].weight = 0;
-		models[1].mask = 0x80;	models[1].weight = 2;
-		models[2].mask = 0x40;	models[2].weight = 1;
-		models[3].mask = 0xC0;	models[3].weight = 3;
-		models[4].mask = 0x20;	models[4].weight = 0;
-		models[5].mask = 0xA0;	models[5].weight = 2;
-		models[6].mask = 0x60;	models[6].weight = 2;
-		models[7].mask = 0x90;	models[7].weight = 2;
-		models[8].mask = 0xFF;	models[8].weight = 7;
-		models[9].mask = 0x51;	models[9].weight = 2;
-		models[10].mask = 0xB0;	models[10].weight = 3;
-		models.nmodels = 11;
-		return models;
-	}
-
 	SoftwareCompressionStateEvaluator evaluator;
 
 	CompressionState cs(data, datasize, baseprobs, &evaluator);
@@ -160,7 +161,7 @@ ModelList ApproximateModels(const unsigned char* data, int datasize, int basepro
 			models[models.nmodels].weight = 0;
 			models.nmodels++;
 
-			size = tryWeights(cs, models, bestsize, compressionType);
+			size = tryWeights(cs, models, bestsize, compressionType, modelbits);
 
 			if (size < bestsize) {
 				bestsize = size;
@@ -170,7 +171,7 @@ ModelList ApproximateModels(const unsigned char* data, int datasize, int basepro
 					Model rmod = models[m];
 					models.nmodels -= 1;
 					models[m] = models[models.nmodels];
-					size = tryWeights(cs, models, bestsize, compressionType);
+					size = tryWeights(cs, models, bestsize, compressionType, modelbits);
 					if (size < bestsize) {
 						bestsize = size;
 					} else {
@@ -185,7 +186,7 @@ ModelList ApproximateModels(const unsigned char* data, int datasize, int basepro
 					for (m = models.nmodels-1 ; m >= 0 ; m--) {
 						Model rmod = models[m];
 						models[m] = models[models.nmodels];
-						size = tryWeights(cs, models, bestsize, compressionType);
+						size = tryWeights(cs, models, bestsize, compressionType, modelbits);
 						if (size < bestsize) {
 							bestsize = size;
 							break;

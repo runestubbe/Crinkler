@@ -15,11 +15,13 @@ VERSION HISTORY
                 Compression tweak for greatly improved compression ratio.
                 Much faster compression.
                 Automatically takes advantage of multiple processors.
+                Improved Visual Studio 2005 integration.
 		/COMPMODE:INSTANT option for very quick compression.
                 /ORDERTRIES option to try out different section orderings.
 		/SAFEIMPORT option to insert a check for nonexisting DLLs.
 		/PROGRESSGUI option for a graphical progress bar.
 		/REPLACEDLL option to replace one DLL with another.
+		/FIX option to fix compatibility problems of older versions.
 
 09.02.06: 0.4a: Fixed linker crash problem with blank member entries
                 in some library files (such as glut32).
@@ -199,7 +201,9 @@ following:
 - In the Release configuration (or whichever configuration you want to
   enable compression), under Linker/Command Line/Additional Options,
   type in /CRINKLER, along with any other Crinkler options you want to
-  set. See the next section for more details on options.
+  set. See the next section for more details on options. If you are
+  using Visual Studio 2005, set Linker/Manifest File/Generate Manifest
+  to No.
 
 If you have Visual Studio installed but want to run Crinkler from the
 commandline, the easiest way is to use the Visual Studio Command
@@ -280,6 +284,14 @@ Linker/Command Line/Additional Options:
     this option is enabled by default, otherwise it is disabled by
     default.
 
+/FIX
+
+    Fix a program compressed using an older version of Crinkler so
+    that it works on all versions of Windows 2000, XP and Vista. When
+    this option is specified, all other options except /OUT are
+    ignored, and Crinkler takes a single file argument, which must be
+    an output EXE file from Crinkler 0.3 or newer.
+
 /PRIORITY:IDLE
 /PRIORITY:BELOWNORMAL
 /PRIORITY:NORMAL
@@ -348,7 +360,7 @@ Linker/Command Line/Additional Options:
     instead. DLL replacement is useful when the end user might not
     have the version of the DLL that you are linking to. Typical
     examples are replacing msvcr70, msvcr71 or msvcr80 by msvcrt and
-    replacing one version of d3dx_?? by another. Only use this option
+    replacing one version of d3dx9_?? by another. Only use this option
     if you know that the two DLLs are compatible. When REPLACEDLL and
     RANGE are used together, RANGE must refer to the new DLL.
 
@@ -398,8 +410,8 @@ specified under Linker/Command Line/Additional Options:
 /VERBOSE:IMPORTS
 
     List all functions imported from DLLs. The functions are grouped
-    by DLL, and functions imported by ordinal range import will be
-    grouped into ranges.
+    by DLL, and functions imported by ordinal range import are grouped
+    into ranges.
 
 /VERBOSE:MODELS
 
@@ -450,7 +462,7 @@ gives some advice on these.
   ordering of the sections to optimize the compression ratio.
 
 - If you are using OpenGL, use ordinal range import for opengl32. If
-  you are using Direct3D, use ordinal range import for d3dx_??. This
+  you are using Direct3D, use ordinal range import for d3dx9_??. This
   drastically reduces the space needed for function hash codes.
 
 - Avoid large blocks of data, even if they are all zero. Use
