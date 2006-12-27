@@ -69,14 +69,14 @@ Hunk::~Hunk() {
 
 
 void Hunk::addSymbol(Symbol* s) {
-	if(m_symbols.find(s->name.c_str()) == m_symbols.end()) {
+	map<string, Symbol*>::iterator it = m_symbols.find(s->name.c_str());
+	if(it == m_symbols.end()) {
 		pair<string, Symbol*> p(s->name, s);
 		m_symbols.insert(p);
 	} else {
 		//TODO: error handling, duplicate symbols - currently using keep old symbols semantic
 		delete s;
 	}
-	
 }
 
 
@@ -109,8 +109,9 @@ void Hunk::printSymbols() const {
 	sort(symbols.begin(), symbols.end(), SymbolComparator());
 
 	//print symbol ordered symbols
-	for(vector<Symbol*>::const_iterator it = symbols.begin(); it != symbols.end(); it++)
+	for(vector<Symbol*>::const_iterator it = symbols.begin(); it != symbols.end(); it++) {
 		printf("%8x: %s\n", (*it)->value, (*it)->name.c_str());
+	}
 }
 
 
@@ -146,7 +147,7 @@ void Hunk::relocate(int imageBase) {
 		//find symbol
 		Symbol* s = findSymbol(r.symbolname.c_str());
 		if(s == NULL) {
-			Log::error(0, "", "error: could not find symbol '%s'\n", r.symbolname.c_str());
+			Log::error(0, "", "could not find symbol '%s'\n", r.symbolname.c_str());
 		}
 
 		//perform relocation
@@ -251,10 +252,12 @@ CompressionSummaryRecord* Hunk::getCompressionSummary(int* sizefill, int splitti
 	for(vector<Symbol*>::iterator it = symbols.begin(); it != symbols.end(); it++) {
 		CompressionSummaryRecord* c = new CompressionSummaryRecord((*it)->getPrettyName().c_str(), 
 			((*it)->flags & SYMBOL_IS_LOCAL) ? 0 : RECORD_PUBLIC, (*it)->value, ((*it)->value < m_rawsize) ? sizefill[(*it)->value] : -1);
+
 		if((*it)->flags & SYMBOL_IS_FUNCTION) {
 			c->functionName = (*it)->getUndecoratedName();
 			c->functionSize = (*it)->size;
 			c->compressedFunctionSize = sizefill[(*it)->value+c->functionSize] - sizefill[(*it)->value];
+			c->type |= RECORD_FUNCTION;
 		}
 
 		if((*it)->value < splittingPoint)

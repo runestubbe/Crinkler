@@ -125,7 +125,7 @@ in:
 
 void verboseFunctions(CompressionSummaryRecord* csr) {
 	if(csr->type == RECORD_ROOT) {
-		printf("\nfunction name                                   size compsize");
+		printf("\nfunction name                                      size          compsize\n");
 	} else {
 		if(csr->type & RECORD_FUNCTION)
 			printf("  %-36.36s        %9d          %8.2f\n", csr->name.c_str(), csr->functionSize, csr->compressedFunctionSize / (BITPREC*8.0f));
@@ -205,6 +205,7 @@ void Crinkler::link(const char* filename) {
 	else
 		load(importObj, importObj_end - importObj, "crinkler import");
 
+
 	Symbol* import = findUndecoratedSymbol("Import");
 	m_hunkPool.removeHunk(import->hunk);
 	m_hunkPool.addHunkFront(import->hunk);
@@ -217,6 +218,7 @@ void Crinkler::link(const char* filename) {
 		startHunks.push_back(import->hunk);
 		m_hunkPool.removeUnreferencedHunks(startHunks);
 	}
+
 
 	//replace dlls
 	replaceDlls(m_hunkPool);
