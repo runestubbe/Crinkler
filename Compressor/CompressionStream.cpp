@@ -40,7 +40,7 @@ void CompressionStream::Compress(const unsigned char* d, int size, const ModelLi
 	memcpy(data, m_context, MAX_CONTEXT_LENGTH);
 	data += MAX_CONTEXT_LENGTH;
 	memcpy(data, d, size);
-	
+		
 	unsigned int weightmasks[256];
 	unsigned char masks[256];
 	int nmodels = models.nmodels;
@@ -199,7 +199,99 @@ int CompressionStream::EvaluateSize(const unsigned char* d, int size, const Mode
 	return (int) (totalsize / (BITPREC_TABLE / BITPREC));
 }
 
-inline unsigned int QuickHash(const byte *data, int bitpos, __m64 mask) {
+inline unsigned int QuickHash(const byte *data, int pos, __m64 mask, int bytemask) {
+	__m64 contextdata = *(__m64 *)&data[pos-8];
+	__m64 scrambler = _mm_set_pi8(23,5,17,13,11,7,19,3);
+	__m64 sample = _mm_mullo_pi16(_mm_and_si64(contextdata, mask), scrambler);
+	unsigned int contexthash1 = _mm_cvtsi64_si32(sample);
+	unsigned int contexthash2 = _mm_cvtsi64_si32(_mm_srli_si64(sample, 32));
+	unsigned int contexthash = contexthash1 ^ contexthash2;
+	unsigned char databyte = (unsigned char)(data[pos] & bytemask);
+	return contexthash + ((unsigned int)databyte);
+}
+
+int CompressionStream::EvaluateSizeQuick(const unsigned char* d, int size, const ModelList& models, int baseprobs[8], char* context, int bitpos) {
+	int bitlength = size*8;
+	unsigned char* data = new unsigned char[size+MAX_CONTEXT_LENGTH];
+	memcpy(data, context, MAX_CONTEXT_LENGTH);
+	data += MAX_CONTEXT_LENGTH;
+	memcpy(data, d, size);
+
+	unsigned int tinyhashsize = previousPowerOf2(size*2);
+	unsigned int recths = ((1<<31)/tinyhashsize-1)*2+1;
+	unsigned int recthslog = 0;
+	while((1<<recthslog) <= recths) recthslog++;
+	TinyHashEntry* hashtable = new TinyHashEntry[tinyhashsize];
+
+	unsigned int* sums = new unsigned int[size*2];	//summed predictions
+
+	for(int i = 0; i < size; i++) {
+		sums[i*2] = baseprobs[bitpos];
+		sums[i*2+1] = baseprobs[bitpos];
+	}
+
+	int bytemask = (0xff00 >> bitpos);
+	int nmodels = models.nmodels; 
+	for(int modeli = 0; modeli < nmodels; modeli++) {
+		//clear hashtable
+		memset(hashtable, 0, tinyhashsize*sizeof(TinyHashEntry));
+
+		int weight = models[modeli].weight;
+		unsigned char w = (unsigned char)models[modeli].mask;
+		unsigned char maskbytes[8];
+		for (int i = 0 ; i < 8 ; i++) {
+			maskbytes[i] = ((w >> i) & 1) * 0xff;
+		}
+		__m64 mask = *(__m64 *)maskbytes;
+
+		for(int pos = 0; pos < size; pos++) {
+			int bit = (data[pos] >> (7-bitpos)) & 1;
+
+			unsigned int hash = QuickHash(data, pos, mask, bytemask);
+			unsigned int tinyHash = (hash*recths)>>recthslog;
+			//unsigned int tinyHash = hash & (tinyhashsize-1);
+			TinyHashEntry *he = &hashtable[tinyHash];
+			while(he->hash != hash && he->used == 1) {
+				tinyHash++;
+				if(tinyHash >= tinyhashsize)
+					tinyHash = 0;
+				he = &hashtable[tinyHash];
+			}
+
+			he->hash = hash;
+			he->used = 1;
+
+			int fac = weight;
+			unsigned int shift = (1 - (((he->prob[0]+255)&(he->prob[1]+255)) >> 8))*2 + fac;
+			sums[pos*2+0] += ((int)he->prob[0] << shift);
+			sums[pos*2+1] += ((int)he->prob[1] << shift);
+
+			//update weights
+			he->prob[bit] += 1;
+			if (he->prob[!bit] > 1) he->prob[!bit] >>= 1;
+		}
+	}
+
+	//sum 
+	long long totalsize = 0;
+	#pragma omp parallel for reduction(+:totalsize)
+	for(int pos = 0; pos < size; pos++) {
+		int bit = (data[pos] >> (7-bitpos)) & 1;
+		totalsize += AritSize2(sums[pos*2+bit], sums[pos*2+!bit]);
+	}
+	
+	_mm_empty();
+
+	delete[] hashtable;
+
+	data -= MAX_CONTEXT_LENGTH;
+	delete[] data;
+	delete[] sums;
+
+	return (int) (totalsize / (BITPREC_TABLE / BITPREC));
+}
+
+inline unsigned int QuickHash_OLD(const byte *data, int bitpos, __m64 mask) {
 	int bytepos = bitpos >> 3;
 	int subbit = bitpos & 7;
 	__m64 contextdata = *(__m64 *)&data[bytepos-8];
@@ -214,7 +306,7 @@ inline unsigned int QuickHash(const byte *data, int bitpos, __m64 mask) {
 	return hash;
 }
 
-int CompressionStream::EvaluateSizeQuick(const unsigned char* d, int size, const ModelList& models, int baseprobs[8], char* context) {
+int CompressionStream::EvaluateSizeQuick_OLD(const unsigned char* d, int size, const ModelList& models, int baseprobs[8], char* context) {
 	int bitlength = size*8;
 	unsigned char* data = new unsigned char[size+MAX_CONTEXT_LENGTH];
 	memcpy(data, context, MAX_CONTEXT_LENGTH);
@@ -266,7 +358,7 @@ int CompressionStream::EvaluateSizeQuick(const unsigned char* d, int size, const
 		for(int bitpos = 0; bitpos < bitlength; bitpos++) {
 			int bit = GetBit(data, bitpos);
 
-			unsigned int hash = QuickHash(data, bitpos, mask);
+			unsigned int hash = QuickHash_OLD(data, bitpos, mask);
 			unsigned int tinyHash = (hash*recths)>>recthslog;
 			//unsigned int tinyHash = hash & (tinyhashsize-1);
 			TinyHashEntry *he = &hashtable[tinyHash];
@@ -304,10 +396,9 @@ int CompressionStream::EvaluateSizeQuick(const unsigned char* d, int size, const
 	delete[] data;
 	delete[] sums;
 
-	//printf("%d ", (int) (totalsize / (BITPREC_TABLE / BITPREC)) - EvaluateSize(d, size, models, baseprobs, context));
-
 	return (int) (totalsize / (BITPREC_TABLE / BITPREC));
 }
+
 
 CompressionStream::CompressionStream(unsigned char* data, int* sizefill, int maxsize) :
 	m_data(data), m_sizefill(sizefill), m_sizefillptr(sizefill), m_maxsize(maxsize)

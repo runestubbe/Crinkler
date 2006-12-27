@@ -3,6 +3,7 @@
 
 #include <windows.h>
 #include <list>
+#include <set>
 #include <ctime>
 
 #include "HunkList.h"
@@ -39,6 +40,28 @@ Crinkler::Crinkler() {
 Crinkler::~Crinkler() {
 }
 
+void Crinkler::replaceDlls(HunkList& hunklist) {
+	set<string> usedDlls;
+	//replace dll
+	for(int i = 0; i < hunklist.getNumHunks(); i++) {
+		Hunk* hunk = hunklist[i];
+		if(hunk->getFlags() & HUNK_IS_IMPORT) {
+			map<string, string>::iterator it = m_replaceDlls.find(toLower(hunk->getImportDll()));
+			if(it != m_replaceDlls.end()) {
+				hunk->setImportDll(it->second.c_str());
+				usedDlls.insert(it->first);
+			}
+		}
+	}
+
+	//warn about unused replace DLLs
+	for(map<string, string>::iterator it = m_replaceDlls.begin(); it != m_replaceDlls.end(); it++) {
+		if(usedDlls.find(it->first) == usedDlls.end()) {
+			Log::warning(0, "", "no functions were imported from replaced dll '%s'", it->first.c_str());
+		}
+	}
+}
+
 
 void Crinkler::load(const char* filename) {
 	HunkList* hunkList = m_hunkLoader.loadFromFile(filename);
@@ -46,7 +69,7 @@ void Crinkler::load(const char* filename) {
 		m_hunkPool.append(hunkList);
 		delete hunkList;
 	} else {
-		Log::error(0, "", "failed to load file %s", filename);
+		Log::error(0, "", "failed to load file '%s'", filename);
 	}
 }
 
@@ -61,7 +84,7 @@ Symbol* Crinkler::findUndecoratedSymbol(const char* name) const {
 	if(s)
 		return s;
 	else {
-		Log::error(0, "", "could not find symbol %s", name);
+		Log::error(0, "", "could not find symbol '%s'", name);
 		return NULL;
 	}
 }
@@ -99,16 +122,27 @@ in:
 	return n;
 }
 
-void verboseLabels(CompressionSummaryRecord* csr) {
+void verboseFunctions(CompressionSummaryRecord* csr) {
 	if(csr->type == RECORD_ROOT) {
+		printf("\nfunction name                                   size compsize");
+	} else {
+		if(csr->type & RECORD_FUNCTION)
+			printf("  %-36.36s        %9d          %8.2f\n", csr->name.c_str(), csr->functionSize, csr->compressedFunctionSize / (BITPREC*8.0f));
+	}
+
+	for(vector<CompressionSummaryRecord*>::iterator it = csr->children.begin(); it != csr->children.end(); it++)
+		verboseFunctions(*it);
+}
+
+void verboseLabels(CompressionSummaryRecord* csr) {
+	if(csr->type & RECORD_ROOT) {
 		printf("\nlabel name                                   pos comp-pos      size compsize");
 	} else {
-		if(csr->type == RECORD_SECTION)
+		if(csr->type & RECORD_SECTION)
 			printf("\n%-38.38s", csr->name.c_str());
-		
-		else if(csr->type == RECORD_PUBLIC)
+		else if(csr->type & RECORD_PUBLIC)
 			printf("  %-36.36s", csr->name.c_str());
-		else if(csr->type == RECORD_LOCAL)
+		else
 			printf("    %-34.34s", csr->name.c_str());
 
 
@@ -126,7 +160,7 @@ void Crinkler::link(const char* filename) {
 	//open output file now, just to be sure :)
 	FILE* outfile;
 	if(fopen_s(&outfile, filename, "wb")) {
-		Log::error(0, "", "could not open %s for writing", filename);
+		Log::error(0, "", "could not open '%s' for writing", filename);
 		return;
 	}
 
@@ -135,16 +169,8 @@ void Crinkler::link(const char* filename) {
 	if(entry == NULL) {
 		Log::error(0, "", "could not find entry symbol");
 		return;
-	}
+	}	
 
-	//1byte aligned entry point
-	if(entry->hunk->getAlignmentBits() > 0) {
-		Log::warning(0, "", "entry point hunk has alignment greater than 1, forcing alignment of 1");
-		entry->hunk->setAlignmentBits(0);
-	}
-	
-
-	
 	//add a jump to the entry point, if the entry point is not at the beginning of a hunk
 	if(entry->value > 0) {
 		Log::warning(0, "", "Could not move entry point to beginning of code, inserted jump");
@@ -161,6 +187,12 @@ void Crinkler::link(const char* filename) {
 		m_hunkPool.removeHunk(entry->hunk);
 		m_hunkPool.addHunkFront(entry->hunk);
 		entry->hunk->fixate();
+	}
+
+	//1byte aligned entry point
+	if(entry->hunk->getAlignmentBits() > 0) {
+		Log::warning(0, "", "entry point hunk has alignment greater than 1, forcing alignment of 1");
+		entry->hunk->setAlignmentBits(0);
 	}
 
 
@@ -183,6 +215,9 @@ void Crinkler::link(const char* filename) {
 		m_hunkPool.removeUnreferencedHunks(startHunks);
 	}
 
+	//replace dlls
+	replaceDlls(m_hunkPool);
+
 	//handle imports
 	HunkList* headerHunks = m_hunkLoader.load(headerObj, headerObj_end - headerObj, "crinkler header");//m_hunkLoader.loadFromFile("modules/header5.obj");
 	Hunk* header = headerHunks->findSymbol("_header")->hunk;
@@ -200,7 +235,6 @@ void Crinkler::link(const char* filename) {
 	int splittingPoint;
 	Hunk* phase1 = m_transform.linkAndTransform(&m_hunkPool, m_imageBase+sectionSize*2, &splittingPoint);
 
-
 	//calculate baseprobs
 	int baseprob = 10;
 	int baseprobs[8];
@@ -211,9 +245,6 @@ void Crinkler::link(const char* filename) {
 	int modelskip = 0;
 	Hunk* phase1Compressed, *models;
 	{
-		int maxsize = phase1->getRawSize()*10;	//allocate plenty of memory
-		unsigned char* data = new unsigned char[maxsize];
-		int* sizefill = new int[phase1->getRawSize()*2];
 		int size;
 
 		//Construct composite progress bar
@@ -249,16 +280,16 @@ void Crinkler::link(const char* filename) {
 		if(m_compressionType != COMPRESSION_INSTANT && m_hunktries > 0) {
 			EmpiricalHunkSorter::sortHunkList(&m_hunkPool, ml1, ml2, baseprobs, m_hunktries, m_showProgressBar ? &windowBar : NULL);
 			delete phase1;
-			Hunk* phase1 = m_transform.linkAndTransform(&m_hunkPool, m_imageBase+sectionSize*2, &splittingPoint);
-
+			phase1 = m_transform.linkAndTransform(&m_hunkPool, m_imageBase+sectionSize*2, &splittingPoint);
+			
 			//reestimate models
-			progressBar.beginTask("Estimating models for code");
-			ModelList ml1 = ApproximateModels((unsigned char*)phase1->getPtr(), splittingPoint, baseprobs, &size, &progressBar, m_verboseFlags & VERBOSE_MODELS, m_compressionType);
+			progressBar.beginTask("Reestimating models for code");
+			ml1 = ApproximateModels((unsigned char*)phase1->getPtr(), splittingPoint, baseprobs, &size, &progressBar, m_verboseFlags & VERBOSE_MODELS, m_compressionType);
 			progressBar.endTask();
 			idealsize = size;
 
-			progressBar.beginTask("Estimating models for data");
-			ModelList ml2 = ApproximateModels((unsigned char*)phase1->getPtr()+splittingPoint, phase1->getRawSize() - splittingPoint, baseprobs, &size, &progressBar, m_verboseFlags & VERBOSE_MODELS, m_compressionType);
+			progressBar.beginTask("Reestimating models for data");
+			ml2 = ApproximateModels((unsigned char*)phase1->getPtr()+splittingPoint, phase1->getRawSize() - splittingPoint, baseprobs, &size, &progressBar, m_verboseFlags & VERBOSE_MODELS, m_compressionType);
 			progressBar.endTask();
 			idealsize += size;
 
@@ -267,16 +298,20 @@ void Crinkler::link(const char* filename) {
 		
 
 		//hashing time
+		int* sizefill = new int[phase1->getRawSize()*2];
+		int maxsize = phase1->getRawSize()*10;	//allocate plenty of memory
+		unsigned char* data = new unsigned char[maxsize];
 		if(m_compressionType != COMPRESSION_INSTANT && m_hashtries > 0) {
 			int bestsize = INT_MAX;
 			int hashsize = best_hashsize;
 			progressBar.beginTask("Optimizing hash table size");
 
 			for(int i = 0; i < m_hashtries; i++) {
-				CompressionStream cs(data, sizefill, maxsize);
+				CompressionStream cs(data, NULL, maxsize);
 				hashsize = previousPrime(hashsize/2)*2;
 				cs.Compress((unsigned char*)phase1->getPtr(), splittingPoint, ml1, baseprobs, hashsize, false);
 				cs.Compress((unsigned char*)phase1->getPtr() + splittingPoint, phase1->getRawSize() - splittingPoint, ml2, baseprobs, hashsize, true);
+				
 				size = cs.close();
 				if(size <= bestsize) {
 					bestsize = size;
@@ -289,7 +324,7 @@ void Crinkler::link(const char* filename) {
 		}
 
 		{
-			CompressionStream cs(data, NULL, maxsize);
+			CompressionStream cs(data, sizefill, maxsize);
 			cs.Compress((unsigned char*)phase1->getPtr(), splittingPoint, ml1, baseprobs, best_hashsize, false);
 			cs.Compress((unsigned char*)phase1->getPtr() + splittingPoint, phase1->getRawSize() - splittingPoint, ml2, baseprobs, best_hashsize, true);
 			size = cs.close();
@@ -301,7 +336,9 @@ void Crinkler::link(const char* filename) {
 		delete[] sizefill;
 		if(m_verboseFlags & VERBOSE_LABELS)
 			verboseLabels(csr);
-		
+		if(m_verboseFlags & VERBOSE_FUNCTIONS)
+			verboseFunctions(csr);
+
 		delete csr;
 		
 		phase1Compressed = new Hunk("compressed data", (char*)data, 0, 1, size, size);
@@ -397,9 +434,8 @@ Crinkler* Crinkler::addRangeDll(const char* dllname) {
 	return this;
 }
 
-Crinkler* Crinkler::replaceDll(const char* dll1, const char* dll2) {
-	StringPair sp(dll1, dll2);
-	m_replaceDlls.push_back(sp);
+Crinkler* Crinkler::addReplaceDll(const char* dll1, const char* dll2) {
+	m_replaceDlls.insert(pair<string, string>(toLower(dll1), toLower(dll2)));
 	return this;
 }
 

@@ -3,6 +3,7 @@
 
 #define SYMBOL_IS_RELOCATEABLE	0x01
 #define SYMBOL_IS_LOCAL			0x02
+#define SYMBOL_IS_FUNCTION		0x04
 
 #include <string>
 
@@ -14,8 +15,10 @@ public:
 	int				value;
 	unsigned int	flags;
 	Hunk*			hunk;
+	int				size;
 
 	std::string getPrettyName();
+	std::string getUndecoratedName();
 };
 
 #endif

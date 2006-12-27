@@ -90,6 +90,7 @@ CompressionState::CompressionState(const unsigned char* data, int size, int base
 	memcpy(data2+8, data, size);
 
 	//apply models
+	#pragma omp parallel for
 	for(int mask = 0; mask <= 0xff; mask++) {
 		m_models[mask] = applyModel(data2+8, m_size, (unsigned char)mask);
 	}

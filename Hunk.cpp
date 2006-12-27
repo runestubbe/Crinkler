@@ -146,7 +146,7 @@ void Hunk::relocate(int imageBase) {
 		//find symbol
 		Symbol* s = findSymbol(r.symbolname.c_str());
 		if(s == NULL) {
-			Log::error(0, "", "error: could not find symbol %s\n", r.symbolname.c_str());
+			Log::error(0, "", "error: could not find symbol '%s'\n", r.symbolname.c_str());
 		}
 
 		//perform relocation
@@ -250,7 +250,12 @@ CompressionSummaryRecord* Hunk::getCompressionSummary(int* sizefill, int splitti
 
 	for(vector<Symbol*>::iterator it = symbols.begin(); it != symbols.end(); it++) {
 		CompressionSummaryRecord* c = new CompressionSummaryRecord((*it)->getPrettyName().c_str(), 
-			((*it)->flags & SYMBOL_IS_LOCAL) ? RECORD_LOCAL : RECORD_PUBLIC, (*it)->value, ((*it)->value < m_rawsize) ? sizefill[(*it)->value] : -1);
+			((*it)->flags & SYMBOL_IS_LOCAL) ? 0 : RECORD_PUBLIC, (*it)->value, ((*it)->value < m_rawsize) ? sizefill[(*it)->value] : -1);
+		if((*it)->flags & SYMBOL_IS_FUNCTION) {
+			c->functionName = (*it)->getUndecoratedName();
+			c->functionSize = (*it)->size;
+			c->compressedFunctionSize = sizefill[(*it)->value+c->functionSize] - sizefill[(*it)->value];
+		}
 
 		if((*it)->value < splittingPoint)
 			codeSection->children.push_back(c);
@@ -260,4 +265,9 @@ CompressionSummaryRecord* Hunk::getCompressionSummary(int* sizefill, int splitti
 
 	root->calculateSize(m_virtualsize, sizefill[m_rawsize]);
 	return root;
+}
+
+
+void Hunk::setImportDll(const char* dll) {
+	m_importDll = dll;
 }

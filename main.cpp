@@ -3,6 +3,7 @@
 #include <iostream>
 #include <list>
 #include <string>
+#include <direct.h>
 
 #include "CoffObjectLoader.h"
 #include "CoffLibraryLoader.h"
@@ -117,21 +118,19 @@ void runOriginalLinker(const char* crinklerCanonicalName, const char* linkerName
 	}
 
 	//Linker not found
-	Log::error(0, "", "could not find default linker (%s) in path", linkerName);
+	Log::error(0, "", "could not find default linker '%s' in path", linkerName);
 }
 
 #define TRANSFORM_CALLS		0x01
 
-DWORD WINAPI ThreadProc( LPVOID lpParam );
-
-int main(int argc, char* argv[]) {
-	/*
+int main(int argc, char* argv[]) {	
+/*	
 	argc = 4;
 	char* argv[] = {
 		argv2[0],
-		"@test\\buildtest.txt",
+		"@test\\buildgalv.txt",
 		"/CRINKLER",
-		"/ORDERTRIES:100"
+		"/ORDERTRIES:10"
 	};
 */
 	//find canonical name of the crinkler executable
@@ -154,6 +153,7 @@ int main(int argc, char* argv[]) {
 	CmdParamString entryArg("ENTRY", "name of the entrypoint", "symbol", 0, "");
 	CmdParamString outArg("OUT", "output filename", "filename", 0, "out.exe");
 	CmdParamSwitch crinklerFlag("CRINKLER", "enables crinkler", 0);
+	CmdParamSwitch fixFlag("FIX", "fix old crinkler files", 0);
 	CmdParamSwitch safeImportArg("SAFEIMPORT", "emit an error if a dll is missing", 0);
 	CmdParamSwitch showProgressArg("PROGRESSGUI", "shows a progressbar", 0);
 	CmdParamEnum subsystemArg("SUBSYSTEM", "select subsystem", 0, SUBSYSTEM_CONSOLE, 
@@ -195,14 +195,37 @@ int main(int argc, char* argv[]) {
 		return 0;
 	}
 
+	//Fix mode
+	if(cmdline.removeToken("/FIX")) {
+		CmdLineInterface cmdline2(CRINKLER_TITLE, CMDI_PARSE_FILES);
+
+		cmdline2.addParams(&fixFlag, &outArg, &filesArg, NULL);
+		cmdline2.setCmdParameters(argc, argv);
+		if(cmdline2.parse()) {
+			const char* infilename = filesArg.getValue();
+			if(infilename == NULL || filesArg.getValue() != 0) {
+				Log::error(0, "", "Crinkler fix takes exactly one file argument");
+				return 1;
+			}
+			//kald på askes kode
+			printf("fixing: %s out: %s\n", infilename, outArg.getValue());
+			return 0;
+		}
+
+		return 1;
+	}
+
 	if(!cmdline.parse()) {
 		return 1;
 	}
+
+	//cmdline.printTokens();
 
 	//set priority
 	SetPriorityClass(GetCurrentProcess(), priorityArg.getValue());
 
 	Crinkler crinkler;
+	//TODO: håndter flere definitioner af samme dllreplacement
 
 	//set crinkler options
 	crinkler.setImportingType(safeImportArg.getValue());
@@ -246,11 +269,11 @@ int main(int argc, char* argv[]) {
 			printf("NONE");
 		} else {
 			printf("%s -> %s", sp->first.c_str(), sp->second.c_str());
-			crinkler.replaceDll(sp->first.c_str(), sp->second.c_str());
+			crinkler.addReplaceDll(sp->first.c_str(), sp->second.c_str());
 		}
 		while(sp = replaceDllArg.getValue()) {
 			printf(", %s -> %s", sp->first.c_str(), sp->second.c_str());
-			crinkler.replaceDll(sp->first.c_str(), sp->second.c_str());
+			crinkler.addReplaceDll(sp->first.c_str(), sp->second.c_str());
 		}
 		printf("\n");
 	}
@@ -276,6 +299,9 @@ int main(int argc, char* argv[]) {
 
 	//build search library+object search path
 	string lib = ";.;";
+	char drive[3] = "?:";
+	drive[0] = _getdrive()+'A'-1;
+	lib += string(drive) + ";";
 	const char* path;
 	while(path = libpathArg.getValue()) {
 		lib += path;

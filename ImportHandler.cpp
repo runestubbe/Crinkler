@@ -37,7 +37,7 @@ int getOrdinal(const char* function, const char* dll) {
 		}
 	}
 
-	Log::error(0, "", "import %s could not be found in %s", function, dll);
+	Log::error(0, "", "import '%s' could not be found in '%s'", function, dll);
 	return -1;
 }
 
@@ -64,7 +64,7 @@ bool isForwardRVA(const char* dll, const char* function) {
 		}
 	}
 
-	Log::error(0, "", "import %s could not be found in %s", function, dll);
+	Log::error(0, "", "import '%s' could not be found in '%s'", function, dll);
 	return false;
 }
 
@@ -105,7 +105,6 @@ const int hashCode(const char* str) {
 	return code;
 }
 
-//TODO: report unused range dlls
 HunkList* ImportHandler::createImportHunks(HunkList* hunklist, Hunk* hashHunk, const vector<string>& rangeDlls, bool verbose) {
 	bool* usedRangeDlls = new bool[rangeDlls.size()];
 	memset(usedRangeDlls, 0, rangeDlls.size()*sizeof(bool));
@@ -119,7 +118,7 @@ HunkList* ImportHandler::createImportHunks(HunkList* hunklist, Hunk* hashHunk, c
 		Hunk* hunk = (*hunklist)[i];
 		if(hunk->getFlags() & HUNK_IS_IMPORT) {
 			if(isForwardRVA(hunk->getImportDll(), hunk->getImportName())) {
-				Log::error(0, "", "import %s from %s uses forwarded RVA. This feature is not supported by crinkler (yet)", 
+				Log::error(0, "", "import '%s' from '%s' uses forwarded RVA. This feature is not supported by crinkler (yet)", 
 					hunk->getImportName(), hunk->getImportDll());
 			}
 			importHunks.push_back(hunk);
@@ -159,7 +158,7 @@ HunkList* ImportHandler::createImportHunks(HunkList* hunklist, Hunk* hashHunk, c
 		}
 
 		if(currentDllName.compare(importHunk->getImportDll())) {
-			if(strcmp(importHunk->getImportDll(), "kernel32") != 0) {
+			if(strcmp(importHunk->getImportDll(), "kernel32") != 0) {	//TODO: case?
 				strcpy_s(dllNamesPtr, sizeof(dllNames)-(dllNamesPtr-dllNames), importHunk->getImportDll());
 				dllNamesPtr += strlen(importHunk->getImportDll()) + 2;
 				hashCounter = dllNamesPtr-1;
@@ -193,7 +192,7 @@ HunkList* ImportHandler::createImportHunks(HunkList* hunklist, Hunk* hashHunk, c
 			int o = getOrdinal((*it)->getImportName(), (*it)->getImportDll());
 
 			if(verbose) {
-				printf("    %s (ordinal %d)\n", (*it)->getImportName(), startOrdinal);		
+				printf("    %s (ordinal %d)\n", (*it)->getImportName(), o);
 			}
 
 			if(o - startOrdinal >= 254)
