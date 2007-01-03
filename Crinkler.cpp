@@ -22,7 +22,7 @@
 #include "data.h"
 
 using namespace std;
-const int CRINKLER_VERSION = 0x3630;
+const int CRINKLER_VERSION = 0x3031;
 
 Crinkler::Crinkler() {
 	m_subsytem = SUBSYSTEM_WINDOWS;

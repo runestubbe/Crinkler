@@ -30,6 +30,8 @@ Code:
  hashcrash with transform+ordertries
  uncompressed sizes
  /FIX
+ordinal range print bug
+
 
 Check:
 -Dev-C++ object files
