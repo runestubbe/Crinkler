@@ -29,6 +29,11 @@ void FixFile(const char *filename, const char *outfile) {
 		Log::error(0, "", "Input file is not a Crinkler compressed executable");
 	}
 
+	if (majorlv == '0' && minorlv == '6') {
+		majorlv = '1';
+		minorlv = '0';
+	}
+
 	printf("File compressed using Crinkler %c.%c\n", majorlv, minorlv);
 	switch (majorlv) {
 	case '0':
