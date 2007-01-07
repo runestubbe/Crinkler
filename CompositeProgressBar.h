@@ -1,3 +1,4 @@
+#pragma once
 #ifndef _COMPOSITE_PROGRESS_BAR_H_
 #define _COMPOSITE_PROGRESS_BAR_H_
 

@@ -1,3 +1,4 @@
+#pragma once
 #ifndef _CMD_PARAM_MULTI_ASSIGN_H_
 #define _CMD_PARAM_MULTI_ASSIGN_H_
 

@@ -1,11 +1,10 @@
 #include <string>
 #include "HunkList.h"
-
-
 #include "CoffLibraryLoader.h"
 #include "CoffObjectLoader.h"
 #include "Hunk.h"
 #include "NameMangling.h"
+#include "Symbol.h"
 
 using namespace std;
 
@@ -14,6 +13,9 @@ CoffLibraryLoader::~CoffLibraryLoader() {
 
 bool CoffLibraryLoader::clicks(const char* data, int size) {
 	const char* ptr = data;
+
+	if(size < 8+16+60+16+(size&1))
+		return false;
 
 	//check signature
 	if(memcmp("!<arch>\n", ptr, 8*sizeof(char))) {
@@ -112,7 +114,7 @@ HunkList* CoffLibraryLoader::load(const char* data, int size, const char* module
 					break;
 			}
 
-			if(strlen(symbolNames[i]) > 5 && memcmp(symbolNames[i], "__imp__", 7) == 0) {	//TODO: this is an EVIL hack
+			if(strlen(symbolNames[i]) >= 6 && memcmp(symbolNames[i], "__imp_", 6) == 0) {	//TODO: this is an EVIL hack
 				//an import
 				char dllName[256];
 				memset(dllName, 0, 256*sizeof(char));
@@ -125,12 +127,18 @@ HunkList* CoffLibraryLoader::load(const char* data, int size, const char* module
 				unsigned char stubData[6] = {0xFF, 0x25, 0x00, 0x00, 0x00, 0x00};
 				char hunkName[512];
 				sprintf_s(hunkName, 512, "stub_for_%s", symbolNames[i]);
+				
 				Hunk* stubHunk = new Hunk(hunkName, (char*)stubData, HUNK_IS_CODE, 1, 6, 6);
 				hunklist->addHunkBack(stubHunk);
 				stubHunk->addSymbol(new Symbol(symbolNames[i], 0, SYMBOL_IS_RELOCATEABLE, stubHunk));
+				
 				relocation r;
-				r.symbolname = "__imp_";	//TODO: hackedy hack
-				r.symbolname += symbolNames[i];
+				if(strlen(symbolNames[i]) >= 6 && memcmp("__imp_", symbolNames[i], 6) == 0) {
+					r.symbolname = symbolNames[i];
+				} else {
+					r.symbolname += string("__imp_") + symbolNames[i];	//TODO: hackedy hack
+				}
+				
 				r.offset = 2;
 				r.type = RELOCTYPE_ABS32;
 				stubHunk->addRelocation(r);
@@ -139,6 +147,5 @@ HunkList* CoffLibraryLoader::load(const char* data, int size, const char* module
 	}
 
 	delete[] symbolNames;
-
 	return hunklist;
 }

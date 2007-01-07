@@ -1,3 +1,4 @@
+#pragma once
 #ifndef _CMD_PARAM_ENUM_H_
 #define _CMD_PARAM_ENUM_H_
 

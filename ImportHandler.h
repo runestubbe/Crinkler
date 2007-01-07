@@ -1,3 +1,4 @@
+#pragma once
 #ifndef _IMPORT_HANDLER_H_
 #define _IMPORT_HANDLER_H_
 

@@ -1,3 +1,4 @@
+#pragma once
 #ifndef _COFF_LIBRARY_LOADER_H_
 #define _COFF_LIBRARY_LOADER_H_
 

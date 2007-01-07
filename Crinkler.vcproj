@@ -139,6 +139,7 @@
 				RuntimeTypeInfo="false"
 				OpenMP="true"
 				UsePrecompiledHeader="0"
+				AssemblerOutput="0"
 				WarningLevel="3"
 				Detect64BitPortabilityProblems="false"
 				DebugInformationFormat="4"
@@ -207,14 +208,6 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
-				RelativePath=".\CmdParamMultiAssign.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\CompressionSummary.cpp"
-				>
-			</File>
-			<File
 				RelativePath=".\Crinkler.cpp"
 				>
 				<FileConfiguration
@@ -239,19 +232,11 @@
 				>
 			</File>
 			<File
-				RelativePath=".\HunkLoader.cpp"
-				>
-			</File>
-			<File
 				RelativePath=".\ImportHandler.cpp"
 				>
 			</File>
 			<File
 				RelativePath=".\main.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\MultiLoader.cpp"
 				>
 			</File>
 			<File
@@ -264,14 +249,6 @@
 			Filter="h;hpp;hxx;hm;inl;inc;xsd"
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
-			<File
-				RelativePath=".\CmdParamMultiAssign.h"
-				>
-			</File>
-			<File
-				RelativePath=".\CompressionSummary.h"
-				>
-			</File>
 			<File
 				RelativePath=".\Crinkler.h"
 				>
@@ -289,15 +266,7 @@
 				>
 			</File>
 			<File
-				RelativePath=".\HunkLoader.h"
-				>
-			</File>
-			<File
 				RelativePath=".\ImportHandler.h"
-				>
-			</File>
-			<File
-				RelativePath=".\MultiLoader.h"
 				>
 			</File>
 			<File
@@ -396,6 +365,14 @@
 					>
 				</File>
 				<File
+					RelativePath=".\CmdParamMultiAssign.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\CmdParamMultiAssign.h"
+					>
+				</File>
+				<File
 					RelativePath=".\CmdParamMultiString.cpp"
 					>
 				</File>
@@ -438,6 +415,22 @@
 			</File>
 			<File
 				RelativePath=".\CoffObjectLoader.h"
+				>
+			</File>
+			<File
+				RelativePath=".\HunkLoader.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\HunkLoader.h"
+				>
+			</File>
+			<File
+				RelativePath=".\MultiLoader.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\MultiLoader.h"
 				>
 			</File>
 		</Filter>

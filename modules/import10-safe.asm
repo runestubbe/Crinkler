@@ -50,7 +50,7 @@ DLLLoop:
 	call	[__imp__MessageBoxA@16]
 	ret
 .dontEnd:
-
+y
 	xor		eax, eax
 	lodsb
 	xchg	ecx, eax

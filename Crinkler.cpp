@@ -5,6 +5,7 @@
 #include <list>
 #include <set>
 #include <ctime>
+#include <algorithm>
 
 #include "HunkList.h"
 #include "Hunk.h"
@@ -18,11 +19,10 @@
 #include "ConsoleProgressBar.h"
 #include "WindowProgressBar.h"
 #include "CompositeProgressBar.h"
-#include "CompressionSummary.h"
 #include "data.h"
+#include "Symbol.h"
 
 using namespace std;
-const int CRINKLER_VERSION = 0x3031;
 
 Crinkler::Crinkler() {
 	m_subsytem = SUBSYSTEM_WINDOWS;
@@ -123,16 +123,35 @@ in:
 	return n;
 }
 
-void verboseFunctions(CompressionSummaryRecord* csr) {
-	if(csr->type == RECORD_ROOT) {
-		printf("\nfunction name                                      size          compsize\n");
-	} else {
-		if(csr->type & RECORD_FUNCTION)
-			printf("  %-36.36s        %9d          %8.2f\n", csr->name.c_str(), csr->functionSize, csr->compressedFunctionSize / (BITPREC*8.0f));
+void extractFunctions(CompressionSummaryRecord* csr, vector<CompressionSummaryRecord*>& functions) {
+	for(vector<CompressionSummaryRecord*>::iterator it = csr->children.begin(); it != csr->children.end(); it++) {
+		if((*it)->type & RECORD_FUNCTION)
+			functions.push_back(*it);
+		extractFunctions(*it, functions);
 	}
+}
 
-	for(vector<CompressionSummaryRecord*>::iterator it = csr->children.begin(); it != csr->children.end(); it++)
-		verboseFunctions(*it);
+bool compareFunctionsByName(CompressionSummaryRecord* a, CompressionSummaryRecord* b) {
+	return a->functionName < b->functionName;
+}
+
+bool compareFunctionsByCompSize(CompressionSummaryRecord* a, CompressionSummaryRecord* b) {
+	return a->compressedFunctionSize > b->compressedFunctionSize;
+}
+
+bool compareFunctionsByAddress(CompressionSummaryRecord* a, CompressionSummaryRecord* b) {
+	return a->pos < b->pos;
+}
+
+void verboseFunctions(CompressionSummaryRecord* csr, bool (*compareFunction)(CompressionSummaryRecord*, CompressionSummaryRecord*)) {
+	vector<CompressionSummaryRecord*> functions;
+	printf("\nfunction name                                      size          compsize\n");
+	extractFunctions(csr, functions);
+
+	sort(functions.begin(), functions.end(), compareFunction);
+
+	for(vector<CompressionSummaryRecord*>::iterator it = functions.begin(); it != functions.end(); it++)
+		printf("  %-36.36s        %9d          %8.2f\n", (*it)->name.c_str(), (*it)->functionSize, (*it)->compressedFunctionSize / (BITPREC*8.0f));
 }
 
 void verboseLabels(CompressionSummaryRecord* csr) {
@@ -156,8 +175,6 @@ void verboseLabels(CompressionSummaryRecord* csr) {
 	for(vector<CompressionSummaryRecord*>::iterator it = csr->children.begin(); it != csr->children.end(); it++)
 		verboseLabels(*it);
 }
-
-
 
 void Crinkler::link(const char* filename) {
 	//open output file now, just to be sure :)
@@ -337,7 +354,11 @@ void Crinkler::link(const char* filename) {
 	if(m_verboseFlags & VERBOSE_LABELS)
 		verboseLabels(csr);
 	if(m_verboseFlags & VERBOSE_FUNCTIONS)
-		verboseFunctions(csr);
+		verboseFunctions(csr, compareFunctionsByAddress);
+	if(m_verboseFlags & VERBOSE_FUNCTIONS_BYSIZE)
+		verboseFunctions(csr, compareFunctionsByCompSize);
+	if(m_verboseFlags & VERBOSE_FUNCTIONS_BYNAME)
+		verboseFunctions(csr, compareFunctionsByName);
 	delete csr;
 	
 	phase1Compressed = new Hunk("compressed data", (char*)data, 0, 1, size, size);
@@ -386,7 +407,7 @@ void Crinkler::link(const char* filename) {
 		*(phase2->getPtr() + phase2->findSymbol("_BaseProbPtr")->value) = baseprob;
 		*(phase2->getPtr() + phase2->findSymbol("_ModelSkipPtr")->value) = modelskip;
 		*(phase2->getPtr() + phase2->findSymbol("_SubsystemTypePtr")->value) = m_subsytem == SUBSYSTEM_WINDOWS ? IMAGE_SUBSYSTEM_WINDOWS_GUI : IMAGE_SUBSYSTEM_WINDOWS_CUI;
-		*((short*)(phase2->getPtr() + phase2->findSymbol("_LinkerVersionPtr")->value)) = CRINKLER_VERSION;
+		*((short*)(phase2->getPtr() + phase2->findSymbol("_LinkerVersionPtr")->value)) = CRINKLER_LINKER_VERSION;
 	}
 	phase2->relocate(m_imageBase);
 

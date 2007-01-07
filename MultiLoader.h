@@ -1,3 +1,4 @@
+#pragma once
 #ifndef _MULTI_LOADER_H_
 #define _MULTI_LOADER_H_
 

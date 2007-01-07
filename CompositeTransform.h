@@ -1,3 +1,4 @@
+#pragma once
 #ifndef _COMPOSITE_TRANSFORM_H_
 #define _COMPOSITE_TRANSFORM_H_
 

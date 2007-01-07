@@ -1,3 +1,4 @@
+#pragma once
 #ifndef _HUNK_LOADER_H_
 #define _HUNK_LOADER_H_
 

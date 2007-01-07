@@ -1,8 +1,10 @@
+#pragma once
 #ifndef _CRINKLER_H_
 #define _CRINKLER_H_
 
-#include <list>
 #include <map>
+#include <string>
+
 #include "MultiLoader.h"
 #include "HunkList.h"
 #include "Compressor/Compressor.h"
@@ -10,18 +12,19 @@
 #include "StringMisc.h"
 
 
-#include <string>
-
 class HunkLoader;
 
 enum SubsystemType {SUBSYSTEM_CONSOLE, SUBSYSTEM_WINDOWS};
 
-#define VERBOSE_LABELS		1
-#define VERBOSE_IMPORTS		2
-#define VERBOSE_MODELS		4
-#define VERBOSE_FUNCTIONS	8
+#define VERBOSE_LABELS				1
+#define VERBOSE_IMPORTS				2
+#define VERBOSE_MODELS				4
+#define VERBOSE_FUNCTIONS			8
+#define VERBOSE_FUNCTIONS_BYSIZE	16
+#define VERBOSE_FUNCTIONS_BYNAME	32
 
 #define CRINKLER_TITLE			"Crinkler 1.0a (" __DATE__ ") (c) 2005-2007 Aske Simon Christensen & Rune Stubbe"
+#define CRINKLER_LINKER_VERSION	0x3031
 
 class Crinkler {
 	MultiLoader				m_hunkLoader;

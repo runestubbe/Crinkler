@@ -7,9 +7,9 @@
 #include "Hunk.h"
 #include "NameMangling.h"
 #include "Log.h"
+#include "Symbol.h"
 
 using namespace std;
-
 
 Hunk::Hunk(const Hunk& h) : 
 	m_alignmentBits(h.m_alignmentBits), m_flags(h.m_flags), m_rawsize(h.m_rawsize),
@@ -246,8 +246,10 @@ CompressionSummaryRecord* Hunk::getCompressionSummary(int* sizefill, int splitti
 	CompressionSummaryRecord* root = new CompressionSummaryRecord("root", RECORD_ROOT, 0, 0);
 	CompressionSummaryRecord* codeSection = new CompressionSummaryRecord("Code section", RECORD_SECTION, 0, 0);
 	CompressionSummaryRecord* dataSection = new CompressionSummaryRecord("Data section", RECORD_SECTION, splittingPoint, sizefill[splittingPoint]);
+	CompressionSummaryRecord* uninitSection = new CompressionSummaryRecord("Uninitialized section", RECORD_SECTION, m_rawsize, -1);
 	root->children.push_back(codeSection);
 	root->children.push_back(dataSection);
+	root->children.push_back(uninitSection);
 
 	for(vector<Symbol*>::iterator it = symbols.begin(); it != symbols.end(); it++) {
 		CompressionSummaryRecord* c = new CompressionSummaryRecord((*it)->getPrettyName().c_str(), 
@@ -260,10 +262,13 @@ CompressionSummaryRecord* Hunk::getCompressionSummary(int* sizefill, int splitti
 			c->type |= RECORD_FUNCTION;
 		}
 
-		if((*it)->value < splittingPoint)
+		if((*it)->value < splittingPoint) {
 			codeSection->children.push_back(c);
-		else
+		} else if((*it)->value < m_rawsize) {
 			dataSection->children.push_back(c);
+		} else {
+			uninitSection->children.push_back(c);
+		}
 	}
 
 	root->calculateSize(m_virtualsize, sizefill[m_rawsize]);

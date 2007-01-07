@@ -1,3 +1,4 @@
+#pragma once
 #ifndef _NAME_MANGLING_H_
 #define _NAME_MANGLING_H_
 
