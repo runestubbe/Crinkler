@@ -9,6 +9,9 @@
 #include "model.h"
 #include "common.h"
 
+const unsigned int MAX_N_MODELS = 21;
+const unsigned int MAX_MODEL_WEIGHT = 9;
+
 BOOL APIENTRY DllMain( HANDLE, 
                        DWORD, 
                        LPVOID
@@ -53,13 +56,11 @@ unsigned int optimizeWeights(CompressionState& cs, ModelList& models) {
 
 			if (i == index) {
 				newmodels[i].weight += dir;
-				/*
-				//TODO: cap weight
-				if(newmodels[i].weight == 5) {
-					newmodels[i].weight = 4;
+				// cap weight
+				if(newmodels[i].weight > MAX_MODEL_WEIGHT) {
+					newmodels[i].weight = MAX_MODEL_WEIGHT;
 					skip = 1;
 				}
-				*/
 				if (newmodels[i].weight == 255) {
 					newmodels[i].weight = 0;
 					skip = 1;
@@ -156,7 +157,7 @@ ModelList ApproximateModels(const unsigned char* data, int datasize, int basepro
 			}
 		}
 
-		if (!used) {
+		if (!used && models.nmodels < MAX_N_MODELS) {
 			models[models.nmodels].mask = (unsigned char)mask;
 			models[models.nmodels].weight = 0;
 			models.nmodels++;

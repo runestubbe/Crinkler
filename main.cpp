@@ -125,13 +125,14 @@ void runOriginalLinker(const char* crinklerCanonicalName, const char* linkerName
 #define TRANSFORM_CALLS		0x01
 
 int main(int argc, char* argv[]) {	
-/*	
-	argc = 4;
+/*
+	argc = 5;
 	char* argv[] = {
 		argv2[0],
-		"@test\\buildgalv.txt",
+		"@test\\buildfallty.txt",
 		"/CRINKLER",
-		"/ORDERTRIES:10"
+		"/RANGE:opengl32",
+		"/COMPMODE:SLOW"
 	};
 */
 	//find canonical name of the crinkler executable

@@ -13,7 +13,13 @@ a_intervalmin	equ	12
 	global	_AritDecode
 	global	_LogTable
 
+	global	_breakpoint
+
 	section	.text
+
+_breakpoint:
+	db 0xcc
+	ret
 
 _AritCodePos:
 	;; object
@@ -83,40 +89,39 @@ _AritCodeInit:
 
 	;; object, zero prob, one prob, bit
 _AritCode:
-	pusha
-	mov	ebx, [esp + (8+1)*4]
-	mov	edi, [ebx + a_dest_ptr]
-	mov	ebp, [ebx + a_dest_bit]
-	mov	eax, [ebx + a_intervalsize]
-	mov	ecx, [ebx + a_intervalmin]
+	push ebx
+	push edi
+	push ebp
+	push esi
+	mov	esi, [esp + (4+1)*4]
+	mov	edx, [esp + (4+2)*4]
+	mov	ebx, [esp + (4+3)*4]
 
-	mov	edx, [esp + (8+2)*4]
-	mov	ebx, [esp + (8+3)*4]
-	mov	esi, [esp + (8+4)*4]
+	mov	edi, [esi + a_dest_ptr]
+	mov	ebp, [esi + a_dest_bit]
+	mov	eax, [esi + a_intervalsize]
+	mov	ecx, [esi + a_intervalmin]
 
 	;; ebp = dest bit index
 	;; ecx = interval min
 	;; eax = interval size
 	;; edx = zero prob
 	;; ebx = one prob
-	;; esi = bit value
 	;; edi = dest ptr
 
 	add	ebx, edx
-	push	eax
 	mul	edx
 	div	ebx
 	;; eax = threshold value between 0 and 1
 
-	pop	edx
-	test	esi, esi
+	test [esp + (4+4)*4], byte 1
 	jz	.zero
 	add	ecx, eax
 	jnc	.not_overflow
 	call	PutBit
 .not_overflow:
-	xchg	eax, edx
-	sub	eax, edx
+	sub	eax, [esi + a_intervalsize]
+	neg eax
 .zero:
 	;; ecx = new interval min
 	;; eax = new interval size
@@ -133,12 +138,14 @@ _AritCode:
 	jns	.floop
 .filled:
 
-	mov	ebx, [esp + (8+1)*4]
-	mov	[ebx + a_dest_bit], ebp
-	mov	[ebx + a_intervalsize], eax
-	mov	[ebx + a_intervalmin], ecx
+	mov	[esi + a_dest_bit], ebp
+	mov	[esi + a_intervalsize], eax
+	mov	[esi + a_intervalmin], ecx
 
-	popa
+	pop esi
+	pop ebp
+	pop edi
+	pop ebx
 	ret
 
 PutBit:

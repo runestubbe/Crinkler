@@ -8,12 +8,14 @@
 #include <ctime>
 #include <cstdio>
 #include <mmintrin.h>
+#include <intrin.h>
 
 using namespace std;
 
 struct Weights;
 
 const int MAX_CONTEXT_LENGTH = 8;
+const int MAX_N_MODELS = 32;
 
 void updateWeights(Weights *w, int bit);
 
@@ -41,29 +43,27 @@ void CompressionStream::Compress(const unsigned char* d, int size, const ModelLi
 	data += MAX_CONTEXT_LENGTH;
 	memcpy(data, d, size);
 		
-	unsigned int weightmasks[256];
-	unsigned char masks[256];
+	unsigned int weightmasks[MAX_N_MODELS];
+	unsigned char masks[MAX_N_MODELS];
 	int nmodels = models.nmodels;
 	unsigned int w = models.getMaskList(masks, finish);
-	int weights[256];
+	int weights[MAX_N_MODELS];
 
-	int n = 0;
 	int v = 0;
-	while(w != 0 && n < models.nmodels) {
+	for(int n = 0 ; n < models.nmodels ; n++) {
 		while (w & 0x80000000) {
 			w <<= 1;
 			v++;
 		}
 		w <<= 1;
 		weights[n] = v;
-		weightmasks[n] = (int)masks[n] | (w & 0xFFFFFF00);
-		n++;
+		weightmasks[n] = (unsigned int)masks[n] | (w & 0xFFFFFF00);
 	}
 
 	unsigned int tinyhashsize = previousPowerOf2(bitlength*nmodels);
 	TinyHashEntry* hashtable = new TinyHashEntry[tinyhashsize];
 	memset(hashtable, 0, tinyhashsize*sizeof(TinyHashEntry));
-	TinyHashEntry* hashEntries[32];
+	TinyHashEntry* hashEntries[MAX_N_MODELS];
 
 	for(int bitpos = 0 ; bitpos < bitlength; bitpos++) {
 		int bit = GetBit(data, bitpos);

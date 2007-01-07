@@ -87,7 +87,7 @@
 				AssemblerOutput="4"
 				WarningLevel="3"
 				Detect64BitPortabilityProblems="0"
-				DebugInformationFormat="2"
+				DebugInformationFormat="4"
 				OpenMP="1"
 				Parallelization="1"
 				RecognizeRestrictKeyword="1"/>

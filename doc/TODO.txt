@@ -1,5 +1,5 @@
 Manual:
-Set date (in two places)
+ Set date (in two places)
  Setting executable path
  More options in example?
  New options
@@ -8,7 +8,8 @@ Set date (in two places)
  Range is after replace
 -bytes lost to hashing
 -HASHTRIES and ORDERTRIES ignored with INSTANT
-
+Progress bar problem in VS: only text
+FUNCTIONS-BYSIZE
 
 Code:
  new faster hashing
@@ -31,6 +32,8 @@ Code:
  uncompressed sizes
  /FIX
 ordinal range print bug
+hash blowup/crash
+counting uninit as data in LABELS
 
 
 Check:
