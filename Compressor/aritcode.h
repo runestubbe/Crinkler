@@ -1,3 +1,4 @@
+#pragma once
 #ifndef _ARITCODE_H_
 #define _ARITCODE_H_
 

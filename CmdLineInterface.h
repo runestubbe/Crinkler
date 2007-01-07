@@ -1,3 +1,4 @@
+#pragma once
 #ifndef _CMD_LINE_INTERFACE_H_
 #define _CMD_LINE_INTERFACE_H_
 

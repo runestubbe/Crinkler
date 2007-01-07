@@ -5,6 +5,7 @@
 #include "Hunk.h"
 #include "StringMisc.h"
 #include "Log.h"
+#include "Symbol.h"
 
 #include <algorithm>
 #include <vector>
@@ -191,12 +192,12 @@ HunkList* ImportHandler::createImportHunks(HunkList* hunklist, Hunk* hashHunk, c
 				currentDllName.compare((*it)->getImportDll()) == 0) {
 			int o = getOrdinal((*it)->getImportName(), (*it)->getImportDll());
 
+			if(o - startOrdinal >= 254)
+				break;
+
 			if(verbose) {
 				printf("    %s (ordinal %d)\n", (*it)->getImportName(), o);
 			}
-
-			if(o - startOrdinal >= 254)
-				break;
 
 			ordinal = o;
 			importList->addSymbol(new Symbol((*it)->getName(), (pos+ordinal-startOrdinal)*4, SYMBOL_IS_RELOCATEABLE, importList));

@@ -3,6 +3,7 @@
 #include "CoffObjectLoader.h"
 #include "data.h"
 #include "HunkList.h"
+#include "Symbol.h"
 
 Hunk* CallTransform::getDetransformer() {
 	CoffObjectLoader loader;

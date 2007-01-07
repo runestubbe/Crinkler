@@ -1,3 +1,4 @@
+#pragma once
 #ifndef _HUNK_LIST_H_
 #define _HUNK_LIST_H_
 

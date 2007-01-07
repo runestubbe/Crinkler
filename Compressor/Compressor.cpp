@@ -7,7 +7,6 @@
 #include "ModelList.h"
 #include "aritcode.h"
 #include "model.h"
-#include "common.h"
 
 const unsigned int MAX_N_MODELS = 21;
 const unsigned int MAX_MODEL_WEIGHT = 9;

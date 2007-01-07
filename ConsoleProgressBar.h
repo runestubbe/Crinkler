@@ -1,3 +1,4 @@
+#pragma once
 #ifndef _CONSOLE_PROGRESS_BAR_H_
 #define _CONSOLE_PROGRESS_BAR_H_
 

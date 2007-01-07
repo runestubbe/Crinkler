@@ -1,3 +1,4 @@
+#pragma once
 #ifndef _CMD_PARAM_FLAGS_H_
 #define _CMD_PARAM_FLAGS_H_
 

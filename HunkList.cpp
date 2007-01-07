@@ -4,6 +4,7 @@
 #include "Hunk.h"
 #include "Log.h"
 #include "misc.h"
+#include "Symbol.h"
 
 using namespace std;
 

@@ -1,3 +1,4 @@
+#pragma once
 #ifndef _COMPRESSION_STREAM_H_
 #define _COMPRESSION_STREAM_H_
 

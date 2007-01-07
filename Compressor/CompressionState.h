@@ -1,3 +1,4 @@
+#pragma once
 #ifndef _COMPRESSION_STATE_
 #define _COMPRESSION_STATE_
 

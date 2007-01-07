@@ -2,7 +2,6 @@
 #include <windows.h>
 #include "model.h"
 #include "aritcode.h"
-#include "common.h"
 #include "CompressionStream.h"
 #include "..\misc.h"
 #include <ctime>

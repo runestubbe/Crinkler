@@ -64,11 +64,14 @@ list<string> findFileInPath(const char* filename, const char* path) {
 }
 
 string getEnv(const char* varname) {
-	char* buff;
-	size_t len;
+	char* buff = NULL;
+	size_t len = 0;
 	if(_dupenv_s(&buff, &len, varname)) {
 		return "";
 	} else {
+		if(buff == NULL) {
+			return "";
+		}
 		string s = buff;
 		free(buff);
 		return s;
@@ -123,6 +126,7 @@ void runOriginalLinker(const char* crinklerCanonicalName, const char* linkerName
 }
 
 #define TRANSFORM_CALLS		0x01
+#define TRANSFORM_CALLS2		0x02
 
 int main(int argc, char* argv[]) {	
 /*
@@ -170,9 +174,13 @@ int main(int argc, char* argv[]) {
 						"SLOW", COMPRESSION_SLOW, NULL);
 	CmdParamFlags verboseArg("VERBOSE", "selects verbose modes", 0, 0, 
 							"LABELS", VERBOSE_LABELS, "IMPORTS", VERBOSE_IMPORTS,
-							"MODELS", VERBOSE_MODELS, "FUNCTIONS", VERBOSE_FUNCTIONS, NULL);
+							"MODELS", VERBOSE_MODELS, "FUNCTIONS", VERBOSE_FUNCTIONS,
+							"FUNCTIONS-BYSIZE", VERBOSE_FUNCTIONS_BYSIZE,
+							"FUNCTIONS-BYNAME", VERBOSE_FUNCTIONS_BYNAME,
+							NULL);
 	CmdParamFlags transformArg("TRANSFORM", "select transformations", 0, 0, 
-							"CALLS", TRANSFORM_CALLS, NULL);
+							"CALLS", TRANSFORM_CALLS,
+							"CALLS2", TRANSFORM_CALLS2, NULL);
 	CmdParamMultiString libpathArg("LIBPATH", "adds a path to the library search path", "dirs", CMD_PARAM_IS_SWITCH, 0);
 	CmdParamMultiString rangeImportArg("RANGE", "use range importing for this dll", "dllname", CMD_PARAM_IS_SWITCH, 0);
 	CmdParamMultiAssign replaceDllArg("REPLACEDLL", "replace a dll with another", "oldDLL=newDLL", CMD_PARAM_IS_SWITCH);
@@ -241,11 +249,10 @@ int main(int argc, char* argv[]) {
 	crinkler.setHunktries(hunktriesArg.getValue());
 	crinkler.setVerboseFlags(verboseArg.getValue());
 	crinkler.showProgressBar(showProgressArg.getValue());
-	//crinkler.setModelBits(modelbitsArg.getValue());
 
 	//transforms
 	CallTransform callTransform;
-	if(transformArg.getValue())
+	if(transformArg.getValue() & TRANSFORM_CALLS)
 		crinkler.addTransform(&callTransform);
 
 	//print some info

@@ -1,3 +1,4 @@
+#pragma once
 #ifndef _HUNK_H_
 #define _HUNK_H_
 
@@ -6,13 +7,12 @@
 #include <map>
 #include <vector>
 
-#include "Symbol.h"
-
 #define HUNK_IS_CODE		0x01
 #define HUNK_IS_WRITEABLE	0x02
 #define HUNK_IS_FIXED		0x04
 #define HUNK_IS_IMPORT		0x08
 
+class Symbol;
 class Hunk;
 class HunkList;
 enum RelocationType {RELOCTYPE_ABS32, RELOCTYPE_REL32};
@@ -21,7 +21,6 @@ enum RelocationType {RELOCTYPE_ABS32, RELOCTYPE_REL32};
 #define RECORD_SECTION 0x02
 #define RECORD_PUBLIC 0x04
 #define RECORD_FUNCTION 0x08
-
 
 struct CompressionSummaryRecord {
 	std::string name;
@@ -56,6 +55,10 @@ struct CompressionSummaryRecord {
 			children[i]->calculateSize(children[i+1]->pos - children[i]->pos, nextCompressedSize - children[i]->compressedPos);
 		}
 		if(!children.empty()) {
+			printf("Compressed size: %d\n", compressedSize);
+			printf("Compressed pos: %d\n", compressedPos);
+			printf("child comp size: %d\n", children.back()->compressedPos);
+
 			children.back()->calculateSize(pos + size - children.back()->pos, compressedPos + compressedSize - children.back()->compressedPos);
 		}
 	}

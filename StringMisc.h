@@ -1,3 +1,4 @@
+#pragma once
 #ifndef _STRING_MISC_H_
 #define _STRING_MISC_H_
 

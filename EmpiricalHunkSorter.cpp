@@ -160,9 +160,11 @@ void EmpiricalHunkSorter::sortHunkList(HunkList* hunklist, ModelList& codeModels
 		for(int j = 0; j < nHunks; j++)
 			backup[j] = (*hunklist)[j+fixedHunks];
 
-		permuteHunklist(hunklist);
+		//permuteHunklist(hunklist);
+		randomPermute(hunklist);
 
 		int size = tryHunkCombination(hunklist, codeModels, dataModels, baseprobs);
+		printf("size: %5.2f\n", size / (BITPREC * 8.0f));
 		if(size < bestsize) {
 			printf("  Iteration: %5d  Size: %5.2f\n", i, size / (BITPREC * 8.0f));
 			fflush(stdout);

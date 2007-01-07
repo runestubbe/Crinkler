@@ -1,3 +1,4 @@
+#pragma once
 #ifndef _MODEL_LIST_
 #define _MODEL_LIST_
 

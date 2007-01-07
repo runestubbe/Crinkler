@@ -1,3 +1,4 @@
+#pragma once
 #ifndef _EMPIRICAL_HUNK_SORTER_H_
 #define _EMPIRICAL_HUNK_SORTER_H_
 
