@@ -76,5 +76,5 @@ unsigned int ModelList::getMaskList(unsigned char* masks, bool terminate) const 
 		biti--;
 	}
 
-	return weightmask & (-2 + terminate + parity(weightmask));
+	return weightmask & (-2 + (terminate ^ parity(weightmask)));
 }

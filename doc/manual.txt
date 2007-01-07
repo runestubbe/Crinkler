@@ -4,12 +4,17 @@ CRINKLER - Compressing linker for Windows specialized for 4k intros
 Aske Simon Christensen "Blueberry/Loonies"
 Rune L. H. Stubbe "Mentor/TBC"
 
-Version 1.0 (December 27, 2006)
+Version 1.0a (January 7, 2007)
 
 
 
 VERSION HISTORY
 ---------------
+
+07.01.07: 1.0a: New /VERBOSE:FUNCTIONS options to sort the functions.
+                Various verbose output fixes.
+                Various crash fixes.
+                A fix to the /FIX Crinkler version recognizer.
 
 27.12.06: 1.0:  Output EXE files are now Windows Vista compatible.
                 Compression tweak for greatly improved compression ratio.
@@ -386,6 +391,8 @@ during compression. Just like the other options, these can be
 specified under Linker/Command Line/Additional Options:
 
 /VERBOSE:FUNCTIONS
+/VERBOSE:FUNCTIONS-BYNAME
+/VERBOSE:FUNCTIONS-BYSIZE
 
     For each function in the program, output the size of the function
     in bytes before and after compression. This can help you decide
@@ -504,10 +511,11 @@ Debugging (F5). The debugger cannot handle Crinkler-compressed
 executables. If the program crashes, you can still attach the debugger
 in the normal way.
 
-When running inside Visual Studio, the progress bars are not updated
-correctly, since the Visual Studio console does not flush the output
-until a newline is reached, even when explicitly flushed by the
-running program.
+When running inside Visual Studio, the textual progress bars are not
+updated correctly, since the Visual Studio console does not flush the
+output until a newline is reached, even when explicitly flushed by the
+running program. Use the /PROGRESSGUI option to get a graphical
+progress bar.
 
 The code for parsing object and library files contains only a minimum
 of sanity checks. If you pass a corrupt file to Crinkler, it will most
