@@ -55,10 +55,6 @@ struct CompressionSummaryRecord {
 			children[i]->calculateSize(children[i+1]->pos - children[i]->pos, nextCompressedSize - children[i]->compressedPos);
 		}
 		if(!children.empty()) {
-			printf("Compressed size: %d\n", compressedSize);
-			printf("Compressed pos: %d\n", compressedPos);
-			printf("child comp size: %d\n", children.back()->compressedPos);
-
 			children.back()->calculateSize(pos + size - children.back()->pos, compressedPos + compressedSize - children.back()->compressedPos);
 		}
 	}
