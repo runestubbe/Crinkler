@@ -560,9 +560,9 @@ The import code is loosely based on the hashed imports code by Peci.
 
 Many thanks to all the people who have given us comments, bug reports
 and test material, especially to Rambo, Kusma, Polaris, Gargaj,
-Frenetic, Buzzie, Shash, Auld, Minas, Skarab, Hunta, Snq and
-Darkblade. Also thanks to Dwarf, Polygon7 and Gargaj for suggestions
-for our web design.
+Frenetic, Buzzie, Shash, Auld, Minas, Skarab, Hunta, Snq, Darkblade,
+Abductee, Las and Hitchhikr. Also thanks to Dwarf, Polygon7 and Gargaj
+for suggestions for our web design.
 
 Our special thanks to the many people who have demostrated the
 usefulness of Crinkler by using it for their own productions.
