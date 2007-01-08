@@ -175,12 +175,12 @@ int main(int argc, char* argv[]) {
 	CmdParamFlags verboseArg("VERBOSE", "selects verbose modes", 0, 0, 
 							"LABELS", VERBOSE_LABELS, "IMPORTS", VERBOSE_IMPORTS,
 							"MODELS", VERBOSE_MODELS, "FUNCTIONS", VERBOSE_FUNCTIONS,
-							"FUNCTIONS-BYSIZE", VERBOSE_FUNCTIONS_BYSIZE,
 							"FUNCTIONS-BYNAME", VERBOSE_FUNCTIONS_BYNAME,
+							"FUNCTIONS-BYSIZE", VERBOSE_FUNCTIONS_BYSIZE,
 							NULL);
 	CmdParamFlags transformArg("TRANSFORM", "select transformations", 0, 0, 
 							"CALLS", TRANSFORM_CALLS,
-							"CALLS2", TRANSFORM_CALLS2, NULL);
+							NULL);
 	CmdParamMultiString libpathArg("LIBPATH", "adds a path to the library search path", "dirs", CMD_PARAM_IS_SWITCH, 0);
 	CmdParamMultiString rangeImportArg("RANGE", "use range importing for this dll", "dllname", CMD_PARAM_IS_SWITCH, 0);
 	CmdParamMultiAssign replaceDllArg("REPLACEDLL", "replace a dll with another", "oldDLL=newDLL", CMD_PARAM_IS_SWITCH);

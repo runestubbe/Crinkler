@@ -402,6 +402,11 @@ specified under Linker/Command Line/Additional Options:
     functions, the second one will be much smaller, since the contents
     of the first one will guide the compression of the second.
 
+    By default, the functions are written in the order in which they
+    occur in the linked code. If you specify -BYNAME or -BYSIZE, they
+    will be sorted in alphabetical order or by decreasing compressed
+    size, respectively.
+
     For this option to work, you must enable debugging information in
     your object files. In Visual Studio, this is done by selecting a
     debugging information format under C/C++/General/Debug Information
@@ -560,9 +565,9 @@ The import code is loosely based on the hashed imports code by Peci.
 
 Many thanks to all the people who have given us comments, bug reports
 and test material, especially to Rambo, Kusma, Polaris, Gargaj,
-Frenetic, Buzzie, Shash, Auld, Minas, Skarab, Hunta, Snq, Darkblade,
-Abductee, Las and Hitchhikr. Also thanks to Dwarf, Polygon7 and Gargaj
-for suggestions for our web design.
+Frenetic, Buzzie, Shash, Auld, Minas, Skarab, Dwing, Freak5, Hunta,
+Snq, Darkblade, Abductee, Las and Hitchhikr. Also thanks to Dwarf,
+Polygon7 and Gargaj for suggestions for our web design.
 
 Our special thanks to the many people who have demostrated the
 usefulness of Crinkler by using it for their own productions.
