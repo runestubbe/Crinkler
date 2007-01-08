@@ -8,8 +8,8 @@ Manual:
  Range is after replace
 -bytes lost to hashing
 -HASHTRIES and ORDERTRIES ignored with INSTANT
-Progress bar problem in VS: only text
-FUNCTIONS-BYSIZE
+ Progress bar problem in VS: only text
+ FUNCTIONS-BYNAME/BYSIZE
 
 Code:
  new faster hashing
@@ -31,10 +31,10 @@ Code:
  hashcrash with transform+ordertries
  uncompressed sizes
  /FIX
-ordinal range print bug
-hash blowup/crash
-counting uninit as data in LABELS
-
+ ordinal range print bug
+ hash blowup/crash
+ counting uninit as data in LABELS
+cache order tries
 
 Check:
 -Dev-C++ object files
