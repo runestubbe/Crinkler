@@ -55,7 +55,8 @@ struct CompressionSummaryRecord {
 			children[i]->calculateSize(children[i+1]->pos - children[i]->pos, nextCompressedSize - children[i]->compressedPos);
 		}
 		if(!children.empty()) {
-			children.back()->calculateSize(pos + size - children.back()->pos, compressedPos + compressedSize - children.back()->compressedPos);
+			CompressionSummaryRecord* child = children.back();
+			child->calculateSize(pos + size - child->pos, compressedPos + compressedSize - child->compressedPos);
 		}
 	}
 };
@@ -68,7 +69,7 @@ struct relocation {
 };
 
 class Hunk {
-	friend HunkList;
+	friend class HunkList;
 	int				m_alignmentBits;
 	unsigned int	m_flags;
 	int				m_rawsize;

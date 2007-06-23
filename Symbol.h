@@ -13,6 +13,7 @@ class Symbol {
 public:
 	Symbol(const char* name, int value, unsigned int flags, Hunk* hunk);
 	std::string		name;
+	std::string		secondaryName;	//if this is != "" the symbol is a reference to the symbol with the name secondaryName
 	int				value;
 	unsigned int	flags;
 	Hunk*			hunk;

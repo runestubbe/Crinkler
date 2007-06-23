@@ -9,8 +9,6 @@
 #include "HunkList.h"
 #include "Compressor/Compressor.h"
 #include "CompositeTransform.h"
-#include "StringMisc.h"
-
 
 class HunkLoader;
 
@@ -23,7 +21,7 @@ enum SubsystemType {SUBSYSTEM_CONSOLE, SUBSYSTEM_WINDOWS};
 #define VERBOSE_FUNCTIONS_BYSIZE	16
 #define VERBOSE_FUNCTIONS_BYNAME	32
 
-#define CRINKLER_TITLE			"Crinkler 1.0a (" __DATE__ ") (c) 2005-2007 Aske Simon Christensen & Rune Stubbe"
+#define CRINKLER_TITLE			"Crinkler 1.0b (" __DATE__ ") (c) 2005-2007 Aske Simon Christensen & Rune Stubbe"
 #define CRINKLER_LINKER_VERSION	0x3031
 
 class Crinkler {
@@ -43,6 +41,7 @@ class Crinkler {
 	bool					m_showProgressBar;
 	CompositeTransform		m_transform;
 	int						m_modelbits;
+	bool					m_1KMode;
 	
 	Symbol* getEntrySymbol() const;
 	Symbol* findUndecoratedSymbol(const char* name) const;
@@ -57,6 +56,7 @@ public:
 
 	void link(const char* filename);
 
+	Crinkler* set1KMode(bool use1KMode);
 	Crinkler* setEntry(const char* entry);
 	Crinkler* setVerboseFlags(int verboseFlags);
 	Crinkler* setSubsystem(SubsystemType subsystem);

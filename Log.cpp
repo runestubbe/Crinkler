@@ -1,6 +1,6 @@
-#include <Windows.h>
 #include <cstdio>
 #include <cstdarg>
+#include <cstdlib>
 #include "Log.h"
 
 void Log::warning(int code, const char* from, const char* msg, ...) {
@@ -20,5 +20,5 @@ void Log::error(int code, const char* from, const char* msg, ...) {
 
 	fprintf(stdout, "%s : fatal error: LNK%4d: %s\n", from, code, buff);
 	fflush(stdout);
-	ExitProcess(-1);
+	exit(-1);
 }

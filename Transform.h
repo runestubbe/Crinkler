@@ -6,6 +6,7 @@ class Hunk;
 class HunkList;
 class Transform {
 public:
+	virtual ~Transform() {};
 	virtual Hunk* getDetransformer() = 0;
 	virtual void transform(Hunk* hunk, int splittingPoint) = 0;
 

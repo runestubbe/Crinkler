@@ -1,6 +1,5 @@
 #include "WindowProgressBar.h"
 #include <windows.h>
-#include <iostream>
 #include <ctime>
 #include <commctrl.h>
 #include "resource.h"

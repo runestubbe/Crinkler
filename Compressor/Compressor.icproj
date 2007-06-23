@@ -121,6 +121,7 @@
 				Name="Debug|Win32">
 				<Tool 
 					Name="CustomTool"
+					Description="Assembling $(InputName).obj"
 					CommandLine="nasmw -f win32 -Xvc &quot;$(InputDir)\$(InputFileName)&quot; -o &quot;$(OutDir)\$(InputName).obj&quot;&#xA;"
 					Outputs="&quot;$(OutDir)\$(InputName).obj&quot;"/>
 			</FileConfiguration>
@@ -128,6 +129,7 @@
 				Name="Release|Win32">
 				<Tool 
 					Name="CustomTool"
+					Description="Assembling $(InputName).obj"
 					CommandLine="nasmw -f win32 -Xvc &quot;$(InputDir)\$(InputFileName)&quot; -o &quot;$(OutDir)\$(InputName).obj&quot;&#xA;"
 					Outputs="&quot;$(OutDir)\$(InputName).obj&quot;"/>
 			</FileConfiguration>
@@ -138,6 +140,7 @@
 				Name="Debug|Win32">
 				<Tool 
 					Name="CustomTool"
+					Description="Assembling $(InputName).obj"
 					CommandLine="nasmw -f win32 -Xvc &quot;$(InputDir)\$(InputFileName)&quot; -o &quot;$(OutDir)\$(InputName).obj&quot;&#xA;"
 					Outputs="&quot;$(OutDir)\$(InputName).obj&quot;"/>
 			</FileConfiguration>
@@ -145,6 +148,7 @@
 				Name="Release|Win32">
 				<Tool 
 					Name="CustomTool"
+					Description="Assembling $(InputName).obj"
 					CommandLine="nasmw -f win32 -Xvc &quot;$(InputDir)\$(InputFileName)&quot; -o &quot;$(OutDir)\$(InputName).obj&quot;&#xA;"
 					Outputs="&quot;$(OutDir)\$(InputName).obj&quot;"/>
 			</FileConfiguration>
@@ -155,6 +159,7 @@
 				Name="Debug|Win32">
 				<Tool 
 					Name="CustomTool"
+					Description="Assembling $(InputName).obj"
 					CommandLine="nasmw -f win32 -Xvc &quot;$(InputDir)\$(InputFileName)&quot; -o &quot;$(OutDir)\$(InputName).obj&quot;&#xA;"
 					Outputs="&quot;$(OutDir)\$(InputName).obj&quot;"/>
 			</FileConfiguration>
@@ -162,6 +167,7 @@
 				Name="Release|Win32">
 				<Tool 
 					Name="CustomTool"
+					Description="Assembling $(InputName).obj"
 					CommandLine="nasmw -f win32 -Xvc &quot;$(InputDir)\$(InputFileName)&quot; -o &quot;$(OutDir)\$(InputName).obj&quot;&#xA;"
 					Outputs="&quot;$(OutDir)\$(InputName).obj&quot;"/>
 			</FileConfiguration>

@@ -2,9 +2,8 @@
 #ifndef _COMPRESSION_STREAM_H_
 #define _COMPRESSION_STREAM_H_
 
-extern "C" {
-	#include "aritcode.h"
-}
+
+#include "aritcode.h"
 #include "ModelList.h"
 
 class CompressionStream {

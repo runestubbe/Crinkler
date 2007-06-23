@@ -2,8 +2,6 @@
 #ifndef _COFF_LIBRARY_LOADER_H_
 #define _COFF_LIBRARY_LOADER_H_
 
-#include <windows.h>
-#include <string>
 #include "HunkLoader.h"
 class HunkList;
 

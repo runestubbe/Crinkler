@@ -6,7 +6,8 @@
 #define BITPREC_TABLE 4096
 
 #include <cassert>
-#include <windows.h>
+#include <cstdlib>
+#include <algorithm>
 
 using namespace std;
 
@@ -32,8 +33,8 @@ extern "C" {
 }
 
 
-static inline DWORD __stdcall BitScanReverse_MY(int v) {
-	DWORD r;
+static inline unsigned int __stdcall BitScanReverse_MY(int v) {
+	unsigned int r;
 	__asm {
 		bsr eax, v
 		mov r, eax

@@ -1,5 +1,4 @@
 #include "EmpiricalHunkSorter.h"
-#include <cstdio>
 #include <ctime>
 #include "HunkList.h"
 #include "Hunk.h"

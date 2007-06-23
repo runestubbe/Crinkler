@@ -4,7 +4,6 @@
 
 using namespace std;
 
-//TODO: put this somewhere useful
 static int parity(int n) {
 	int p = 0;
 	for (int i = 0 ; i < 8 ; i++) {
