@@ -1,6 +1,6 @@
 #include "ConsoleProgressBar.h"
 
-#include <iostream>
+#include <cstring>
 #include <ctime>
 #include <cstdio>
 

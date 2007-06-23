@@ -1,7 +1,7 @@
 #include "Transform.h"
 #include "Hunk.h"
 #include "HunkList.h"
-#include <cassert>
+#include "Log.h"
 
 Hunk* Transform::linkAndTransform(HunkList* hunklist, int baseAddress, int* splittingPoint) {
 	Hunk* detrans = getDetransformer();
@@ -9,7 +9,9 @@ Hunk* Transform::linkAndTransform(HunkList* hunklist, int baseAddress, int* spli
 	if(detrans)
 		hunklist->addHunkFront(detrans);
 	int sp;
+
 	Hunk* h = hunklist->toHunk("linked", &sp);
+
 	h->relocate(baseAddress);
 
 	transform(h, sp);

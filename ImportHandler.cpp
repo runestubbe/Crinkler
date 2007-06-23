@@ -1,4 +1,5 @@
 #include <windows.h>
+#include <fstream>
 #include "ImportHandler.h"
 
 #include "HunkList.h"
@@ -106,15 +107,16 @@ const int hashCode(const char* str) {
 	return code;
 }
 
-HunkList* ImportHandler::createImportHunks(HunkList* hunklist, Hunk* hashHunk, const vector<string>& rangeDlls, bool verbose) {
-	bool* usedRangeDlls = new bool[rangeDlls.size()];
-	memset(usedRangeDlls, 0, rangeDlls.size()*sizeof(bool));
-
+HunkList* ImportHandler::createImportHunks(HunkList* hunklist, Hunk* hashHunk, const vector<string>& rangeDlls, bool verbose, bool& enableRangeImport) {
 	if(verbose)
 		printf("\n-Imports----------------------------------\n");
 
-
 	vector<Hunk*> importHunks;
+	bool* usedRangeDlls = new bool[rangeDlls.size()];
+	memset(usedRangeDlls, 0, rangeDlls.size()*sizeof(bool));
+
+	//fill list for import hunks
+	enableRangeImport = false;
 	for(int i = 0; i <hunklist->getNumHunks(); i++) {
 		Hunk* hunk = (*hunklist)[i];
 		if(hunk->getFlags() & HUNK_IS_IMPORT) {
@@ -122,8 +124,27 @@ HunkList* ImportHandler::createImportHunks(HunkList* hunklist, Hunk* hashHunk, c
 				Log::error(0, "", "import '%s' from '%s' uses forwarded RVA. This feature is not supported by crinkler (yet)", 
 					hunk->getImportName(), hunk->getImportDll());
 			}
+
+			//is the dll a range dll?
+			for(int i = 0; i < rangeDlls.size(); i++) {
+				if(toUpper(rangeDlls[i]) == toUpper(hunk->getImportDll())) {
+					usedRangeDlls[i] = true;
+					enableRangeImport = true;
+					break;
+				}
+			}
 			importHunks.push_back(hunk);
 		}
+	}
+
+	//warn about unused range dlls
+	{
+		for(int i = 0; i < rangeDlls.size(); i++) {
+			if(!usedRangeDlls[i]) {
+				Log::warning(0, "", "no functions were imported from range dll '%s'", rangeDlls[i].c_str());
+			}
+		}
+		delete[] usedRangeDlls;
 	}
 
 	//sort import hunks
@@ -152,14 +173,15 @@ HunkList* ImportHandler::createImportHunks(HunkList* hunklist, Hunk* hashHunk, c
 
 		//skip non hashes
 		while(*hashptr != 0x48534148) {
-			*dllNamesPtr++ = 1;
+			if(enableRangeImport)
+				*dllNamesPtr++ = 1;
 			hashptr++;
 			(*hashCounter)++;
 			pos++;
 		}
 
 		if(currentDllName.compare(importHunk->getImportDll())) {
-			if(strcmp(importHunk->getImportDll(), "kernel32") != 0) {	//TODO: case?
+			if(strcmp(importHunk->getImportDll(), "kernel32") != 0) {
 				strcpy_s(dllNamesPtr, sizeof(dllNames)-(dllNamesPtr-dllNames), importHunk->getImportDll());
 				dllNamesPtr += strlen(importHunk->getImportDll()) + 2;
 				hashCounter = dllNamesPtr-1;
@@ -207,7 +229,8 @@ HunkList* ImportHandler::createImportHunks(HunkList* hunklist, Hunk* hashHunk, c
 		if(verbose && useRange)
 			printf("  }\n");
 
-		*dllNamesPtr++ = ordinal - startOrdinal + 1;
+		if(enableRangeImport)
+			*dllNamesPtr++ = ordinal - startOrdinal + 1;
 		pos += ordinal - startOrdinal + 1;
 	}
 	*dllNamesPtr++ = -1;
@@ -227,16 +250,6 @@ HunkList* ImportHandler::createImportHunks(HunkList* hunklist, Hunk* hashHunk, c
 	Hunk* dllNamesHunk = new Hunk("DllNames", dllNames, HUNK_IS_WRITEABLE, 0, dllNamesPtr - dllNames, dllNamesPtr - dllNames);
 	dllNamesHunk->addSymbol(new Symbol("_DLLNames", 0, SYMBOL_IS_RELOCATEABLE, dllNamesHunk));
 	newHunks->addHunkBack(dllNamesHunk);
-
-	//warn about unused range dlls
-	{
-		for(int i = 0; i < rangeDlls.size(); i++) {
-			if(!usedRangeDlls[i]) {
-				Log::warning(0, "", "no functions were imported from range dll '%s'", rangeDlls[i].c_str());
-			}
-		}
-		delete[] usedRangeDlls;
-	}
 
 	return newHunks;
 }

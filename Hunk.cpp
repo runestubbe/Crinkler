@@ -2,7 +2,6 @@
 #include <vector>
 #include <algorithm>
 #include <cassert>
-#include <iostream>
 
 #include "Hunk.h"
 #include "NameMangling.h"
@@ -67,25 +66,28 @@ Hunk::~Hunk() {
 	}
 }
 
-
 void Hunk::addSymbol(Symbol* s) {
 	map<string, Symbol*>::iterator it = m_symbols.find(s->name.c_str());
 	if(it == m_symbols.end()) {
 		pair<string, Symbol*> p(s->name, s);
 		m_symbols.insert(p);
 	} else {
-		//TODO: error handling, duplicate symbols - currently using keep old symbols semantic
-		delete s;
+		Symbol* oldSym = it->second;
+		if(oldSym->secondaryName.size() > 0) {
+			//overwrite weak symbols
+			m_symbols[s->name.c_str()] = s;
+			delete oldSym;
+		} else {
+			delete s;
+		}
 	}
 }
-
 
 void Hunk::addRelocation(relocation r) {
 	assert(r.offset >= 0);
 	assert(r.offset <= m_rawsize-4);
 	m_relocations.push_back(r);
 }
-
 
 const char* Hunk::getName() const {
 	return m_name.c_str();
@@ -146,6 +148,8 @@ void Hunk::relocate(int imageBase) {
 
 		//find symbol
 		Symbol* s = findSymbol(r.symbolname.c_str());
+		if(s && s->secondaryName.size() > 0)
+			s = findSymbol(s->secondaryName.c_str());
 		if(s == NULL) {
 			Log::error(0, "", "could not find symbol '%s'\n", r.symbolname.c_str());
 		}
@@ -205,7 +209,7 @@ void Hunk::trim() {
 	int oldsize = m_rawsize;
 	int farestReloc = 0;
 	for(list<relocation>::const_iterator it = m_relocations.begin(); it != m_relocations.end(); it++) {
-		int relocSize = 4;	//TODO: change this if relocs of different sizes are to be supported
+		int relocSize = 4;
 		farestReloc = max(it->offset+relocSize, farestReloc);
 	}
 

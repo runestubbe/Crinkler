@@ -1,10 +1,10 @@
-#include <windows.h>
-
 #include "CompressionState.h"
+#include <memory>
+
 #include "ModelList.h"
 #include "aritcode.h"
-
 #include "model.h"
+
 
 struct HashEntry {
 	unsigned char mask;

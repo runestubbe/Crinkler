@@ -1,10 +1,9 @@
 #include "SoftwareCompressionStateEvaluator.h"
-#include <windows.h>
-#include <cassert>
+#include <cstdlib>
+#include <memory>
 
-extern "C" {
 #include "aritcode.h"
-}
+
 
 SoftwareCompressionStateEvaluator::SoftwareCompressionStateEvaluator() :
 	m_models(NULL), m_sums(NULL)

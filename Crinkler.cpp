@@ -1,11 +1,11 @@
 #include "Crinkler.h"
 #include "Compressor/Compressor.h"
+#include "TinyCompress.h"
 
-#include <windows.h>
 #include <list>
 #include <set>
 #include <ctime>
-#include <algorithm>
+#include <fstream>
 
 #include "HunkList.h"
 #include "Hunk.h"
@@ -21,6 +21,7 @@
 #include "CompositeProgressBar.h"
 #include "data.h"
 #include "Symbol.h"
+#include "StringMisc.h"
 
 using namespace std;
 
@@ -35,6 +36,7 @@ Crinkler::Crinkler() {
 	m_verboseFlags = 0;
 	m_showProgressBar = false;
 	m_modelbits = 8;
+	m_1KMode = false;
 }
 
 
@@ -105,7 +107,7 @@ Symbol* Crinkler::getEntrySymbol() const {
 	}
 }
 
-int getPreciseTime() {
+static int getPreciseTime() {
 	LARGE_INTEGER time;
 	LARGE_INTEGER freq;
 	QueryPerformanceCounter(&time);
@@ -114,7 +116,7 @@ int getPreciseTime() {
 }
 
 
-int previousPrime(int n) {
+static int previousPrime(int n) {
 in:
 	n = (n-2)|1;
 	for (int i = 3 ; i*i < n ; i += 2) {
@@ -189,7 +191,7 @@ void Crinkler::link(const char* filename) {
 	if(entry == NULL) {
 		Log::error(0, "", "could not find entry symbol");
 		return;
-	}	
+	}
 
 	//add a jump to the entry point, if the entry point is not at the beginning of a hunk
 	if(entry->value > 0) {
@@ -215,13 +217,45 @@ void Crinkler::link(const char* filename) {
 		entry->hunk->setAlignmentBits(0);
 	}
 
+	{	//check dependencies and remove unused hunks
+		list<Hunk*> startHunks;
+		startHunks.push_back(entry->hunk);
+		startHunks.push_back(m_hunkPool.findSymbol("__imp__LoadLibraryA@4")->hunk);	//don't throw loadlibrary away. we are going to need it
+		m_hunkPool.removeUnreferencedHunks(startHunks);
+	}
+
+	//replace dlls
+	replaceDlls(m_hunkPool);
+
+	//handle imports
+	HunkList* headerHunks;
+	if(m_1KMode)
+		headerHunks = m_hunkLoader.load(header1KObj, header1KObj_end - header1KObj, "crinkler header");
+	else
+		headerHunks = m_hunkLoader.load(headerObj, headerObj_end - headerObj, "crinkler header");
+
+	Hunk* header = headerHunks->findSymbol("_header")->hunk;
+	headerHunks->removeHunk(header);
+	bool usesRangeImport;
+	{	//add imports
+		
+		HunkList* importHunkList = ImportHandler::createImportHunks(&m_hunkPool, header, m_rangeDlls, m_verboseFlags & VERBOSE_IMPORTS, usesRangeImport);
+		m_hunkPool.removeImportHunks();
+		m_hunkPool.append(importHunkList);
+		delete importHunkList;
+	}
 
 	//do imports
 	if(m_useSafeImporting)
-		load(importSafeObj, importSafeObj_end - importSafeObj, "crinkler import");
+		if(usesRangeImport)
+			load(importSafeRangeObj, importSafeRangeObj_end - importSafeRangeObj, "crinkler import");
+		else
+			load(importSafeObj, importSafeObj_end - importSafeObj, "crinkler import");
 	else
-		load(importObj, importObj_end - importObj, "crinkler import");
-
+		if(usesRangeImport)
+			load(importRangeObj, importRangeObj_end - importRangeObj, "crinkler import");
+		else
+			load(importObj, importObj_end - importObj, "crinkler import");
 
 	Symbol* import = findUndecoratedSymbol("Import");
 	m_hunkPool.removeHunk(import->hunk);
@@ -229,36 +263,72 @@ void Crinkler::link(const char* filename) {
 	import->hunk->fixate();
 	import->hunk->addSymbol(new Symbol("_ImageBase", m_imageBase, 0, import->hunk));
 
-	{	//check dependencies and remove unused hunks
-		list<Hunk*> startHunks;
-		startHunks.push_back(entry->hunk);
-		startHunks.push_back(import->hunk);
-		m_hunkPool.removeUnreferencedHunks(startHunks);
-	}
-
-
-	//replace dlls
-	replaceDlls(m_hunkPool);
-
-	//handle imports
-	HunkList* headerHunks = m_hunkLoader.load(headerObj, headerObj_end - headerObj, "crinkler header");//m_hunkLoader.loadFromFile("modules/header5.obj");
-	Hunk* header = headerHunks->findSymbol("_header")->hunk;
-	headerHunks->removeHunk(header);
-	{	//add imports
-		HunkList* importHunkList = ImportHandler::createImportHunks(&m_hunkPool, header, m_rangeDlls, m_verboseFlags & VERBOSE_IMPORTS);
-		m_hunkPool.removeImportHunks();
-		m_hunkPool.append(importHunkList);
-		delete importHunkList;
-	}
 	HeuristicHunkSorter::sortHunkList(&m_hunkPool);
 	int sectionSize = 0x10000;
 
 	//create phase 1 data hunk
 	int splittingPoint;
+
+
 	Hunk* phase1 = m_transform.linkAndTransform(&m_hunkPool, m_imageBase+sectionSize*2, &splittingPoint);
+
+
 
 	printf("\nUncompressed size of code: %5d\n", splittingPoint);
 	printf("Uncompressed size of data: %5d\n", phase1->getRawSize() - splittingPoint);
+
+	//Do 1k specific stuff
+	if (m_1KMode) {
+		int compressed_size = phase1->getRawSize()*2+100;
+		unsigned char* compressed_data = new unsigned char[compressed_size];
+		
+		TinyCompress((unsigned char*)phase1->getPtr(), phase1->getRawSize(), compressed_data, compressed_size);
+		Hunk* phase1Compressed = new Hunk("compressed data", (char*)compressed_data, 0, 1, compressed_size, compressed_size);
+		phase1Compressed->addSymbol(new Symbol("_PackedData", 0, SYMBOL_IS_RELOCATEABLE, phase1Compressed));
+		delete[] compressed_data;
+		printf("compressed size: %d\n", compressed_size);
+
+		HunkList phase2list;
+		phase2list.addHunkBack(header);
+		Hunk* depacker = headerHunks->findSymbol("_DepackEntry")->hunk;
+		headerHunks->removeHunk(depacker);
+		phase2list.addHunkBack(depacker);
+		phase2list.addHunkBack(phase1Compressed);
+
+		Hunk* phase2 = phase2list.toHunk("final");
+		//add constants
+		{
+			int virtualSize = align(phase1->getVirtualSize(), 16);
+			int packedDataPos = phase2->findSymbol("_PackedData")->value;
+			int packedDataOffset = (packedDataPos - sectionSize*2)*8;
+			printf("packed data offset: %x\n", packedDataOffset);
+			printf("image size: %x\n", phase1->getRawSize());
+			phase2->addSymbol(new Symbol("_UnpackedData", m_imageBase + sectionSize*2, 0, phase2));
+			phase2->addSymbol(new Symbol("_PackedDataOffset", packedDataOffset, 0, phase2));
+			phase2->addSymbol(new Symbol("_VirtualSize", virtualSize, 0, phase2));
+			phase2->addSymbol(new Symbol("_ImageBase", m_imageBase, 0, phase2));
+
+			int baseprob = 13;
+			*(phase2->getPtr() + phase2->findSymbol("_BaseProbPtr1")->value) = baseprob;
+			*(phase2->getPtr() + phase2->findSymbol("_BaseProbPtr2")->value) = baseprob;
+			*(phase2->getPtr() + phase2->findSymbol("_SubsystemTypePtr")->value) = m_subsytem == SUBSYSTEM_WINDOWS ? IMAGE_SUBSYSTEM_WINDOWS_GUI : IMAGE_SUBSYSTEM_WINDOWS_CUI;
+			*((short*)(phase2->getPtr() + phase2->findSymbol("_LinkerVersionPtr")->value)) = CRINKLER_LINKER_VERSION;
+			*((short*)(phase2->getPtr() + phase2->findSymbol("_UnpackedDataLengthPtr")->value)) = phase1->getRawSize()*8;
+		}
+		phase2->relocate(m_imageBase);
+		
+
+		fwrite(phase2->getPtr(), 1, phase2->getRawSize(), outfile);
+		fclose(outfile);
+
+		printf("\nFinal file size: %d\n\n", phase2->getRawSize());
+
+		delete headerHunks;
+		delete phase1;
+		delete phase2;
+
+		return;
+	}
 
 	//calculate baseprobs
 	int baseprob = 10;
@@ -421,12 +491,15 @@ void Crinkler::link(const char* filename) {
 	delete phase2;
 }
 
+Crinkler* Crinkler::set1KMode(bool use1KMode) {
+	m_1KMode = use1KMode;
+	return this;
+}
 
 Crinkler* Crinkler::setEntry(const char* entry) {
 	m_entry = entry;
 	return this;
 }
-
 
 Crinkler* Crinkler::setSubsystem(SubsystemType subsystem) {
 	m_subsytem = subsystem;

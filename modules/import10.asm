@@ -31,13 +31,6 @@ _Import:
 	mov		eax, [byte eax+00h]		; forward to next LIST_ENTRY
 	mov		ebp, [eax+08h]			; Kernel32 base memory
 
-;	pop		ebp
-;	push	ebp
-;FindKernel32:
-;	dec		ebp
-;	cmp		[ebp], dword 00905A4Dh	; DOS header 00905a4dh
-;	jne		FindKernel32
-
 DLLLoop:
 	xor		eax, eax
 	lodsb
@@ -95,16 +88,11 @@ CalculateHashLoop:
 	mov		[esp + 20], eax			; stack position of edx
 	popa
 
-OrdinalLoop:
 	mov		eax,	[edx]
 	add		eax,	ebp
-	add		edx,	byte 4
 	stosd
-	dec		byte	[esi]
-	jnz		OrdinalLoop
 	
 NextHash:
-	inc		esi
 	add		ebx,	byte 4
 	loop	HashLoop
 

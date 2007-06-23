@@ -1,6 +1,9 @@
-#include <cassert>
-
 #include "HunkList.h"
+
+#include <cassert>
+#include <stack>
+#include <algorithm>
+
 #include "Hunk.h"
 #include "Log.h"
 #include "misc.h"
@@ -8,9 +11,7 @@
 
 using namespace std;
 
-#include <stack>
-#include <set>
-#include <algorithm>
+
 
 
 HunkList::HunkList() {
@@ -118,7 +119,6 @@ Hunk* HunkList::toHunk(const char* name, int* splittingPoint) const {
 			newHunk->addRelocation(r);
 		}
 
-		//TODO: what if it is all code?
 		if(splittingPoint && *splittingPoint == -1 && !(h->getFlags() & HUNK_IS_CODE))
 			*splittingPoint = address;
 
@@ -132,33 +132,36 @@ Hunk* HunkList::toHunk(const char* name, int* splittingPoint) const {
 
 
 Symbol* HunkList::findUndecoratedSymbol(const char* name) const {
+	Symbol* res = NULL;
 	for(vector<Hunk*>::const_iterator it = m_hunks.begin(); it != m_hunks.end(); it++) {
 		Symbol* s = (*it)->findUndecoratedSymbol(name);
-		if(s != NULL)
-			return s;
-	}
-	return NULL;
-}
-
-Symbol* HunkList::findSymbol(const char* name) const {
-	for(vector<Hunk*>::const_iterator it = m_hunks.begin(); it != m_hunks.end(); it++) {
-		Symbol* s = (*it)->findSymbol(name);
-		if(s != NULL)
-			return s;
-	}
-	return NULL;
-}
-
-void HunkList::removeUnreferencedHunks(list<Hunk*> startHunks) {
-	//make a combined symbol table for all hunks to speed up search
-	map<string, Hunk*> combinedSymbolTable;
-	for(vector<Hunk*>::const_iterator it = m_hunks.begin(); it != m_hunks.end(); it++) {
-		Hunk* h = *it;
-		for(map<string, Symbol*>::const_iterator jt = h->m_symbols.begin(); jt != h->m_symbols.end(); jt++) {
-			combinedSymbolTable[jt->first] = h;
+		if(s != NULL) {
+			if(s->secondaryName.size() == 0)
+				return s;
+			else
+				res = s;
 		}
 	}
 
+	return res;
+}
+
+Symbol* HunkList::findSymbol(const char* name) const {
+	Symbol* res = NULL;
+	for(vector<Hunk*>::const_iterator it = m_hunks.begin(); it != m_hunks.end(); it++) {
+		Symbol* s = (*it)->findSymbol(name);
+		if(s != NULL) {
+			if(s->secondaryName.size() == 0)
+				return s;
+			else
+				res = s;
+		}
+	}
+
+	return res;
+}
+
+void HunkList::removeUnreferencedHunks(list<Hunk*> startHunks) {
 	stack<Hunk*> stak;
 	for(list<Hunk*>::iterator it = startHunks.begin(); it != startHunks.end(); it++) {
 		(*it)->m_numReferences++;
@@ -171,10 +174,17 @@ void HunkList::removeUnreferencedHunks(list<Hunk*> startHunks) {
 		stak.pop();
 
 		for(list<relocation>::iterator it = h->m_relocations.begin(); it != h->m_relocations.end(); it++) {
-			map<string, Hunk*>::const_iterator p = combinedSymbolTable.find(it->symbolname);
-			if(p != combinedSymbolTable.end()) {
-				if(p->second->m_numReferences++ == 0) {
-					stak.push(p->second);
+			Symbol* s = findSymbol(it->symbolname.c_str());
+			
+			if(s) {
+				if(s->secondaryName.size() > 0)	{//weak symbol
+					s->hunk->m_numReferences++;
+					s = findSymbol(s->secondaryName.c_str());
+					if(s == NULL)
+						continue;
+				}
+				if(s->hunk->m_numReferences++ == 0) {
+					stak.push(s->hunk);
 				}
 			}
 		}

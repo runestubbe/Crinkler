@@ -6,9 +6,8 @@
 
 enum CompressionType {COMPRESSION_INSTANT, COMPRESSION_FAST, COMPRESSION_SLOW, COMPRESSION_VERYSLOW};
 
-extern "C" {
-	#include "aritcode.h"
-}
+
+#include "aritcode.h"
 #include "CompressionStream.h"
 #include "ProgressBar.h"
 
@@ -38,5 +37,6 @@ public:
 ModelList ApproximateModels(const unsigned char* data, int datasize, int baseprobs[8], int* compsize, ProgressBar* progressBar, bool verbose, CompressionType compressionType, int modelbits);
 ModelList InstantModels();
 
+void TinyCompress(unsigned char* org_data, int size, unsigned char* compressed, int& compressed_size);
 
 #endif

@@ -107,16 +107,11 @@ CalculateHashLoop:
 	mov		[esp + 20], eax			; stack position of edx
 	popa
 
-OrdinalLoop:
 	mov		eax,	[edx]
 	add		eax,	ebp
-	add		edx,	byte 4
 	stosd
-	dec		byte	[esi]
-	jnz		OrdinalLoop
 	
 NextHash:
-	inc		esi
 	add		ebx,	byte 4
 	loop	HashLoop
 

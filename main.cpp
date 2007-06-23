@@ -1,5 +1,5 @@
-#include <cstdio>
 #include <windows.h>
+#include <cstdio>
 #include <iostream>
 #include <list>
 #include <string>
@@ -10,7 +10,7 @@
 #include "HunkList.h"
 #include "Hunk.h"
 #include "Crinkler.h"
-#include "CmdLineInterface.h"
+#include "CmdLineInterFace/CmdLineInterface.h"
 #include "Log.h"
 #include "StringMisc.h"
 #include "CallTransform.h"
@@ -18,7 +18,7 @@
 
 using namespace std;
 
-bool fileExists(const char* filename) {
+static bool fileExists(const char* filename) {
 	FILE* file;
 	fopen_s(&file, filename, "r");
 	if(file != NULL) {
@@ -28,7 +28,7 @@ bool fileExists(const char* filename) {
 	return false;
 }
 
-list<string> findFileInPath(const char* filename, const char* path) {
+static list<string> findFileInPath(const char* filename, const char* path) {
 	list<string> res;
 	string str = path;
 
@@ -63,7 +63,7 @@ list<string> findFileInPath(const char* filename, const char* path) {
 	return res;
 }
 
-string getEnv(const char* varname) {
+static string getEnv(const char* varname) {
 	char* buff = NULL;
 	size_t len = 0;
 	if(_dupenv_s(&buff, &len, varname)) {
@@ -78,7 +78,7 @@ string getEnv(const char* varname) {
 	}
 }
 
-void runOriginalLinker(const char* crinklerCanonicalName, const char* linkerName) {
+static void runOriginalLinker(const char* crinklerCanonicalName, const char* linkerName) {
 	//Crinkler not enabled. Search for linker
 	string path = ".;" + getEnv("PATH");
 	list<string> res = findFileInPath(linkerName, path.c_str());
@@ -150,25 +150,26 @@ int main(int argc, char* argv[]) {
 	string crinklerFilename = stripPath(crinklerCanonicalName);
 	
 	//cmdline parameters
-	CmdParamInt hashsizeArg("HASHSIZE", "number of megabytes for hashing", "size in mb", CMD_PARAM_SHOW_RESTRICTION,
+	CmdParamInt hashsizeArg("HASHSIZE", "number of megabytes for hashing", "size in mb", PARAM_SHOW_CONSTRAINTS,
 							10, 1000, 100);
 	CmdParamInt hashtriesArg("HASHTRIES", "number of hashing tries", "number of hashing tries", 0,
 							0, 10000, 20);
 	CmdParamInt hunktriesArg("ORDERTRIES", "", "number of section reordering tries", 0,
 							0, 10000, 0);
-	/*CmdParamInt modelbitsArg("MODELBITS", "", "internal", 0,
-							0, 100, 8);*/
-	CmdParamString entryArg("ENTRY", "name of the entrypoint", "symbol", 0, "");
-	CmdParamString outArg("OUT", "output filename", "filename", 0, "out.exe");
+	CmdParamString entryArg("ENTRY", "name of the entrypoint", "symbol", 
+						PARAM_IS_SWITCH|PARAM_FORBID_MULTIPLE_DEFINITIONS, "");
+	CmdParamString outArg("OUT", "output filename", "filename", 
+						PARAM_IS_SWITCH|PARAM_FORBID_MULTIPLE_DEFINITIONS, "out.exe");
 	CmdParamSwitch crinklerFlag("CRINKLER", "enables crinkler", 0);
 	CmdParamSwitch fixFlag("FIX", "fix old crinkler files", 0);
 	CmdParamSwitch safeImportArg("SAFEIMPORT", "emit an error if a dll is missing", 0);
 	CmdParamSwitch showProgressArg("PROGRESSGUI", "shows a progressbar", 0);
-	CmdParamEnum subsystemArg("SUBSYSTEM", "select subsystem", 0, SUBSYSTEM_CONSOLE, 
+	CmdParamSwitch tinyCompressor("1K", "1k mode", PARAM_HIDE_IN_PARAM_LIST);
+	CmdParamFlags subsystemArg("SUBSYSTEM", "select subsystem", PARAM_FORBID_MULTIPLE_DEFINITIONS, SUBSYSTEM_CONSOLE, 
 						"WINDOWS", SUBSYSTEM_WINDOWS, "CONSOLE", SUBSYSTEM_CONSOLE, NULL);
-	CmdParamEnum priorityArg("PRIORITY", "select priority", 0, BELOW_NORMAL_PRIORITY_CLASS, 
+	CmdParamFlags priorityArg("PRIORITY", "select priority", PARAM_FORBID_MULTIPLE_DEFINITIONS, BELOW_NORMAL_PRIORITY_CLASS, 
 						"IDLE", IDLE_PRIORITY_CLASS, "BELOWNORMAL", BELOW_NORMAL_PRIORITY_CLASS, "NORMAL", NORMAL_PRIORITY_CLASS, NULL);
-	CmdParamEnum compmodeArg("COMPMODE", "compression mode", 0, COMPRESSION_FAST,
+	CmdParamFlags compmodeArg("COMPMODE", "compression mode", PARAM_FORBID_MULTIPLE_DEFINITIONS, COMPRESSION_FAST,
 						"INSTANT", COMPRESSION_INSTANT, 
 						"FAST", COMPRESSION_FAST, 
 						"SLOW", COMPRESSION_SLOW, NULL);
@@ -181,15 +182,17 @@ int main(int argc, char* argv[]) {
 	CmdParamFlags transformArg("TRANSFORM", "select transformations", 0, 0, 
 							"CALLS", TRANSFORM_CALLS,
 							NULL);
-	CmdParamMultiString libpathArg("LIBPATH", "adds a path to the library search path", "dirs", CMD_PARAM_IS_SWITCH, 0);
-	CmdParamMultiString rangeImportArg("RANGE", "use range importing for this dll", "dllname", CMD_PARAM_IS_SWITCH, 0);
-	CmdParamMultiAssign replaceDllArg("REPLACEDLL", "replace a dll with another", "oldDLL=newDLL", CMD_PARAM_IS_SWITCH);
-	CmdParamMultiString filesArg("FILES", "list of filenames", "", CMD_PARAM_HIDE_IN_PARAM_LIST, 0);
+	CmdParamString libpathArg("LIBPATH", "adds a path to the library search path", "dirs", PARAM_IS_SWITCH, 0);
+	CmdParamString rangeImportArg("RANGE", "use range importing for this dll", "dllname", PARAM_IS_SWITCH, 0);
+	CmdParamMultiAssign replaceDllArg("REPLACEDLL", "replace a dll with another", "oldDLL=newDLL", PARAM_IS_SWITCH);
+	CmdParamString filesArg("FILES", "list of filenames", "", PARAM_HIDE_IN_PARAM_LIST, 0);
 	CmdLineInterface cmdline(CRINKLER_TITLE, CMDI_PARSE_FILES);
 
 	cmdline.addParams(&crinklerFlag, &hashsizeArg, &hashtriesArg, &hunktriesArg, &entryArg, &outArg, &safeImportArg,
 						&subsystemArg, &compmodeArg, &verboseArg, &transformArg, &libpathArg, 
-						&rangeImportArg, &replaceDllArg, &filesArg, &priorityArg, &showProgressArg, NULL);
+						&rangeImportArg, &replaceDllArg, &filesArg, &priorityArg, &showProgressArg, 
+						&tinyCompressor,
+						NULL);
 	cmdline.setCmdParameters(argc, argv);
 
 	//print syntax?
@@ -215,7 +218,7 @@ int main(int argc, char* argv[]) {
 		cmdline2.setCmdParameters(argc, argv);
 		if(cmdline2.parse()) {
 			const char* infilename = filesArg.getValue();
-			if(infilename == NULL || filesArg.getValue() != 0) {
+			if(infilename == NULL || filesArg.hasNext() != 0) {
 				Log::error(0, "", "Crinkler fix takes exactly one file argument");
 				return 1;
 			}
@@ -231,15 +234,14 @@ int main(int argc, char* argv[]) {
 		return 1;
 	}
 
-	//cmdline.printTokens();
 
 	//set priority
 	SetPriorityClass(GetCurrentProcess(), priorityArg.getValue());
 
 	Crinkler crinkler;
-	//TODO: håndter flere definitioner af samme dllreplacement
 
 	//set crinkler options
+	crinkler.set1KMode(tinyCompressor.getValue());
 	crinkler.setImportingType(safeImportArg.getValue());
 	crinkler.setEntry(entryArg.getValue());
 	crinkler.setHashsize(hashsizeArg.getValue());
@@ -277,16 +279,19 @@ int main(int argc, char* argv[]) {
 	//replace dll
 	{
 		printf("Replace DLLs: ");
-		StringPair* sp = replaceDllArg.getValue();
-		if(sp == NULL) {
+		if(!replaceDllArg.hasNext())
 			printf("NONE");
-		} else {
-			printf("%s -> %s", sp->first.c_str(), sp->second.c_str());
-			crinkler.addReplaceDll(sp->first.c_str(), sp->second.c_str());
-		}
-		while(sp = replaceDllArg.getValue()) {
-			printf(", %s -> %s", sp->first.c_str(), sp->second.c_str());
-			crinkler.addReplaceDll(sp->first.c_str(), sp->second.c_str());
+		
+		bool first = true;
+		while(replaceDllArg.hasNext()) {
+			if(first)
+				printf("%s -> %s", replaceDllArg.getValue1(), replaceDllArg.getValue2());
+			else
+				printf(", %s -> %s", replaceDllArg.getValue1(), replaceDllArg.getValue2());
+			
+			crinkler.addReplaceDll(replaceDllArg.getValue1(), replaceDllArg.getValue2());
+			first = false;	
+			replaceDllArg.next();
 		}
 		printf("\n");
 	}
@@ -294,17 +299,19 @@ int main(int argc, char* argv[]) {
 	//range
 	{
 		printf("Range DLLs: ");
-		const char* s = rangeImportArg.getValue();
-		if(s == NULL) {
+		if(!rangeImportArg.hasNext())
 			printf("NONE");
-		} else {
-			printf("%s", s);
-			crinkler.addRangeDll(s);
-		}
 
-		while(s = rangeImportArg.getValue()) {
-			printf(", %s", s);
-			crinkler.addRangeDll(s);
+		bool first = true;
+		while(rangeImportArg.hasNext()) {
+			if(first)
+				printf("%s", rangeImportArg.getValue());
+			else
+				printf(", %s", rangeImportArg.getValue());
+
+			crinkler.addRangeDll(rangeImportArg.getValue());
+			rangeImportArg.next();
+			first = false;
 		}
 		printf("\n");
 	}
@@ -313,12 +320,13 @@ int main(int argc, char* argv[]) {
 	//build search library+object search path
 	string lib = ";.;";
 	char drive[3] = "?:";
-	drive[0] = _getdrive()+'A'-1;
+	drive[0] = (char) (_getdrive()+'A'-1);
 	lib += string(drive) + ";";
-	const char* path;
-	while(path = libpathArg.getValue()) {
-		lib += path;
+	
+	while(libpathArg.hasNext()) {
+		lib += libpathArg.getValue();
 		lib += ";";
+		libpathArg.next();
 	}
 	lib += ";" + getEnv("LIB");
 	lib += ";" + getEnv("PATH");
@@ -327,8 +335,9 @@ int main(int argc, char* argv[]) {
 	{
 		printf("loading: \n");
 		int c = 0;
-		const char* filename;
-		while(filename = filesArg.getValue()) {
+		while(filesArg.hasNext()) {
+			const char* filename = filesArg.getValue();
+			filesArg.next();
 			list<string> res = findFileInPath(filename, lib.c_str());
 			if(res.size() == 0) {
 				Log::error(1104, "", "cannot open file '%s'", filename);

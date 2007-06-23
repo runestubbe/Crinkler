@@ -1,6 +1,8 @@
+#include "CoffLibraryLoader.h"
+
+#include <windows.h>
 #include <string>
 #include "HunkList.h"
-#include "CoffLibraryLoader.h"
 #include "CoffObjectLoader.h"
 #include "Hunk.h"
 #include "NameMangling.h"
@@ -28,9 +30,9 @@ bool CoffLibraryLoader::clicks(const char* data, int size) {
 		return false;
 
 	{	//skip member
-		int size = atoi(&ptr[48]);
-		ptr += 60 + size;
-		if(size & 1)
+		int memberSize = atoi(&ptr[48]);
+		ptr += 60 + memberSize;
+		if(memberSize & 1)
 			ptr++;
 	}
 
@@ -47,9 +49,9 @@ HunkList* CoffLibraryLoader::load(const char* data, int size, const char* module
 	HunkList* hunklist = new HunkList;
 	const char* ptr = data+8;
 	{	//skip member
-		int size = atoi(&ptr[48]);
-		ptr += 120 + size;
-		if(size & 1)
+		int memberSize = atoi(&ptr[48]);
+		ptr += 120 + memberSize;
+		if(memberSize & 1)
 			ptr++;
 	}
 

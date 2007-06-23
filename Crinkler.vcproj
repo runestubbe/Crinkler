@@ -325,75 +325,63 @@
 				Name="CmdLineInterface"
 				>
 				<File
-					RelativePath=".\CmdLineInterface.cpp"
+					RelativePath=".\CmdLineInterface\CmdLineInterface manual.txt"
 					>
 				</File>
 				<File
-					RelativePath=".\CmdLineInterface.h"
+					RelativePath=".\CmdLineInterface\CmdLineInterface.cpp"
 					>
 				</File>
 				<File
-					RelativePath=".\CmdParam.cpp"
+					RelativePath=".\CmdLineInterface\CmdLineInterface.h"
 					>
 				</File>
 				<File
-					RelativePath=".\CmdParam.h"
+					RelativePath=".\CmdLineInterface\CmdParam.cpp"
 					>
 				</File>
 				<File
-					RelativePath=".\CmdParamEnum.cpp"
+					RelativePath=".\CmdLineInterface\CmdParam.h"
 					>
 				</File>
 				<File
-					RelativePath=".\CmdParamEnum.h"
+					RelativePath=".\CmdLineInterface\CmdParamFlags.cpp"
 					>
 				</File>
 				<File
-					RelativePath=".\CmdParamFlags.cpp"
+					RelativePath=".\CmdLineInterface\CmdParamFlags.h"
 					>
 				</File>
 				<File
-					RelativePath=".\CmdParamFlags.h"
+					RelativePath=".\CmdLineInterface\CmdParamInt.cpp"
 					>
 				</File>
 				<File
-					RelativePath=".\CmdParamInt.cpp"
+					RelativePath=".\CmdLineInterface\CmdParamInt.h"
 					>
 				</File>
 				<File
-					RelativePath=".\CmdParamInt.h"
+					RelativePath=".\CmdLineInterface\CmdParamMultiAssign.cpp"
 					>
 				</File>
 				<File
-					RelativePath=".\CmdParamMultiAssign.cpp"
+					RelativePath=".\CmdLineInterface\CmdParamMultiAssign.h"
 					>
 				</File>
 				<File
-					RelativePath=".\CmdParamMultiAssign.h"
+					RelativePath=".\CmdLineInterface\CmdParamString.cpp"
 					>
 				</File>
 				<File
-					RelativePath=".\CmdParamMultiString.cpp"
+					RelativePath=".\CmdLineInterface\CmdParamString.h"
 					>
 				</File>
 				<File
-					RelativePath=".\CmdParamMultiString.h"
+					RelativePath=".\CmdLineInterface\CmdParamSwitch.cpp"
 					>
 				</File>
 				<File
-					RelativePath=".\CmdParamString.cpp"
-					>
-				</File>
-				<File
-					RelativePath=".\CmdParamString.h"
-					>
-				</File>
-				<File
-					RelativePath=".\CmdParamSwitch.cpp"
-					>
-				</File>
-				<File
-					RelativePath=".\CmdParamSwitch.h"
+					RelativePath=".\CmdLineInterface\CmdParamSwitch.h"
 					>
 				</File>
 			</Filter>
@@ -446,7 +434,15 @@
 				>
 			</File>
 			<File
-				RelativePath=".\modules\header4.asm"
+				RelativePath=".\modules\header10_1k.asm"
+				>
+			</File>
+			<File
+				RelativePath=".\modules\import10-range.asm"
+				>
+			</File>
+			<File
+				RelativePath=".\modules\import10-safe-range.asm"
 				>
 			</File>
 			<File
@@ -455,10 +451,6 @@
 			</File>
 			<File
 				RelativePath=".\modules\import10.asm"
-				>
-			</File>
-			<File
-				RelativePath=".\modules\import4.asm"
 				>
 			</File>
 		</Filter>

@@ -233,6 +233,7 @@
 					>
 					<Tool
 						Name="VCCustomBuildTool"
+						Description="Assembling $(InputName).obj"
 						CommandLine="nasmw -f win32 -Xvc &quot;$(InputDir)\$(InputFileName)&quot; -o &quot;$(OutDir)\$(InputName).obj&quot;&#x0D;&#x0A;"
 						Outputs="&quot;$(OutDir)\$(InputName).obj&quot;"
 					/>
@@ -242,6 +243,7 @@
 					>
 					<Tool
 						Name="VCCustomBuildTool"
+						Description="Assembling $(InputName).obj"
 						CommandLine="nasmw -f win32 -Xvc &quot;$(InputDir)\$(InputFileName)&quot; -o &quot;$(OutDir)\$(InputName).obj&quot;&#x0D;&#x0A;"
 						Outputs="&quot;$(OutDir)\$(InputName).obj&quot;"
 					/>
@@ -255,6 +257,7 @@
 					>
 					<Tool
 						Name="VCCustomBuildTool"
+						Description="Assembling $(InputName).obj"
 						CommandLine="nasmw -f win32 -Xvc &quot;$(InputDir)\$(InputFileName)&quot; -o &quot;$(OutDir)\$(InputName).obj&quot;&#x0D;&#x0A;"
 						Outputs="&quot;$(OutDir)\$(InputName).obj&quot;"
 					/>
@@ -264,6 +267,7 @@
 					>
 					<Tool
 						Name="VCCustomBuildTool"
+						Description="Assembling $(InputName).obj"
 						CommandLine="nasmw -f win32 -Xvc &quot;$(InputDir)\$(InputFileName)&quot; -o &quot;$(OutDir)\$(InputName).obj&quot;&#x0D;&#x0A;"
 						Outputs="&quot;$(OutDir)\$(InputName).obj&quot;"
 					/>
@@ -277,6 +281,7 @@
 					>
 					<Tool
 						Name="VCCustomBuildTool"
+						Description="Assembling $(InputName).obj"
 						CommandLine="nasmw -f win32 -Xvc &quot;$(InputDir)\$(InputFileName)&quot; -o &quot;$(OutDir)\$(InputName).obj&quot;&#x0D;&#x0A;"
 						Outputs="&quot;$(OutDir)\$(InputName).obj&quot;"
 					/>
@@ -286,6 +291,7 @@
 					>
 					<Tool
 						Name="VCCustomBuildTool"
+						Description="Assembling $(InputName).obj"
 						CommandLine="nasmw -f win32 -Xvc &quot;$(InputDir)\$(InputFileName)&quot; -o &quot;$(OutDir)\$(InputName).obj&quot;&#x0D;&#x0A;"
 						Outputs="&quot;$(OutDir)\$(InputName).obj&quot;"
 					/>

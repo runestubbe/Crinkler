@@ -1,13 +1,13 @@
-#include <memory>
-#include <windows.h>
-#include "model.h"
-#include "aritcode.h"
 #include "CompressionStream.h"
-#include "..\misc.h"
+#include <memory>
 #include <ctime>
 #include <cstdio>
 #include <mmintrin.h>
 #include <intrin.h>
+
+#include "model.h"
+#include "aritcode.h"
+#include "..\misc.h"
 
 using namespace std;
 
