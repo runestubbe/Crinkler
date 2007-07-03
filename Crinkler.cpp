@@ -22,6 +22,7 @@
 #include "data.h"
 #include "Symbol.h"
 #include "StringMisc.h"
+#include "HtmlSummary.h"
 
 using namespace std;
 
@@ -37,6 +38,7 @@ Crinkler::Crinkler() {
 	m_showProgressBar = false;
 	m_modelbits = 8;
 	m_1KMode = false;
+	m_summaryFilename = "";
 }
 
 
@@ -178,86 +180,6 @@ void verboseLabels(CompressionSummaryRecord* csr) {
 		verboseLabels(*it);
 }
 
-//dummy implementation, don't use!
-void htmlSummaryRecursive(CompressionSummaryRecord* csr, FILE* out) {
-	//handle enter node events
-	if(csr->type & RECORD_ROOT) {
-		//write header
-		fprintf(out,"<html><head>"
-						"<title>Crinkler compression summary</title>"
-					"</head><body>");
-	} else {
-		if(csr->type & RECORD_SECTION) {
-			fprintf(out, "<table border=1>"
-							"<tr>"
-								"<th>label name</th>"
-								"<th>pos</th>"
-								"<th>comp-pos</th>"
-								"<th>size</th>"
-								"<th>compsize</th>"
-							"</tr>");
-		} else {
-			fprintf(out, "<tr><td>%s</td>", csr->name.c_str());
-			if(csr->type & RECORD_PUBLIC) {
-				//printf("  %-36.36s", csr->name.c_str());
-			} else {
-
-				//printf("    %-34.34s", csr->name.c_str());
-			}
-			
-			if(csr->compressedPos >= 0) {
-				fprintf(out,"<td align=right>%9d</td>"
-							"<td align=right>%8.2f</td>"
-							"<td align=right>%9d</td>"
-							"<td align=right>%8.2f</td>",
-							csr->pos, csr->compressedPos / (BITPREC*8.0f), csr->size, csr->compressedSize / (BITPREC*8.0f));
-			} else {
-				fprintf(out,"<td align=right>%9d</td>"
-							"<td/>"
-							"<td align=right>%9d</td>"
-							"<td/>",
-							csr->pos, csr->size);
-			}
-			fprintf(out,"</tr>");
-
-			//write data
-			fprintf(out, "<tr><td><table>");
-			for(int y = 0; y < 5; y++) {
-				fprintf(out, "<tr>");
-				for(int x = 0; x < 16; x++) {
-					fprintf(out, "<td>%2X</td>", rand()%0xFF);
-				}
-				fprintf(out, "</tr>");
-			}
-			fprintf(out, "</table></td></tr>");
-		} 
-
-	}
-
-	for(vector<CompressionSummaryRecord*>::iterator it = csr->children.begin(); it != csr->children.end(); it++)
-		htmlSummaryRecursive(*it, out);
-
-	//handle leave node event
-	if(csr->type == RECORD_ROOT) {
-		fprintf(out, "</body></html>");
-	} else {
-		if(csr->type == RECORD_SECTION) {
-			fprintf(out,"</table>");
-		}
-	}
-	
-}
-
-void htmlSummary(CompressionSummaryRecord* csr, const char* filename) {
-	FILE* out;
-	if(fopen_s(&out, filename, "wb")) {
-		Log::error(0, "", "could not open '%s' for writing", filename);
-		return;
-	}
-	htmlSummaryRecursive(csr, out);
-
-	fclose(out);
-}
 
 
 void Crinkler::link(const char* filename) {
@@ -510,7 +432,6 @@ void Crinkler::link(const char* filename) {
 		printf("Real compressed total size: %d\nBytes lost to hashing: %d\n", size, size - idealsize / BITPREC / 8);
 
 	CompressionSummaryRecord* csr = phase1->getCompressionSummary(sizefill, splittingPoint);
-	delete[] sizefill;
 	if(m_verboseFlags & VERBOSE_LABELS)
 		verboseLabels(csr);
 	if(m_verboseFlags & VERBOSE_FUNCTIONS)
@@ -519,8 +440,10 @@ void Crinkler::link(const char* filename) {
 		verboseFunctions(csr, compareFunctionsByCompSize);
 	if(m_verboseFlags & VERBOSE_FUNCTIONS_BYNAME)
 		verboseFunctions(csr, compareFunctionsByName);
-	//htmlSummary(csr, "summary.html");
+	if(m_summaryFilename.compare("") != 0)
+		htmlSummary(csr, m_summaryFilename.c_str(), (unsigned char*)phase1->getPtr(), phase1->getRawSize(), sizefill);
 	delete csr;
+	delete[] sizefill;
 	
 	phase1Compressed = new Hunk("compressed data", (char*)data, 0, 1, size, size);
 	delete[] data;
@@ -589,6 +512,11 @@ Crinkler* Crinkler::set1KMode(bool use1KMode) {
 
 Crinkler* Crinkler::setEntry(const char* entry) {
 	m_entry = entry;
+	return this;
+}
+
+Crinkler* Crinkler::setSummary(const char* summaryFilename) {
+	m_summaryFilename = summaryFilename;
 	return this;
 }
 

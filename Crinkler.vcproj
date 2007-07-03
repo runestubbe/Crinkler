@@ -224,6 +224,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\HtmlSummary.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\Hunk.cpp"
 				>
 			</File>
@@ -255,6 +259,10 @@
 			</File>
 			<File
 				RelativePath=".\Fix.h"
+				>
+			</File>
+			<File
+				RelativePath=".\HtmlSummary.h"
 				>
 			</File>
 			<File

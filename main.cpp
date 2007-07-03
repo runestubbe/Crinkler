@@ -161,6 +161,8 @@ int main(int argc, char* argv[]) {
 						PARAM_IS_SWITCH|PARAM_FORBID_MULTIPLE_DEFINITIONS, "");
 	CmdParamString outArg("OUT", "output filename", "filename", 
 						PARAM_IS_SWITCH|PARAM_FORBID_MULTIPLE_DEFINITIONS, "out.exe");
+	CmdParamString summaryArg("SUMMARY", "summary filename", "filename", 
+						PARAM_IS_SWITCH|PARAM_FORBID_MULTIPLE_DEFINITIONS, "");
 	CmdParamSwitch crinklerFlag("CRINKLER", "enables crinkler", 0);
 	CmdParamSwitch fixFlag("FIX", "fix old crinkler files", 0);
 	CmdParamSwitch safeImportArg("SAFEIMPORT", "emit an error if a dll is missing", 0);
@@ -189,7 +191,7 @@ int main(int argc, char* argv[]) {
 	CmdParamString filesArg("FILES", "list of filenames", "", PARAM_HIDE_IN_PARAM_LIST, 0);
 	CmdLineInterface cmdline(CRINKLER_TITLE, CMDI_PARSE_FILES);
 
-	cmdline.addParams(&crinklerFlag, &hashsizeArg, &hashtriesArg, &hunktriesArg, &entryArg, &outArg, &safeImportArg,
+	cmdline.addParams(&crinklerFlag, &hashsizeArg, &hashtriesArg, &hunktriesArg, &entryArg, &outArg, &summaryArg, &safeImportArg,
 						&subsystemArg, &compmodeArg, &verboseArg, &transformArg, &libpathArg, 
 						&rangeImportArg, &replaceDllArg, &filesArg, &priorityArg, &showProgressArg, 
 						&tinyCompressor,
@@ -245,6 +247,7 @@ int main(int argc, char* argv[]) {
 	crinkler.set1KMode(tinyCompressor.getValue());
 	crinkler.setImportingType(safeImportArg.getValue());
 	crinkler.setEntry(entryArg.getValue());
+	crinkler.setSummary(summaryArg.getValue());
 	crinkler.setHashsize(hashsizeArg.getValue());
 	crinkler.setSubsystem((SubsystemType)subsystemArg.getValue());
 	crinkler.setCompressionType((CompressionType)compmodeArg.getValue());
