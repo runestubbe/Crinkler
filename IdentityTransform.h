@@ -1,10 +1,10 @@
-#ifndef _CALL_TRANSFORM_H_
-#define _CALL_TRANSFORM_H_
+#ifndef _IDENTITY_TRANSFORM_H_
+#define _IDENTITY_TRANSFORM_H_
 
 #include "Transform.h"
 
 class Hunk;
-class CallTransform : public Transform {
+class IdentityTransform : public Transform {
 public:
 	Hunk* getDetransformer();
 	int getFlags();

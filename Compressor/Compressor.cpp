@@ -47,6 +47,10 @@ unsigned int optimizeWeights(CompressionState& cs, ModelList& models) {
 	int lastindex = index;
 	unsigned int size;
 	unsigned int bestsize = approximateWeights(cs, models);
+	
+	if(models.nmodels == 0)	//nothing to optimize, leave and prevent a crash
+		return bestsize;
+
 	do {
 		int skip = 0;
 		for (int i = 0 ; i < models.nmodels; i++) {
@@ -202,6 +206,7 @@ ModelList ApproximateModels(const unsigned char* data, int datasize, int basepro
 		if(progressBar)
 			progressBar->update(maski+1, 256);
 	}
+
 	size = optimizeWeights(cs, models);
 	if(compsize)
 		*compsize = size;

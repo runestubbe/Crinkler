@@ -9,15 +9,18 @@ Hunk* Transform::linkAndTransform(HunkList* hunklist, int baseAddress, int* spli
 	if(detrans)
 		hunklist->addHunkFront(detrans);
 	int sp;
-
+	//
 	Hunk* h = hunklist->toHunk("linked", &sp);
-
 	h->relocate(baseAddress);
-
-	transform(h, sp);
-
+	
 	delete detrans;
 	hunklist->removeHunk(detrans);
+
+	if(!transform(h, sp)) {	//transform failed, link without transform
+		delete h;
+		Hunk* h = hunklist->toHunk("linked", &sp);
+		h->relocate(baseAddress);
+	}
 
 	if(splittingPoint)
 		*splittingPoint = sp;

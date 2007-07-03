@@ -4,7 +4,7 @@
 using namespace std;
 
 CmdParamInt::CmdParamInt(const char* parameterName, const char* description, const char* argumentDescription, int flags,
-					 int minimumValue, int maximumValue, int defaultValue) : CmdParam(parameterName, description, argumentDescription, flags | CMD_PARAM_IS_SWITCH | CMD_PARAM_TAKES_ARGUMENT){
+					 int minimumValue, int maximumValue, int defaultValue) : CmdParam(parameterName, description, argumentDescription, flags | PARAM_IS_SWITCH | PARAM_TAKES_ARGUMENT | PARAM_FORBID_MULTIPLE_DEFINITIONS){
 	 m_minValue = minimumValue;
 	 m_maxValue = maximumValue;
 	 m_defaultValue = defaultValue;
@@ -24,13 +24,13 @@ int CmdParamInt::parse(const char* str, char* errorMsg, int buffsize) {
 		m_value = v;
 		if(v < m_minValue || v > m_maxValue) {
 			sprintf_s(errorMsg, buffsize, "argument is not within the legal range [%d..%d]", m_minValue, m_maxValue);
-			return CMD_PARAM_INVALID;
+			return PARSE_INVALID;
 		}
 
-		return CMD_PARAM_PARSE_OK;
+		return PARSE_OK;
 	}
 	sprintf_s(errorMsg, buffsize, "expected integer argument");
-	return CMD_PARAM_INVALID;
+	return PARSE_INVALID;
 }
 
 int CmdParamInt::getValue() const {

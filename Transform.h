@@ -8,7 +8,7 @@ class Transform {
 public:
 	virtual ~Transform() {};
 	virtual Hunk* getDetransformer() = 0;
-	virtual void transform(Hunk* hunk, int splittingPoint) = 0;
+	virtual bool transform(Hunk* hunk, int splittingPoint) = 0;
 
 	Hunk* linkAndTransform(HunkList* hunklist, int baseAddress, int* splittingPoint = 0);
 };

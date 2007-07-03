@@ -8,7 +8,7 @@
 #include "MultiLoader.h"
 #include "HunkList.h"
 #include "Compressor/Compressor.h"
-#include "CompositeTransform.h"
+#include "Transform.h"
 
 class HunkLoader;
 
@@ -39,7 +39,7 @@ class Crinkler {
 	std::vector<std::string>	m_rangeDlls;
 	std::map<std::string, std::string>	m_replaceDlls;
 	bool					m_showProgressBar;
-	CompositeTransform		m_transform;
+	Transform*				m_transform;
 	int						m_modelbits;
 	bool					m_1KMode;
 	
@@ -71,7 +71,7 @@ public:
 	Crinkler* showProgressBar(bool show);
 	Crinkler* setModelBits(int modelbits);
 
-	Crinkler* addTransform(Transform* transform);
+	Crinkler* setTransform(Transform* transform);
 };
 
 #endif
