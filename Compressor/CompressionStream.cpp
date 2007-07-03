@@ -104,7 +104,7 @@ void CompressionStream::Compress(const unsigned char* d, int size, const ModelLi
 	}
 
 	if(m_sizefillptr) {
-		*m_sizefillptr++ = AritCodePos(&m_aritstate)/(BITPREC_TABLE/BITPREC);
+		*m_sizefillptr = AritCodePos(&m_aritstate)/(BITPREC_TABLE/BITPREC);
 	}
 
 	delete[] hashtable;

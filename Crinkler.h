@@ -28,6 +28,7 @@ class Crinkler {
 	MultiLoader				m_hunkLoader;
 	HunkList				m_hunkPool;
 	std::string				m_entry;
+	std::string				m_summaryFilename;
 	SubsystemType			m_subsytem;
 	int						m_imageBase;
 	int						m_hashsize;
@@ -70,6 +71,7 @@ public:
 	Crinkler* clearRangeDlls();
 	Crinkler* showProgressBar(bool show);
 	Crinkler* setModelBits(int modelbits);
+	Crinkler* setSummary(const char* summaryFilename);
 
 	Crinkler* setTransform(Transform* transform);
 };
