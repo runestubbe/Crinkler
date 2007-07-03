@@ -14,6 +14,7 @@
 #include "Log.h"
 #include "StringMisc.h"
 #include "CallTransform.h"
+#include "IdentityTransform.h"
 #include "Fix.h"
 
 using namespace std;
@@ -253,9 +254,12 @@ int main(int argc, char* argv[]) {
 	crinkler.showProgressBar(showProgressArg.getValue());
 
 	//transforms
+	IdentityTransform identTransform;
 	CallTransform callTransform;
 	if(transformArg.getValue() & TRANSFORM_CALLS)
-		crinkler.addTransform(&callTransform);
+		crinkler.setTransform(&callTransform);
+	else
+		crinkler.setTransform(&identTransform);
 
 	//print some info
 	printf("Target: %s\n", outArg.getValue());

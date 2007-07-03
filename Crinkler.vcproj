@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="8.00"
+	Version="8,00"
 	Name="Crinkler"
 	ProjectGUID="{B0591735-B8E8-4E45-8394-5A01A5F53984}"
 	RootNamespace="Crinkler"
@@ -514,11 +514,11 @@
 				>
 			</File>
 			<File
-				RelativePath=".\CompositeTransform.cpp"
+				RelativePath=".\IdentityTransform.cpp"
 				>
 			</File>
 			<File
-				RelativePath=".\CompositeTransform.h"
+				RelativePath=".\IdentityTransform.h"
 				>
 			</File>
 			<File

@@ -4,7 +4,6 @@ bits	32
 	global	_Import
 
 	extern __imp__LoadLibraryA@4
-	extern __imp__MessageBoxA@16
 
 	extern	_ImageBase
 	extern	_DLLNames
@@ -40,16 +39,6 @@ _Import:
 ;	jne		FindKernel32
 
 DLLLoop:
-	test	ebp, ebp
-	jne		.dontEnd
-	
-	push	byte 0
-	push	byte 0
-	push	edx
-	push	byte 0
-	call	[__imp__MessageBoxA@16]
-	ret
-.dontEnd:
 	xor		eax, eax
 	lodsb
 	xchg	ecx, eax
@@ -106,18 +95,22 @@ CalculateHashLoop:
 	mov		[esp + 20], eax			; stack position of edx
 	popa
 
+OrdinalLoop:
 	mov		eax,	[edx]
 	add		eax,	ebp
+	add		edx,	byte 4
 	stosd
+	dec		byte	[esi]
+	jnz		OrdinalLoop
 	
 NextHash:
+	inc		esi
 	add		ebx,	byte 4
 	loop	HashLoop
 
 	push	esi
 	call	[__imp__LoadLibraryA@4]
 	xchg	ebp, eax
-	mov		edx, esi
 
 NextDLL:
 	lodsb

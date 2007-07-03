@@ -5,9 +5,7 @@
 #include "CmdParamInt.h"
 #include "CmdParamSwitch.h"
 #include "CmdParamString.h"
-#include "CmdParamEnum.h"
 #include "CmdParamFlags.h"
-#include "CmdParamMultiString.h"
 #include "CmdParamMultiAssign.h"
 
 #include <list>
@@ -29,8 +27,6 @@ public:
 	void addParams(CmdParam* param, ...);
 	void printSyntax();
 	void printHeader();
-
-	void printTokens();	//TODO: remove, debug function
 
 	bool setCmdParameters(int argc, char* argv[]);
 	bool removeToken(const char* str);

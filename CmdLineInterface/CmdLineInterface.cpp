@@ -1,13 +1,9 @@
 #include "CmdLineInterface.h"
 #include <iostream>
-#include <fstream>
 #include <windows.h>
-#include <algorithm>
-#include <cstdarg>
 
-#include "MemoryFile.h"
-#include "Log.h"
-#include "StringMisc.h"
+#include "../StringMisc.h"
+#include "../MemoryFile.h"
 
 using namespace std;
 
@@ -19,8 +15,6 @@ CmdLineInterface::CmdLineInterface(const char* title, int flags) {
 CmdLineInterface::~CmdLineInterface() {
 }
 
-//TODO: parse "" correctly
-//TODO: is this tight?
 void CmdLineInterface::addTokens(const char* str) {
 	int len = strlen(str)+1;
 	char* tmp = new char[len];
@@ -79,13 +73,11 @@ bool CmdLineInterface::setCmdParameters(int argc, char* argv[]) {
 			MemoryFile mf(arg);
 			if(mf.getPtr() == NULL) {
 				m_tokens.clear();
-				Log::error(0, "", "failed to open file '%s'", arg);	//TODO: is this a LNK error?
+				cerr << "error: failed to open file '" << arg << "'" << endl;
 				return false;
 			}
 
 			//add tokens from file
-			//TODO: test unicode support
-
 			if(mf.getSize() >= 2 && (*(unsigned short*) mf.getPtr()) == 0xFEFF) {	//UNICODE
 				char* tmp = new char[mf.getSize()+2];
 				WideCharToMultiByte(CP_ACP, 0, (LPCWSTR)(mf.getPtr()+2), -1, tmp, mf.getSize()+2, NULL, NULL);
@@ -114,7 +106,7 @@ bool CmdLineInterface::parse() {
 			CmdParam* param = *jt;
 
 			string argument = token;
-			if(param->getFlags() & CMD_PARAM_IS_SWITCH) {
+			if(param->getFlags() & PARAM_IS_SWITCH) {
 				if(token[0] == '/') {
 					string::size_type p = token.find(":", 0);
 					argument = "";
@@ -131,13 +123,18 @@ bool CmdLineInterface::parse() {
 						continue;	//wrong parameter
 					}
 
-					//check for the correct number of arguments (0 or 1)
-					if((param->getFlags() & CMD_PARAM_TAKES_ARGUMENT) && !foundArgument) {
-						cerr << "error parsing token: '" << token << "'\n  " << "parameter needs argument" << endl;
+					if(foundArgument && argument.size() == 0) {
+						cerr << "error: argument must be non-empty" << endl;
 						return false;
 					}
-					if(!(param->getFlags() & CMD_PARAM_TAKES_ARGUMENT) && foundArgument) {
-						cerr << "error parsing token: '" << token << "'\n  " << "parameter doesn't take any arguments" << endl;
+
+					//check for the correct number of arguments (0 or 1)
+					if((param->getFlags() & PARAM_TAKES_ARGUMENT) && !foundArgument) {
+						cerr << "error: error parsing token: '" << token << "'\n  " << "parameter needs argument" << endl;
+						return false;
+					}
+					if(!(param->getFlags() & PARAM_TAKES_ARGUMENT) && foundArgument) {
+						cerr << "error: error parsing token: '" << token << "'\n  " << "parameter doesn't take any arguments" << endl;
 						return false;
 					}
 				} else {
@@ -149,14 +146,15 @@ bool CmdLineInterface::parse() {
 			
 			//parse argument and handle potential errors
 			int hr = param->parse(argument.c_str(), errorMsg, sizeof(errorMsg));
-			if(hr == CMD_PARAM_PARSE_OK) {
-				if(param->m_numMatches && !(param->getFlags() & CMD_PARAM_ALLOW_MULTIPLE_DEFINITIONS)) {
-					Log::warning(0, "", "parameter cannot be defined more than once '%s'", token.c_str());
+			if(hr == PARSE_OK) {
+				if(param->m_numMatches && (param->getFlags() & PARAM_FORBID_MULTIPLE_DEFINITIONS)) {
+					cerr << "error: parameter cannot be defined more than once '" << token.c_str() << "'" << endl;
+					return false;
 				}
 				param->m_numMatches++;
 				nMatches++;
-			} else if(hr == CMD_PARAM_INVALID) {
-				Log::error(0, "", "cannot parse token '%s': %s", token.c_str(), errorMsg);
+			} else if(hr == PARSE_INVALID) {
+				cerr << "error: cannot parse token '" << token.c_str() << "': " << errorMsg << endl;
 				return false;
 			}
 		}
@@ -175,7 +173,7 @@ void CmdLineInterface::addParams(CmdParam* param, ...) {
 
 	do {
 		m_params.push_back(param);
-	} while(param = va_arg(ap, CmdParam*));
+	} while((param = va_arg(ap, CmdParam*)) != NULL);
 
 	va_end(ap);
 }
@@ -192,15 +190,7 @@ void CmdLineInterface::printSyntax() {
 	printf("   options:\n\n");
 
 	for(list<CmdParam*>::const_iterator it = m_params.begin(); it != m_params.end(); it++) {
-		if(! ((*it)->getFlags() & CMD_PARAM_HIDE_IN_PARAM_LIST))
+		if(! ((*it)->getFlags() & PARAM_HIDE_IN_PARAM_LIST))
 			printf("      %s\n", (*it)->toString().c_str());
 	}
-}
-
-void CmdLineInterface::printTokens() {
-	printf("tokens: \n");
-	for(list<string>::const_iterator it = m_tokens.begin(); it != m_tokens.end(); it++) {
-		printf("%s ", it->c_str());
-	}
-	printf("\n");
 }

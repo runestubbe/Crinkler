@@ -1,14 +1,12 @@
 #include "CmdParamFlags.h"
 #include <cstdarg>
-#include <Windows.h>
-#include <iostream>
-#include "StringMisc.h"
+#include "../StringMisc.h"
 
 using namespace std;
 
 CmdParamFlags::CmdParamFlags(const char* paramName, const char* description, int flags, int defaultValue, 
 						   const char* flagName, int flagValue, ...) : 
-CmdParam(paramName, description, NULL, flags | CMD_PARAM_IS_SWITCH | CMD_PARAM_TAKES_ARGUMENT | CMD_PARAM_ALLOW_MULTIPLE_DEFINITIONS){
+CmdParam(paramName, description, NULL, flags | PARAM_IS_SWITCH | PARAM_TAKES_ARGUMENT){
 	va_list ap;
 	va_start(ap, flagValue);
 	m_value = defaultValue;
@@ -29,19 +27,21 @@ CmdParam(paramName, description, NULL, flags | CMD_PARAM_IS_SWITCH | CMD_PARAM_T
 
 		flagValue = va_arg(ap, int);
 	}
-
 }
 
 int CmdParamFlags::parse(const char* str, char* errorMsg, int buffsize) {
 	map<string, int>::iterator it = m_flagMap.find(toUpper(str));
 	if(it == m_flagMap.end()) {
 		sprintf_s(errorMsg, buffsize, "unknown argument %s", str);
-		return CMD_PARAM_INVALID;
+		return PARSE_INVALID;
 	}
 
-	m_value |= it->second;
+	if(getFlags() & PARAM_FORBID_MULTIPLE_DEFINITIONS)
+		m_value = it->second;
+	else
+		m_value |= it->second;
 
-	return CMD_PARAM_PARSE_OK;
+	return PARSE_OK;
 }
 
 int CmdParamFlags::getValue() {

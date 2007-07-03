@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject 
 	ProjectType="Intel C++ Project"
-	Version="9.1"
+	Version="10.0"
 	Name="Crinkler"
 	ProjectGUID="{392261A4-DEA9-4E58-9BD2-5E3BF928D2CF}"
 	VCNestedProjectGUID="{B0591735-B8E8-4E45-8394-5A01A5F53984}"
-	VCNestedProjectCRC32="3314994595"
+	VCNestedProjectCRC32="2102226951"
 	VCNestedProjectFileName="Crinkler.vcproj"
 	Keyword="Win32Proj">
 	<Platforms>
@@ -21,8 +21,6 @@
 				IntermediateDirectory="Debug"
 				ConfigurationType="1"
 				CharacterSet="2"/>
-			<Tool 
-				Name="DebugTool"/>
 			<Tool 
 				Name="CppCmplrTool"
 				Optimization="0"
@@ -72,8 +70,6 @@
 				ConfigurationType="1"
 				CharacterSet="2"
 				WholeProgramOptimization="0"/>
-			<Tool 
-				Name="DebugTool"/>
 			<Tool 
 				Name="CppCmplrTool"
 				WholeProgramOptimization="0"
@@ -249,9 +245,9 @@
 		<File 
 			RelativePath=".\CallTransform.h"/>
 		<File 
-			RelativePath=".\CompositeTransform.cpp"/>
+			RelativePath=".\IdentityTransform.cpp"/>
 		<File 
-			RelativePath=".\CompositeTransform.h"/>
+			RelativePath=".\IdentityTransform.h"/>
 		<File 
 			RelativePath=".\Transform.cpp"/>
 		<File 
