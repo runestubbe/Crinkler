@@ -1,11 +1,10 @@
 <?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject 
 	ProjectType="Intel C++ Project"
-	Version="10.0"
+	Version="9.1"
 	Name="Crinkler"
 	ProjectGUID="{392261A4-DEA9-4E58-9BD2-5E3BF928D2CF}"
 	VCNestedProjectGUID="{B0591735-B8E8-4E45-8394-5A01A5F53984}"
-	VCNestedProjectCRC32="251719235"
 	VCNestedProjectFileName="Crinkler.vcproj"
 	Keyword="Win32Proj">
 	<Platforms>
@@ -22,6 +21,8 @@
 				ConfigurationType="1"
 				CharacterSet="2"/>
 			<Tool 
+				Name="DebugTool"/>
+			<Tool 
 				Name="CppCmplrTool"
 				Optimization="0"
 				PreprocessorDefinitions="WIN32;_DEBUG;_CONSOLE;D3D_DEBUG_INFO"
@@ -31,11 +32,12 @@
 				UsePrecompiledHeader="0"
 				WarningLevel="3"
 				Detect64BitPortabilityProblems="1"
-				DebugInformationFormat="4"/>
+				DebugInformationFormat="4"
+				OpenMP="1"/>
 			<Tool 
 				Name="LinkerTool"
 				DelayImpLib=""
-				AdditionalDependencies="comctl32.lib Dbghelp.lib Compressor\debug\Compressor.lib"
+				AdditionalDependencies="comctl32.lib Dbghelp.lib Compressor\debug\Compressor.lib distorm.lib"
 				OutputFile="$(OutDir)/Crinkler.exe"
 				LinkIncremental="2"
 				GenerateDebugInformation="1"
@@ -71,6 +73,8 @@
 				CharacterSet="2"
 				WholeProgramOptimization="0"/>
 			<Tool 
+				Name="DebugTool"/>
+			<Tool 
 				Name="CppCmplrTool"
 				WholeProgramOptimization="0"
 				UseUnicodeResponseFiles="0"
@@ -99,7 +103,7 @@
 				Name="LinkerTool"
 				DelayImpLib=""
 				IgnoreImportLibrary="0"
-				AdditionalDependencies="comctl32.lib Dbghelp.lib Compressor\Release\Compressor.lib"
+				AdditionalDependencies="comctl32.lib Dbghelp.lib Compressor\Release\Compressor.lib distorm.lib"
 				OutputFile="$(OutDir)/Crinkler.exe"
 				LinkIncremental="1"
 				IgnoreAllDefaultLibraries="0"
@@ -157,6 +161,8 @@
 			RelativePath=".\data.h"/>
 		<File 
 			RelativePath=".\Crinkler.h"/>
+		<File 
+			RelativePath=".\distorm.h"/>
 		<File 
 			RelativePath=".\Fix.h"/>
 		<File 

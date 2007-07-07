@@ -28,7 +28,7 @@ using namespace std;
 
 Crinkler::Crinkler() {
 	m_subsytem = SUBSYSTEM_WINDOWS;
-	m_imageBase = 0x00400000;
+	m_imageBase = CRINKLER_IMAGEBASE;
 	m_hashsize = 50*1024*1024;
 	m_compressionType = COMPRESSION_FAST;
 	m_useSafeImporting = false;
@@ -276,13 +276,13 @@ void Crinkler::link(const char* filename) {
 	import->hunk->addSymbol(new Symbol("_ImageBase", m_imageBase, 0, import->hunk));
 
 	HeuristicHunkSorter::sortHunkList(&m_hunkPool);
-	int sectionSize = 0x10000;
+	int sectionSize = CRINKLER_SECTIONSIZE;
 
 	//create phase 1 data hunk
 	int splittingPoint;
 
 
-	Hunk* phase1 = m_transform->linkAndTransform(&m_hunkPool, m_imageBase+sectionSize*2, &splittingPoint);
+	Hunk* phase1 = m_transform->linkAndTransform(&m_hunkPool, CRINKLER_CODEBASE, &splittingPoint);
 
 
 
@@ -315,7 +315,7 @@ void Crinkler::link(const char* filename) {
 			int packedDataOffset = (packedDataPos - sectionSize*2)*8;
 			printf("packed data offset: %x\n", packedDataOffset);
 			printf("image size: %x\n", phase1->getRawSize());
-			phase2->addSymbol(new Symbol("_UnpackedData", m_imageBase + sectionSize*2, 0, phase2));
+			phase2->addSymbol(new Symbol("_UnpackedData", CRINKLER_CODEBASE, 0, phase2));
 			phase2->addSymbol(new Symbol("_PackedDataOffset", packedDataOffset, 0, phase2));
 			phase2->addSymbol(new Symbol("_VirtualSize", virtualSize, 0, phase2));
 			phase2->addSymbol(new Symbol("_ImageBase", m_imageBase, 0, phase2));
@@ -384,7 +384,7 @@ void Crinkler::link(const char* filename) {
 		if(m_hunktries > 0) {
 			EmpiricalHunkSorter::sortHunkList(&m_hunkPool, ml1, ml2, baseprobs, m_hunktries, m_showProgressBar ? &windowBar : NULL);
 			delete phase1;
-			phase1 = m_transform->linkAndTransform(&m_hunkPool, m_imageBase+sectionSize*2, &splittingPoint);
+			phase1 = m_transform->linkAndTransform(&m_hunkPool, CRINKLER_CODEBASE, &splittingPoint);
 			//reestimate models
 			progressBar.beginTask("Reestimating models for code");
 			ml1 = ApproximateModels((unsigned char*)phase1->getPtr(), splittingPoint, baseprobs, &size, &progressBar, m_verboseFlags & VERBOSE_MODELS, m_compressionType, m_modelbits);
@@ -484,7 +484,7 @@ void Crinkler::link(const char* filename) {
 		int virtualSize = max(phase1->getVirtualSize(), phase1->getRawSize()+best_hashsize);
 		virtualSize = align(virtualSize, 16);
 		phase2->addSymbol(new Symbol("_HashTableSize", best_hashsize/2, 0, phase2));
-		phase2->addSymbol(new Symbol("_UnpackedData", m_imageBase + sectionSize*2, 0, phase2));
+		phase2->addSymbol(new Symbol("_UnpackedData", CRINKLER_CODEBASE, 0, phase2));
 		phase2->addSymbol(new Symbol("_VirtualSize", virtualSize, 0, phase2));
 		phase2->addSymbol(new Symbol("_ImageBase", m_imageBase, 0, phase2));
 
