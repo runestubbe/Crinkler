@@ -1,11 +1,10 @@
 <?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject 
 	ProjectType="Intel C++ Project"
-	Version="10.0"
+	Version="9.1"
 	Name="Compressor"
 	ProjectGUID="{A28AF165-4907-43A7-BB47-E90F652B8143}"
 	VCNestedProjectGUID="{869F3A10-26E8-49E6-980F-FE72F642714F}"
-	VCNestedProjectCRC32="252974468"
 	VCNestedProjectFileName="Compressor.vcproj"
 	Keyword="Win32Proj">
 	<Platforms>
@@ -20,50 +19,44 @@
 				OutputDirectory="Debug"
 				IntermediateDirectory="Debug"
 				ConfigurationType="4"
-				InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
 				CharacterSet="2"/>
 			<Tool 
-				Name="PreBuildEventTool"/>
-			<Tool 
-				Name="CustomTool"/>
-			<Tool 
-				Name="VCXMLDataGeneratorTool"/>
-			<Tool 
-				Name="VCWebServiceProxyGeneratorTool"/>
-			<Tool 
-				Name="MidlCmplrTool"/>
+				Name="DebugTool"/>
 			<Tool 
 				Name="CppCmplrTool"
 				Optimization="0"
 				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;COMPRESSOR_EXPORTS;D3D_DEBUG_INFO"
-				MinimalRebuild="true"
+				MinimalRebuild="1"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="1"
-				TreatWChar_tAsBuiltInType="false"
-				RuntimeTypeInfo="false"
-				OpenMP="false"
+				TreatWChar_tAsBuiltInType="0"
+				RuntimeTypeInfo="0"
 				UsePrecompiledHeader="0"
 				WarningLevel="3"
-				Detect64BitPortabilityProblems="true"
-				DebugInformationFormat="4"/>
+				Detect64BitPortabilityProblems="1"
+				DebugInformationFormat="4"
+				OpenMP="1"/>
 			<Tool 
-				Name="VCManagedResourceCompilerTool"/>
-			<Tool 
-				Name="ResCmplrTool"/>
-			<Tool 
-				Name="PreLinkEventTool"/>
+				Name="LinkerTool"
+				DelayImpLib=""/>
 			<Tool 
 				Name="LibrarianTool"/>
 			<Tool 
-				Name="VCALinkTool"/>
+				Name="ResCmplrTool"/>
 			<Tool 
-				Name="VCXDCMakeTool"/>
+				Name="MidlCmplrTool"/>
 			<Tool 
 				Name="BscMakeTool"/>
 			<Tool 
-				Name="VCFxCopTool"/>
+				Name="PreBuildEventTool"/>
+			<Tool 
+				Name="PreLinkEventTool"/>
 			<Tool 
 				Name="PostBuildEventTool"/>
+			<Tool 
+				Name="CustomTool"/>
+			<Tool 
+				Name="CustomNodeTool"/>
 		</Configuration>
 		<Configuration 
 			Name="Release|Win32">
@@ -72,202 +65,155 @@
 				OutputDirectory="Release"
 				IntermediateDirectory="Release"
 				ConfigurationType="4"
-				InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
 				CharacterSet="2"/>
 			<Tool 
-				Name="PreBuildEventTool"/>
-			<Tool 
-				Name="CustomTool"/>
-			<Tool 
-				Name="VCXMLDataGeneratorTool"/>
-			<Tool 
-				Name="VCWebServiceProxyGeneratorTool"/>
-			<Tool 
-				Name="MidlCmplrTool"/>
+				Name="DebugTool"/>
 			<Tool 
 				Name="CppCmplrTool"
-				UseUnicodeResponseFiles="false"
-				EnableIntrinsicFunctions="true"
+				WholeProgramOptimization="0"
+				UseUnicodeResponseFiles="0"
+				GlobalOptimizations="1"
+				EnableIntrinsicFunctions="1"
 				FavorSizeOrSpeed="1"
-				OmitFramePointers="true"
-				WholeProgramOptimization="false"
+				OmitFramePointers="1"
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;COMPRESSOR_EXPORTS;_CRT_SECURE_NO_DEPRECATE"
 				ExceptionHandling="0"
 				RuntimeLibrary="0"
-				BufferSecurityCheck="false"
+				BufferSecurityCheck="0"
 				EnableEnhancedInstructionSet="0"
-				FloatingPointModel="2"
-				TreatWChar_tAsBuiltInType="false"
-				RuntimeTypeInfo="false"
-				OpenMP="true"
+				TreatWChar_tAsBuiltInType="0"
+				RuntimeTypeInfo="0"
 				UsePrecompiledHeader="0"
 				AssemblerOutput="4"
 				WarningLevel="3"
-				Detect64BitPortabilityProblems="false"
+				Detect64BitPortabilityProblems="0"
 				DebugInformationFormat="4"
-				GlobalOptimizations="1"
+				OpenMP="1"
 				Parallelization="1"
 				RecognizeRestrictKeyword="1"/>
 			<Tool 
-				Name="VCManagedResourceCompilerTool"/>
-			<Tool 
-				Name="ResCmplrTool"/>
-			<Tool 
-				Name="PreLinkEventTool"/>
+				Name="LinkerTool"
+				DelayImpLib=""/>
 			<Tool 
 				Name="LibrarianTool"/>
 			<Tool 
-				Name="VCALinkTool"/>
+				Name="ResCmplrTool"/>
 			<Tool 
-				Name="VCXDCMakeTool"/>
+				Name="MidlCmplrTool"/>
 			<Tool 
 				Name="BscMakeTool"/>
 			<Tool 
-				Name="VCFxCopTool"/>
+				Name="PreBuildEventTool"/>
+			<Tool 
+				Name="PreLinkEventTool"/>
 			<Tool 
 				Name="PostBuildEventTool"/>
+			<Tool 
+				Name="CustomTool"/>
+			<Tool 
+				Name="CustomNodeTool"/>
 		</Configuration>
 	</Configurations>
 	<Files>
-		<Filter 
-			Name="Source Files"
-			Filter="cpp;c;cxx;def;odl;idl;hpj;bat;asm;asmx"
-			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}">
-			<File 
-				RelativePath=".\CompressionState.cpp">
-			</File>
-			<File 
-				RelativePath=".\CompressionStream.cpp">
-			</File>
-			<File 
-				RelativePath=".\Compressor.cpp">
-			</File>
-			<File 
-				RelativePath=".\ModelList.cpp">
-			</File>
-		</Filter>
-		<Filter 
-			Name="Header Files"
-			Filter="h;hpp;hxx;hm;inl;inc;xsd"
-			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}">
-			<File 
-				RelativePath=".\aritcode.h">
-			</File>
-			<File 
-				RelativePath=".\common.h">
-			</File>
-			<File 
-				RelativePath=".\CompressionState.h">
-			</File>
-			<File 
-				RelativePath=".\CompressionStream.h">
-			</File>
-			<File 
-				RelativePath=".\Compressor.h">
-			</File>
-			<File 
-				RelativePath=".\data.h">
-			</File>
-			<File 
-				RelativePath=".\model.h">
-			</File>
-			<File 
-				RelativePath=".\ModelList.h">
-			</File>
-			<File 
-				RelativePath=".\ProgressBar.h">
-			</File>
-		</Filter>
-		<Filter 
-			Name="Assembly Files">
-			<File 
-				RelativePath=".\aritcode.asm">
-				<FileConfiguration 
-					Name="Debug|Win32">
-					<Tool 
-						Name="CustomTool"
-						Description="Assembling $(InputName).obj"
-						CommandLine="nasmw -f win32 -Xvc &quot;$(InputDir)\$(InputFileName)&quot; -o &quot;$(OutDir)\$(InputName).obj&quot;&#xA;"
-						Outputs="&quot;$(OutDir)\$(InputName).obj&quot;"/>
-				</FileConfiguration>
-				<FileConfiguration 
-					Name="Release|Win32">
-					<Tool 
-						Name="CustomTool"
-						Description="Assembling $(InputName).obj"
-						CommandLine="nasmw -f win32 -Xvc &quot;$(InputDir)\$(InputFileName)&quot; -o &quot;$(OutDir)\$(InputName).obj&quot;&#xA;"
-						Outputs="&quot;$(OutDir)\$(InputName).obj&quot;"/>
-				</FileConfiguration>
-			</File>
-			<File 
-				RelativePath=".\data.asm">
-				<FileConfiguration 
-					Name="Debug|Win32">
-					<Tool 
-						Name="CustomTool"
-						Description="Assembling $(InputName).obj"
-						CommandLine="nasmw -f win32 -Xvc &quot;$(InputDir)\$(InputFileName)&quot; -o &quot;$(OutDir)\$(InputName).obj&quot;&#xA;"
-						Outputs="&quot;$(OutDir)\$(InputName).obj&quot;"/>
-				</FileConfiguration>
-				<FileConfiguration 
-					Name="Release|Win32">
-					<Tool 
-						Name="CustomTool"
-						Description="Assembling $(InputName).obj"
-						CommandLine="nasmw -f win32 -Xvc &quot;$(InputDir)\$(InputFileName)&quot; -o &quot;$(OutDir)\$(InputName).obj&quot;&#xA;"
-						Outputs="&quot;$(OutDir)\$(InputName).obj&quot;"/>
-				</FileConfiguration>
-			</File>
-			<File 
-				RelativePath=".\model.asm">
-				<FileConfiguration 
-					Name="Debug|Win32">
-					<Tool 
-						Name="CustomTool"
-						Description="Assembling $(InputName).obj"
-						CommandLine="nasmw -f win32 -Xvc &quot;$(InputDir)\$(InputFileName)&quot; -o &quot;$(OutDir)\$(InputName).obj&quot;&#xA;"
-						Outputs="&quot;$(OutDir)\$(InputName).obj&quot;"/>
-				</FileConfiguration>
-				<FileConfiguration 
-					Name="Release|Win32">
-					<Tool 
-						Name="CustomTool"
-						Description="Assembling $(InputName).obj"
-						CommandLine="nasmw -f win32 -Xvc &quot;$(InputDir)\$(InputFileName)&quot; -o &quot;$(OutDir)\$(InputName).obj&quot;&#xA;"
-						Outputs="&quot;$(OutDir)\$(InputName).obj&quot;"/>
-				</FileConfiguration>
-			</File>
-		</Filter>
-		<Filter 
-			Name="CompressionStateEvaluators">
-			<File 
-				RelativePath=".\CompressionStateEvaluator.h">
-			</File>
-			<File 
-				RelativePath=".\GPUCompressionStateEvaluator.cpp">
-			</File>
-			<File 
-				RelativePath=".\GPUCompressionStateEvaluator.h">
-			</File>
-			<File 
-				RelativePath=".\SoftwareCompressionStateEvaluator.cpp">
-			</File>
-			<File 
-				RelativePath=".\SoftwareCompressionStateEvaluator.h">
-			</File>
-			<Filter 
-				Name="Shaders">
-				<File 
-					RelativePath=".\downscale_ps.hlsl">
-				</File>
-				<File 
-					RelativePath=".\shader_ps.hlsl">
-				</File>
-				<File 
-					RelativePath=".\shader_vs.hlsl">
-				</File>
-			</Filter>
-		</Filter>
+		<File 
+			RelativePath=".\aritcode.asm">
+			<FileConfiguration 
+				Name="Debug|Win32">
+				<Tool 
+					Name="CustomTool"
+					Description="Assembling $(InputName).obj"
+					CommandLine="nasmw -f win32 -Xvc &quot;$(InputDir)\$(InputFileName)&quot; -o &quot;$(OutDir)\$(InputName).obj&quot;&#xA;"
+					Outputs="&quot;$(OutDir)\$(InputName).obj&quot;"/>
+			</FileConfiguration>
+			<FileConfiguration 
+				Name="Release|Win32">
+				<Tool 
+					Name="CustomTool"
+					Description="Assembling $(InputName).obj"
+					CommandLine="nasmw -f win32 -Xvc &quot;$(InputDir)\$(InputFileName)&quot; -o &quot;$(OutDir)\$(InputName).obj&quot;&#xA;"
+					Outputs="&quot;$(OutDir)\$(InputName).obj&quot;"/>
+			</FileConfiguration>
+		</File>
+		<File 
+			RelativePath=".\data.asm">
+			<FileConfiguration 
+				Name="Debug|Win32">
+				<Tool 
+					Name="CustomTool"
+					Description="Assembling $(InputName).obj"
+					CommandLine="nasmw -f win32 -Xvc &quot;$(InputDir)\$(InputFileName)&quot; -o &quot;$(OutDir)\$(InputName).obj&quot;&#xA;"
+					Outputs="&quot;$(OutDir)\$(InputName).obj&quot;"/>
+			</FileConfiguration>
+			<FileConfiguration 
+				Name="Release|Win32">
+				<Tool 
+					Name="CustomTool"
+					Description="Assembling $(InputName).obj"
+					CommandLine="nasmw -f win32 -Xvc &quot;$(InputDir)\$(InputFileName)&quot; -o &quot;$(OutDir)\$(InputName).obj&quot;&#xA;"
+					Outputs="&quot;$(OutDir)\$(InputName).obj&quot;"/>
+			</FileConfiguration>
+		</File>
+		<File 
+			RelativePath=".\model.asm">
+			<FileConfiguration 
+				Name="Debug|Win32">
+				<Tool 
+					Name="CustomTool"
+					Description="Assembling $(InputName).obj"
+					CommandLine="nasmw -f win32 -Xvc &quot;$(InputDir)\$(InputFileName)&quot; -o &quot;$(OutDir)\$(InputName).obj&quot;&#xA;"
+					Outputs="&quot;$(OutDir)\$(InputName).obj&quot;"/>
+			</FileConfiguration>
+			<FileConfiguration 
+				Name="Release|Win32">
+				<Tool 
+					Name="CustomTool"
+					Description="Assembling $(InputName).obj"
+					CommandLine="nasmw -f win32 -Xvc &quot;$(InputDir)\$(InputFileName)&quot; -o &quot;$(OutDir)\$(InputName).obj&quot;&#xA;"
+					Outputs="&quot;$(OutDir)\$(InputName).obj&quot;"/>
+			</FileConfiguration>
+		</File>
+		<File 
+			RelativePath=".\downscale_ps.hlsl"/>
+		<File 
+			RelativePath=".\shader_ps.hlsl"/>
+		<File 
+			RelativePath=".\shader_vs.hlsl"/>
+		<File 
+			RelativePath=".\CompressionStateEvaluator.h"/>
+		<File 
+			RelativePath=".\GPUCompressionStateEvaluator.cpp"/>
+		<File 
+			RelativePath=".\GPUCompressionStateEvaluator.h"/>
+		<File 
+			RelativePath=".\SoftwareCompressionStateEvaluator.cpp"/>
+		<File 
+			RelativePath=".\SoftwareCompressionStateEvaluator.h"/>
+		<File 
+			RelativePath=".\aritcode.h"/>
+		<File 
+			RelativePath=".\common.h"/>
+		<File 
+			RelativePath=".\CompressionState.h"/>
+		<File 
+			RelativePath=".\CompressionStream.h"/>
+		<File 
+			RelativePath=".\Compressor.h"/>
+		<File 
+			RelativePath=".\data.h"/>
+		<File 
+			RelativePath=".\model.h"/>
+		<File 
+			RelativePath=".\ModelList.h"/>
+		<File 
+			RelativePath=".\ProgressBar.h"/>
+		<File 
+			RelativePath=".\CompressionState.cpp"/>
+		<File 
+			RelativePath=".\CompressionStream.cpp"/>
+		<File 
+			RelativePath=".\Compressor.cpp"/>
+		<File 
+			RelativePath=".\ModelList.cpp"/>
 	</Files>
 </VisualStudioProject>
 
