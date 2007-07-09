@@ -21,6 +21,7 @@ enum RelocationType {RELOCTYPE_ABS32, RELOCTYPE_REL32};
 #define RECORD_SECTION 0x02
 #define RECORD_PUBLIC 0x04
 #define RECORD_FUNCTION 0x08
+#define RECORD_OLD_SECTION 0x10
 
 struct CompressionSummaryRecord {
 	std::string name;
@@ -32,7 +33,7 @@ struct CompressionSummaryRecord {
 	int compressedSize;
 	int functionSize;
 	int compressedFunctionSize;
-	std::string functionName;
+	std::string miscString; //for holding extra textual information about the symbol e.g. a section name.
 
 	CompressionSummaryRecord(const char* name, int type, int pos, int compressedPos) {
 		this->name = name;
@@ -93,6 +94,7 @@ public:
 	void addSymbol(Symbol* s);
 	Symbol* findUndecoratedSymbol(const char* name) const;
 	Symbol* findSymbol(const char* name) const;
+	Symbol* findSymbolWithWeak(const char* name) const;
 	void fixate();
 	void printSymbols() const;
 	void relocate(int imageBase);
@@ -100,6 +102,7 @@ public:
 	void setAlignmentBits(int alignmentBits);
 	void trim();
 	void chop(int size);
+	void truncateFloats(int defaultBits);
 
 	CompressionSummaryRecord* getCompressionSummary(int* sizefill, int splittingPoint);
 
@@ -114,6 +117,8 @@ public:
 	const char* getImportName() const;
 	const char* getImportDll() const;
 	void setImportDll(const char* dll);
+	std::map<int, Symbol*> getOffsetToRelocationMap();
+	std::map<int, Symbol*> getOffsetToSymbolMap();
 };
 
 #endif

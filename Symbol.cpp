@@ -10,19 +10,6 @@ Symbol::Symbol(const char* name, int value, unsigned int flags, Hunk* hunk) :
 
 }
 
-//TODO: pretty, really??
-std::string Symbol::getPrettyName() {
-	string str = name;
-	if(str.size() > 3) {
-		string::size_type pos = str.find("]", 0);
-		if(str[0] == 'l' && str[1] == '[' && pos != string::npos) {
-			str = name.substr(pos+1, name.size()-pos-1);
-		}
-	}
-
-	return str;
-}
-
 std::string Symbol::getUndecoratedName() {
 	string str = name;
 	char buff[1024];

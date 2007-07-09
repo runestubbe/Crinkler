@@ -18,5 +18,5 @@ string toLower(const string& s) {
 std::string stripPath(const std::string& s) {
 	int idx = s.size()-1;
 	while(idx >= 0 && s[idx] != ':' && s[idx] != '/' && s[idx] != '\\') idx--;
-	return s.substr(idx+1, s.size() - idx+1);
+	return s.substr(idx+1, s.size() - (idx+1));
 }

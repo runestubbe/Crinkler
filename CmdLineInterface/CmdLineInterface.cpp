@@ -105,35 +105,37 @@ bool CmdLineInterface::parse() {
 		for(list<CmdParam*>::const_iterator jt = m_params.begin(); jt != m_params.end(); jt++) {
 			CmdParam* param = *jt;
 
+			bool hasArgument = false;
 			string argument = token;
 			if(param->getFlags() & PARAM_IS_SWITCH) {
 				if(token[0] == '/') {
-					string::size_type p = token.find(":", 0);
+					string::size_type split_index = token.find(":", 0);
 					argument = "";
-					bool foundArgument = false;
 
-					if(p == string::npos) {
-						p = token.size();
+					
+					if(split_index == string::npos) {
+						split_index = token.size();
 					} else {
-						foundArgument = true;
-						argument = token.substr(p+1, token.size()-p-1);
+						hasArgument = true;
+						argument = token.substr(split_index+1, token.size()-split_index-1);
 					}
-					string swi = token.substr(1, p-1);
+					string swi = token.substr(1, split_index-1);
 					if(toUpper(swi).compare(toUpper(param->getParameterName())) != 0) {	//case insensitive argument matching
 						continue;	//wrong parameter
 					}
 
-					if(foundArgument && argument.size() == 0) {
+					if(hasArgument && argument.size() == 0) {
 						cerr << "error: argument must be non-empty" << endl;
 						return false;
 					}
 
 					//check for the correct number of arguments (0 or 1)
-					if((param->getFlags() & PARAM_TAKES_ARGUMENT) && !foundArgument) {
+					if((param->getFlags() & PARAM_TAKES_ARGUMENT) &&
+						!(param->getFlags() & PARAM_ALLOW_NO_ARGUMENT_DEFAULT) && !hasArgument) {
 						cerr << "error: error parsing token: '" << token << "'\n  " << "parameter needs argument" << endl;
 						return false;
 					}
-					if(!(param->getFlags() & PARAM_TAKES_ARGUMENT) && foundArgument) {
+					if(!(param->getFlags() & PARAM_TAKES_ARGUMENT) && hasArgument) {
 						cerr << "error: error parsing token: '" << token << "'\n  " << "parameter doesn't take any arguments" << endl;
 						return false;
 					}
@@ -145,7 +147,10 @@ bool CmdLineInterface::parse() {
 			}
 			
 			//parse argument and handle potential errors
-			int hr = param->parse(argument.c_str(), errorMsg, sizeof(errorMsg));
+			int hr = PARSE_OK;
+			if(!(param->getFlags() & PARAM_ALLOW_NO_ARGUMENT_DEFAULT) || hasArgument) {
+				hr = param->parse(argument.c_str(), errorMsg, sizeof(errorMsg));	//skip parsing of argument, if we are in the special default form
+			}
 			if(hr == PARSE_OK) {
 				if(param->m_numMatches && (param->getFlags() & PARAM_FORBID_MULTIPLE_DEFINITIONS)) {
 					cerr << "error: parameter cannot be defined more than once '" << token.c_str() << "'" << endl;

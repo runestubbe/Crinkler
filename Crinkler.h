@@ -25,8 +25,8 @@ enum SubsystemType {SUBSYSTEM_CONSOLE, SUBSYSTEM_WINDOWS};
 #define VERBOSE_FUNCTIONS_BYSIZE	16
 #define VERBOSE_FUNCTIONS_BYNAME	32
 
-#define CRINKLER_TITLE			"Crinkler 1.0b (" __DATE__ ") (c) 2005-2007 Aske Simon Christensen & Rune Stubbe"
-#define CRINKLER_LINKER_VERSION	0x3031
+#define CRINKLER_TITLE			"Crinkler 1.1 (" __DATE__ ") (c) 2005-2007 Aske Simon Christensen & Rune Stubbe"
+#define CRINKLER_LINKER_VERSION	0x3131
 
 class Crinkler {
 	MultiLoader				m_hunkLoader;
@@ -34,7 +34,6 @@ class Crinkler {
 	std::string				m_entry;
 	std::string				m_summaryFilename;
 	SubsystemType			m_subsytem;
-	int						m_imageBase;
 	int						m_hashsize;
 	int						m_hashtries;
 	int						m_hunktries;
@@ -47,6 +46,8 @@ class Crinkler {
 	Transform*				m_transform;
 	int						m_modelbits;
 	bool					m_1KMode;
+	bool					m_truncateFloats;
+	int						m_truncateBits;
 	
 	Symbol* getEntrySymbol() const;
 	Symbol* findUndecoratedSymbol(const char* name) const;
@@ -76,6 +77,8 @@ public:
 	Crinkler* showProgressBar(bool show);
 	Crinkler* setModelBits(int modelbits);
 	Crinkler* setSummary(const char* summaryFilename);
+	Crinkler* setTruncateFloats(bool enabled);
+	Crinkler* setTruncateBits(int bits);
 
 	Crinkler* setTransform(Transform* transform);
 };

@@ -28,7 +28,6 @@ using namespace std;
 
 Crinkler::Crinkler() {
 	m_subsytem = SUBSYSTEM_WINDOWS;
-	m_imageBase = CRINKLER_IMAGEBASE;
 	m_hashsize = 50*1024*1024;
 	m_compressionType = COMPRESSION_FAST;
 	m_useSafeImporting = false;
@@ -39,6 +38,8 @@ Crinkler::Crinkler() {
 	m_modelbits = 8;
 	m_1KMode = false;
 	m_summaryFilename = "";
+	m_truncateFloats = false;
+	m_truncateBits = 32;
 }
 
 
@@ -136,7 +137,7 @@ void extractFunctions(CompressionSummaryRecord* csr, vector<CompressionSummaryRe
 }
 
 bool compareFunctionsByName(CompressionSummaryRecord* a, CompressionSummaryRecord* b) {
-	return a->functionName < b->functionName;
+	return a->miscString < b->miscString;
 }
 
 bool compareFunctionsByCompSize(CompressionSummaryRecord* a, CompressionSummaryRecord* b) {
@@ -273,10 +274,13 @@ void Crinkler::link(const char* filename) {
 	m_hunkPool.removeHunk(import->hunk);
 	m_hunkPool.addHunkFront(import->hunk);
 	import->hunk->fixate();
-	import->hunk->addSymbol(new Symbol("_ImageBase", m_imageBase, 0, import->hunk));
+	import->hunk->addSymbol(new Symbol("_ImageBase", CRINKLER_IMAGEBASE, 0, import->hunk));
+
+	//truncate floats
+	if(m_truncateFloats)
+		m_hunkPool.truncateFloats(m_truncateBits);
 
 	HeuristicHunkSorter::sortHunkList(&m_hunkPool);
-	int sectionSize = CRINKLER_SECTIONSIZE;
 
 	//create phase 1 data hunk
 	int splittingPoint;
@@ -312,13 +316,13 @@ void Crinkler::link(const char* filename) {
 		{
 			int virtualSize = align(phase1->getVirtualSize(), 16);
 			int packedDataPos = phase2->findSymbol("_PackedData")->value;
-			int packedDataOffset = (packedDataPos - sectionSize*2)*8;
+			int packedDataOffset = (packedDataPos - CRINKLER_SECTIONSIZE*2)*8;
 			printf("packed data offset: %x\n", packedDataOffset);
 			printf("image size: %x\n", phase1->getRawSize());
 			phase2->addSymbol(new Symbol("_UnpackedData", CRINKLER_CODEBASE, 0, phase2));
 			phase2->addSymbol(new Symbol("_PackedDataOffset", packedDataOffset, 0, phase2));
 			phase2->addSymbol(new Symbol("_VirtualSize", virtualSize, 0, phase2));
-			phase2->addSymbol(new Symbol("_ImageBase", m_imageBase, 0, phase2));
+			phase2->addSymbol(new Symbol("_ImageBase", CRINKLER_IMAGEBASE, 0, phase2));
 
 			int baseprob = 13;
 			*(phase2->getPtr() + phase2->findSymbol("_BaseProbPtr1")->value) = baseprob;
@@ -327,7 +331,7 @@ void Crinkler::link(const char* filename) {
 			*((short*)(phase2->getPtr() + phase2->findSymbol("_LinkerVersionPtr")->value)) = CRINKLER_LINKER_VERSION;
 			*((short*)(phase2->getPtr() + phase2->findSymbol("_UnpackedDataLengthPtr")->value)) = phase1->getRawSize()*8;
 		}
-		phase2->relocate(m_imageBase);
+		phase2->relocate(CRINKLER_IMAGEBASE);
 		
 
 		fwrite(phase2->getPtr(), 1, phase2->getRawSize(), outfile);
@@ -441,7 +445,7 @@ void Crinkler::link(const char* filename) {
 	if(m_verboseFlags & VERBOSE_FUNCTIONS_BYNAME)
 		verboseFunctions(csr, compareFunctionsByName);
 	if(m_summaryFilename.compare("") != 0)
-		htmlSummary(csr, m_summaryFilename.c_str(), (unsigned char*)phase1->getPtr(), phase1->getRawSize(), sizefill);
+		htmlSummary(csr, m_summaryFilename.c_str(), *phase1, sizefill);
 	delete csr;
 	delete[] sizefill;
 	
@@ -476,7 +480,7 @@ void Crinkler::link(const char* filename) {
 	phase2list.addHunkBack(depacker);
 	phase2list.addHunkBack(models);
 	phase2list.addHunkBack(phase1Compressed);
-	header->addSymbol(new Symbol("_HashTable", sectionSize*2+phase1->getRawSize(), SYMBOL_IS_RELOCATEABLE, header));
+	header->addSymbol(new Symbol("_HashTable", CRINKLER_SECTIONSIZE*2+phase1->getRawSize(), SYMBOL_IS_RELOCATEABLE, header));
 
 	Hunk* phase2 = phase2list.toHunk("final");
 	//add constants
@@ -486,14 +490,14 @@ void Crinkler::link(const char* filename) {
 		phase2->addSymbol(new Symbol("_HashTableSize", best_hashsize/2, 0, phase2));
 		phase2->addSymbol(new Symbol("_UnpackedData", CRINKLER_CODEBASE, 0, phase2));
 		phase2->addSymbol(new Symbol("_VirtualSize", virtualSize, 0, phase2));
-		phase2->addSymbol(new Symbol("_ImageBase", m_imageBase, 0, phase2));
+		phase2->addSymbol(new Symbol("_ImageBase", CRINKLER_IMAGEBASE, 0, phase2));
 
 		*(phase2->getPtr() + phase2->findSymbol("_BaseProbPtr")->value) = baseprob;
 		*(phase2->getPtr() + phase2->findSymbol("_ModelSkipPtr")->value) = modelskip;
 		*(phase2->getPtr() + phase2->findSymbol("_SubsystemTypePtr")->value) = m_subsytem == SUBSYSTEM_WINDOWS ? IMAGE_SUBSYSTEM_WINDOWS_GUI : IMAGE_SUBSYSTEM_WINDOWS_CUI;
 		*((short*)(phase2->getPtr() + phase2->findSymbol("_LinkerVersionPtr")->value)) = CRINKLER_LINKER_VERSION;
 	}
-	phase2->relocate(m_imageBase);
+	phase2->relocate(CRINKLER_IMAGEBASE);
 
 	fwrite(phase2->getPtr(), 1, phase2->getRawSize(), outfile);
 	fclose(outfile);
@@ -582,5 +586,15 @@ Crinkler* Crinkler::setHunktries(int hunktries) {
 
 Crinkler* Crinkler::setModelBits(int modelbits) {
 	m_modelbits = modelbits;
+	return this;
+}
+
+Crinkler* Crinkler::setTruncateFloats(bool enabled) {
+	m_truncateFloats = enabled;
+	return this;
+}
+
+Crinkler* Crinkler::setTruncateBits(int bits) {
+	m_truncateBits = bits;
 	return this;
 }

@@ -76,14 +76,14 @@ HunkList* CoffLibraryLoader::load(const char* data, int size, const char* module
 
 	//add coff
 	for(int i = 0; i < numberOfMembers; i++) {
-		char memberName[256];
-		sprintf_s(memberName, 256, "%s#%d", module, i);
+		char memberModuleName[256];
+		sprintf_s(memberModuleName, 256, "%s#%d", module, i);
 		ptr = data + offsets[i];
 		ptr += 60;	//skip member header
 
 		if(*(int*)ptr != 0xFFFF0000) {	//coff
 			CoffObjectLoader coffLoader;
-			HunkList* hl = coffLoader.load(ptr, 0, memberName);
+			HunkList* hl = coffLoader.load(ptr, 0, memberModuleName);
 			hunklist->append(hl);
 			delete hl;
 		}
@@ -106,13 +106,13 @@ HunkList* CoffLibraryLoader::load(const char* data, int size, const char* module
 
 			switch(nameType) {
 				case IMPORT_OBJECT_NAME_NO_PREFIX:
-					importName = removePrefix(importName.c_str());
+					importName = stripSymbolPrefix(importName.c_str());
 					break;
 				case IMPORT_OBJECT_NAME:
 					break;
 				case IMPORT_OBJECT_NAME_UNDECORATE:
 				default:
-					importName = undecorate(importName.c_str());
+					importName = undecorateSymbolName(importName.c_str());
 					break;
 			}
 

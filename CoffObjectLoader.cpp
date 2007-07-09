@@ -4,6 +4,7 @@
 #include "Hunk.h"
 #include "HunkList.h"
 #include "Symbol.h"
+#include "StringMisc.h"
 
 using namespace std;
 
@@ -61,7 +62,7 @@ HunkList* CoffObjectLoader::load(const char* data, int size, const char* module)
 	Hunk* constantsHunk;
 	{
 		char hunkName[256];
-		sprintf_s(hunkName, 256, "c[%s]constants", module);
+		sprintf_s(hunkName, 256, "c[%s]!constants", module);
 		constantsHunk = new Hunk(hunkName, 0, 0, 1, 0, 0);
 	}
 
@@ -71,7 +72,7 @@ HunkList* CoffObjectLoader::load(const char* data, int size, const char* module)
 		string sectionName = getSectionName(&sectionHeaders[i], stringTable);
 		int chars = sectionHeaders[i].Characteristics;
 		char hunkName[256];
-		sprintf_s(hunkName, 256, "h[%s]%s(%d)", module, sectionName.c_str(), i);
+		sprintf_s(hunkName, 256, "h[%s](%d)!%s", module, i, sectionName.c_str());
 		unsigned int flags = 0;
 		if(chars & IMAGE_SCN_CNT_CODE)
 			flags |= HUNK_IS_CODE;
@@ -96,7 +97,7 @@ HunkList* CoffObjectLoader::load(const char* data, int size, const char* module)
 				symbol->StorageClass == IMAGE_SYM_CLASS_LABEL) {	//local symbol reference
 				//construct local name
 				char name[256];
-				sprintf_s(name, 256, "l[%s]%s", module, symbolName.c_str());
+				sprintf_s(name, 256, "l[%s]!%s", module, symbolName.c_str());
 				r.symbolname = name;
 			} else {
 				r.symbolname = symbolName;
@@ -143,16 +144,21 @@ HunkList* CoffObjectLoader::load(const char* data, int size, const char* module)
 
 			if(sym->StorageClass == IMAGE_SYM_CLASS_STATIC ||	//perform name mangling on local symbols
 				sym->StorageClass == IMAGE_SYM_CLASS_LABEL) {
-					char symname[256];
-					sprintf_s(symname, 256, "l[%s]%s", module, s->name.c_str());
-					s->name = symname;
-					s->flags |= SYMBOL_IS_LOCAL;
+
+				char symname[256];
+				sprintf_s(symname, 256, "l[%s]!%s", module, s->name.c_str());
+				s->name = symname;
+				s->flags |= SYMBOL_IS_LOCAL;
+				if(sym->StorageClass == IMAGE_SYM_CLASS_STATIC && sym->NumberOfAuxSymbols == 1) {
+					s->flags |= SYMBOL_IS_SECTION;
+					s->miscString = module;
+				}
 			}
 			s->hunk->addSymbol(s);
 		} else if(sym->SectionNumber == 0 && sym->StorageClass == IMAGE_SYM_CLASS_EXTERNAL && sym->Value > 0) {
 			//create an uninitialised hunk
 			char hunkName[256];
-			sprintf_s(hunkName, 256, "u[%s]%s", module, s->name.c_str());
+			sprintf_s(hunkName, 256, "u[%s]!%s", module, s->name.c_str());
 			Hunk* uninitHunk = new Hunk(hunkName, NULL, HUNK_IS_WRITEABLE, 1, 0, s->value);
 			s->hunk = uninitHunk;
 			s->value = 0;
