@@ -34,6 +34,7 @@ public:
 
 	void trim();
 	void printHunks();
+	void truncateFloats(int defaultBits);
 };
 
 #endif

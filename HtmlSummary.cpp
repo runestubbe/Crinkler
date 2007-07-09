@@ -1,4 +1,5 @@
 #include "HtmlSummary.h"
+#include "NameMangling.h"
 
 #include <cstdio>
 #include <algorithm>
@@ -6,14 +7,16 @@
 #include "Compressor/Compressor.h"
 #include "Log.h"
 #include "Hunk.h"
+#include "Symbol.h"
 #include "Crinkler.h"
+#include "StringMisc.h"
 #include "distorm.h"
-
 
 using namespace std;
 
 const int NUM_COLUMNS = 16;
 const int OPCODE_WIDTH = 11;
+const int LABEL_COLOR = 0x808080;
 
 struct scol {
 	float size;
@@ -42,28 +45,26 @@ static int sizeToColor(int size) {
 
 static int instructionSize(_DecodedInst *inst, const int *sizefill) {
 	int idx = (int)inst->offset - CRINKLER_CODEBASE;
-	int size = sizefill[idx + inst->size] - sizefill[idx];
-	size /= inst->size;
-	return size;
+	return sizefill[idx + inst->size] - sizefill[idx];
 }
 
 static int toAscii(int c) {
 	return (c >= 32 && c <= 126 || c >= 160) ? c : '.';
 }
 
-static void printRow(FILE *out, const unsigned char *data, const int *sizefill, int index, int n, int datasize, bool ascii) {
+static void printRow(FILE *out, Hunk& hunk, const int *sizefill, int index, int n, bool ascii) {
 	for(int x = 0; x < n; x++) {
 		unsigned char c = 0;
 		int size = 0;
 		int idx = index + x;
-		if(idx < datasize) {
+		if(idx < hunk.getRawSize()) {
 			size = sizefill[idx+1]-sizefill[idx];
-			c = data[idx++];
+			c = hunk.getPtr()[idx++];
 		}
 
 		if (ascii) {
 			fprintf(out,"<td title=\"%.2f bits\" style=\"color: #%.6X;\">"
-				"%c</td>", size / (float)BITPREC, sizeToColor(size), toAscii(c));
+				"&#x%.2X;</td>", size / (float)BITPREC, sizeToColor(size), toAscii(c));
 		} else {
 			fprintf(out,"<td title=\"%.2f bits\" style=\"color: #%.6X;\">"
 				"%.2X</td>", size / (float)BITPREC, sizeToColor(size), c);
@@ -72,12 +73,131 @@ static void printRow(FILE *out, const unsigned char *data, const int *sizefill, 
 
 }
 
-void htmlSummaryRecursive(CompressionSummaryRecord* csr, FILE* out, const unsigned char* data, int datasize, const int* sizefill, bool iscode) {
+//return the relocation symbol offset bytes into the instruction. Handles off bounds reads gracefully
+static Symbol* getRelocationSymbol(_DecodedInst& inst, int offset, map<int, Symbol*>& relocs) {
+	if(offset < 0 || offset > inst.size-4)
+		return NULL;
+	offset += inst.offset-CRINKLER_CODEBASE;
+	
+	map<int, Symbol*>::iterator it = relocs.find(offset);
+	return it != relocs.end() ? it->second : NULL;
+}
+
+static std::string generateLabel(Symbol* symbol, int value, map<int, Symbol*>& symbols) {
+	char buff[128];
+	int offset = 0;
+	if(symbol->flags & SYMBOL_IS_RELOCATEABLE) {
+		offset = value - (symbol->value+CRINKLER_CODEBASE);
+		
+		//prefer label over label+offset, eventhough it makes us change symbol
+		if(offset != 0) {
+			map<int, Symbol*>::iterator it = symbols.find(value-CRINKLER_CODEBASE);
+			if(it != symbols.end()) {
+				symbol = it->second;
+				offset = 0;
+			}
+		}
+	}
+	string name = stripCrinklerSymbolPrefix(symbol->name.c_str());
+	if(offset > 0)
+		sprintf_s(buff, sizeof(buff), "%s+0x%X", name.c_str(), offset);
+	else if(offset < 0)
+		sprintf_s(buff, sizeof(buff), "%s-0x%X", name.c_str(), -offset);
+	else
+		sprintf_s(buff, sizeof(buff), "%s", name.c_str());
+	return buff;
+}
+
+//finds a hexnumber, removes it from the string and returns its position. value is set to the value of the number
+static void extractNumber(string& str, int begin, int& value, string::size_type& startpos, string::size_type& endpos) {
+	startpos = str.find("0x", begin);
+	if(startpos == string::npos)
+		return;
+
+	endpos = startpos+2;
+	while(endpos < str.size() && 
+		(str[endpos] >= '0' && str[endpos] <= '9' ||
+		str[endpos] >= 'A' && str[endpos] <= 'F')) {
+			endpos++;
+	}
+	
+	sscanf_s(&str.c_str()[startpos], "%X", &value);
+}
+
+static string calculateInstructionOperands(_DecodedInst& inst, Hunk& hunk, map<int, Symbol*>& relocs, map<int, Symbol*> symbols) {
+	string operands = (char*)inst.operands.p;
+
+	//find number operands in textual assembly
+	int number1_value = 0;
+	string::size_type number1_startpos = string::npos, number1_endpos = string::npos;			//immediate or displace
+	extractNumber(operands, 0, number1_value, number1_startpos, number1_endpos);
+	int number2_value = 0;
+	string::size_type number2_startpos = string::npos, number2_endpos = string::npos;			//displace
+	if(number1_startpos != string::npos) {
+		extractNumber(operands, number1_startpos+1, number2_value, number2_startpos, number2_endpos);
+		if(number2_startpos != string::npos && operands[number1_endpos] == ']') {
+			swap(number1_startpos, number2_startpos);
+			swap(number1_endpos, number2_endpos);
+			swap(number1_value, number2_value);
+		}
+	}
+
+	//find relocation
+	Symbol* reloc_symbol1 = getRelocationSymbol(inst, inst.size-4, relocs);//imm32 or disp32
+	Symbol* reloc_symbol2 = NULL;	//disp32
+
+	reloc_symbol2 = getRelocationSymbol(inst, inst.size-5, relocs);	//disp32 followed by imm8
+	if(reloc_symbol2 == NULL)
+		reloc_symbol2 = getRelocationSymbol(inst, inst.size-6, relocs);	//disp32 followed by imm16
+	if(reloc_symbol2 == NULL)
+		reloc_symbol2 = getRelocationSymbol(inst, inst.size-8, relocs);	//disp32 followed by imm32
+
+	if(number1_startpos != string::npos && (reloc_symbol1 || reloc_symbol2)) {		//at least one number operand needs a fix
+		if(number2_startpos == string::npos) {	//if number2 isn't there
+			if(reloc_symbol1 == NULL)
+				swap(reloc_symbol1, reloc_symbol2);	//force symbol1 into number1
+		}
+
+		int delta = 0;	//the amount label2 will need to be displaced
+		if(reloc_symbol1) {
+			string label = generateLabel(reloc_symbol1, number1_value, symbols);
+			delta = label.size() - (number1_endpos-number1_startpos);
+			operands.erase(number1_startpos, number1_endpos-number1_startpos);
+			operands.insert(number1_startpos, label);
+		}
+		if(reloc_symbol2) {
+			if(number2_startpos < number1_startpos)
+				delta = 0;
+			string label = generateLabel(reloc_symbol2, number2_value, symbols);
+			operands.erase(number2_startpos+delta, number2_endpos-number2_startpos);
+			operands.insert(number2_startpos+delta, label);
+		}
+	}
+
+	//handle 8 and 16-bit displacements
+	unsigned char* inst_ptr = (unsigned char*)&hunk.getPtr()[inst.offset-CRINKLER_CODEBASE];
+
+	if((inst_ptr[0] >=0x70 && inst_ptr[0] < 0x80) ||		//jcc
+		(inst_ptr[0] >= 0xE0 && inst_ptr[0] <= 0xE3) ||	//loop
+		(inst_ptr[0] == 0xE8)) {						//jmp
+
+		int value;
+		sscanf_s(operands.c_str(), "%X", &value);
+		map<int, Symbol*>::iterator it = symbols.find(value-CRINKLER_CODEBASE);
+		if(it != symbols.end()) {
+			operands = generateLabel(it->second, value, symbols);
+		}
+	}
+
+	return operands;
+}
+
+static void htmlSummaryRecursive(CompressionSummaryRecord* csr, FILE* out, Hunk& hunk, const int* sizefill, bool iscode, map<int, Symbol*>& relocs, map<int, Symbol*>& symbols) {
 	//handle enter node events
 	if(csr->type & RECORD_ROOT) {
 		//write header
 		fprintf(out,
-			"<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\">"
+			"<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01//EN\" \"http://www.w3.org/TR/html4/strict.dtd\">"
 			"<html><head>"
 			"<meta http-equiv=\"Content-Type\" content=\"text/html; charset=iso-8859-1\">"
 			"<title>Crinkler compression summary</title>"
@@ -102,9 +222,22 @@ void htmlSummaryRecursive(CompressionSummaryRecord* csr, FILE* out, const unsign
 			".data td {"
 				"border: 0px;"
 			"}"
+			".fillcell {"
+			"}"
+			".private_symbol_row {"
+				"background-color: #eef;"
+			"}"
+			".public_symbol_row {"
+				"background-color: #99c;"
+				"font-weight: bold;"
+			"}"
+			".section_symbol_row {"
+				"background-color: #c88;"
+				"font-weight: bold;"
+			"}"
 			"</style>"
 
-			"</head><body>");
+			"</head><body>", LABEL_COLOR);
 	} else {
 		if(csr->type & RECORD_SECTION) {
 			fprintf(out,
@@ -114,6 +247,7 @@ void htmlSummaryRecursive(CompressionSummaryRecord* csr, FILE* out, const unsign
 				"<th>address</th>"
 				"<th>label name</th>"
 				"<th>size</th>",
+				csr->name.c_str(),
 				csr->name.c_str());
 
 			if (csr->name.c_str()[0] == 'U') {
@@ -128,14 +262,28 @@ void htmlSummaryRecursive(CompressionSummaryRecord* csr, FILE* out, const unsign
 				iscode = true;
 			}
 		} else {
+			string label;
+			if(csr->type & RECORD_OLD_SECTION) {
+				label = stripPath(csr->miscString) + ":" + csr->name;
+				fprintf(out, "<tr class=section_symbol_row>");
+			} else {
+				label = csr->name;
+				fprintf(out, "<tr class=\"%s_symbol_row\">", (csr->type & RECORD_PUBLIC) ? "public" : "private");
+			}
+			
+			fprintf(out, "<td><table class=\"data\"><tr><td class=\"address\">%.8X&nbsp;</td></tr></table></td>", CRINKLER_CODEBASE + csr->pos);
+			
+			
 
-			fprintf(out, "<tr><td><table class=\"data\"><tr><td class=\"address\">%.8X&nbsp;</td></tr></table></td>",
-					CRINKLER_CODEBASE + csr->pos);
+			int colspan = 1;
+			if(csr->size == 0)
+				if(csr->compressedPos >= 0)	//initialized data
+					colspan = 4;
+				else
+					colspan = 2;
 
-			if(csr->type & RECORD_PUBLIC)
-				fprintf(out, "<td><b>%s</b></td>", csr->name.c_str());	//emphasize global labels
-			else
-				fprintf(out, "<td>%s</td>", csr->name.c_str());
+			
+			fprintf(out, "<td colspan=\"%d\">%s</td>", colspan, label.c_str());
 
 			if (csr->size > 0) {
 				if(csr->compressedPos >= 0) {
@@ -147,12 +295,8 @@ void htmlSummaryRecursive(CompressionSummaryRecord* csr, FILE* out, const unsign
 						csr->compressedSize / (BITPREC*8.0f),
 						(csr->compressedSize / (BITPREC*8.0f)) * 100 / csr->size);
 				} else {
-					fprintf(out,
-						"<td align=right>%d</td>",
-						csr->size);
+					fprintf(out, "<td align=right>%d</td>", csr->size);
 				}
-			} else {
-				fprintf(out, "<td/><td/><td/>");
 			}
 			fprintf(out,"</tr>");
 
@@ -165,7 +309,7 @@ void htmlSummaryRecursive(CompressionSummaryRecord* csr, FILE* out, const unsign
 					if (instspace < 15) instspace = 15;
 					_DecodedInst *insts = (_DecodedInst *)malloc(instspace * sizeof(_DecodedInst));
 					unsigned int numinsts;
-					distorm_decode(CRINKLER_CODEBASE + csr->pos, &data[csr->pos], csr->size, Decode32Bits, insts, instspace, &numinsts);
+					distorm_decode(CRINKLER_CODEBASE + csr->pos, (unsigned char*)&hunk.getPtr()[csr->pos], csr->size, Decode32Bits, insts, instspace, &numinsts);
 
 					// Print instruction adresses
 					fprintf(out, "<tr><td><table class=\"data\">");
@@ -180,7 +324,7 @@ void htmlSummaryRecursive(CompressionSummaryRecord* csr, FILE* out, const unsign
 					fprintf(out, "<td><table class=\"data\">");
 					for (int i = 0 ; i < numinsts ; i++) {
 						fprintf(out, "<tr>");
-						printRow(out, data, sizefill, (int)insts[i].offset - CRINKLER_CODEBASE, insts[i].size, datasize, false);
+						printRow(out, hunk, sizefill, (int)insts[i].offset - CRINKLER_CODEBASE, insts[i].size, false);
 						fprintf(out, "</tr>");
 					}
 					fprintf(out, "</table></td>");
@@ -194,12 +338,15 @@ void htmlSummaryRecursive(CompressionSummaryRecord* csr, FILE* out, const unsign
 						}
 						int size = instructionSize(&insts[i], sizefill);
 
-						fprintf(out, "<tr><td title=\"%.2f bits/byte\" style=\"color: #%.6X;\">%s",
-							size / (float)BITPREC, sizeToColor(size), insts[i].mnemonic.p);
+						fprintf(out, "<tr><td title=\"%.2f bytes\" style=\"color: #%.6X;\">%s",
+							size / (float)(BITPREC*8), sizeToColor(size/insts[i].size), insts[i].mnemonic.p);
 						for (int j = 0 ; j < OPCODE_WIDTH-insts[i].mnemonic.length ; j++) {
 							fprintf(out, "&nbsp;");
 						}
-						fprintf(out, "&nbsp;%s</td></tr>", insts[i].operands.p);
+				
+						fprintf(out, "&nbsp;%s</td>", calculateInstructionOperands(insts[i], hunk, relocs, symbols).c_str());
+						fprintf(out, "</tr>");
+						
 					}
 					fprintf(out, "</table></td></tr>");
 
@@ -207,21 +354,39 @@ void htmlSummaryRecursive(CompressionSummaryRecord* csr, FILE* out, const unsign
 
 				} else {
 					// Data section
+					vector<int> rowLengths;
+					{	//fill row lenghts
+						int count = 0;
+						int idx = csr->pos;
+						while(idx < csr->pos+csr->size) {
+							if(relocs.find(idx) == relocs.end()) {
+								count++;
+								if(count == NUM_COLUMNS) {
+									rowLengths.push_back(NUM_COLUMNS);
+									count = 0;
+								}
+								idx++;
+							} else {
+								if(count > 0)
+									rowLengths.push_back(count);
+								rowLengths.push_back(4);
+								count = 0;
+								idx+=4;
+							}
+						}
+						if(count > 0)
+							rowLengths.push_back(count);
+					}
 
 					// Print adresses
 					{
 						fprintf(out, "<tr><td><table class=\"data\">");
-						int bytesleft = csr->size;
 						int idx = csr->pos;
-						while(bytesleft > 0) {
-							int ncolumns = min(bytesleft, NUM_COLUMNS);
-
+						for(vector<int>::iterator it = rowLengths.begin(); it != rowLengths.end(); it++) {
 							fprintf(out, "<tr>");
 							fprintf(out, "<td class=\"address\">%.8X&nbsp;</td>", CRINKLER_CODEBASE + idx);
 							fprintf(out, "</tr>");
-
-							bytesleft -= ncolumns;
-							idx += ncolumns;	
+							idx += *it;
 						}
 						fprintf(out, "</table></td>");
 					}
@@ -229,17 +394,12 @@ void htmlSummaryRecursive(CompressionSummaryRecord* csr, FILE* out, const unsign
 					//write hex
 					{
 						fprintf(out, "<td><table class=\"data\">");
-						int bytesleft = csr->size;
 						int idx = csr->pos;
-						while(bytesleft > 0) {
-							int ncolumns = min(bytesleft, NUM_COLUMNS);
-
+						for(vector<int>::iterator it = rowLengths.begin(); it != rowLengths.end(); it++) {
 							fprintf(out, "<tr>");
-							printRow(out, data, sizefill, idx, ncolumns, datasize, false);
+							printRow(out, hunk, sizefill, idx, *it, false);
 							fprintf(out, "</tr>");
-
-							bytesleft -= ncolumns;
-							idx += ncolumns;	
+							idx += *it;	
 						}
 						fprintf(out, "</table></td>");
 					}
@@ -248,17 +408,22 @@ void htmlSummaryRecursive(CompressionSummaryRecord* csr, FILE* out, const unsign
 					//write ascii
 					{
 						fprintf(out, "<td colspan=3><table class=\"data\">");
-						int bytesleft = csr->size;
 						int idx = csr->pos;
-						while(bytesleft > 0) {
-							int ncolumns = min(bytesleft, NUM_COLUMNS);
-
+						for(vector<int>::iterator it = rowLengths.begin(); it != rowLengths.end(); it++) {
 							fprintf(out, "<tr>");
-							printRow(out, data, sizefill, idx, ncolumns, datasize, true);
-							fprintf(out, "</tr>");
-
-							bytesleft -= ncolumns;
-							idx += ncolumns;	
+							map<int, Symbol*>::iterator jt = relocs.find(idx);
+							if(jt != relocs.end()) {
+								//write label
+								int size = sizefill[idx+4]-sizefill[idx];
+								int value = *((int*)&hunk.getPtr()[idx]);
+								string label = generateLabel(jt->second, value, symbols);
+								fprintf(out, "<td title=\"%.2f bytes\" style=\"color: #%.6X;\" colspan=\"%d\">%s</td>",
+									size / (float)(BITPREC*8), sizeToColor(size/4), NUM_COLUMNS, label.c_str());
+							} else {
+								//write ascii
+								printRow(out, hunk, sizefill, idx, *it, true);
+							}
+							idx += *it;
 						}
 						fprintf(out, "</table></td></tr>");
 					}
@@ -270,7 +435,7 @@ void htmlSummaryRecursive(CompressionSummaryRecord* csr, FILE* out, const unsign
 	}
 
 	for(vector<CompressionSummaryRecord*>::iterator it = csr->children.begin(); it != csr->children.end(); it++)
-		htmlSummaryRecursive(*it, out, data, datasize, sizefill, iscode);
+		htmlSummaryRecursive(*it, out, hunk, sizefill, iscode, relocs, symbols);
 
 	//handle leave node event
 	if(csr->type == RECORD_ROOT) {
@@ -280,16 +445,17 @@ void htmlSummaryRecursive(CompressionSummaryRecord* csr, FILE* out, const unsign
 			fprintf(out,"</table>");
 		}
 	}
-
 }
 
-void htmlSummary(CompressionSummaryRecord* csr, const char* filename, const unsigned char* data, int datasize, const int* sizefill) {
+void htmlSummary(CompressionSummaryRecord* csr, const char* filename, Hunk& hunk, const int* sizefill) {
+	map<int, Symbol*> relocs = hunk.getOffsetToRelocationMap();
+	map<int, Symbol*> symbols = hunk.getOffsetToSymbolMap();
 	FILE* out;
 	if(fopen_s(&out, filename, "wb")) {
 		Log::error(0, "", "could not open '%s' for writing", filename);
 		return;
 	}
-	htmlSummaryRecursive(csr, out, data, datasize, sizefill, false);
+	htmlSummaryRecursive(csr, out, hunk, sizefill, false, relocs, symbols);
 
 	fclose(out);
 }

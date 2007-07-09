@@ -15,7 +15,10 @@ string CmdParam::toString() const {
 	char buff[1024];
 	char param[1024];
 	if(m_flags & PARAM_TAKES_ARGUMENT) {
-		sprintf_s(param, sizeof(param), "%s:%s", m_parameterName.c_str(), m_argumentDesc.c_str());
+		if(m_flags & PARAM_ALLOW_NO_ARGUMENT_DEFAULT)
+			sprintf_s(param, sizeof(param), "%s[:%s]", m_parameterName.c_str(), m_argumentDesc.c_str());
+		else
+			sprintf_s(param, sizeof(param), "%s:%s", m_parameterName.c_str(), m_argumentDesc.c_str());
 	} else {
 		sprintf_s(param, sizeof(param), "%s", m_parameterName.c_str());
 	}

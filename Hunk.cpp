@@ -95,7 +95,10 @@ const char* Hunk::getName() const {
 
 struct SymbolComparator {
 	bool operator()(Symbol*& first, Symbol*& second) {
-		return first->value < second->value;
+		if(first->value != second->value)
+			return first->value < second->value;
+		else
+			return first->flags & SYMBOL_IS_SECTION;
 	}
 };
 
@@ -124,7 +127,7 @@ unsigned int Hunk::getFlags() const {
 Symbol* Hunk::findUndecoratedSymbol(const char* name) const {
 	for(map<string, Symbol*>::const_iterator it = m_symbols.begin(); it != m_symbols.end(); it++) {
 		Symbol* s = it->second;
-		if(undecorate(s->name.c_str()).compare(name) == 0)
+		if(undecorateSymbolName(s->name.c_str()).compare(name) == 0)
 			return s;
 	}
 	return NULL;
@@ -256,15 +259,19 @@ CompressionSummaryRecord* Hunk::getCompressionSummary(int* sizefill, int splitti
 	root->children.push_back(uninitSection);
 
 	for(vector<Symbol*>::iterator it = symbols.begin(); it != symbols.end(); it++) {
-		CompressionSummaryRecord* c = new CompressionSummaryRecord((*it)->getPrettyName().c_str(), 
+		CompressionSummaryRecord* c = new CompressionSummaryRecord(stripCrinklerSymbolPrefix((*it)->name.c_str()).c_str(), 
 			((*it)->flags & SYMBOL_IS_LOCAL) ? 0 : RECORD_PUBLIC, (*it)->value, ((*it)->value < m_rawsize) ? sizefill[(*it)->value] : -1);
 
+		c->miscString = (*it)->miscString;
 		if((*it)->flags & SYMBOL_IS_FUNCTION) {
-			c->functionName = (*it)->getUndecoratedName();
+			c->miscString = (*it)->getUndecoratedName();
 			c->functionSize = (*it)->size;
 			c->compressedFunctionSize = sizefill[(*it)->value+c->functionSize] - sizefill[(*it)->value];
 			c->type |= RECORD_FUNCTION;
 		}
+
+		if((*it)->flags & SYMBOL_IS_SECTION)
+			c->type |= RECORD_OLD_SECTION;
 
 		if((*it)->value < splittingPoint) {
 			codeSection->children.push_back(c);
@@ -282,4 +289,87 @@ CompressionSummaryRecord* Hunk::getCompressionSummary(int* sizefill, int splitti
 
 void Hunk::setImportDll(const char* dll) {
 	m_importDll = dll;
+}
+
+map<int, Symbol*> Hunk::getOffsetToRelocationMap() {
+	map<int, Symbol*> offsetmap;
+	map<int, Symbol*> symbolmap = getOffsetToSymbolMap();
+	for(list<relocation>::iterator it = m_relocations.begin(); it != m_relocations.end(); it++) {
+		Symbol* s = findSymbol(it->symbolname.c_str());
+		if(s && s->secondaryName.size() > 0)
+			s = findSymbol(s->secondaryName.c_str());
+		if(s->flags & SYMBOL_IS_RELOCATEABLE && s->flags & SYMBOL_IS_SECTION)
+			s = symbolmap.find(s->value)->second;	//replace relocation to section with non-section
+		pair<int, Symbol*> p(it->offset, s);
+		offsetmap.insert(p);
+	}
+	return offsetmap;
+}
+
+map<int, Symbol*> Hunk::getOffsetToSymbolMap() {
+	map<int, Symbol*> offsetmap;
+	for(map<string, Symbol*>::iterator it = m_symbols.begin(); it != m_symbols.end(); it++) {
+		Symbol* s = it->second;
+		if(s->flags & SYMBOL_IS_RELOCATEABLE) {
+			if(offsetmap.find(s->value) != offsetmap.end() && s->flags & SYMBOL_IS_SECTION)	//favor non-sections
+				continue;
+
+			pair<int, Symbol*> p(s->value, s);
+			offsetmap.insert(p);
+		}
+	}
+	return offsetmap;
+}
+
+static float truncateFloat(float ptr, int bits) {
+	int truncBits = 32-bits;
+	float* v = &ptr;
+	int v1;
+	double orgv = *v;
+	unsigned int* iv = (unsigned int*)v;
+
+	if(bits < 2) {
+		*iv = 0;
+	} else {
+		//round
+		//compare actual floating point values due to non-linearity
+		*iv >>= truncBits;
+		*iv <<= truncBits;
+		if(truncBits > 0) {
+			double v0 = *v;
+			(*iv) += 1<<truncBits;
+			double v1 = *v;
+			if(abs(orgv-v0) < abs(orgv-v1)) {
+				(*iv) -= 1<<truncBits;
+			}
+		}
+	}
+	return *v;
+}
+
+void Hunk::truncateFloats(int defaultBits) {
+	for(map<string, Symbol*>::iterator it = m_symbols.begin(); it != m_symbols.end(); it++) {
+		Symbol* s = it->second;
+		int bits = defaultBits;
+		string name = undecorateSymbolName(s->name.c_str());
+
+		//REMARK: a float with most significant byte = 0 could be trimmed down
+		//and thus not get truncated. Just ignore it. It only happens to numbers with norm < 10^-38
+		if(s->value < 0 | s->value > m_rawsize-4)	//sanity check.
+			continue;
+
+		int a;
+		if(sscanf_s(s->name.c_str(), "__real@%8X", &a) && s->name.size() == (2+4+1+8)) {	//TODO: fix hacked check
+			bits = defaultBits;
+		} else if(sscanf_s(name.c_str(), "tf%d_", &bits) && bits >= 0 && bits <= 32) {
+			
+		} else {
+			continue;
+		}
+		
+		float orgv = *(float*)&m_data[s->value];
+		float v = truncateFloat(orgv, bits);			
+		*(float*)&m_data[s->value] = v;
+		printf("symbol %s truncated to %d bits: %f -> %f (%.8X)\n", stripCrinklerSymbolPrefix(s->name.c_str()).c_str(), bits, orgv, v, *(unsigned int*)&v);
+	}
 }

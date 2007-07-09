@@ -2,8 +2,10 @@
 #include <cstdio>
 #include <iostream>
 #include <list>
+#include <set>
 #include <string>
 #include <direct.h>
+
 
 #include "CoffObjectLoader.h"
 #include "CoffLibraryLoader.h"
@@ -79,47 +81,66 @@ static string getEnv(const char* varname) {
 	}
 }
 
+static bool runExecutable(const char* filename) {
+	char args[MAX_PATH];
+	strcpy_s(args, GetCommandLine());
+
+	STARTUPINFO siStartupInfo;
+	PROCESS_INFORMATION piProcessInfo;
+	memset(&siStartupInfo, 0, sizeof(siStartupInfo));
+	memset(&piProcessInfo, 0, sizeof(piProcessInfo));
+	siStartupInfo.cb = sizeof(siStartupInfo);
+
+	if(!CreateProcess(filename,		//LPCSTR lpApplicationName
+		args,	//LPSTR lpCommandLine,
+		NULL,			//LPSECURITY_ATTRIBUTES lpProcessAttributes,
+		NULL,			//LPSECURITY_ATTRIBUTES lpThreadAttributes,
+		FALSE,			//BOOL bInheritHandles,
+		CREATE_DEFAULT_ERROR_MODE,//DWORD dwCreationFlags,
+		NULL,			//LPVOID lpEnvironment,
+		NULL,			//LPCSTR lpCurrentDirectory,
+		&siStartupInfo, //LPSTARTUPINFOA lpStartupInfo,
+		&piProcessInfo))//LPPROCESS_INFORMATION lpProcessInformation
+	{
+		return false;
+	}
+
+	//Wait until application has terminated
+	WaitForSingleObject(piProcessInfo.hProcess, INFINITE);
+
+	//Close process and thread handles
+	CloseHandle(piProcessInfo.hThread);
+	CloseHandle(piProcessInfo.hProcess);
+	return true;
+
+}
+
 static void runOriginalLinker(const char* crinklerCanonicalName, const char* linkerName) {
 	//Crinkler not enabled. Search for linker
+	//Only call target, if we have already seen ourselves and the target is not in the taboo list.
+	//This ensures that we always invoke a linker further down the path
+	string crinklerName = toUpper(crinklerCanonicalName);
+
 	string path = ".;" + getEnv("PATH");
 	list<string> res = findFileInPath(linkerName, path.c_str());
+	bool foundSelf = find(res.begin(), res.end(), crinklerName) == res.end();	//just pretend crinkler was seen, if it wasn't in the path -> run first linker in path
+	set<string> tabooNames;
+	
 	for(list<string>::const_iterator it = res.begin(); it != res.end(); it++) {
-		if(toUpper(*it).compare(toUpper(crinklerCanonicalName)) != 0) {
-			printf("Launching default linker at '%s'\n\n", it->c_str());
-			fflush(stdout);
-			char args[MAX_PATH];
-			strcpy_s(args, GetCommandLine());
-
-			STARTUPINFO siStartupInfo;
-			PROCESS_INFORMATION piProcessInfo;
-			memset(&siStartupInfo, 0, sizeof(siStartupInfo));
-			memset(&piProcessInfo, 0, sizeof(piProcessInfo));
-			siStartupInfo.cb = sizeof(siStartupInfo);
-
-			if(!CreateProcess(it->c_str(),		//LPCSTR lpApplicationName
-				args,	//LPSTR lpCommandLine,
-				NULL,			//LPSECURITY_ATTRIBUTES lpProcessAttributes,
-				NULL,			//LPSECURITY_ATTRIBUTES lpThreadAttributes,
-				FALSE,			//BOOL bInheritHandles,
-				CREATE_DEFAULT_ERROR_MODE,//DWORD dwCreationFlags,
-				NULL,			//LPVOID lpEnvironment,
-				NULL,			//LPCSTR lpCurrentDirectory,
-				&siStartupInfo, //LPSTARTUPINFOA lpStartupInfo,
-				&piProcessInfo))//LPPROCESS_INFORMATION lpProcessInformation
-			{
-				Log::error(0, "", "failed to launch default linker, errorcode: %X", GetLastError());
-			}
-
-			//Wait until application has terminated
-			WaitForSingleObject(piProcessInfo.hProcess, INFINITE);
-
-			//Close process and thread handles
-			CloseHandle(piProcessInfo.hThread);
-			CloseHandle(piProcessInfo.hProcess);
-			return;
+		string name = toUpper(*it);
+		if(crinklerName.compare(name) == 0) {
+			foundSelf = true;
 		} else {
-			printf("\n");
+			if(foundSelf && tabooNames.find(name) == tabooNames.end()) {
+				//run linker
+				printf("Launching default linker at '%s'\n\n", it->c_str());
+				fflush(stdout);
+				if(!runExecutable(name.c_str()))
+					Log::error(0, "", "failed to launch default linker, errorcode: %X", GetLastError());
+				return;
+			}
 		}
+		tabooNames.insert(name);
 	}
 
 	//Linker not found
@@ -130,16 +151,6 @@ static void runOriginalLinker(const char* crinklerCanonicalName, const char* lin
 #define TRANSFORM_CALLS2		0x02
 
 int main(int argc, char* argv[]) {	
-/*
-	argc = 5;
-	char* argv[] = {
-		argv2[0],
-		"@test\\buildfallty.txt",
-		"/CRINKLER",
-		"/RANGE:opengl32",
-		"/COMPMODE:SLOW"
-	};
-*/
 	//find canonical name of the crinkler executable
 	char crinklerCanonicalName[1024];
 	{
@@ -157,6 +168,8 @@ int main(int argc, char* argv[]) {
 							0, 10000, 20);
 	CmdParamInt hunktriesArg("ORDERTRIES", "", "number of section reordering tries", 0,
 							0, 10000, 0);
+	CmdParamInt truncateFloats("TRUNCATEFLOATS", "truncates floats", "bits", PARAM_ALLOW_NO_ARGUMENT_DEFAULT,
+							0, 32, 32);
 	CmdParamString entryArg("ENTRY", "name of the entrypoint", "symbol", 
 						PARAM_IS_SWITCH|PARAM_FORBID_MULTIPLE_DEFINITIONS, "");
 	CmdParamString outArg("OUT", "output filename", "filename", 
@@ -192,7 +205,7 @@ int main(int argc, char* argv[]) {
 	CmdLineInterface cmdline(CRINKLER_TITLE, CMDI_PARSE_FILES);
 
 	cmdline.addParams(&crinklerFlag, &hashsizeArg, &hashtriesArg, &hunktriesArg, &entryArg, &outArg, &summaryArg, &safeImportArg,
-						&subsystemArg, &compmodeArg, &verboseArg, &transformArg, &libpathArg, 
+						&subsystemArg, &truncateFloats, &compmodeArg, &verboseArg, &transformArg, &libpathArg, 
 						&rangeImportArg, &replaceDllArg, &filesArg, &priorityArg, &showProgressArg, 
 						&tinyCompressor,
 						NULL);
@@ -255,6 +268,8 @@ int main(int argc, char* argv[]) {
 	crinkler.setHunktries(hunktriesArg.getValue());
 	crinkler.setVerboseFlags(verboseArg.getValue());
 	crinkler.showProgressBar(showProgressArg.getValue());
+	crinkler.setTruncateFloats(truncateFloats.getNumMatches() > 0);
+	crinkler.setTruncateBits(truncateFloats.getValue());
 
 	//transforms
 	IdentityTransform identTransform;
@@ -282,7 +297,9 @@ int main(int argc, char* argv[]) {
 	printf("Hash size: %d MB\n", hashsizeArg.getValue());
 	printf("Hash tries: %d\n", hashtriesArg.getValue());
 	printf("Order tries: %d\n", hunktriesArg.getValue());
+	printf("Summary: %s\n", strlen(summaryArg.getValue()) > 0 ? summaryArg.getValue() : "NONE");
 	printf("Transforms: %s\n", (transformArg.getValue() & TRANSFORM_CALLS) ? "CALLS" : "NONE");
+
 	//replace dll
 	{
 		printf("Replace DLLs: ");

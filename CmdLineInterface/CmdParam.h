@@ -9,6 +9,7 @@
 #define PARAM_TAKES_ARGUMENT				0x04	//parameter name should be followed by a ':'' and an argument ex. /VERBOSE:LABELS
 #define PARAM_FORBID_MULTIPLE_DEFINITIONS	0x08	//forbids multiple definitions of this parameter
 #define PARAM_HIDE_IN_PARAM_LIST			0x10	//hide parameter in parameter list
+#define PARAM_ALLOW_NO_ARGUMENT_DEFAULT		0x20	//allows a form where /FOO eq. /FOO:default
 
 #define PARSE_OK							0x00	//the parameter parsed successfully
 #define PARSE_NO_MATCH						0x01	//the input doesn't match this parameter

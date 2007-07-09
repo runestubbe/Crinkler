@@ -1,10 +1,11 @@
 <?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject 
 	ProjectType="Intel C++ Project"
-	Version="9.1"
+	Version="10.0"
 	Name="Crinkler"
 	ProjectGUID="{392261A4-DEA9-4E58-9BD2-5E3BF928D2CF}"
 	VCNestedProjectGUID="{B0591735-B8E8-4E45-8394-5A01A5F53984}"
+	VCNestedProjectCRC32="3619293878"
 	VCNestedProjectFileName="Crinkler.vcproj"
 	Keyword="Win32Proj">
 	<Platforms>
@@ -19,9 +20,8 @@
 				OutputDirectory="Debug"
 				IntermediateDirectory="Debug"
 				ConfigurationType="1"
-				CharacterSet="2"/>
-			<Tool 
-				Name="DebugTool"/>
+				CharacterSet="2"
+				InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"/>
 			<Tool 
 				Name="CppCmplrTool"
 				Optimization="0"
@@ -71,9 +71,8 @@
 				IntermediateDirectory="Release"
 				ConfigurationType="1"
 				CharacterSet="2"
-				WholeProgramOptimization="0"/>
-			<Tool 
-				Name="DebugTool"/>
+				WholeProgramOptimization="0"
+				InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"/>
 			<Tool 
 				Name="CppCmplrTool"
 				WholeProgramOptimization="0"
