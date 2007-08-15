@@ -1,42 +1,21 @@
 Manual:
- Set date (in two places)
- Setting executable path
- More options in example?
- New options
- Detailed comparisons: mention ORDERTRIES?
- Error message for not found DLL
- Range is after replace
--bytes lost to hashing
--HASHTRIES and ORDERTRIES ignored with INSTANT
- Progress bar problem in VS: only text
- FUNCTIONS-BYNAME/BYSIZE
+	beskriv summary
+	verbose -> ?
+	truncation?
+	credit til flere personer?
+	nævn at verbose functions ikke virker i vs8
 
 Code:
- new faster hashing
--review
- test vs.net integration
- set date
- VERBOSE: models
- VERBOSE: functions
--Hunk destructor bug i (benitoite, fast, safeimport)
- Sanity check of REPLACEDLL: check that all functions exist
- INSTANT
- replacedll
- warn if rangedlls are not used
--cleanup cmdline library
--strip extension from rangedll/dllreplace
- fix range and dllreplace output
--Count model bytes in ideal sizes?
- Calls transformed
- hashcrash with transform+ordertries
- uncompressed sizes
- /FIX
- ordinal range print bug
- hash blowup/crash
- counting uninit as data in LABELS
-cache order tries
+	summary: layout ved lange idents
+	summary: lav relocs til links
+	summary: colapse/expand
+	summary: lav sidste justeringer af layout og skriv forklaringstekst
 
-Check:
--Dev-C++ object files
--rambo?
- replace msvcrt
+	truncation?
+	verbose -> ?
+	combine identical read-only symbols
+	fix recursive call bug
+
+
+test:
+	Test weak externals support
