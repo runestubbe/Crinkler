@@ -5,6 +5,10 @@ Manual:
 	credit til flere personer?
 	nævn at verbose functions ikke virker i vs8
 
+Licens:
+	inkluder Distorm-licens
+	formuler Crinkler-licens
+
 Code:
 	summary: layout ved lange idents
 	summary: lav relocs til links
