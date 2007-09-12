@@ -29,8 +29,7 @@ int CmdParamMultiAssign::parse(const char* str, char* errorMsg, int buffsize) {
 		return PARSE_INVALID;
 	}
 
-	pair<string, string> sp(s1, s2);
-	m_strings.push_back(sp);
+	m_strings.push_back(make_pair(s1,s2));
 	m_it = m_strings.begin();
 	return PARSE_OK;
 }

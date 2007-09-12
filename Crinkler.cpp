@@ -23,6 +23,7 @@
 #include "Symbol.h"
 #include "StringMisc.h"
 #include "HtmlSummary.h"
+#include "NameMangling.h"
 
 using namespace std;
 
@@ -163,12 +164,13 @@ void verboseLabels(CompressionSummaryRecord* csr) {
 	if(csr->type & RECORD_ROOT) {
 		printf("\nlabel name                                   pos comp-pos      size compsize");
 	} else {
+		string strippedName = stripCrinklerSymbolPrefix(csr->name.c_str());
 		if(csr->type & RECORD_SECTION)
-			printf("\n%-38.38s", csr->name.c_str());
+			printf("\n%-38.38s", strippedName.c_str());
 		else if(csr->type & RECORD_PUBLIC)
-			printf("  %-36.36s", csr->name.c_str());
+			printf("  %-36.36s", strippedName.c_str());
 		else
-			printf("    %-34.34s", csr->name.c_str());
+			printf("    %-34.34s", strippedName.c_str());
 
 
 		if(csr->compressedPos >= 0)
@@ -228,7 +230,7 @@ void Crinkler::link(const char* filename) {
 
 		//hack to ensure that LoadLibrary & MessageBox is there to be used in the import code
 		Symbol* loadLibrary = m_hunkPool.findSymbol("__imp__LoadLibraryA@4"); 
-		Symbol* messageBox = m_hunkPool.findSymbol("__imp__MessageBoxA@16"); 
+		Symbol* messageBox = m_hunkPool.findSymbol("__imp__MessageBoxA@16");
 		if(loadLibrary != NULL)
 			startHunks.push_back(loadLibrary->hunk);
 		if(m_useSafeImporting && messageBox != NULL)
@@ -251,24 +253,31 @@ void Crinkler::link(const char* filename) {
 	headerHunks->removeHunk(header);
 	bool usesRangeImport;
 	{	//add imports
-		
-		HunkList* importHunkList = ImportHandler::createImportHunks(&m_hunkPool, header, m_rangeDlls, m_verboseFlags & VERBOSE_IMPORTS, usesRangeImport);
+		HunkList* importHunkList;
+		if(m_1KMode)
+			importHunkList = ImportHandler::createImportHunks1K(&m_hunkPool, m_verboseFlags & VERBOSE_IMPORTS);
+		else
+			importHunkList = ImportHandler::createImportHunks(&m_hunkPool, header, m_rangeDlls, m_verboseFlags & VERBOSE_IMPORTS, usesRangeImport);
 		m_hunkPool.removeImportHunks();
 		m_hunkPool.append(importHunkList);
 		delete importHunkList;
 	}
 
 	//do imports
-	if(m_useSafeImporting)
-		if(usesRangeImport)
-			load(importSafeRangeObj, importSafeRangeObj_end - importSafeRangeObj, "crinkler import");
+	if(m_1KMode) {
+		load(import1KObj, import1KObj_end - import1KObj, "crinkler import");
+	} else {
+		if(m_useSafeImporting)
+			if(usesRangeImport)
+				load(importSafeRangeObj, importSafeRangeObj_end - importSafeRangeObj, "crinkler import");
+			else
+				load(importSafeObj, importSafeObj_end - importSafeObj, "crinkler import");
 		else
-			load(importSafeObj, importSafeObj_end - importSafeObj, "crinkler import");
-	else
-		if(usesRangeImport)
-			load(importRangeObj, importRangeObj_end - importRangeObj, "crinkler import");
-		else
-			load(importObj, importObj_end - importObj, "crinkler import");
+			if(usesRangeImport)
+				load(importRangeObj, importRangeObj_end - importRangeObj, "crinkler import");
+			else
+				load(importObj, importObj_end - importObj, "crinkler import");
+	}
 
 	Symbol* import = findUndecoratedSymbol("Import");
 	m_hunkPool.removeHunk(import->hunk);
@@ -288,8 +297,6 @@ void Crinkler::link(const char* filename) {
 
 	Hunk* phase1 = m_transform->linkAndTransform(&m_hunkPool, CRINKLER_CODEBASE, &splittingPoint);
 
-
-
 	printf("\nUncompressed size of code: %5d\n", splittingPoint);
 	printf("Uncompressed size of data: %5d\n", phase1->getRawSize() - splittingPoint);
 
@@ -299,16 +306,13 @@ void Crinkler::link(const char* filename) {
 		unsigned char* compressed_data = new unsigned char[compressed_size];
 		
 		TinyCompress((unsigned char*)phase1->getPtr(), phase1->getRawSize(), compressed_data, compressed_size);
-		Hunk* phase1Compressed = new Hunk("compressed data", (char*)compressed_data, 0, 1, compressed_size, compressed_size);
+		Hunk* phase1Compressed = new Hunk("compressed data", (char*)compressed_data, 0, 0, compressed_size, compressed_size);
 		phase1Compressed->addSymbol(new Symbol("_PackedData", 0, SYMBOL_IS_RELOCATEABLE, phase1Compressed));
 		delete[] compressed_data;
 		printf("compressed size: %d\n", compressed_size);
 
 		HunkList phase2list;
 		phase2list.addHunkBack(header);
-		Hunk* depacker = headerHunks->findSymbol("_DepackEntry")->hunk;
-		headerHunks->removeHunk(depacker);
-		phase2list.addHunkBack(depacker);
 		phase2list.addHunkBack(phase1Compressed);
 
 		Hunk* phase2 = phase2list.toHunk("final");
@@ -320,16 +324,15 @@ void Crinkler::link(const char* filename) {
 			printf("packed data offset: %x\n", packedDataOffset);
 			printf("image size: %x\n", phase1->getRawSize());
 			phase2->addSymbol(new Symbol("_UnpackedData", CRINKLER_CODEBASE, 0, phase2));
-			phase2->addSymbol(new Symbol("_PackedDataOffset", packedDataOffset, 0, phase2));
+			//phase2->addSymbol(new Symbol("_PackedDataOffset", packedDataOffset, 0, phase2));
+			phase2->addSymbol(new Symbol("_DepackEndPosition", CRINKLER_CODEBASE+phase1->getRawSize(), 0, phase2));
 			phase2->addSymbol(new Symbol("_VirtualSize", virtualSize, 0, phase2));
 			phase2->addSymbol(new Symbol("_ImageBase", CRINKLER_IMAGEBASE, 0, phase2));
 
 			int baseprob = 13;
 			*(phase2->getPtr() + phase2->findSymbol("_BaseProbPtr1")->value) = baseprob;
 			*(phase2->getPtr() + phase2->findSymbol("_BaseProbPtr2")->value) = baseprob;
-			*(phase2->getPtr() + phase2->findSymbol("_SubsystemTypePtr")->value) = m_subsytem == SUBSYSTEM_WINDOWS ? IMAGE_SUBSYSTEM_WINDOWS_GUI : IMAGE_SUBSYSTEM_WINDOWS_CUI;
-			*((short*)(phase2->getPtr() + phase2->findSymbol("_LinkerVersionPtr")->value)) = CRINKLER_LINKER_VERSION;
-			*((short*)(phase2->getPtr() + phase2->findSymbol("_UnpackedDataLengthPtr")->value)) = phase1->getRawSize()*8;
+			//*((short*)(phase2->getPtr() + phase2->findSymbol("_UnpackedDataLengthPtr")->value)) = phase1->getRawSize()*8;
 		}
 		phase2->relocate(CRINKLER_IMAGEBASE);
 		
@@ -449,7 +452,7 @@ void Crinkler::link(const char* filename) {
 	delete csr;
 	delete[] sizefill;
 	
-	phase1Compressed = new Hunk("compressed data", (char*)data, 0, 1, size, size);
+	phase1Compressed = new Hunk("compressed data", (char*)data, 0, 0, size, size);
 	delete[] data;
 	phase1Compressed->addSymbol(new Symbol("_PackedData", 0, SYMBOL_IS_RELOCATEABLE, phase1Compressed));
 	int modelsSize = 16 + ml1.nmodels + ml2.nmodels;
@@ -550,7 +553,7 @@ Crinkler* Crinkler::addRangeDll(const char* dllname) {
 }
 
 Crinkler* Crinkler::addReplaceDll(const char* dll1, const char* dll2) {
-	m_replaceDlls.insert(pair<string, string>(toLower(dll1), toLower(dll2)));
+	m_replaceDlls.insert(make_pair(toLower(dll1), toLower(dll2)));
 	return this;
 }
 

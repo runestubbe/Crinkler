@@ -4,6 +4,7 @@ Manual:
 	truncation?
 	credit til flere personer?
 	nævn at verbose functions ikke virker i vs8
+	skriv faq
 
 Licens:
 	inkluder Distorm-licens
@@ -11,15 +12,17 @@ Licens:
 
 Code:
 	summary: layout ved lange idents
-	summary: lav relocs til links
+	*summary: lav relocs til links
+		*escape idents
 	summary: colapse/expand
 	summary: lav sidste justeringer af layout og skriv forklaringstekst
 
 	truncation?
 	verbose -> ?
 	combine identical read-only symbols
-	fix recursive call bug
+        verbose:functions
 
 
 test:
 	Test weak externals support
+	recursive call bug

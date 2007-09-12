@@ -84,7 +84,7 @@ static Symbol* getRelocationSymbol(_DecodedInst& inst, int offset, map<int, Symb
 }
 
 static std::string generateLabel(Symbol* symbol, int value, map<int, Symbol*>& symbols) {
-	char buff[128];
+	char buff[1024];
 	int offset = 0;
 	if(symbol->flags & SYMBOL_IS_RELOCATEABLE) {
 		offset = value - (symbol->value+CRINKLER_CODEBASE);
@@ -99,6 +99,7 @@ static std::string generateLabel(Symbol* symbol, int value, map<int, Symbol*>& s
 		}
 	}
 	string name = stripCrinklerSymbolPrefix(symbol->name.c_str());
+	name = "<a href=\"#" + escapeHtml(symbol->name) + "\">" + name + "</a>";	//add link
 	if(offset > 0)
 		sprintf_s(buff, sizeof(buff), "%s+0x%X", name.c_str(), offset);
 	else if(offset < 0)
@@ -175,14 +176,8 @@ static string calculateInstructionOperands(_DecodedInst& inst, Hunk& hunk, map<i
 	}
 
 	//handle 8 and 16-bit displacements
-	unsigned char* inst_ptr = (unsigned char*)&hunk.getPtr()[inst.offset-CRINKLER_CODEBASE];
-
-	if((inst_ptr[0] >=0x70 && inst_ptr[0] < 0x80) ||		//jcc
-		(inst_ptr[0] >= 0xE0 && inst_ptr[0] <= 0xE3) ||	//loop
-		(inst_ptr[0] == 0xE8)) {						//jmp
-
-		int value;
-		sscanf_s(operands.c_str(), "%X", &value);
+	int value;
+	if(sscanf_s(operands.c_str(), "%X", &value)) {
 		map<int, Symbol*>::iterator it = symbols.find(value-CRINKLER_CODEBASE);
 		if(it != symbols.end()) {
 			operands = generateLabel(it->second, value, symbols);
@@ -192,7 +187,26 @@ static string calculateInstructionOperands(_DecodedInst& inst, Hunk& hunk, map<i
 	return operands;
 }
 
-static void htmlSummaryRecursive(CompressionSummaryRecord* csr, FILE* out, Hunk& hunk, const int* sizefill, bool iscode, map<int, Symbol*>& relocs, map<int, Symbol*>& symbols) {
+string hashname(const char* name) {
+	static map<string, int> namemap;
+	static int counter = 1;
+	if(namemap[name] == 0) {
+		namemap[name] = counter++;
+	}
+	char buff[128];
+	sprintf_s(buff, sizeof(buff), "v%d", namemap[name]);
+	return buff;
+}
+
+//Sorts pair<string, int> by greater<int> and then by name
+bool opcodeComparator(const pair<string, int>& a, const pair<string, int>& b) {
+	if(a.second != b.second)
+		return a.second > b.second;
+	else
+		return a.first < b.first;
+}
+
+static void htmlSummaryRecursive(CompressionSummaryRecord* csr, FILE* out, Hunk& hunk, const int* sizefill, bool iscode, map<int, Symbol*>& relocs, map<int, Symbol*>& symbols, map<string, int>& opcodeCounters) {
 	//handle enter node events
 	if(csr->type & RECORD_ROOT) {
 		//write header
@@ -201,6 +215,16 @@ static void htmlSummaryRecursive(CompressionSummaryRecord* csr, FILE* out, Hunk&
 			"<html><head>"
 			"<meta http-equiv=\"Content-Type\" content=\"text/html; charset=iso-8859-1\">"
 			"<title>Crinkler compression summary</title>"
+			"<script type=\"text/javascript\">"
+				"function switchMenu(obj) {"
+					"var el = document.getElementById(obj);"
+					"if ( el.style.display != \"none\" ) {"
+						"el.style.display = 'none';"
+					"} else {"
+						"el.style.display = '';"
+					"}"
+				"}"
+			"</script>"
 			"<style  type=\"text/css\">"	//css style courtesy of gargaj :)
 			"body {"
 				"font-family: verdana;"
@@ -244,36 +268,38 @@ static void htmlSummaryRecursive(CompressionSummaryRecord* csr, FILE* out, Hunk&
 				"<h1>%s</h1>"
 				"<table class=\"outertable\">"
 				"<tr>"
-				"<th>address</th>"
-				"<th>label name</th>"
-				"<th>size</th>",
+				"<th>+</th>"
+				"<th>Address</th>"
+				"<th>Label name</th>"
+				"<th>Size / bytes</th>",
 				csr->name.c_str(),
 				csr->name.c_str());
 
-			if (csr->name.c_str()[0] == 'U') {
+			if (csr->name[0] == 'U') {
 				fprintf(out, "</tr>");
 			} else {
 				fprintf(out,
-					"<th>comp. size</th>"
-					"<th>ratio</th>"
+					"<th>Compressed size / bytes</th>"
+					"<th>Ratio</th>"
 					"</tr>");
 			}
-			if (csr->name.c_str()[0] == 'C') {
+			if (csr->name[0] == 'C') {
 				iscode = true;
 			}
 		} else {
 			string label;
 			if(csr->type & RECORD_OLD_SECTION) {
-				label = stripPath(csr->miscString) + ":" + csr->name;
+				label = stripPath(csr->miscString) + ":" + stripCrinklerSymbolPrefix(csr->name.c_str());
 				fprintf(out, "<tr class=section_symbol_row>");
 			} else {
-				label = csr->name;
+				label = stripCrinklerSymbolPrefix(csr->name.c_str());
 				fprintf(out, "<tr class=\"%s_symbol_row\">", (csr->type & RECORD_PUBLIC) ? "public" : "private");
 			}
+
+			//make the label an anchor
+			label = "<a name=\"" + escapeHtml(csr->name) + "\">" + label + "</a>";
 			
-			fprintf(out, "<td><table class=\"data\"><tr><td class=\"address\">%.8X&nbsp;</td></tr></table></td>", CRINKLER_CODEBASE + csr->pos);
-			
-			
+			fprintf(out, "<td><table class=\"data\"><tr><td><a onclick=\"switchMenu('%s');\">+</a></td><td class=\"address\">%.8X&nbsp;</td></tr></table></td>", hashname(csr->name.c_str()).c_str(), CRINKLER_CODEBASE + csr->pos);
 
 			int colspan = 1;
 			if(csr->size == 0)
@@ -311,10 +337,10 @@ static void htmlSummaryRecursive(CompressionSummaryRecord* csr, FILE* out, Hunk&
 					unsigned int numinsts;
 					distorm_decode(CRINKLER_CODEBASE + csr->pos, (unsigned char*)&hunk.getPtr()[csr->pos], csr->size, Decode32Bits, insts, instspace, &numinsts);
 
-					// Print instruction adresses
-					fprintf(out, "<tr><td><table class=\"data\">");
+					// Print instruction addresses
+					fprintf(out, "<tr><td><table class=\"data\">");	//hashname(csr->name.c_str()).c_str()
 					for (int i = 0 ; i < numinsts ; i++) {
-						fprintf(out, "<tr>");
+						fprintf(out, "<tr>\n");
 						fprintf(out, "<td class=\"address\">%.8X&nbsp;</td>", insts[i].offset);
 						fprintf(out, "</tr>");
 					}
@@ -338,6 +364,7 @@ static void htmlSummaryRecursive(CompressionSummaryRecord* csr, FILE* out, Hunk&
 						}
 						int size = instructionSize(&insts[i], sizefill);
 
+						opcodeCounters[(char*)insts[i].mnemonic.p]++;
 						fprintf(out, "<tr><td title=\"%.2f bytes\" style=\"color: #%.6X;\">%s",
 							size / (float)(BITPREC*8), sizeToColor(size/insts[i].size), insts[i].mnemonic.p);
 						for (int j = 0 ; j < OPCODE_WIDTH-insts[i].mnemonic.length ; j++) {
@@ -378,12 +405,12 @@ static void htmlSummaryRecursive(CompressionSummaryRecord* csr, FILE* out, Hunk&
 							rowLengths.push_back(count);
 					}
 
-					// Print adresses
+					// Print addresses
 					{
 						fprintf(out, "<tr><td><table class=\"data\">");
 						int idx = csr->pos;
 						for(vector<int>::iterator it = rowLengths.begin(); it != rowLengths.end(); it++) {
-							fprintf(out, "<tr>");
+							fprintf(out, "<tr>\n");
 							fprintf(out, "<td class=\"address\">%.8X&nbsp;</td>", CRINKLER_CODEBASE + idx);
 							fprintf(out, "</tr>");
 							idx += *it;
@@ -435,15 +462,48 @@ static void htmlSummaryRecursive(CompressionSummaryRecord* csr, FILE* out, Hunk&
 	}
 
 	for(vector<CompressionSummaryRecord*>::iterator it = csr->children.begin(); it != csr->children.end(); it++)
-		htmlSummaryRecursive(*it, out, hunk, sizefill, iscode, relocs, symbols);
+		htmlSummaryRecursive(*it, out, hunk, sizefill, iscode, relocs, symbols, opcodeCounters);
 
 	//handle leave node event
-	if(csr->type == RECORD_ROOT) {
-		fprintf(out, "</body></html>");
-	} else {
-		if(csr->type == RECORD_SECTION) {
+	if(csr->type == RECORD_SECTION) {
+		fprintf(out,"</table>");
+		if(csr->name[0] == 'C') {
+			//print opcode counters
+			vector<pair<string, int> > v(opcodeCounters.begin(), opcodeCounters.end());
+			sort(v.begin(), v.end(), opcodeComparator);
+			int num_insts = 0;
+			const int MAX_OPCODE_COLUMNS = 4;
+			int num_columns = min((int)v.size(), MAX_OPCODE_COLUMNS);
+			int num_rows = v.size() / num_columns + 1;
+			fprintf(out, 
+				"<h2>Instructions</h2>"
+				"<table class=\"outertable\" cellpadding=\"2%\">"
+				"<tr>");
+			for(int i = 0; i < num_columns; i++) {
+				fprintf(out, "<th>Instruction</th><th>#</th>");
+			}
+			for(int i = 0; i < num_rows; i++) {
+				fprintf(out, "<tr>");
+				for(int j = 0; j < num_columns; j++) {
+					int idx = j*num_rows+i;
+
+					if(idx < v.size()) {
+						const pair<string, int>& inst = v[idx];
+						fprintf(out, "<td>%s</td><td align=\"right\">%d</td>", inst.first.c_str(), inst.second);
+						num_insts += inst.second;
+					} else if(idx == v.size()) {
+						fprintf(out, "<td>TOTAL</td><td>%d</td>", num_insts);
+					} else {
+						fprintf(out, "<td>&nbsp</td><td>&nbsp</td>");
+					}
+				}
+				fprintf(out, "</tr>");
+			}
 			fprintf(out,"</table>");
 		}
+		
+	} else if(csr->type & RECORD_ROOT) {
+		fprintf(out,"</body></html>");
 	}
 }
 
@@ -451,11 +511,13 @@ void htmlSummary(CompressionSummaryRecord* csr, const char* filename, Hunk& hunk
 	map<int, Symbol*> relocs = hunk.getOffsetToRelocationMap();
 	map<int, Symbol*> symbols = hunk.getOffsetToSymbolMap();
 	FILE* out;
+	map<string, int> opcodeCounters;
 	if(fopen_s(&out, filename, "wb")) {
 		Log::error(0, "", "could not open '%s' for writing", filename);
 		return;
 	}
-	htmlSummaryRecursive(csr, out, hunk, sizefill, false, relocs, symbols);
+	htmlSummaryRecursive(csr, out, hunk, sizefill, false, relocs, symbols, opcodeCounters);
 
+	
 	fclose(out);
 }

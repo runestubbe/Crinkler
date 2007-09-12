@@ -9,6 +9,9 @@ extern "C" {
 	char header1KObj[];
 	char header1KObj_end[];
 
+	char import1KObj[];
+	char import1KObj_end[];
+
 	char importObj[];
 	char importObj_end[];
 

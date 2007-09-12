@@ -11,16 +11,14 @@
 
 using namespace std;
 
-
-
-
 HunkList::HunkList() {
 }
 
 HunkList::~HunkList() {
-	//free hunks
-	for(vector<Hunk*>::iterator it = m_hunks.begin(); it != m_hunks.end(); it++)
+	//free hunks;
+	for(vector<Hunk*>::iterator it = m_hunks.begin(); it != m_hunks.end(); it++) {
 		delete *it;
+	}
 }
 
 Hunk*& HunkList::operator[] (unsigned idx) {

@@ -2,6 +2,8 @@ global _headerObj
 global _headerObj_end
 global _header1KObj
 global _header1KObj_end
+global _import1KObj
+global _import1KObj_end
 global _importObj
 global _importObj_end
 global _importRangeObj
@@ -22,6 +24,10 @@ _headerObj_end:
 _header1KObj:
 	incbin "modules/header10_1k.obj"
 _header1KObj_end:
+
+_import1KObj:
+	incbin "modules/import10_1k.obj"
+_import1KObj_end:
 
 _importObj:
 	incbin "modules/import10.obj"
