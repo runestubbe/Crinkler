@@ -73,10 +73,9 @@ class Hunk {
 	friend class HunkList;
 	int				m_alignmentBits;
 	unsigned int	m_flags;
-	int				m_rawsize;
 	int				m_virtualsize;
 
-	char*	m_data;
+	std::vector<char>	m_data;
 	std::list<relocation> m_relocations;
 	std::map<std::string, Symbol*> m_symbols;
 	std::string m_name;

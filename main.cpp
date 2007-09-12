@@ -6,7 +6,6 @@
 #include <string>
 #include <direct.h>
 
-
 #include "CoffObjectLoader.h"
 #include "CoffLibraryLoader.h"
 #include "HunkList.h"
@@ -18,6 +17,7 @@
 #include "CallTransform.h"
 #include "IdentityTransform.h"
 #include "Fix.h"
+#include "MemoryFile.h"
 
 using namespace std;
 
@@ -31,6 +31,7 @@ static bool fileExists(const char* filename) {
 	return false;
 }
 
+//returns a list of found files in uppercase
 static list<string> findFileInPath(const char* filename, const char* path) {
 	list<string> res;
 	string str = path;
@@ -56,7 +57,7 @@ static list<string> findFileInPath(const char* filename, const char* path) {
 			);
 
 		if(fileExists(canonicalName)) {
-			res.push_back(canonicalName);
+			res.push_back(toUpper(canonicalName));
 		}
 		
 		lastPos = str.find_first_not_of(delimiters, pos);
@@ -112,35 +113,32 @@ static bool runExecutable(const char* filename) {
 	CloseHandle(piProcessInfo.hThread);
 	CloseHandle(piProcessInfo.hProcess);
 	return true;
-
 }
 
-static void runOriginalLinker(const char* crinklerCanonicalName, const char* linkerName) {
-	//Crinkler not enabled. Search for linker
-	//Only call target, if we have already seen ourselves and the target is not in the taboo list.
-	//This ensures that we always invoke a linker further down the path
-	string crinklerName = toUpper(crinklerCanonicalName);
-
+static void runOriginalLinker(const char* linkerName) {
 	string path = ".;" + getEnv("PATH");
 	list<string> res = findFileInPath(linkerName, path.c_str());
-	bool foundSelf = find(res.begin(), res.end(), crinklerName) == res.end();	//just pretend crinkler was seen, if it wasn't in the path -> run first linker in path
-	set<string> tabooNames;
-	
+	const char* needle = "Crinkler";
+	const int needleLength = strlen(needle);
+
 	for(list<string>::const_iterator it = res.begin(); it != res.end(); it++) {
-		string name = toUpper(*it);
-		if(crinklerName.compare(name) == 0) {
-			foundSelf = true;
-		} else {
-			if(foundSelf && tabooNames.find(name) == tabooNames.end()) {
-				//run linker
-				printf("Launching default linker at '%s'\n\n", it->c_str());
-				fflush(stdout);
-				if(!runExecutable(name.c_str()))
-					Log::error(0, "", "failed to launch default linker, errorcode: %X", GetLastError());
-				return;
+		MemoryFile mf(it->c_str());
+		bool isCrinkler = false;
+		for(int i = 0; i < mf.getSize()-needleLength; i++) {
+			if(memcmp(mf.getPtr()+i, needle, needleLength) == 0) {
+				isCrinkler = true;
+				break;
 			}
 		}
-		tabooNames.insert(name);
+
+		if(!isCrinkler) {
+			//run linker
+			printf("Launching default linker at '%s'\n\n", it->c_str());
+			fflush(stdout);
+			if(!runExecutable(it->c_str()))
+				Log::error(0, "", "failed to launch default linker, errorcode: %X", GetLastError());
+			return;
+		}
 	}
 
 	//Linker not found
@@ -148,7 +146,7 @@ static void runOriginalLinker(const char* crinklerCanonicalName, const char* lin
 }
 
 #define TRANSFORM_CALLS		0x01
-#define TRANSFORM_CALLS2		0x02
+#define TRANSFORM_CALLS2	0x02
 
 int main(int argc, char* argv[]) {	
 	//find canonical name of the crinkler executable
@@ -174,7 +172,7 @@ int main(int argc, char* argv[]) {
 						PARAM_IS_SWITCH|PARAM_FORBID_MULTIPLE_DEFINITIONS, "");
 	CmdParamString outArg("OUT", "output filename", "filename", 
 						PARAM_IS_SWITCH|PARAM_FORBID_MULTIPLE_DEFINITIONS, "out.exe");
-	CmdParamString summaryArg("SUMMARY", "summary filename", "filename", 
+	CmdParamString summaryArg("REPORT", "report html filename", "filename", 
 						PARAM_IS_SWITCH|PARAM_FORBID_MULTIPLE_DEFINITIONS, "");
 	CmdParamSwitch crinklerFlag("CRINKLER", "enables crinkler", 0);
 	CmdParamSwitch fixFlag("FIX", "fix old crinkler files", 0);
@@ -189,7 +187,7 @@ int main(int argc, char* argv[]) {
 						"INSTANT", COMPRESSION_INSTANT, 
 						"FAST", COMPRESSION_FAST, 
 						"SLOW", COMPRESSION_SLOW, NULL);
-	CmdParamFlags verboseArg("VERBOSE", "selects verbose modes", 0, 0, 
+	CmdParamFlags verboseArg("PRINT", "print", 0, 0, 
 							"LABELS", VERBOSE_LABELS, "IMPORTS", VERBOSE_IMPORTS,
 							"MODELS", VERBOSE_MODELS, "FUNCTIONS", VERBOSE_FUNCTIONS,
 							"FUNCTIONS-BYNAME", VERBOSE_FUNCTIONS_BYNAME,
@@ -207,7 +205,7 @@ int main(int argc, char* argv[]) {
 	cmdline.addParams(&crinklerFlag, &hashsizeArg, &hashtriesArg, &hunktriesArg, &entryArg, &outArg, &summaryArg, &unsafeImportArg,
 						&subsystemArg, &truncateFloats, &compmodeArg, &verboseArg, &transformArg, &libpathArg, 
 						&rangeImportArg, &replaceDllArg, &filesArg, &priorityArg, &showProgressArg, 
-						&tinyCompressor,
+						&tinyCompressor,	//TODO: remove before release
 						NULL);
 	cmdline.setCmdParameters(argc, argv);
 
@@ -222,7 +220,7 @@ int main(int argc, char* argv[]) {
 
 	//Run default linker or crinkler?
 	if(!cmdline.removeToken("/CRINKLER") && toUpper(crinklerFilename).compare("CRINKLER.EXE") != 0) {
-		runOriginalLinker(crinklerCanonicalName, crinklerFilename.c_str());
+		runOriginalLinker(crinklerFilename.c_str());
 		return 0;
 	}
 
@@ -297,7 +295,7 @@ int main(int argc, char* argv[]) {
 	printf("Hash size: %d MB\n", hashsizeArg.getValue());
 	printf("Hash tries: %d\n", hashtriesArg.getValue());
 	printf("Order tries: %d\n", hunktriesArg.getValue());
-	printf("Summary: %s\n", strlen(summaryArg.getValue()) > 0 ? summaryArg.getValue() : "NONE");
+	printf("Report: %s\n", strlen(summaryArg.getValue()) > 0 ? summaryArg.getValue() : "NONE");
 	printf("Transforms: %s\n", (transformArg.getValue() & TRANSFORM_CALLS) ? "CALLS" : "NONE");
 
 	//replace dll

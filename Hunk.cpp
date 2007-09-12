@@ -11,17 +11,10 @@
 using namespace std;
 
 Hunk::Hunk(const Hunk& h) : 
-	m_alignmentBits(h.m_alignmentBits), m_flags(h.m_flags), m_rawsize(h.m_rawsize),
+	m_alignmentBits(h.m_alignmentBits), m_flags(h.m_flags), m_data(h.m_data),
 	m_virtualsize(h.m_virtualsize), m_relocations(h.m_relocations), m_name(h.m_name),
 	m_importName(h.m_importName), m_importDll(h.m_importDll), m_numReferences(0)
 {
-	if(m_rawsize > 0) {
-		m_data = new char[m_rawsize];
-		memcpy(m_data, h.m_data, m_rawsize);
-	} else {
-		m_data = NULL;
-	}
-
 	//deep copy symbols
 	for(map<std::string, Symbol*>::const_iterator it = h.m_symbols.begin(); it != h.m_symbols.end(); it++) {
 		Symbol* s = new Symbol(*it->second);
@@ -32,7 +25,7 @@ Hunk::Hunk(const Hunk& h) :
 
 
 Hunk::Hunk(const char* symbolName, const char* importName, const char* importDll) :
-	m_name(symbolName), m_data(NULL), m_rawsize(0), m_virtualsize(0),
+	m_name(symbolName), m_virtualsize(0),
 	m_flags(HUNK_IS_IMPORT), m_alignmentBits(0), m_importName(importName),
 	m_importDll(importDll), m_numReferences(0)
 {
@@ -42,24 +35,15 @@ Hunk::Hunk(const char* symbolName, const char* importName, const char* importDll
 
 Hunk::Hunk(const char* name, const char* data, unsigned int flags, int alignmentBits, int rawsize, int virtualsize) :
 	m_name(name), m_flags(flags), m_alignmentBits(alignmentBits),
-	m_rawsize(rawsize), m_virtualsize(virtualsize), m_numReferences(0)
+	m_virtualsize(virtualsize), m_numReferences(0)
 {
-	if(rawsize > 0) {
-		m_data = new char[rawsize];
-		if(data != 0)
-			memcpy(m_data, data, rawsize);
-		else
-			memset(m_data, 0, rawsize);
-	} else {
-		m_data = 0;
-	}
+	m_data.resize(rawsize);
+	if(data != NULL)
+		copy(data, data+rawsize, m_data.begin());
 }
 
 
 Hunk::~Hunk() {
-	//free data
-	delete[] m_data;
-
 	//free symbols
 	for(map<std::string, Symbol*>::iterator it = m_symbols.begin(); it != m_symbols.end(); it++) {
 		delete it->second;
@@ -69,8 +53,7 @@ Hunk::~Hunk() {
 void Hunk::addSymbol(Symbol* s) {
 	map<string, Symbol*>::iterator it = m_symbols.find(s->name.c_str());
 	if(it == m_symbols.end()) {
-		pair<string, Symbol*> p(s->name, s);
-		m_symbols.insert(p);
+		m_symbols.insert(make_pair(s->name, s));
 	} else {
 		Symbol* oldSym = it->second;
 		if(oldSym->secondaryName.size() > 0) {
@@ -85,7 +68,7 @@ void Hunk::addSymbol(Symbol* s) {
 
 void Hunk::addRelocation(relocation r) {
 	assert(r.offset >= 0);
-	assert(r.offset <= m_rawsize-4);
+	assert(r.offset <= getRawSize()-4);
 	m_relocations.push_back(r);
 }
 
@@ -93,14 +76,14 @@ const char* Hunk::getName() const {
 	return m_name.c_str();
 }
 
-struct SymbolComparator {
-	bool operator()(Symbol*& first, Symbol*& second) {
-		if(first->value != second->value)
-			return first->value < second->value;
-		else
-			return first->flags & SYMBOL_IS_SECTION;
-	}
-};
+
+bool symbolComparator(Symbol*& first, Symbol*& second) {
+	if(first->value != second->value)
+		return first->value < second->value;
+	else
+		return first->flags & SYMBOL_IS_SECTION;
+}
+
 
 void Hunk::printSymbols() const {
 	vector<Symbol*> symbols;
@@ -111,7 +94,7 @@ void Hunk::printSymbols() const {
 	}
 
 	//sort symbol by value
-	sort(symbols.begin(), symbols.end(), SymbolComparator());
+	sort(symbols.begin(), symbols.end(), symbolComparator);
 
 	//print symbol ordered symbols
 	for(vector<Symbol*>::const_iterator it = symbols.begin(); it != symbols.end(); it++) {
@@ -177,11 +160,14 @@ int Hunk::getAlignmentBits() const {
 }
 
 char* Hunk::getPtr() {
-	return m_data;
+	if(!m_data.empty())
+		return &m_data[0];
+	else
+		return NULL;
 }
 
 int Hunk::getRawSize() const {
-	return m_rawsize;
+	return m_data.size();
 }
 
 int Hunk::getVirtualSize() const {
@@ -209,34 +195,19 @@ void Hunk::setAlignmentBits(int alignmentBits) {
 }
 
 void Hunk::trim() {
-	int oldsize = m_rawsize;
 	int farestReloc = 0;
 	for(list<relocation>::const_iterator it = m_relocations.begin(); it != m_relocations.end(); it++) {
 		int relocSize = 4;
 		farestReloc = max(it->offset+relocSize, farestReloc);
 	}
 
-	while(m_rawsize > farestReloc && m_data[m_rawsize-1] == 0)
-		m_rawsize--;
-
-	//realloc memory
-	if(m_rawsize != oldsize) {
-		if(m_rawsize > 0) {
-			char* data = new char[m_rawsize];
-			memcpy(data, m_data, m_rawsize);
-			delete[] m_data;
-			m_data = data;
-		} else {
-			delete[] m_data;
-			m_data = NULL;
-		}
-	}
+	while(m_data.size() > farestReloc && m_data.back() == 0)
+		m_data.pop_back();
 }
 
 //chop of x bytes from the initialized data
 void Hunk::chop(int size) {
-	assert(m_rawsize >= size);
-	m_rawsize -= size;
+	m_data.erase((m_data.end()-size), m_data.end());
 }
 
 CompressionSummaryRecord* Hunk::getCompressionSummary(int* sizefill, int splittingPoint) {
@@ -248,19 +219,19 @@ CompressionSummaryRecord* Hunk::getCompressionSummary(int* sizefill, int splitti
 	}
 
 	//sort symbol by value
-	sort(symbols.begin(), symbols.end(), SymbolComparator());
+	sort(symbols.begin(), symbols.end(), symbolComparator);
 
 	CompressionSummaryRecord* root = new CompressionSummaryRecord("root", RECORD_ROOT, 0, 0);
 	CompressionSummaryRecord* codeSection = new CompressionSummaryRecord("Code section", RECORD_SECTION, 0, 0);
 	CompressionSummaryRecord* dataSection = new CompressionSummaryRecord("Data section", RECORD_SECTION, splittingPoint, sizefill[splittingPoint]);
-	CompressionSummaryRecord* uninitSection = new CompressionSummaryRecord("Uninitialized section", RECORD_SECTION, m_rawsize, -1);
+	CompressionSummaryRecord* uninitSection = new CompressionSummaryRecord("Uninitialized section", RECORD_SECTION, getRawSize(), -1);
 	root->children.push_back(codeSection);
 	root->children.push_back(dataSection);
 	root->children.push_back(uninitSection);
 
 	for(vector<Symbol*>::iterator it = symbols.begin(); it != symbols.end(); it++) {
-		CompressionSummaryRecord* c = new CompressionSummaryRecord(stripCrinklerSymbolPrefix((*it)->name.c_str()).c_str(), 
-			((*it)->flags & SYMBOL_IS_LOCAL) ? 0 : RECORD_PUBLIC, (*it)->value, ((*it)->value < m_rawsize) ? sizefill[(*it)->value] : -1);
+		CompressionSummaryRecord* c = new CompressionSummaryRecord((*it)->name.c_str(), 
+			((*it)->flags & SYMBOL_IS_LOCAL) ? 0 : RECORD_PUBLIC, (*it)->value, ((*it)->value < getRawSize()) ? sizefill[(*it)->value] : -1);
 
 		c->miscString = (*it)->miscString;
 		if((*it)->flags & SYMBOL_IS_FUNCTION) {
@@ -275,14 +246,14 @@ CompressionSummaryRecord* Hunk::getCompressionSummary(int* sizefill, int splitti
 
 		if((*it)->value < splittingPoint) {
 			codeSection->children.push_back(c);
-		} else if((*it)->value < m_rawsize) {
+		} else if((*it)->value < getRawSize()) {
 			dataSection->children.push_back(c);
 		} else {
 			uninitSection->children.push_back(c);
 		}
 	}
 
-	root->calculateSize(m_virtualsize, sizefill[m_rawsize]);
+	root->calculateSize(m_virtualsize, sizefill[getRawSize()]);
 	return root;
 }
 
@@ -300,8 +271,7 @@ map<int, Symbol*> Hunk::getOffsetToRelocationMap() {
 			s = findSymbol(s->secondaryName.c_str());
 		if(s->flags & SYMBOL_IS_RELOCATEABLE && s->flags & SYMBOL_IS_SECTION)
 			s = symbolmap.find(s->value)->second;	//replace relocation to section with non-section
-		pair<int, Symbol*> p(it->offset, s);
-		offsetmap.insert(p);
+		offsetmap.insert(make_pair(it->offset, s));
 	}
 	return offsetmap;
 }
@@ -314,8 +284,7 @@ map<int, Symbol*> Hunk::getOffsetToSymbolMap() {
 			if(offsetmap.find(s->value) != offsetmap.end() && s->flags & SYMBOL_IS_SECTION)	//favor non-sections
 				continue;
 
-			pair<int, Symbol*> p(s->value, s);
-			offsetmap.insert(p);
+			offsetmap.insert(make_pair(s->value, s));
 		}
 	}
 	return offsetmap;
@@ -355,7 +324,7 @@ void Hunk::truncateFloats(int defaultBits) {
 
 		//REMARK: a float with most significant byte = 0 could be trimmed down
 		//and thus not get truncated. Just ignore it. It only happens to numbers with norm < 10^-38
-		if(s->value < 0 | s->value > m_rawsize-4)	//sanity check.
+		if(s->value < 0 | s->value > getRawSize()-4)	//sanity check.
 			continue;
 
 		int a;

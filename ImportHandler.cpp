@@ -10,6 +10,8 @@
 
 #include <algorithm>
 #include <vector>
+#include <set>
+#include <iostream>
 
 using namespace std;
 
@@ -107,13 +109,24 @@ const int hashCode(const char* str) {
 	return code;
 }
 
+const unsigned int hashCode_1k(const char* str) {
+	unsigned int code = 0;
+	unsigned int eax;
+	do {
+		code = _rotl(code, 6);
+		eax = *str++;
+		code += eax;
+	} while(eax);
+	return (code & 0x3FFFFF)*4;
+}
+
+
 HunkList* ImportHandler::createImportHunks(HunkList* hunklist, Hunk* hashHunk, const vector<string>& rangeDlls, bool verbose, bool& enableRangeImport) {
 	if(verbose)
 		printf("\n-Imports----------------------------------\n");
 
 	vector<Hunk*> importHunks;
-	bool* usedRangeDlls = new bool[rangeDlls.size()];
-	memset(usedRangeDlls, 0, rangeDlls.size()*sizeof(bool));
+	vector<bool> usedRangeDlls(rangeDlls.size());
 
 	//fill list for import hunks
 	enableRangeImport = false;
@@ -144,7 +157,6 @@ HunkList* ImportHandler::createImportHunks(HunkList* hunklist, Hunk* hashHunk, c
 				Log::warning(0, "", "no functions were imported from range dll '%s'", rangeDlls[i].c_str());
 			}
 		}
-		delete[] usedRangeDlls;
 	}
 
 	//sort import hunks
@@ -245,11 +257,58 @@ HunkList* ImportHandler::createImportHunks(HunkList* hunklist, Hunk* hashHunk, c
 
 	//create new hunklist
 	HunkList* newHunks = new HunkList;
+
 	newHunks->addHunkBack(importList);
 
 	Hunk* dllNamesHunk = new Hunk("DllNames", dllNames, HUNK_IS_WRITEABLE, 0, dllNamesPtr - dllNames, dllNamesPtr - dllNames);
 	dllNamesHunk->addSymbol(new Symbol("_DLLNames", 0, SYMBOL_IS_RELOCATEABLE, dllNamesHunk));
 	newHunks->addHunkBack(dllNamesHunk);
+
+	return newHunks;
+}
+
+HunkList* ImportHandler::createImportHunks1K(HunkList* hunklist, bool verbose) {
+	if(verbose)
+		printf("\n-Imports----------------------------------\n");
+
+	vector<Hunk*> importHunks;
+	set<string> dlls;
+
+	//fill list for import hunks
+	for(int i = 0; i <hunklist->getNumHunks(); i++) {
+		Hunk* hunk = (*hunklist)[i];
+		if(hunk->getFlags() & HUNK_IS_IMPORT) {
+			dlls.insert(hunk->getImportDll());
+			if(isForwardRVA(hunk->getImportDll(), hunk->getImportName())) {
+				Log::error(0, "", "import '%s' from '%s' uses forwarded RVA. This feature is not supported by crinkler (yet)", 
+					hunk->getImportName(), hunk->getImportDll());
+			}
+			importHunks.push_back(hunk);
+		}
+	}
+
+	string dllnames;
+	for(set<string>::iterator it = dlls.begin(); it != dlls.end(); it++) {
+		if(it->compare("kernel32")) {
+			string name = *it;
+			name.resize(9);
+			dllnames += name;
+		}
+	}
+
+	Hunk* importList = new Hunk("ImportListHunk", 0, HUNK_IS_WRITEABLE, 256, 0, 65536*256);
+	importList->addSymbol(new Symbol("_ImportList", 0, SYMBOL_IS_RELOCATEABLE, importList));
+	for(vector<Hunk*>::iterator it = importHunks.begin(); it != importHunks.end(); it++) {
+		Hunk* importHunk = *it;
+		unsigned int hashcode = hashCode_1k(importHunk->getImportName());
+		importList->addSymbol(new Symbol(importHunk->getName(), hashcode, SYMBOL_IS_RELOCATEABLE, importList));
+	}
+
+	HunkList* newHunks = new HunkList;
+	Hunk* dllNamesHunk = new Hunk("DllNames", dllnames.c_str(), HUNK_IS_WRITEABLE, 0, dllnames.size(), dllnames.size());
+	dllNamesHunk->addSymbol(new Symbol("_DLLNames", 0, SYMBOL_IS_RELOCATEABLE, dllNamesHunk));
+	newHunks->addHunkBack(dllNamesHunk);
+	newHunks->addHunkBack(importList);
 
 	return newHunks;
 }

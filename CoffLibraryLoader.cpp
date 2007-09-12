@@ -7,6 +7,7 @@
 #include "Hunk.h"
 #include "NameMangling.h"
 #include "Symbol.h"
+#include <boost/scoped_ptr.hpp>
 
 using namespace std;
 
@@ -68,7 +69,7 @@ HunkList* CoffLibraryLoader::load(const char* data, int size, const char* module
 	ptr += numberOfSymbols * sizeof(unsigned short);
 
 	//make symbol names table
-	const char** symbolNames = new const char*[numberOfSymbols];
+	vector<const char*> symbolNames(numberOfSymbols);
 	for(int i = 0; i < numberOfSymbols; i++) {
 		symbolNames[i] = ptr;
 		ptr += strlen(ptr) + 1;
@@ -123,8 +124,7 @@ HunkList* CoffLibraryLoader::load(const char* data, int size, const char* module
 				for(int j = 0; importDLL[j] && importDLL[j] != '.'; j++)
 					dllName[j] = (char)tolower(importDLL[j]);
 
-				Hunk* importHunk = new Hunk(symbolNames[i], importName.c_str(), dllName);
-				hunklist->addHunkBack(importHunk);
+				hunklist->addHunkBack(new Hunk(symbolNames[i], importName.c_str(), dllName));
 			} else {	//a call stub
 				unsigned char stubData[6] = {0xFF, 0x25, 0x00, 0x00, 0x00, 0x00};
 				char hunkName[512];
@@ -148,6 +148,5 @@ HunkList* CoffLibraryLoader::load(const char* data, int size, const char* module
 		}
 	}
 
-	delete[] symbolNames;
 	return hunklist;
 }

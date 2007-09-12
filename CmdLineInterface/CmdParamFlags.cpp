@@ -15,8 +15,7 @@ CmdParam(paramName, description, NULL, flags | PARAM_IS_SWITCH | PARAM_TAKES_ARG
 
 	while(true) {
 		m_argumentDesc += string(flagName) + "|";
-		pair<string, int> p1(toUpper(flagName), flagValue);
-		m_flagMap.insert(p1);
+		m_flagMap.insert(make_pair(toUpper(flagName), flagValue));
 
 		flagName = va_arg(ap, const char*);
 		if(flagName == NULL) {

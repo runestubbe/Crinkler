@@ -4,21 +4,20 @@ extern	_PackedData
 extern	_UnpackedData
 extern	_VirtualSize
 extern	_ImageBase
+extern _DepackEndPosition
 
-extern _PackedDataOffset
-
-global _UnpackedDataLengthPtr
 global	_header
 global	_DepackEntry
-global  _LinkerVersionPtr
 global	_SubsystemTypePtr
 global	_BaseProbPtr1
 global	_BaseProbPtr2
 
 BaseProbDummy	equ	13
 
+%define SECTION_SIZE 10000h
+
 %define HeaderOffset(l) (l-_header)
-%define HeaderRVA(l) 10000h+(l-_header)
+%define HeaderRVA(l) SECTION_SIZE+(l-_header)
 %define NUM_MODELS	15
 %define BOOST_FACTOR 8
 
@@ -36,99 +35,37 @@ _header:
 ;dos header
 db 'M','Z'
 DepackInit:
-	mov		ebp, _PackedDataOffset
-	xor		eax, eax
-	inc		eax
-	jmp		short DepackInit2
-	
+mov		esi, _UnpackedData
+push	esi
+xor		edi, edi
+jmp	short DepackInit2
+
 ;coff header
 db 'P', 'E', 0, 0	;PE signature
 dw 014Ch			;Machine, 386+
 dw 01h				;Number of sections
-db "HASH"			;Timestamp
-db "HASH"			;Symbol table pointer
-db "HASH"			;Number of symbols
-dw 0078h			;Size of optional header
+;db "HASH"			;Timestamp
+;db "HASH"			;Symbol table pointer
+;db "HASH"			;Number of symbols
+AritDecode:
+	test eax,eax		;msb of interval != 0
+	jns	short AritDecodeLoop	;loop while msb of interval == 0
+	add	ebx, edx		;ebx = p0 + p1
+	std
+	push eax			;push interval_size
+	mul	edx				;edx:eax = p0 * interval_size
+	jmp short AritDecode2
+
+dw 0040h			;Size of optional header
 dw 030Fh			;Characteristics (32bit, relocs stripped,
 					;					executable image + everything stripped)
 
 ;optional header (PE-header)
 dw 010Bh			;Magic (Image file)
-_LinkerVersionPtr:
-dw 0h				;Major/Minor linker version
-db "HASH"			;Size of code
-db "HASH"			;Size of initialized data
-db "HASH"			;Size of uninitialized data
-dd HeaderOffset(DepackInit);Address of entry point
-db "HASH"			;Base of code
-dd 0000000Ch		;Base of data (and PE header offset)
-dd _ImageBase		;Image base
-dd 00010000h		;Section alignment (in memory)
-dd 00000200h		;File alignment (on disk)
-db "HASH"			;Major/minor OS version
-db "HASH"			;Major/minor image version
-
-DummyImport:
-dw 4,8000h			;Major/minor subsystem version
-dd 0h				;Reserved
-dd _VirtualSize+20000h;Size of image (= Section size + Section alignment)
-dd 00010000h		;Size of headers (= Section alignment)
-
-	;Checksum
-DepackInit2:
-	xor		edi, edi
-	std
-	db		0xbb ; mov ebx, const
-_SubsystemTypePtr:
-	dw		0002h	;Subsystem
-	dw		0h		;DLL characteristics
-	;Size of stack reserve
-	;Size of stack commit
-	;Size of heap reserve
-	;Size of heap commit
-	push	esi
-	mov		esi, _UnpackedData
-	push	byte 0
-	pop		ecx
-	jmp		_DepackEntry
-	dw		0
-
-LoaderFlags:
-DummyImportTable equ LoaderFlags-4
-db "HASH"			;Loader flags
-dd 3				;Number of RVAs and Sizes
-
-;Data directories
-;directory 0 (export table)
-dd HeaderRVA(DummyDLL)		;RVA
-dd HeaderRVA(DummyImport)	;Size
-;directory 1 (import table)
-dd HeaderRVA(DummyImportTable)	;RVA
-db "HASH"			;Size
-;directory 2
-dd 0h				;RVA
-dd 0h				;Size
-
-;Section headers
-;Name
-DummyDLL:
-db "lz32.dll"
-dd _VirtualSize+10000h;Virtual size (= Section size)
-dd 00010000h		;Virtual address (= Section alignment)
-dd 200h				;Size of raw data
-dd 1h				;Pointer to raw data
-db "HASH"			;Pointer to relocations
-dd 0h				;Pointer to line numbers
-db "HASH"			;Number of relocations/line numbers
-dd 0E00000E0h		;Characteristics (contains everything, is executable, readable and writable)
-
-;times	100	db "HASH"
-
-zero_offset	equ	20
-one_offset	equ	16
-section depacker align=1
-
-;decode bit
+;dw 0h				;Major/Minor linker version
+;db "HASH"			;Size of code
+;db "HASH"			;Size of initialized data
+;db "HASH"			;Size of uninitialized data
 	;; ebp = source bit index
 	;; ecx = dest bit index
 	;; edi = data
@@ -136,53 +73,99 @@ section depacker align=1
 	;; edx = zero prob
 	;; ebx = one prob
 AritDecodeLoop:
-	bt	[esi], ebp		;test bit
-	adc	edi, edi		;shift bit in
-	inc	ebp				;next bit
-	add	eax, eax		;shift interval
-AritDecode:
-	test eax, eax		;msb of interval != 0
-	jns	AritDecodeLoop	;loop while msb of interval == 0
-	
-	add	ebx, edx		;ebx = p0 + p1
-	push eax			;push interval_size
-	mul	edx				;edx:eax = p0 * interval_size
+	bt	[_PackedData], ebp	;test bit
+	adc	edi, edi			;shift bit in
+	inc	ebp					;next bit
+	add	eax, eax			;shift interval
+	jmp AritDecode
+
+
+dd HeaderOffset(DepackInit)		;Address of entry point
+;db "HASH"			;Base of code
+AritDecode2:
 	div	ebx				;eax = (p0 * interval_size) / (p0 + p1)
 	;; eax = threshold value between 0 and 1
-
-	pop	edx				;edx = interval_size
+	jmp short AritDecode3
+	
+dd 0000000Ch		;Base of data (and PE header offset)
+dd _ImageBase		;Image base
+dd SECTION_SIZE		;Section alignment (in memory)
+dd 00000200h		;File alignment (on disk)
+;db "HASH"			;Major/minor OS version
+;db "HASH"			;Major/minor image version
+AritDecode3:
+	pop	edx			;edx = interval_size
 	cmp	edi, eax		;data < threshold?
-	jb	.zero			;cf = 1
-	
-	;one
-	sub	edi, eax		;data -= threshold	
+	jb	short zero
 	xchg eax, edx		;eax = interval_size, edx = threshold
+	jmp short AritDecode4
+
+dw 4,8000h			;Major/minor subsystem version
+dd 0h				;Reserved
+dd _VirtualSize+SECTION_SIZE*2;Size of image (= Section size + Section alignment)
+dd SECTION_SIZE		;Size of headers (= Section alignment)
+
+	;Section header
+	;db "HASH"			;Checksum / Name1
+AritDecode4:
+	sub	edi, edx		;data -= threshold
+	jmp short one
+
+_SubsystemTypePtr:
+	dw		0002h	;Subsystem				/ Name2
+	dw		0h		;DLL characteristics	/ Name2
+	;Size of stack reserve
+	;Size of stack commit
+	;Size of heap reserve
+	;Size of heap commit
+	dd _VirtualSize+SECTION_SIZE;Virtual size (= Section size)
+	dd SECTION_SIZE		;Virtual address (= Section alignment)
+	dd 200h				;Size of raw data
+	dd 1h				;Pointer to raw data
+
+;db "HASH"			;Loader flags	/ Pointer to relocs
+DepackInit2:
+	push byte 8
+	pop	ecx
+	mov	eax, 1
+;dd 0				;Number of RVAs and Sizes	/ Pointer to linenumbers (must be 0)
+;Data directories
+;db "HASH"			;Number of relocations/line numbers
+	xor		ebp, ebp
+	jmp		short _DepackEntry
+dd 0E00000E0h		;Characteristics (contains everything, is executable, readable and writable)
+
+;decode bit
+AritDecodeJumpPad:
+	jmp short AritDecode
+
+one:
 	sub	eax, edx		;eax = interval_size - threshold, cf=0
-
 	bts [esi], ecx		;write bit
-	.zero:
+zero:
 	
-	pop ecx
-	inc ecx
-
 ;init:
-;; [esp] = _UnpackedData
-;; ebp = source bit index, relative to _UnpackedData
+;; ebp = source bit index
 ;; ecx = 0
 ;; edi = 0
 ;; eax = 1
 ;; edx = ?
 ;; ebx = ?
 ;; esi = _UnpackedData	
+zero_offset	equ	20
+one_offset	equ	16
 _DepackEntry:
-	push ecx
-	xor ecx, byte 7
-	
+	dec ecx
+	jns .dontInc
+	and ecx, byte 7
+	inc esi
+	.dontInc:
+
 	push byte BaseProbDummy
 BaseProbPtrP1:
 	push byte BaseProbDummy
 BaseProbPtrP2:
-
+	
 	mov bl, NUM_MODELS
 model_loop:
 	pusha
@@ -191,12 +174,12 @@ model_loop:
 	xor eax, eax
 	cdq ;clear edx
 	
-	mov edi, ecx
-	and ecx, byte 7
-	shr edi, byte 3	;edi: offset from start
+	mov edi, dword [esp+10*4]
+	;edi: start
+	;esi: current ptr
 
 .context_loop:
-	bt [esi], ecx
+	bt [edi], ecx
 	sbb ebp, ebp	;ebp: -bit
 	
 	;try to match
@@ -204,56 +187,51 @@ model_loop:
 	inc ecx			;bitpos \in {8..1}
 	.matchloop:
 	lodsb
-	xor al, byte [esi+edi+1]
+	xor al, byte [edi]
 	shr al, cl
-	jnz .no_match
-	
-	mov cl, byte 0
+	jnz short .no_match
+	dec edi
+	mov ecx, 0		;b8-bb: must be zero
 	shr bl, byte 1
-	jc .matchloop
+	jc short .matchloop
 	mov cl, byte 8
-	jnz .matchloop
+	jnz short .matchloop
 
 	;update
 	inc dword [esp+7*4+ebp*8]
 	not ebp
 	shr dword [esp+7*4+ebp*8], byte 1
-	jnz .no_match
-	rcl	byte [esp+7*4+ebp*8], 1
+	jnz short .no_match
+	rcl	dword [esp+7*4+ebp*8], byte 1
 	
 	.no_match:
 	popa
-	inc esi
-	dec edi
-	jg .context_loop
+	inc edi
+	cmp esi, edi
+	jg short .context_loop
 
 	mov cl, byte BOOST_FACTOR
 	.add_loop:
 		add dword [esp+8*4], eax
 		add dword [esp+9*4], edx
 		pusha
-		imul edx	;TODO: imul doesn't set the zf flags, or does it?!
-		test eax, eax
+		imul edx
+		test eax, eax		; :/
 		popa
-		loope .add_loop	;loop BOOST_FACTOR times, if c0*c1 = 0
+		loope .add_loop		;loop BOOST_FACTOR times, if c0*c1 = 0
 		
 .skip_model:
 	popa
 	dec bl
-	jge model_loop
+	jge short model_loop
 	
 	pop edx
 	pop ebx
 	
-	cmp cx, word 0
-_UnpackedDataLengthPtrP1:
-	jl AritDecode
-	
-	;return
-	cld		;move to import code
-	push esi
+	cmp esi, _DepackEndPosition
+_UnpackedDataLength:
+	jle short AritDecodeJumpPad
 	ret
 	
 _BaseProbPtr1	equ	BaseProbPtrP1-1
 _BaseProbPtr2	equ	BaseProbPtrP2-1
-_UnpackedDataLengthPtr	equ	_UnpackedDataLengthPtrP1-2

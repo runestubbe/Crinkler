@@ -4,6 +4,7 @@
 #include "Hunk.h"
 #include "Compressor/CompressionStream.h"
 #include "Compressor/ProgressBar.h"
+#include "Crinkler.h"
 
 using namespace std;
 
@@ -16,7 +17,7 @@ EmpiricalHunkSorter::~EmpiricalHunkSorter() {
 int EmpiricalHunkSorter::tryHunkCombination(HunkList* hunklist, ModelList& codeModels, ModelList& dataModels, int baseprobs[8]) {
 	int splittingPoint;
 	int imageBase = 0x400000;
-	int sectionSize = 0x10000;
+	int sectionSize = CRINKLER_SECTIONSIZE;
 
 	Hunk* phase1 = hunklist->toHunk("linkedHunk", &splittingPoint);
 	phase1->relocate(imageBase+sectionSize*2);

@@ -10,6 +10,10 @@ Version 1.0a (January 7, 2007)
 
 VERSION HISTORY
 ---------------
+??.??.??: 1.1:	Slightly smaller header if range importing is not used.
+		VERBOSE options renamed to PRINT.
+		
+
 
 07.01.07: 1.0a: New /VERBOSE:FUNCTIONS options to sort the functions.
                 Various verbose output fixes.
