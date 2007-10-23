@@ -7,7 +7,6 @@
 #include "Hunk.h"
 #include "NameMangling.h"
 #include "Symbol.h"
-#include <boost/scoped_ptr.hpp>
 
 using namespace std;
 

@@ -1,11 +1,10 @@
 <?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject 
 	ProjectType="Intel C++ Project"
-	Version="10.0"
+	Version="9.1"
 	Name="Crinkler"
 	ProjectGUID="{392261A4-DEA9-4E58-9BD2-5E3BF928D2CF}"
 	VCNestedProjectGUID="{B0591735-B8E8-4E45-8394-5A01A5F53984}"
-	VCNestedProjectCRC32="1369603761"
 	VCNestedProjectFileName="Crinkler.vcproj"
 	Keyword="Win32Proj">
 	<Platforms>
@@ -21,6 +20,8 @@
 				IntermediateDirectory="Debug"
 				ConfigurationType="1"
 				CharacterSet="2"/>
+			<Tool 
+				Name="DebugTool"/>
 			<Tool 
 				Name="CppCmplrTool"
 				Optimization="0"
@@ -71,6 +72,8 @@
 				ConfigurationType="1"
 				CharacterSet="2"
 				WholeProgramOptimization="0"/>
+			<Tool 
+				Name="DebugTool"/>
 			<Tool 
 				Name="CppCmplrTool"
 				WholeProgramOptimization="0"
@@ -150,8 +153,8 @@
 				<Tool 
 					Name="CustomTool"
 					Description="Assembling data.."
-					CommandLine="nasmw -f win32 -Xvc modules/calltrans.asm -o modules/calltrans.obj&#xA;nasmw -f win32 -Xvc modules/header10.asm -o modules/header10.obj&#xA;nasmw -f win32 -Xvc modules/header10_1k.asm -o modules/header10_1k.obj&#xA;nasmw -f win32 -Xvc modules/import10_1k.asm -o modules/import10_1k.obj&#xA;nasmw -f win32 -Xvc modules/import10.asm -o modules/import10.obj&#xA;nasmw -f win32 -Xvc modules/import10-range.asm -o modules/import10-range.obj&#xA;nasmw -f win32 -Xvc modules/import10-safe-range.asm -o modules/import10-safe-range.obj&#xA;nasmw -f win32 -Xvc modules/import10-safe.asm -o modules/import10-safe.obj&#xA;&#xA;nasmw -f win32 -Xvc $(InputPath) -o $(TargetDir)\$(InputName).obj"
-					AdditionalDependencies="modules/calltrans.asm; modules/header10.asm; modules/header10_1k.asm; modules/import10-range.asm; modules/import10-safe-range.asm; modules/import10-safe.asm; modules/import10.asm; modules/import10_1k.asm"
+					CommandLine="nasmw -f win32 -Xvc modules/calltrans.asm -o modules/calltrans.obj&#xA;nasmw -f win32 -Xvc modules/header11.asm -o modules/header11.obj&#xA;nasmw -f win32 -Xvc modules/header10_1k.asm -o modules/header10_1k.obj&#xA;nasmw -f win32 -Xvc modules/import10_1k.asm -o modules/import10_1k.obj&#xA;nasmw -f win32 -Xvc modules/import10.asm -o modules/import10.obj&#xA;nasmw -f win32 -Xvc modules/import10-range.asm -o modules/import10-range.obj&#xA;nasmw -f win32 -Xvc modules/import10-safe-range.asm -o modules/import10-safe-range.obj&#xA;nasmw -f win32 -Xvc modules/import10-safe.asm -o modules/import10-safe.obj&#xA;&#xA;nasmw -f win32 -Xvc $(InputPath) -o $(TargetDir)\$(InputName).obj"
+					AdditionalDependencies="modules/calltrans.asm; modules/header11.asm; modules/header10_1k.asm; modules/import10-range.asm; modules/import10-safe-range.asm; modules/import10-safe.asm; modules/import10.asm; modules/import10_1k.asm"
 					Outputs="$(TargetDir)\$(InputName).obj"/>
 			</FileConfiguration>
 		</File>
@@ -202,9 +205,9 @@
 		<File 
 			RelativePath=".\modules\calltrans.asm"/>
 		<File 
-			RelativePath=".\modules\header10.asm"/>
-		<File 
 			RelativePath=".\modules\header10_1k.asm"/>
+		<File 
+			RelativePath=".\modules\header11.asm"/>
 		<File 
 			RelativePath=".\modules\import10-range.asm"/>
 		<File 

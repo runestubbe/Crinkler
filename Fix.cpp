@@ -51,12 +51,17 @@ void FixFile(const char *filename, const char *outfile) {
 			return;
 		}
 		break;
+	case '1':
+		switch (minorlv) {
+		case '0':
+			break;
+		}
 	default:
 		printf("No fixing necessary.\n");
 		return;
 	}
 
-	if (*(short *)&data[106] == 0) {
+	if (*(short *)&data[106] == 0 && data[54] == 1) {
 		printf("File has already been fixed.\n");
 		return;
 	}
@@ -69,6 +74,7 @@ void FixFile(const char *filename, const char *outfile) {
 	int models = *(int *)&data[108];
 	fix(data, hptr, 2, 1);
 	fix(data, hptr, 7, 5);
+	fix(data, hptr, 54, 1);
 	fix(data, hptr, 100, 4);
 	fix(data, hptr, 106, 11);
 	fix(data, hptr, 156, 8);

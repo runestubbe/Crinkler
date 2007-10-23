@@ -1,14 +1,16 @@
 Manual:
-	beskriv summary
-	verbose -> ?
+	+safeimport -> unsafeimport
+	+beskriv summary
+	+verbose -> ?
 	truncation?
 	credit til flere personer?
 	nævn at verbose functions ikke virker i vs8
 	skriv faq
+	ws2003
 
 Licens:
-	inkluder Distorm-licens
-	formuler Crinkler-licens
+	+inkluder Distorm-licens
+	+formuler Crinkler-licens
 
 Code:
 	summary: layout ved lange idents
@@ -17,8 +19,10 @@ Code:
 	summary: colapse/expand
 	summary: lav sidste justeringer af layout og skriv forklaringstekst
 
+	max ordertries
+
 	truncation?
-	verbose -> ?
+	+verbose -> ?
 	combine identical read-only symbols
         verbose:functions
 
@@ -26,3 +30,4 @@ Code:
 test:
 	Test weak externals support
 	recursive call bug
+	Windows Server 2003
