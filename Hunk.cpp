@@ -2,6 +2,7 @@
 #include <vector>
 #include <algorithm>
 #include <cassert>
+#include "misc.h"
 
 #include "Hunk.h"
 #include "NameMangling.h"
@@ -76,12 +77,16 @@ const char* Hunk::getName() const {
 	return m_name.c_str();
 }
 
-
-bool symbolComparator(Symbol*& first, Symbol*& second) {
+//sort symbols by address, then by type (section < global < local) and finally by name
+static bool symbolComparator(Symbol*& first, Symbol*& second) {
 	if(first->value != second->value)
 		return first->value < second->value;
 	else
-		return first->flags & SYMBOL_IS_SECTION;
+		if((first->flags & SYMBOL_IS_SECTION) || (second->flags & SYMBOL_IS_SECTION))
+			return first->flags & SYMBOL_IS_SECTION;
+		if((first->flags & SYMBOL_IS_LOCAL) || (second->flags & SYMBOL_IS_LOCAL))
+			return !(first->flags & SYMBOL_IS_LOCAL);
+		return first->name < second->name;
 }
 
 
@@ -210,7 +215,7 @@ void Hunk::chop(int size) {
 	m_data.erase((m_data.end()-size), m_data.end());
 }
 
-CompressionSummaryRecord* Hunk::getCompressionSummary(int* sizefill, int splittingPoint) {
+CompressionReportRecord* Hunk::getCompressionSummary(int* sizefill, int splittingPoint) {
 	vector<Symbol*> symbols;
 	//extract relocatable symbols
 	for(map<string, Symbol*>::const_iterator it = m_symbols.begin(); it != m_symbols.end(); it++) {
@@ -218,22 +223,48 @@ CompressionSummaryRecord* Hunk::getCompressionSummary(int* sizefill, int splitti
 			symbols.push_back(it->second);
 	}
 
-	//sort symbol by value
+	//sort symbols
 	sort(symbols.begin(), symbols.end(), symbolComparator);
 
-	CompressionSummaryRecord* root = new CompressionSummaryRecord("root", RECORD_ROOT, 0, 0);
-	CompressionSummaryRecord* codeSection = new CompressionSummaryRecord("Code section", RECORD_SECTION, 0, 0);
-	CompressionSummaryRecord* dataSection = new CompressionSummaryRecord("Data section", RECORD_SECTION, splittingPoint, sizefill[splittingPoint]);
-	CompressionSummaryRecord* uninitSection = new CompressionSummaryRecord("Uninitialized section", RECORD_SECTION, getRawSize(), -1);
+	CompressionReportRecord* root = new CompressionReportRecord("root", RECORD_ROOT, 0, 0);
+	CompressionReportRecord* codeSection = new CompressionReportRecord("Code section", RECORD_SECTION|RECORD_CODE, 0, 0);
+	CompressionReportRecord* dataSection = new CompressionReportRecord("Data section", RECORD_SECTION, splittingPoint, sizefill[splittingPoint]);
+	CompressionReportRecord* uninitSection = new CompressionReportRecord("Uninitialized section", RECORD_SECTION, getRawSize(), -1);
 	root->children.push_back(codeSection);
 	root->children.push_back(dataSection);
 	root->children.push_back(uninitSection);
 
 	for(vector<Symbol*>::iterator it = symbols.begin(); it != symbols.end(); it++) {
-		CompressionSummaryRecord* c = new CompressionSummaryRecord((*it)->name.c_str(), 
-			((*it)->flags & SYMBOL_IS_LOCAL) ? 0 : RECORD_PUBLIC, (*it)->value, ((*it)->value < getRawSize()) ? sizefill[(*it)->value] : -1);
+		CompressionReportRecord* c = new CompressionReportRecord((*it)->name.c_str(), 
+			0, (*it)->value, ((*it)->value < getRawSize()) ? sizefill[(*it)->value] : -1);
 
+		//copy misc string
 		c->miscString = (*it)->miscString;
+
+		//set flags
+		if((*it)->flags & SYMBOL_IS_SECTION) {
+			c->type |= RECORD_OLD_SECTION;
+		}
+		if(!((*it)->flags & SYMBOL_IS_LOCAL)) {
+			c->type |= RECORD_PUBLIC;
+		}
+
+		//find appropriate section
+		CompressionReportRecord* r;
+		if((*it)->value < splittingPoint) {
+			r = codeSection;
+		} else if((*it)->value < getRawSize()) {
+			r = dataSection;
+		} else {
+			r = uninitSection;
+		}
+		//find where to place the record
+		while(r->children.size() > 0 && r->children.back()->getLevel() < c->getLevel())
+			r = r->children.back();
+
+		r->children.push_back(c);
+
+/*
 		if((*it)->flags & SYMBOL_IS_FUNCTION) {
 			c->miscString = (*it)->getUndecoratedName();
 			c->functionSize = (*it)->size;
@@ -251,6 +282,7 @@ CompressionSummaryRecord* Hunk::getCompressionSummary(int* sizefill, int splitti
 		} else {
 			uninitSection->children.push_back(c);
 		}
+		*/
 	}
 
 	root->calculateSize(m_virtualsize, sizefill[getRawSize()]);
@@ -290,33 +322,7 @@ map<int, Symbol*> Hunk::getOffsetToSymbolMap() {
 	return offsetmap;
 }
 
-static float truncateFloat(float ptr, int bits) {
-	int truncBits = 32-bits;
-	float* v = &ptr;
-	int v1;
-	double orgv = *v;
-	unsigned int* iv = (unsigned int*)v;
-
-	if(bits < 2) {
-		*iv = 0;
-	} else {
-		//round
-		//compare actual floating point values due to non-linearity
-		*iv >>= truncBits;
-		*iv <<= truncBits;
-		if(truncBits > 0) {
-			double v0 = *v;
-			(*iv) += 1<<truncBits;
-			double v1 = *v;
-			if(abs(orgv-v0) < abs(orgv-v1)) {
-				(*iv) -= 1<<truncBits;
-			}
-		}
-	}
-	return *v;
-}
-
-void Hunk::truncateFloats(int defaultBits) {
+void Hunk::roundFloats(int defaultBits) {
 	for(map<string, Symbol*>::iterator it = m_symbols.begin(); it != m_symbols.end(); it++) {
 		Symbol* s = it->second;
 		int bits = defaultBits;
@@ -327,8 +333,10 @@ void Hunk::truncateFloats(int defaultBits) {
 		if(s->value < 0 | s->value > getRawSize()-4)	//sanity check.
 			continue;
 
+		//round __real@XXXXXXXX to default bits
+		//round tfXX_?? to XX bits
 		int a;
-		if(sscanf_s(s->name.c_str(), "__real@%8X", &a) && s->name.size() == (2+4+1+8)) {	//TODO: fix hacked check
+		if(sscanf_s(s->name.c_str(), "__real@%8X", &a) && s->name.size() == (2+4+1+8)) {
 			bits = defaultBits;
 		} else if(sscanf_s(name.c_str(), "tf%d_", &bits) && bits >= 0 && bits <= 32) {
 			
@@ -337,8 +345,8 @@ void Hunk::truncateFloats(int defaultBits) {
 		}
 		
 		float orgv = *(float*)&m_data[s->value];
-		float v = truncateFloat(orgv, bits);			
+		float v = roundFloat(orgv, bits);
 		*(float*)&m_data[s->value] = v;
-		printf("symbol %s truncated to %d bits: %f -> %f (%.8X)\n", stripCrinklerSymbolPrefix(s->name.c_str()).c_str(), bits, orgv, v, *(unsigned int*)&v);
+		printf("symbol %s rounded to %d bits: %f -> %f (%.8X)\n", stripCrinklerSymbolPrefix(s->name.c_str()).c_str(), bits, orgv, v, *(unsigned int*)&v);
 	}
 }

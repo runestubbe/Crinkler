@@ -11,7 +11,7 @@
 #include <list>
 #include <string>
 
-#define CMDI_PARSE_FILES		0x01
+const int CMDI_PARSE_FILES = 0x01;
 
 class CmdLineInterface {
 	std::list<CmdParam*>	m_params;

@@ -22,7 +22,7 @@
 #include "data.h"
 #include "Symbol.h"
 #include "StringMisc.h"
-#include "HtmlSummary.h"
+#include "HtmlReport.h"
 #include "NameMangling.h"
 
 using namespace std;
@@ -129,38 +129,38 @@ in:
 	return n;
 }
 
-void extractFunctions(CompressionSummaryRecord* csr, vector<CompressionSummaryRecord*>& functions) {
-	for(vector<CompressionSummaryRecord*>::iterator it = csr->children.begin(); it != csr->children.end(); it++) {
+void extractFunctions(CompressionReportRecord* csr, vector<CompressionReportRecord*>& functions) {
+	for(vector<CompressionReportRecord*>::iterator it = csr->children.begin(); it != csr->children.end(); it++) {
 		if((*it)->type & RECORD_FUNCTION)
 			functions.push_back(*it);
 		extractFunctions(*it, functions);
 	}
 }
 
-bool compareFunctionsByName(CompressionSummaryRecord* a, CompressionSummaryRecord* b) {
+bool compareFunctionsByName(CompressionReportRecord* a, CompressionReportRecord* b) {
 	return a->miscString < b->miscString;
 }
 
-bool compareFunctionsByCompSize(CompressionSummaryRecord* a, CompressionSummaryRecord* b) {
+bool compareFunctionsByCompSize(CompressionReportRecord* a, CompressionReportRecord* b) {
 	return a->compressedFunctionSize > b->compressedFunctionSize;
 }
 
-bool compareFunctionsByAddress(CompressionSummaryRecord* a, CompressionSummaryRecord* b) {
+bool compareFunctionsByAddress(CompressionReportRecord* a, CompressionReportRecord* b) {
 	return a->pos < b->pos;
 }
 
-void verboseFunctions(CompressionSummaryRecord* csr, bool (*compareFunction)(CompressionSummaryRecord*, CompressionSummaryRecord*)) {
-	vector<CompressionSummaryRecord*> functions;
+void verboseFunctions(CompressionReportRecord* csr, bool (*compareFunction)(CompressionReportRecord*, CompressionReportRecord*)) {
+	vector<CompressionReportRecord*> functions;
 	printf("\nfunction name                                      size          compsize\n");
 	extractFunctions(csr, functions);
 
 	sort(functions.begin(), functions.end(), compareFunction);
 
-	for(vector<CompressionSummaryRecord*>::iterator it = functions.begin(); it != functions.end(); it++)
+	for(vector<CompressionReportRecord*>::iterator it = functions.begin(); it != functions.end(); it++)
 		printf("  %-36.36s        %9d          %8.2f\n", (*it)->name.c_str(), (*it)->functionSize, (*it)->compressedFunctionSize / (BITPREC*8.0f));
 }
 
-void verboseLabels(CompressionSummaryRecord* csr) {
+void verboseLabels(CompressionReportRecord* csr) {
 	if(csr->type & RECORD_ROOT) {
 		printf("\nlabel name                                   pos comp-pos      size compsize");
 	} else {
@@ -179,7 +179,7 @@ void verboseLabels(CompressionSummaryRecord* csr) {
 			printf(" %9d          %9d\n", csr->pos, csr->size);
 	}
 
-	for(vector<CompressionSummaryRecord*>::iterator it = csr->children.begin(); it != csr->children.end(); it++)
+	for(vector<CompressionReportRecord*>::iterator it = csr->children.begin(); it != csr->children.end(); it++)
 		verboseLabels(*it);
 }
 
@@ -287,25 +287,31 @@ void Crinkler::link(const char* filename) {
 
 	//truncate floats
 	if(m_truncateFloats)
-		m_hunkPool.truncateFloats(m_truncateBits);
+		m_hunkPool.roundFloats(m_truncateBits);
 
 	HeuristicHunkSorter::sortHunkList(&m_hunkPool);
 
 	//create phase 1 data hunk
 	int splittingPoint;
 
-
-	Hunk* phase1 = m_transform->linkAndTransform(&m_hunkPool, CRINKLER_CODEBASE, &splittingPoint);
+	Hunk* phase1, *phase1Untransformed;
+	m_transform->linkAndTransform(&m_hunkPool, CRINKLER_CODEBASE, phase1, phase1Untransformed, &splittingPoint);
 
 	printf("\nUncompressed size of code: %5d\n", splittingPoint);
 	printf("Uncompressed size of data: %5d\n", phase1->getRawSize() - splittingPoint);
 
 	//Do 1k specific stuff
+#ifdef INCLUDE_1K_PACKER
 	if (m_1KMode) {
-		int compressed_size = phase1->getRawSize()*2+100;
+		int compressed_size = 1024*1024;
 		unsigned char* compressed_data = new unsigned char[compressed_size];
 		
-		TinyCompress((unsigned char*)phase1->getPtr(), phase1->getRawSize(), compressed_data, compressed_size);
+		int baseprob0;
+		int baseprob1;
+		int boostfactor;
+		int num_models;
+		TinyCompress((unsigned char*)phase1->getPtr(), phase1->getRawSize(), compressed_data, compressed_size,
+			boostfactor, baseprob0, baseprob1, num_models);
 		Hunk* phase1Compressed = new Hunk("compressed data", (char*)compressed_data, 0, 0, compressed_size, compressed_size);
 		phase1Compressed->addSymbol(new Symbol("_PackedData", 0, SYMBOL_IS_RELOCATEABLE, phase1Compressed));
 		delete[] compressed_data;
@@ -329,14 +335,14 @@ void Crinkler::link(const char* filename) {
 			phase2->addSymbol(new Symbol("_VirtualSize", virtualSize, 0, phase2));
 			phase2->addSymbol(new Symbol("_ImageBase", CRINKLER_IMAGEBASE, 0, phase2));
 
-			int baseprob = 13;
-			*(phase2->getPtr() + phase2->findSymbol("_BaseProbPtr1")->value) = baseprob;
-			*(phase2->getPtr() + phase2->findSymbol("_BaseProbPtr2")->value) = baseprob;
-			//*((short*)(phase2->getPtr() + phase2->findSymbol("_UnpackedDataLengthPtr")->value)) = phase1->getRawSize()*8;
+			*(phase2->getPtr() + phase2->findSymbol("_BaseProbPtr0")->value) = baseprob0;
+			*(phase2->getPtr() + phase2->findSymbol("_BaseProbPtr1")->value) = baseprob1;
+			*(phase2->getPtr() + phase2->findSymbol("_NumModelsPtr")->value) = num_models;
+			*(phase2->getPtr() + phase2->findSymbol("_BoostFactorPtr")->value) = boostfactor;
+
 		}
 		phase2->relocate(CRINKLER_IMAGEBASE);
 		
-
 		fwrite(phase2->getPtr(), 1, phase2->getRawSize(), outfile);
 		fclose(outfile);
 
@@ -348,6 +354,7 @@ void Crinkler::link(const char* filename) {
 
 		return;
 	}
+#endif
 
 	//calculate baseprobs
 	int baseprob = 10;
@@ -391,7 +398,8 @@ void Crinkler::link(const char* filename) {
 		if(m_hunktries > 0) {
 			EmpiricalHunkSorter::sortHunkList(&m_hunkPool, ml1, ml2, baseprobs, m_hunktries, m_showProgressBar ? &windowBar : NULL);
 			delete phase1;
-			phase1 = m_transform->linkAndTransform(&m_hunkPool, CRINKLER_CODEBASE, &splittingPoint);
+			delete phase1Untransformed;
+			m_transform->linkAndTransform(&m_hunkPool, CRINKLER_CODEBASE, phase1, phase1Untransformed, &splittingPoint);
 			//reestimate models
 			progressBar.beginTask("Reestimating models for code");
 			ml1 = ApproximateModels((unsigned char*)phase1->getPtr(), splittingPoint, baseprobs, &size, &progressBar, m_verboseFlags & VERBOSE_MODELS, m_compressionType, m_modelbits);
@@ -438,7 +446,7 @@ void Crinkler::link(const char* filename) {
 	if(m_compressionType != COMPRESSION_INSTANT)
 		printf("Real compressed total size: %d\nBytes lost to hashing: %d\n", size, size - idealsize / BITPREC / 8);
 
-	CompressionSummaryRecord* csr = phase1->getCompressionSummary(sizefill, splittingPoint);
+	CompressionReportRecord* csr = phase1->getCompressionSummary(sizefill, splittingPoint);
 	if(m_verboseFlags & VERBOSE_LABELS)
 		verboseLabels(csr);
 	if(m_verboseFlags & VERBOSE_FUNCTIONS)
@@ -448,7 +456,7 @@ void Crinkler::link(const char* filename) {
 	if(m_verboseFlags & VERBOSE_FUNCTIONS_BYNAME)
 		verboseFunctions(csr, compareFunctionsByName);
 	if(m_summaryFilename.compare("") != 0)
-		htmlSummary(csr, m_summaryFilename.c_str(), *phase1, sizefill);
+		htmlReport(csr, m_summaryFilename.c_str(), *phase1, *phase1Untransformed, sizefill);
 	delete csr;
 	delete[] sizefill;
 	
@@ -509,6 +517,7 @@ void Crinkler::link(const char* filename) {
 
 	delete headerHunks;
 	delete phase1;
+	delete phase1Untransformed;
 	delete phase2;
 }
 

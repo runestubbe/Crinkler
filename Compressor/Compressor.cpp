@@ -219,27 +219,57 @@ ModelList ApproximateModels(const unsigned char* data, int datasize, int basepro
 	return models;
 }
 
-
-void TinyCompress(unsigned char* org_data, int size, unsigned char* compressed, int& compressed_size) {
+int compress1K(unsigned char* data, int size, unsigned char* compressed, int compressed_size, int* modeldata, int b0, int b1, int boost_factor, int nmodels) {
 	AritState as;
+	memset(compressed, 0, compressed_size);	
+	AritCodeInit(&as, compressed);
+	int bitlength = size*8;
+	for(int i = 0; i < bitlength; i++) {
+		int bitpos = (i & 7);
+		int bytepos = i >> 3;
+		int mask = 0xFF00 >> bitpos;
+		int bit = ((data[bytepos] << bitpos) & 0x80) == 0x80;
+
+		int n[2];
+		if(bit) {
+			n[0] = b0; n[1] = b1;
+		} else {
+			n[0] = b1; n[1] = b0;
+		}
+		for(int m = 0; m <= nmodels; m++) {
+			int c[2] = {modeldata[(bitlength*m+i)*2], modeldata[(bitlength*m+i)*2+1]};
+			if(c[0]*c[1] == 0) {
+				c[0]*=boost_factor;
+				c[1]*=boost_factor;
+			}
+			n[0] += c[0];
+			n[1] += c[1];
+		}
+
+		AritCode(&as, n[bit], n[!bit], bit);
+	}
+	return (AritCodeEnd(&as) + 7) / 8;
+}
+
+void TinyCompress(unsigned char* org_data, int size, unsigned char* compressed, int& compressed_size,
+				  int& best_boost, int& best_b0, int& best_b1, int& best_nmodels) {
 	unsigned char* data = new unsigned char[size+8];
 	memset(data, 0, 8);
 	data += 8;
 	memcpy(data, org_data, size);
 
-	const int baseprob = 13;
-	const int nmodels = 16;
+	const int NUM_MODELS = 16;
 	int bitlength = size*8;
-	int* modeldata = new int[bitlength*nmodels*2];
+	int* modeldata = new int[bitlength*NUM_MODELS*2];
 
 	//collect model data
-	for(int i = 0; i < size*8; i++) {
+	for(int i = 0; i < bitlength; i++) {
 		int bitpos = (i & 7);
 		int bytepos = i >> 3;
 		int mask = 0xFF00 >> bitpos;
 		int bit = ((data[bytepos] << bitpos) & 0x80) == 0x80;
 	
-		for(int model = nmodels-1; model >= 0; model--) {
+		for(int model = NUM_MODELS-1; model >= 0; model--) {
 			int c[2] = {0,0};
 			int startpos = 0;
 			int offset = bytepos;
@@ -277,32 +307,35 @@ void TinyCompress(unsigned char* org_data, int size, unsigned char* compressed, 
 				offset--;
 			} while(offset > 0);
 
-			if(c[0]*c[1] == 0) {
-				c[0] *= 8;
-				c[1] *= 8;
-			}
 			modeldata[(bitlength*model+i)*2] = c[bit];
 			modeldata[(bitlength*model+i)*2+1] = c[!bit];
 		}
 	}
 
-	memset(compressed, 0, compressed_size);
-	AritCodeInit(&as, compressed);
-	for(int i = 0; i < bitlength; i++) {
-		int bitpos = (i & 7);
-		int bytepos = i >> 3;
-		int mask = 0xFF00 >> bitpos;
-		int bit = ((data[bytepos] << bitpos) & 0x80) == 0x80;
-
-		int n[2] = {baseprob, baseprob};
-		for(int m = 0; m < nmodels; m++) {
-			n[0] += modeldata[(bitlength*m+i)*2];
-			n[1] += modeldata[(bitlength*m+i)*2+1];
+	int best_size = INT_MAX;
+	for(int nmodels = 0; nmodels < NUM_MODELS; nmodels++) {
+		for(int boost_factor = 1; boost_factor < 8; boost_factor++) {
+			for(int b0 = 1; b0 < 10; b0++) {
+				for(int b1 = 1; b1 < 10; b1++) {
+					int testsize = compress1K(data, size, compressed, compressed_size,
+						modeldata, b0, b1, boost_factor, nmodels);
+					if(testsize < best_size) {
+						best_size = testsize;
+						best_boost = boost_factor;
+						best_b0 = b0;
+						best_b1 = b1;
+						best_nmodels = nmodels;
+						printf("baseprob: (%d, %d) boost: %d nmodels: %d compressed size: %d bytes\n", best_b0, best_b1, best_boost, best_nmodels, best_size);
+					}
+				}
+			}
 		}
-		AritCode(&as, n[bit], n[!bit], bit);
 	}
-	compressed_size = (AritCodeEnd(&as) + 7) / 8;
-		
+	
+	compressed_size = compress1K(data, size, compressed, compressed_size,
+		modeldata, best_b0, best_b1, best_boost, best_nmodels);
+
+	printf("baseprob: (%d, %d) boost: %d nmodels: %d compressed size: %d bytes\n", best_b0, best_b1, best_boost, best_nmodels, best_size);
 
 	delete[] modeldata;
 

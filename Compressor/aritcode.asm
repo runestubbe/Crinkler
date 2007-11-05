@@ -15,12 +15,7 @@ a_intervalmin	equ	12
 
 	global	_breakpoint
 
-	section	.text
-
-_breakpoint:
-	db 0xcc
-	ret
-
+	section	aritcode text
 _AritCodePos:
 	;; object
 	mov	ecx, [esp + 1*4]
@@ -255,7 +250,7 @@ _AritDecode:
 	popa
 	ret
 
-	section	.data
+	section	logtable data
 
 _LogTable:
 

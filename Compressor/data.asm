@@ -2,7 +2,7 @@ global _vertexshaderSource
 global _pixelshaderSource
 global _downscaleSource
 
-section	.text
+section	shad data
 _vertexshaderSource:
 incbin "shader_vs.hlsl"
 db 0

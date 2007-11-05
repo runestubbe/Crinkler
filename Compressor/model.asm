@@ -1,20 +1,6 @@
-
 	global	_ModelHash@12
-;	global	_GetBit@8
 
-	section	.text
-%if 0	;bah, this is sloooow
-	;; data, bitpos
-_GetBit@8:
-	mov	edx, [esp + 1*4]
-	mov	ecx, [esp + 2*4]
-	xor ecx, byte 7
-	xor	eax, eax
-	bt	[edx], ecx
-	adc	eax, eax
-	ret 8
-%endif
-
+	section	model text
 	;; data, bitpos, model mask
 _ModelHash@12:
 	;pusha

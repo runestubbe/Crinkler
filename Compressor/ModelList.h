@@ -4,7 +4,7 @@
 
 class Compressor;
 
-#define MAX_MODELS	256
+const int MAX_MODELS = 256;
 
 struct Model {
 	unsigned char weight, mask;

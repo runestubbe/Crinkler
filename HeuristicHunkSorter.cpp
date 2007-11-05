@@ -25,7 +25,7 @@ bool hunkRelation(Hunk* h1, Hunk* h2) {
 
 	if(h1->getAlignmentBits() == h2->getAlignmentBits()) {
 		if(h1->getRawSize() != h2->getRawSize())
-			return h1->getRawSize() > h2->getRawSize();
+			return h1->getRawSize() < h2->getRawSize();
 		else {
 			{
 				//compare data
