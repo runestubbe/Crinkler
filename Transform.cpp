@@ -3,27 +3,20 @@
 #include "HunkList.h"
 #include "Log.h"
 
-Hunk* Transform::linkAndTransform(HunkList* hunklist, int baseAddress, int* splittingPoint) {
+bool Transform::linkAndTransform(HunkList* hunklist, int baseAddress, Hunk* &transformedHunk, Hunk* &untransformedHunk, int* splittingPoint) {	
 	Hunk* detrans = getDetransformer();
 
 	if(detrans)
 		hunklist->addHunkFront(detrans);
 	int sp;
-	//
-	Hunk* h = hunklist->toHunk("linked", &sp);
-	h->relocate(baseAddress);
+	transformedHunk = hunklist->toHunk("linked", &sp);
+	transformedHunk->relocate(baseAddress);
+	untransformedHunk = new Hunk(*transformedHunk);
 	
-	delete detrans;
 	hunklist->removeHunk(detrans);
-
-	if(!transform(h, sp)) {	//transform failed, link without transform
-		delete h;
-		Hunk* h = hunklist->toHunk("linked", &sp);
-		h->relocate(baseAddress);
-	}
-
+	delete detrans;
 	if(splittingPoint)
 		*splittingPoint = sp;
 
-	return h;
+	return transform(transformedHunk, sp);
 }

@@ -2,8 +2,8 @@
 #ifndef _ARITCODE_H_
 #define _ARITCODE_H_
 
-#define BITPREC 256
-#define BITPREC_TABLE 4096
+const int BITPREC = 256;
+const int BITPREC_TABLE = 4096;
 
 #include <cassert>
 #include <cstdlib>

@@ -29,7 +29,7 @@ bool CallTransform::transform(Hunk* hunk, int splittingPoint) {
 			}
 		}
 	}
-	*(hunk->getPtr() + hunk->findSymbol("_NumCallTransPtr")->value) = num;
+	*(hunk->getPtr() + hunk->findSymbol("_CallTrans")->value+5) = num;
 	printf("\nCalls transformed: %d\n", num);
 	return num > 0;
 }

@@ -8,6 +8,7 @@ bits	32
 
 	extern	_DLLNames
 	extern	_ImportList
+	extern  _HashFamily
 
 ; Format of DLL names:
 ; For each DLL
@@ -46,10 +47,9 @@ ScanProcedureNamesLoop:
 	add		eax, ebp				; edi = name pointers table address
 	mov		esi, [eax + ecx*4]		; esi = name pointer offset
 	add		esi, ebp				; esi = name pointer address
-	
 	xor		edx, edx
 CalculateHashLoop:
-	rol		edx, 6
+	imul	edx, _HashFamily
 	xor		eax, eax
 	lodsb
 	add		edx, eax
@@ -67,17 +67,15 @@ CalculateHashLoop:
 	mov		eax, [eax + ebx*4]		; ebp = address of function RVA address
 	add		eax, ebp
 	
-	and		edx, 0x3FFFFF
+	and		edx, 0x3FFF
 	mov		dword [_ImportList+edx*4], eax
 	loop	ScanProcedureNamesLoop
 	popa
 	
 	push	esi
 	call	[__imp__LoadLibraryA@4]
-	test eax, eax
-	jz .done
-	xchg	ebp, eax
-
+	
 	add esi, byte 9
-	jmp	short DLLLoop
-	.done
+	test eax, eax
+	xchg	ebp, eax
+	jnz	short DLLLoop

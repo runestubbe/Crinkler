@@ -1,4 +1,4 @@
-/OUT:test\benitoite.exe /SUBSYSTEM:CONSOLE /ENTRY:tinyentry /LIBPATH:"C:\Program files\Microsoft DirectX SDK (June 2007)\Lib\x86"
+/OUT:test\benitoite.exe /SUBSYSTEM:CONSOLE /ENTRY:tinyentry /LIBPATH:"C:\Program Files\Microsoft DirectX SDK (August 2007)\Lib\x86"
 kernel32.lib
 gdi32.lib
 user32.lib

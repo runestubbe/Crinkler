@@ -221,7 +221,7 @@ void HunkList::printHunks() {
 		(*it)->printSymbols();
 }
 
-void HunkList::truncateFloats(int defaultBits) {
+void HunkList::roundFloats(int defaultBits) {
 	for(vector<Hunk*>::iterator it = m_hunks.begin(); it != m_hunks.end(); it++)
-		(*it)->truncateFloats(defaultBits);
+		(*it)->roundFloats(defaultBits);
 }

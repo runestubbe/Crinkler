@@ -145,8 +145,8 @@ static void runOriginalLinker(const char* linkerName) {
 	Log::error(0, "", "could not find default linker '%s' in path", linkerName);
 }
 
-#define TRANSFORM_CALLS		0x01
-#define TRANSFORM_CALLS2	0x02
+const int TRANSFORM_CALLS = 0x01;
+const int TRANSFORM_CALLS2=	0x02;
 
 int main(int argc, char* argv[]) {	
 	//find canonical name of the crinkler executable
@@ -205,7 +205,9 @@ int main(int argc, char* argv[]) {
 	cmdline.addParams(&crinklerFlag, &hashsizeArg, &hashtriesArg, &hunktriesArg, &entryArg, &outArg, &summaryArg, &unsafeImportArg,
 						&subsystemArg, &truncateFloats, &compmodeArg, &verboseArg, &transformArg, &libpathArg, 
 						&rangeImportArg, &replaceDllArg, &filesArg, &priorityArg, &showProgressArg, 
-						&tinyCompressor,	//TODO: remove before release
+#ifdef INCLUDE_1K_PACKER
+						&tinyCompressor,
+#endif
 						NULL);
 	cmdline.setCmdParameters(argc, argv);
 

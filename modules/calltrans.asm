@@ -2,7 +2,6 @@
 bits 32
 
 	global	_CallTrans
-	global	_NumCallTransPtr
 
 	section	ct	align=1
 
@@ -22,5 +21,3 @@ tloop:
 	cwde
 	stosd
 	loop	tloop
-
-_NumCallTransPtr equ _CallTrans+5

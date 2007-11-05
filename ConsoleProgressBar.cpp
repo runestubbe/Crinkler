@@ -6,7 +6,7 @@
 
 using namespace std;
 
-#define PROGRESS_BAR_WIDTH	60
+const int PROGRESS_BAR_WIDTH = 60;
 
 void ConsoleProgressBar::beginTask(const char* name) {
 	printf("\n|-- %s ", name);

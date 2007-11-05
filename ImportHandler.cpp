@@ -109,17 +109,6 @@ const int hashCode(const char* str) {
 	return code;
 }
 
-const unsigned int hashCode_1k(const char* str) {
-	unsigned int code = 0;
-	unsigned int eax;
-	do {
-		code = _rotl(code, 6);
-		eax = *str++;
-		code += eax;
-	} while(eax);
-	return (code & 0x3FFFFF)*4;
-}
-
 
 HunkList* ImportHandler::createImportHunks(HunkList* hunklist, Hunk* hashHunk, const vector<string>& rangeDlls, bool verbose, bool& enableRangeImport) {
 	if(verbose)
@@ -248,6 +237,7 @@ HunkList* ImportHandler::createImportHunks(HunkList* hunklist, Hunk* hashHunk, c
 	*dllNamesPtr++ = -1;
 	importList->setVirtualSize(pos*4);
 	importList->addSymbol(new Symbol("_ImportList", 0, SYMBOL_IS_RELOCATEABLE, importList));
+	importList->addSymbol(new Symbol(".bss", 0, SYMBOL_IS_RELOCATEABLE|SYMBOL_IS_SECTION, importList, "crinkler import"));
 
 	//trim header (remove trailing hashes)
 	while(hashHunk->getRawSize() >= 4 && *(int*)(hashHunk->getPtr()+hashHunk->getRawSize()-4) == 0x48534148) {
@@ -261,10 +251,64 @@ HunkList* ImportHandler::createImportHunks(HunkList* hunklist, Hunk* hashHunk, c
 	newHunks->addHunkBack(importList);
 
 	Hunk* dllNamesHunk = new Hunk("DllNames", dllNames, HUNK_IS_WRITEABLE, 0, dllNamesPtr - dllNames, dllNamesPtr - dllNames);
+	dllNamesHunk->addSymbol(new Symbol(".data", 0, SYMBOL_IS_RELOCATEABLE|SYMBOL_IS_SECTION, dllNamesHunk, "crinkler import"));
 	dllNamesHunk->addSymbol(new Symbol("_DLLNames", 0, SYMBOL_IS_RELOCATEABLE, dllNamesHunk));
 	newHunks->addHunkBack(dllNamesHunk);
 
 	return newHunks;
+}
+
+const unsigned int hashCode_1k(const char* str, int family) {
+	int code = 0;
+	unsigned int eax;
+	do {
+		code *= family;
+		eax = *str++;
+		code += eax;
+	} while(eax);
+	//code ^= _rotl(code, 16);
+	return (code & 0x03FFF)*4;
+}
+
+
+static int findCollisionFreeHashFamily(const set<string>& dlls, const vector<Hunk*>& importHunks) {
+	
+	int family;
+	bool collisions;
+	cout << "searching for hash family: ";
+	do {
+		cout << ".";
+		map<int, vector<string> > buckets;
+		family = rand();
+		collisions = false;
+	
+		for(set<string>::const_iterator it = dlls.begin(); it != dlls.end(); it++) {
+			char* module = LoadDLL(it->c_str());
+
+			IMAGE_DOS_HEADER* dh = (IMAGE_DOS_HEADER*)module;
+			IMAGE_FILE_HEADER* coffHeader = (IMAGE_FILE_HEADER*)(module + dh->e_lfanew+4);
+			IMAGE_OPTIONAL_HEADER32* pe = (IMAGE_OPTIONAL_HEADER32*)(coffHeader+1);
+			IMAGE_EXPORT_DIRECTORY* exportdir = (IMAGE_EXPORT_DIRECTORY*) (module + pe->DataDirectory[IMAGE_DIRECTORY_ENTRY_EXPORT].VirtualAddress);
+
+			int* nameTable = (int*)(module + exportdir->AddressOfNames);
+			for(int i = 0; i < (int)exportdir->NumberOfNames; i++) {
+				char* name = module+nameTable[i];
+				int hash = hashCode_1k(name, family);
+				buckets[hash].push_back(name);
+			}
+		}
+
+		for(vector<Hunk*>::const_iterator it = importHunks.begin(); it != importHunks.end(); it++) {
+			string name = (*it)->getImportName();
+			int hashcode = hashCode_1k(name.c_str(), family);
+			
+			if(buckets[hashcode].size() > 1) {
+				collisions = true;
+			}
+		}
+	} while(collisions);
+	cout << endl << "found family: " << family << endl;
+	return family;
 }
 
 HunkList* ImportHandler::createImportHunks1K(HunkList* hunklist, bool verbose) {
@@ -286,6 +330,7 @@ HunkList* ImportHandler::createImportHunks1K(HunkList* hunklist, bool verbose) {
 			importHunks.push_back(hunk);
 		}
 	}
+	int family = findCollisionFreeHashFamily(dlls, importHunks);
 
 	string dllnames;
 	for(set<string>::iterator it = dlls.begin(); it != dlls.end(); it++) {
@@ -296,11 +341,12 @@ HunkList* ImportHandler::createImportHunks1K(HunkList* hunklist, bool verbose) {
 		}
 	}
 
-	Hunk* importList = new Hunk("ImportListHunk", 0, HUNK_IS_WRITEABLE, 256, 0, 65536*256);
+	Hunk* importList = new Hunk("ImportListHunk", 0, HUNK_IS_WRITEABLE, 2, 0, 65536*256);
+	importList->addSymbol(new Symbol("_HashFamily", family, 0, importList));
 	importList->addSymbol(new Symbol("_ImportList", 0, SYMBOL_IS_RELOCATEABLE, importList));
 	for(vector<Hunk*>::iterator it = importHunks.begin(); it != importHunks.end(); it++) {
 		Hunk* importHunk = *it;
-		unsigned int hashcode = hashCode_1k(importHunk->getImportName());
+		unsigned int hashcode = hashCode_1k(importHunk->getImportName(), family);
 		importList->addSymbol(new Symbol(importHunk->getName(), hashcode, SYMBOL_IS_RELOCATEABLE, importList));
 	}
 

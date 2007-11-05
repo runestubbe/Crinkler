@@ -9,8 +9,10 @@ extern _DepackEndPosition
 global	_header
 global	_DepackEntry
 global	_SubsystemTypePtr
+global	_BaseProbPtr0
 global	_BaseProbPtr1
-global	_BaseProbPtr2
+global	_NumModelsPtr	
+global  _BoostFactorPtr
 
 BaseProbDummy	equ	13
 
@@ -162,11 +164,12 @@ _DepackEntry:
 	.dontInc:
 
 	push byte BaseProbDummy
-BaseProbPtrP1:
+BaseProbPtrP0:
 	push byte BaseProbDummy
-BaseProbPtrP2:
+BaseProbPtrP1:
 	
 	mov bl, NUM_MODELS
+NumModelsPtrP:
 model_loop:
 	pusha
 	
@@ -211,6 +214,7 @@ model_loop:
 	jg short .context_loop
 
 	mov cl, byte BOOST_FACTOR
+	BoostFactorPtrP:
 	.add_loop:
 		add dword [esp+8*4], eax
 		add dword [esp+9*4], edx
@@ -233,5 +237,7 @@ _UnpackedDataLength:
 	jle short AritDecodeJumpPad
 	ret
 	
+_BaseProbPtr0	equ	BaseProbPtrP0-1
 _BaseProbPtr1	equ	BaseProbPtrP1-1
-_BaseProbPtr2	equ	BaseProbPtrP2-1
+_NumModelsPtr	equ NumModelsPtrP-1
+_BoostFactorPtr	equ BoostFactorPtrP-1
