@@ -13,9 +13,12 @@ VERSION HISTORY
 ??.??.??: 1.1:  Support for weak externals (virtual C++ destructors).
 		Fixed compatibility with Data Execution Prevention.		
                 /REPORT option for a colorful HTML compression report.
+                /TRUNCATEFLOATS option to mutilate float constants.
                 /SAFEIMPORT is now default, disabled with /UNSAFEIMPORT.
                 Slightly smaller header if range importing is not used.
-                /VERBOSE options renamed to /PRINT.
+                Fixed some problems with compressing very small files.
+                /VERBOSE:FUNCTIONS removed, as it is subsumed by /REPORT.
+                Remaining /VERBOSE options renamed to /PRINT.
 
 07.01.07: 1.0a: New /VERBOSE:FUNCTIONS options to sort the functions.
                 Various verbose output fixes.
@@ -393,6 +396,52 @@ Linker/Command Line/Additional Options:
     on a full 4k can be as large as 50 bytes, depending on the number
     of calls in your code.
 
+/TRUNCATEFLOATS:[number of bits]
+
+    Floating point constants can take up a significant amount of space
+    in an intro, and often much of this space is wasted because the
+    constants have more precision than needed. Typically, many bytes
+    can be saved by rounding floating point constants to "nice" values
+    - that is, values where many bits in the mantissa are zero.
+    However, such rounding is cumbersome, especially when the
+    constants are written in decimal notation.
+
+    The purpose of the /TRUNCATEFLOATS option is to automate this
+    rounding process. When this option is given, Crinkler tries to
+    identify float and double constants and round them to the number
+    of bits given (between 1 and 64). If no number is given, 32 is
+    assumed.
+
+    Typically, object files do not contain any information about what
+    data is floating point constants and what is not (though the file
+    format does support such information). This means that in order to
+    identify floating point constants, Crinkler has to resort to
+    heuristics based on label names. These heuristics are able to
+    recognize constants in code and some variables, but far from all.
+
+    You can tell Crinkler explicitly that some variable contains float
+    data and how much it should be truncated by having the variable
+    name (or label) start with tf[n]_ where [n] is the number of bits
+    to truncate the constants to. The number of bits can be omitted,
+    in which case the number of bits given in the argument to
+    /TRUNCATEFLOATS is used. Such variables will still only be
+    truncated if the /TRUNCATEFLOATS option is given. Example:
+
+    const float tf14_positions[] = { 0.1f, 0.35f, 0.25f };
+
+    This will truncate the constants in the table to 14 bits (5 bits
+    of mantissa), resulting in the values 0.099609375, 0.3515625 and
+    0.25, respectively. Tip: rather than changing the variable name
+    and all references to it each time you want to change the
+    truncation precision, use a define:
+
+    #define positions tf14_positions
+
+    Note that /TRUNCATEFLOATS is an unstable and highly experimental
+    feature. Make sure to test the compressed file to verify that the
+    result is acceptable. Remember to include the musician in this
+    verification process. :)
+
 
 Finally, Crinkler has a number of options for controlling the output
 during compression. Just like the other options, these can be
@@ -408,34 +457,12 @@ specified under Linker/Command Line/Additional Options:
     which parts of the executable take up the most space and which
     things to change to reduce the size.
 
-/PRINT:FUNCTIONS
-/PRINT:FUNCTIONS-BYNAME
-/PRINT:FUNCTIONS-BYSIZE
-
-    For each function in the program, output the size of the function
-    in bytes before and after compression. This can help you decide
-    whether specific optimizations you try out on your code are
-    worthwhile. Note that the compressed size of a function depends
-    heavily on what comes before it. If you have two almost identical
-    functions, the second one will be much smaller, since the contents
-    of the first one will guide the compression of the second.
-
-    By default, the functions are written in the order in which they
-    occur in the linked code. If you specify -BYNAME or -BYSIZE, they
-    will be sorted in alphabetical order or by decreasing compressed
-    size, respectively.
-
-    For this option to work, you must enable debugging information in
-    your object files. In Visual Studio, this is done by selecting a
-    debugging information format under C/C++/General/Debug Information
-    Format. Any format other than Disbled will work.
-
 /PRINT:LABELS
 
-    As /PRINT:FUNCTIONS, but instead of showing the size of
-    functions, the sizes between every label is shown. This will show
-    the sizes of code as well as data and does not require any
-    debugging information apart from the labels.
+    Print a list of all labels in the program along with uncompressed
+    and compressed sizes for the data between the labels. This is a
+    stripped down version of the information provided by the /REPORT
+    option.
 
 /PRINT:IMPORTS
 

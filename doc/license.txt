@@ -1,4 +1,8 @@
 
+Crinkler - compressing linker for Windows
+Copyright 2005-2007 Aske Simon Christensen and Rune L. H. Stubbe.
+
+
 DISTRIBUTION
 
 Crinkler is freeware. You may distribute it freely, as long as the
@@ -28,7 +32,7 @@ Windows PE loader. It has been created with the sole purpose of
 producing tiny executable files that may or may not work as intended
 on current and/or future versions of Windows.
 
-DERIVED LICENSE OF DISTORM
+LICENSE OF DISTORM
 
 Crinkler uses the BSD-licensed Distorm disassembler library for
 producing disassembly output of the compressed code. The license for
