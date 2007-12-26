@@ -21,14 +21,34 @@ static const char* htmlHeader = "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01//
 						"<title>Crinkler compression report</title>"
 						"<script type='text/javascript'>"
 						"function collapse(el){"
-							"var address = el.parentNode.parentNode.previousSibling.firstChild.innerHTML.substr(1);"
-							"el.parentNode.parentNode.previousSibling.firstChild.innerHTML = '+' + address;"
-							"el.style.display = 'none';"
+							"el.style.display='none';"
+							"el=el.parentNode.parentNode.previousSibling;"
+							"while(el.className!='c1'){"
+								"el=el.firstChild;"
+							"}"
+							"var address=el.innerHTML.substr(1);"
+							"el.innerHTML='+'+address;"
 						"}"
 						"function expand(el){"
-							"var address = el.parentNode.parentNode.previousSibling.firstChild.innerHTML.substr(1);"
-							"el.parentNode.parentNode.previousSibling.firstChild.innerHTML = '-' + address;"
-							"el.style.display = '';"
+							"el.style.display='';"	
+							"el=el.parentNode.parentNode.previousSibling;"
+							"while(el.className!='c1'){"
+								"el=el.firstChild;"
+							"}"
+							"var address=el.innerHTML.substr(1);"
+							"el.innerHTML='-'+address;"
+						"}"
+						"function hideSections(){"
+							"var el;"
+							"for(i=0;(el=document.getElementById('h_'+i))!=null;i++){"
+								"el.style.display = 'none';"
+							"}"
+						"}"
+						"function showSections(){"
+							"var el;"
+							"for(i=0;(el=document.getElementById('h_'+i))!=null;i++){"
+								"el.style.display='';"
+							"}"
 						"}"
 						"function switchMenu(obj){"
 							"var el=document.getElementById(obj);"
@@ -60,10 +80,14 @@ static const char* htmlHeader = "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01//
 							"expandPrefix('o_');"
 							"expandPrefix('p_');"
 						"}"
+						"function startState(){"
+							"collapsePrefix('o_');"
+							"collapsePrefix('p_');"
+						"}"
 						"function recursiveExpand(id){"
 							"var el=document.getElementById(id);"
 							"while(el!=null){"
-								"if(el.localName == 'DIV'){"
+								"if(el.localName == 'DIV' && el.id.match('h_') == null){"
 									"expand(el);"
 								"}"
 								"el=el.parentNode;"
@@ -71,62 +95,61 @@ static const char* htmlHeader = "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01//
 						"}"
 						"</script>"
 						"<style type='text/css'>"	//css style courtesy of gargaj :)
-						"body{"
-						"font-family:monospace;"
-						"font-size:11px;"
+							"body{"
+							"font-family:monospace;"
 						"}"
 						
 						".outertable th{"
-						"background:#eee;"
+							"background:#eee;"
 						"}"
 						
 						".outertable td{"
-						"border:#eee 1px solid;"
+							"border:#eee 1px solid;"
 						"}"
 						".data{"
-						"border-collapse:collapse;"
+							"border-collapse:collapse;"
 						"}"
 						".data td{"
-						"border:0px;"
+							"border:0px;"
 						"}"
 						".grptable{"
-						"border-collapse:collapse;"
-						"border:0px;"
+							"border-collapse:collapse;"
+							"border:0px;"
 						"}"
 						".grptable td{"
-						"border:0px;"
-						"padding:0px;"
+							"border:0px;"
+							"padding:0px;"
 						"}"
 						".grptable th{"
-						"border:0px;"
-						"padding:0px;"
+							"border:0px;"
+							"padding:0px;"
 						"}"
 
 						".address{width:100px;}"
-						".asm{width:450px;}"
-						".hexdump{width:400px;}"
+						".asm{width:650px;}"
+						".hexdump{width:350px;}"
 						".private_symbol_row th{"
-						"background-color:#eef;"
+							"background-color:#eef;"
 						"}"
 						".public_symbol_row th{"
-						"background-color:#99c;"
-						"font-weight:bold;"
+							"background-color:#99c;"
+							"font-weight:bold;"
 						"}"
 						".oldsection_symbol_row th{"
-						"background-color:#c88;"
-						"font-weight:bold;"
+							"background-color:#c88;"
+							"font-weight:bold;"
 						"}"
 						".section_symbol_row th{"
-						"background-color:#8c8;"
-						"font-weight:bold;"
+							"background-color:#8c8;"
+							"font-weight:bold;"
 						"}"
-						".c1{width:100px;}"
-						".c2{width:400px;}"
-						".c3{width:150px;}"
-						".c4{width:150px;}"
-						".c5{width:150px;}"
+						".c1{width:100px;text-align:right;}"
+						".c2{width:450px;text-align:right;}"
+						".c3{width:150px;text-align:right;}"
+						".c4{width:150px;text-align:right;}"
+						".c5{width:150px;text-align:right;}"
 						"</style>"
-						"</head><body onload='collapseAll()'>"
+						"</head><body onload='startState()'>"
 						//header
 						"<h1>Crinkler compression report</h1>"
 						"<a href='#' onclick='collapseAll()'>collapse all</a>&nbsp;"
@@ -134,9 +157,11 @@ static const char* htmlHeader = "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01//
 						"<a href='#' onclick='collapsePrefix(\"o_\")'>collapse sections</a>&nbsp;"
 						"<a href='#' onclick='expandPrefix(\"o_\")'>expand sections</a>&nbsp;"
 						"<a href='#' onclick='collapsePrefix(\"p_\")'>collapse globals</a>&nbsp;"
-						"<a href='#' onclick='expandPrefix(\"p_\")'>expand globals</a>"
+						"<a href='#' onclick='expandPrefix(\"p_\")'>expand globals</a>&nbsp;"
+						"<a href='#' onclick='hideSections()'>hide sections</a>&nbsp;"
+						"<a href='#' onclick='showSections()'>show sections</a>"
 
-						"<table class='outertable' width=950><tr>"
+						"<table class='outertable' width=1000><tr>"
 						"<th class='c1'>Address</th>"
 						"<th class='c2'>Label name</th>"
 						"<th class='c3'>Size / bytes</th>"
@@ -146,8 +171,7 @@ static const char* htmlHeader = "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01//
 
 static const char* htmlFooter = 
 						"</table>"
-						"<p>bla bla bla visit us at: "
-						"<a href='http://crinkler.net'>http://www.crinkler.net</a></p>"
+						"<p><a href='http://crinkler.net'>http://www.crinkler.net</a></p>"
 						"</body></html>";
 
 const int NUM_COLUMNS = 16;
@@ -155,9 +179,8 @@ const int OPCODE_WIDTH = 11;
 const int LABEL_COLOR = 0x808080;
 
 static map<string, string> identmap;
-static int num_sdivs;
-static int num_odivs;
-static int num_pdivs;
+static int num_divs[4];
+static int num_sections;
 
 
 struct scol {
@@ -211,7 +234,7 @@ static int instructionSize(_DecodedInst *inst, const int *sizefill) {
 }
 
 static int toAscii(int c) {
-	return (c >= 32 && c <= 126 || c >= 160) ? c : '.';
+	return (c > 32 && c <= 126 || c >= 160) ? c : '.';
 }
 
 static void printRow(FILE *out, Hunk& hunk, const int *sizefill, int index, int n, bool ascii) {
@@ -381,55 +404,76 @@ static void htmlReportRecursive(CompressionReportRecord* csr, FILE* out, Hunk& h
 		}
 
 		string label;
-		stringstream ss;
-		if(csr->type & RECORD_SECTION) {
-			label = csr->name;
-			ss << "s_" << num_sdivs;
-			fprintf(out, "<tr class='section_symbol_row' onclick=\"switchMenu('s_%d');\">", num_sdivs++);
-		} else if(csr->type & RECORD_OLD_SECTION) {
-			label = stripPath(csr->miscString) + ":" + stripCrinklerSymbolPrefix(csr->name.c_str());
-			ss << "o_" << num_odivs;
-			fprintf(out, "<tr class='oldsection_symbol_row' onclick=\"switchMenu('o_%d');\">", num_odivs++);
-		} else if(csr->type & RECORD_PUBLIC) {
-			label = stripCrinklerSymbolPrefix(csr->name.c_str());
-			ss << "p_" << num_pdivs;
-			fprintf(out, "<tr class='public_symbol_row' onclick=\"switchMenu('p_%d');\">", num_pdivs++);
-		} else {	//local
-			label = stripCrinklerSymbolPrefix(csr->name.c_str());
-			fprintf(out, "<tr class='private_symbol_row'>");
+		string css_class;
+		string script;
+		char div_prefix = 0;
+		int level = csr->getLevel();
+		switch(level) {
+			case 0:	//section
+				label = csr->name;
+				css_class = "section_symbol_row";
+				div_prefix = 's';
+				break;
+			case 1:	//old section
+				label = stripPath(csr->miscString) + ":" + stripCrinklerSymbolPrefix(csr->name.c_str());
+				css_class = "oldsection_symbol_row";
+				div_prefix  = 'o';
+				break;
+			case 2:	//public symbol
+				label = stripCrinklerSymbolPrefix(csr->name.c_str());
+				css_class = "public_symbol_row";
+				div_prefix = 'p';
+				break;
+			case 3:	//private symbol
+				label = stripCrinklerSymbolPrefix(csr->name.c_str());
+				css_class = "private_symbol_row";
+				break;
 		}
-		divstr = ss.str();
+
+		if(level == 1) {	//old section
+			fprintf(out, "<tr><td colspan='5'><div id='h_%d'><table class='grptable'>", num_sections++);
+		}
 		if(csr->children.empty() && (csr->size == 0 || csr->compressedPos < 0))
-			divstr = "";
+			div_prefix = 0;
+		if(div_prefix) {
+			stringstream ss;
+			ss << div_prefix << "_" << num_divs[level]++;
+			divstr = ss.str();
+			fprintf(out, "<tr class='%s' onclick=\"switchMenu('%s');\">", css_class.c_str(), divstr.c_str());
+		} else {
+			fprintf(out, "<tr class='%s'>", css_class.c_str());
+		}
 
 		//make the label an anchor
-		label = "<a id='" + toIdent(csr->name) + "'>" + label + "</a>";
+		if(!(csr->type & RECORD_DUMMY)) {	//don't put anchors on dummy records
+			label = "<a id='" + toIdent(csr->name) + "'>" + label + "</a>";
+		}
+		
+		fprintf(out,"<th class='c1'>%s%.8X&nbsp;</th>"
+					"<th class='c2'>%s</th>", divstr.empty() ? "&nbsp;" : "-", CRINKLER_CODEBASE + csr->pos, label.c_str());
 
-		fprintf(out, "<th class='c1'>%s%.8X&nbsp;</th>\n", divstr.empty() ? "&nbsp;" : "-", CRINKLER_CODEBASE + csr->pos);
-
-		int colspan = 1;
-		if(csr->size == 0)
-			if(csr->compressedPos >= 0)	//initialized data
-				colspan = 4;
-			else
-				colspan = 2;
-
-		fprintf(out, "<th class='c2' align=right colspan='%d'>%s</th>", colspan, label.c_str());
-
-		if (csr->size > 0) {
-			if(csr->compressedPos >= 0) {
-				fprintf(out,
-					"<th class='c3' align=right>%d</th>"
-					"<th class='c4' align=right>%.2f</th>"
-					"<th class='c5' align=right>%.1f%%</th>",
-					csr->size,
-					csr->compressedSize / (BITPREC*8.0f),
-					(csr->compressedSize / (BITPREC*8.0f)) * 100 / csr->size);
-			} else {
-				fprintf(out, "<th class='c3' align=right>%d</th>", csr->size);
+		
+		if(csr->size > 0) {
+			fprintf(out, "<th class='c3'>%d</th>", csr->size);
+			if(csr->compressedPos >= 0) {	//initialized data
+				fprintf(out,"<th class='c4'>%.2f</th>"
+							"<th class='c5'>%.1f%%</th>", 
+							csr->compressedSize / (BITPREC*8.0f),
+							(csr->compressedSize / (BITPREC*8.0f)) * 100 / csr->size);
+			} else {	//uninitialized data
+				fprintf(out,"<th class='c4'>&nbsp;</th>"
+							"<th class='c5'>&nbsp;</th>");
 			}
+		} else {				//duplicate label
+			fprintf(out,"<th class='c3'>&nbsp;</th>"
+						"<th class='c4'>&nbsp;</th>"
+						"<th class='c5'>&nbsp;</th>");
 		}
 		fprintf(out,"</tr>");
+		if(level == 1) {	//old section
+			fprintf(out, "</table></div></td></tr>");
+		}
+
 
 		if(!divstr.empty())
 			fprintf(out,"<tr><td colspan='5'><div id='%s'><table class='grptable'>", divstr.c_str());
@@ -450,7 +494,7 @@ static void htmlReportRecursive(CompressionReportRecord* csr, FILE* out, Hunk& h
 					unsigned int numinsts;
 					distorm_decode64(CRINKLER_CODEBASE + csr->pos, (unsigned char*)&untransformedHunk.getPtr()[csr->pos], size, Decode32Bits, insts, instspace, &numinsts);
 					for(int i = 0; i < numinsts; i++) {
-						fprintf(out, "<tr>\n");
+						fprintf(out, "<tr>");
 						//address
 						fprintf(out, "<td class='address'>%.8X&nbsp;</td>", insts[i].offset);
 						
@@ -545,7 +589,9 @@ static void htmlReportRecursive(CompressionReportRecord* csr, FILE* out, Hunk& h
 
 void htmlReport(CompressionReportRecord* csr, const char* filename, Hunk& hunk, Hunk& untransformedHunk, const int* sizefill) {
 	identmap.clear();
-	num_sdivs = num_odivs = num_pdivs = 0;
+	num_divs[0] = num_divs[1] = num_divs[2] = num_divs[3] = 0;
+	num_sections = 0;
+	
 	map<int, Symbol*> relocs = hunk.getOffsetToRelocationMap();
 	map<int, Symbol*> symbols = hunk.getOffsetToSymbolMap();
 	FILE* out;

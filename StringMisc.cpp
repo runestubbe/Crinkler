@@ -38,3 +38,22 @@ std::string escapeHtml(const std::string& s) {
 	}
 	return d;
 }
+
+bool endsWith(const char* str, const char* ending) {
+	int slen = strlen(str);
+	int elen = strlen(ending);
+	if(slen < elen)
+		return false;
+	return memcmp(str+slen-elen, ending, elen) == 0;
+}
+
+bool startsWith(const char* str, const char* start) {
+	while(true) {
+		if(*start == '\0')
+			return true;
+		if(*str != *start)
+			return false;
+		str++;
+		start++;
+	}
+}

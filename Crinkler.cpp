@@ -34,7 +34,7 @@ Crinkler::Crinkler() {
 	m_useSafeImporting = false;
 	m_hashtries = 0;
 	m_hunktries = 0;
-	m_verboseFlags = 0;
+	m_printFlags = 0;
 	m_showProgressBar = false;
 	m_modelbits = 8;
 	m_1KMode = false;
@@ -129,37 +129,6 @@ in:
 	return n;
 }
 
-void extractFunctions(CompressionReportRecord* csr, vector<CompressionReportRecord*>& functions) {
-	for(vector<CompressionReportRecord*>::iterator it = csr->children.begin(); it != csr->children.end(); it++) {
-		if((*it)->type & RECORD_FUNCTION)
-			functions.push_back(*it);
-		extractFunctions(*it, functions);
-	}
-}
-
-bool compareFunctionsByName(CompressionReportRecord* a, CompressionReportRecord* b) {
-	return a->miscString < b->miscString;
-}
-
-bool compareFunctionsByCompSize(CompressionReportRecord* a, CompressionReportRecord* b) {
-	return a->compressedFunctionSize > b->compressedFunctionSize;
-}
-
-bool compareFunctionsByAddress(CompressionReportRecord* a, CompressionReportRecord* b) {
-	return a->pos < b->pos;
-}
-
-void verboseFunctions(CompressionReportRecord* csr, bool (*compareFunction)(CompressionReportRecord*, CompressionReportRecord*)) {
-	vector<CompressionReportRecord*> functions;
-	printf("\nfunction name                                      size          compsize\n");
-	extractFunctions(csr, functions);
-
-	sort(functions.begin(), functions.end(), compareFunction);
-
-	for(vector<CompressionReportRecord*>::iterator it = functions.begin(); it != functions.end(); it++)
-		printf("  %-36.36s        %9d          %8.2f\n", (*it)->name.c_str(), (*it)->functionSize, (*it)->compressedFunctionSize / (BITPREC*8.0f));
-}
-
 void verboseLabels(CompressionReportRecord* csr) {
 	if(csr->type & RECORD_ROOT) {
 		printf("\nlabel name                                   pos comp-pos      size compsize");
@@ -167,11 +136,12 @@ void verboseLabels(CompressionReportRecord* csr) {
 		string strippedName = stripCrinklerSymbolPrefix(csr->name.c_str());
 		if(csr->type & RECORD_SECTION)
 			printf("\n%-38.38s", strippedName.c_str());
-		else if(csr->type & RECORD_PUBLIC)
+		else if(csr->type & RECORD_OLD_SECTION)
 			printf("  %-36.36s", strippedName.c_str());
-		else
+		else if(csr->type & RECORD_PUBLIC)
 			printf("    %-34.34s", strippedName.c_str());
-
+		else
+			printf("      %-32.32s", strippedName.c_str());
 
 		if(csr->compressedPos >= 0)
 			printf(" %9d %8.2f %9d %8.2f\n", csr->pos, csr->compressedPos / (BITPREC*8.0f), csr->size, csr->compressedSize / (BITPREC*8.0f));
@@ -255,9 +225,9 @@ void Crinkler::link(const char* filename) {
 	{	//add imports
 		HunkList* importHunkList;
 		if(m_1KMode)
-			importHunkList = ImportHandler::createImportHunks1K(&m_hunkPool, m_verboseFlags & VERBOSE_IMPORTS);
+			importHunkList = ImportHandler::createImportHunks1K(&m_hunkPool, m_printFlags & PRINT_IMPORTS);
 		else
-			importHunkList = ImportHandler::createImportHunks(&m_hunkPool, header, m_rangeDlls, m_verboseFlags & VERBOSE_IMPORTS, usesRangeImport);
+			importHunkList = ImportHandler::createImportHunks(&m_hunkPool, header, m_rangeDlls, m_printFlags & PRINT_IMPORTS, usesRangeImport);
 		m_hunkPool.removeImportHunks();
 		m_hunkPool.append(importHunkList);
 		delete importHunkList;
@@ -286,8 +256,10 @@ void Crinkler::link(const char* filename) {
 	import->hunk->addSymbol(new Symbol("_ImageBase", CRINKLER_IMAGEBASE, 0, import->hunk));
 
 	//truncate floats
-	if(m_truncateFloats)
+	if(m_truncateFloats) {
+		printf("\nTruncating floats:\n");
 		m_hunkPool.roundFloats(m_truncateBits);
+	}
 
 	HeuristicHunkSorter::sortHunkList(&m_hunkPool);
 
@@ -384,13 +356,13 @@ void Crinkler::link(const char* filename) {
 
 		progressBar.init();
 		progressBar.beginTask("Estimating models for code");
-		ml1 = ApproximateModels((unsigned char*)phase1->getPtr(), splittingPoint, baseprobs, &size, &progressBar, m_verboseFlags & VERBOSE_MODELS, m_compressionType, m_modelbits);
+		ml1 = ApproximateModels((unsigned char*)phase1->getPtr(), splittingPoint, baseprobs, &size, &progressBar, m_printFlags & PRINT_MODELS, m_compressionType, m_modelbits);
 		progressBar.endTask();
 		
 		idealsize = size;
 
 		progressBar.beginTask("Estimating models for data");
-		ml2 = ApproximateModels((unsigned char*)phase1->getPtr()+splittingPoint, phase1->getRawSize() - splittingPoint, baseprobs, &size, &progressBar, m_verboseFlags & VERBOSE_MODELS, m_compressionType, m_modelbits);
+		ml2 = ApproximateModels((unsigned char*)phase1->getPtr()+splittingPoint, phase1->getRawSize() - splittingPoint, baseprobs, &size, &progressBar, m_printFlags & PRINT_MODELS, m_compressionType, m_modelbits);
 		progressBar.endTask();
 		idealsize += size;
 		printf("\nIdeal compressed total size: %d\n", idealsize / BITPREC / 8);
@@ -402,12 +374,12 @@ void Crinkler::link(const char* filename) {
 			m_transform->linkAndTransform(&m_hunkPool, CRINKLER_CODEBASE, phase1, phase1Untransformed, &splittingPoint);
 			//reestimate models
 			progressBar.beginTask("Reestimating models for code");
-			ml1 = ApproximateModels((unsigned char*)phase1->getPtr(), splittingPoint, baseprobs, &size, &progressBar, m_verboseFlags & VERBOSE_MODELS, m_compressionType, m_modelbits);
+			ml1 = ApproximateModels((unsigned char*)phase1->getPtr(), splittingPoint, baseprobs, &size, &progressBar, m_printFlags & PRINT_MODELS, m_compressionType, m_modelbits);
 			progressBar.endTask();
 			idealsize = size;
 
 			progressBar.beginTask("Reestimating models for data");
-			ml2 = ApproximateModels((unsigned char*)phase1->getPtr()+splittingPoint, phase1->getRawSize() - splittingPoint, baseprobs, &size, &progressBar, m_verboseFlags & VERBOSE_MODELS, m_compressionType, m_modelbits);
+			ml2 = ApproximateModels((unsigned char*)phase1->getPtr()+splittingPoint, phase1->getRawSize() - splittingPoint, baseprobs, &size, &progressBar, m_printFlags & PRINT_MODELS, m_compressionType, m_modelbits);
 			progressBar.endTask();
 			idealsize += size;
 
@@ -447,15 +419,9 @@ void Crinkler::link(const char* filename) {
 		printf("Real compressed total size: %d\nBytes lost to hashing: %d\n", size, size - idealsize / BITPREC / 8);
 
 	CompressionReportRecord* csr = phase1->getCompressionSummary(sizefill, splittingPoint);
-	if(m_verboseFlags & VERBOSE_LABELS)
+	if(m_printFlags & PRINT_LABELS)
 		verboseLabels(csr);
-	if(m_verboseFlags & VERBOSE_FUNCTIONS)
-		verboseFunctions(csr, compareFunctionsByAddress);
-	if(m_verboseFlags & VERBOSE_FUNCTIONS_BYSIZE)
-		verboseFunctions(csr, compareFunctionsByCompSize);
-	if(m_verboseFlags & VERBOSE_FUNCTIONS_BYNAME)
-		verboseFunctions(csr, compareFunctionsByName);
-	if(m_summaryFilename.compare("") != 0)
+	if(!m_summaryFilename.empty())
 		htmlReport(csr, m_summaryFilename.c_str(), *phase1, *phase1Untransformed, sizefill);
 	delete csr;
 	delete[] sizefill;
@@ -576,8 +542,8 @@ Crinkler* Crinkler::setHashtries(int hashtries) {
 	return this;
 }
 
-Crinkler* Crinkler::setVerboseFlags(int verboseFlags) {
-	m_verboseFlags = verboseFlags;
+Crinkler* Crinkler::setPrintFlags(int printFlags) {
+	m_printFlags = printFlags;
 	return this;
 }
 

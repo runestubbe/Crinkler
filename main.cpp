@@ -146,9 +146,9 @@ static void runOriginalLinker(const char* linkerName) {
 }
 
 const int TRANSFORM_CALLS = 0x01;
-const int TRANSFORM_CALLS2=	0x02;
-
+#include "NameMangling.h"
 int main(int argc, char* argv[]) {	
+	printf("%s", undecorateSymbolName("?Main@Module1@@AAGXXZ").c_str());
 	//find canonical name of the crinkler executable
 	char crinklerCanonicalName[1024];
 	{
@@ -167,7 +167,7 @@ int main(int argc, char* argv[]) {
 	CmdParamInt hunktriesArg("ORDERTRIES", "", "number of section reordering tries", 0,
 							0, 10000, 0);
 	CmdParamInt truncateFloats("TRUNCATEFLOATS", "truncates floats", "bits", PARAM_ALLOW_NO_ARGUMENT_DEFAULT,
-							0, 32, 32);
+							0, 64, 64);
 	CmdParamString entryArg("ENTRY", "name of the entrypoint", "symbol", 
 						PARAM_IS_SWITCH|PARAM_FORBID_MULTIPLE_DEFINITIONS, "");
 	CmdParamString outArg("OUT", "output filename", "filename", 
@@ -187,11 +187,9 @@ int main(int argc, char* argv[]) {
 						"INSTANT", COMPRESSION_INSTANT, 
 						"FAST", COMPRESSION_FAST, 
 						"SLOW", COMPRESSION_SLOW, NULL);
-	CmdParamFlags verboseArg("PRINT", "print", 0, 0, 
-							"LABELS", VERBOSE_LABELS, "IMPORTS", VERBOSE_IMPORTS,
-							"MODELS", VERBOSE_MODELS, "FUNCTIONS", VERBOSE_FUNCTIONS,
-							"FUNCTIONS-BYNAME", VERBOSE_FUNCTIONS_BYNAME,
-							"FUNCTIONS-BYSIZE", VERBOSE_FUNCTIONS_BYSIZE,
+	CmdParamFlags printArg("PRINT", "print", 0, 0, 
+							"LABELS", PRINT_LABELS, "IMPORTS", PRINT_IMPORTS,
+							"MODELS", PRINT_MODELS, 
 							NULL);
 	CmdParamFlags transformArg("TRANSFORM", "select transformations", 0, 0, 
 							"CALLS", TRANSFORM_CALLS,
@@ -203,16 +201,16 @@ int main(int argc, char* argv[]) {
 	CmdLineInterface cmdline(CRINKLER_TITLE, CMDI_PARSE_FILES);
 
 	cmdline.addParams(&crinklerFlag, &hashsizeArg, &hashtriesArg, &hunktriesArg, &entryArg, &outArg, &summaryArg, &unsafeImportArg,
-						&subsystemArg, &truncateFloats, &compmodeArg, &verboseArg, &transformArg, &libpathArg, 
+						&subsystemArg, &truncateFloats, &compmodeArg, &printArg, &transformArg, &libpathArg, 
 						&rangeImportArg, &replaceDllArg, &filesArg, &priorityArg, &showProgressArg, 
 #ifdef INCLUDE_1K_PACKER
 						&tinyCompressor,
 #endif
 						NULL);
-	cmdline.setCmdParameters(argc, argv);
+	
 
 	//print syntax?
-	if(argc == 1) {
+	if(!cmdline.setCmdParameters(argc, argv) || argc == 1) {
 		cmdline.printSyntax();
 		return 0;
 	}
@@ -266,7 +264,7 @@ int main(int argc, char* argv[]) {
 	crinkler.setCompressionType((CompressionType)compmodeArg.getValue());
 	crinkler.setHashtries(hashtriesArg.getValue());
 	crinkler.setHunktries(hunktriesArg.getValue());
-	crinkler.setVerboseFlags(verboseArg.getValue());
+	crinkler.setPrintFlags(printArg.getValue());
 	crinkler.showProgressBar(showProgressArg.getValue());
 	crinkler.setTruncateFloats(truncateFloats.getNumMatches() > 0);
 	crinkler.setTruncateBits(truncateFloats.getValue());

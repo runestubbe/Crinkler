@@ -2,6 +2,8 @@
 #include <vector>
 #include <algorithm>
 #include <cassert>
+#include <iostream>
+#include "StringMisc.h"
 #include "misc.h"
 
 #include "Hunk.h"
@@ -215,6 +217,19 @@ void Hunk::chop(int size) {
 	m_data.erase((m_data.end()-size), m_data.end());
 }
 
+
+static int getType(int level) {
+	switch(level) {
+		case 0:
+			return RECORD_SECTION;
+		case 1:
+			return RECORD_OLD_SECTION;
+		case 2:
+			return RECORD_PUBLIC;
+	}
+	return 0;
+}
+
 CompressionReportRecord* Hunk::getCompressionSummary(int* sizefill, int splittingPoint) {
 	vector<Symbol*> symbols;
 	//extract relocatable symbols
@@ -258,31 +273,21 @@ CompressionReportRecord* Hunk::getCompressionSummary(int* sizefill, int splittin
 		} else {
 			r = uninitSection;
 		}
+
 		//find where to place the record
-		while(r->children.size() > 0 && r->children.back()->getLevel() < c->getLevel())
+		while(r->getLevel()+1 < c->getLevel()) {
+			if(r->children.empty()) {	//add a dummy element if we skip a level
+				int level = r->getLevel()+1;
+				CompressionReportRecord* dummy = new CompressionReportRecord(r->name.c_str(), 
+					getType(level)|RECORD_DUMMY, (*it)->value, ((*it)->value < getRawSize()) ? sizefill[(*it)->value] : -1);
+				if(level == 1)
+					dummy->miscString = ".dummy";
+				r->children.push_back(dummy);
+			}
 			r = r->children.back();
+		}
 
 		r->children.push_back(c);
-
-/*
-		if((*it)->flags & SYMBOL_IS_FUNCTION) {
-			c->miscString = (*it)->getUndecoratedName();
-			c->functionSize = (*it)->size;
-			c->compressedFunctionSize = sizefill[(*it)->value+c->functionSize] - sizefill[(*it)->value];
-			c->type |= RECORD_FUNCTION;
-		}
-
-		if((*it)->flags & SYMBOL_IS_SECTION)
-			c->type |= RECORD_OLD_SECTION;
-
-		if((*it)->value < splittingPoint) {
-			codeSection->children.push_back(c);
-		} else if((*it)->value < getRawSize()) {
-			dataSection->children.push_back(c);
-		} else {
-			uninitSection->children.push_back(c);
-		}
-		*/
 	}
 
 	root->calculateSize(m_virtualsize, sizefill[getRawSize()]);
@@ -322,31 +327,70 @@ map<int, Symbol*> Hunk::getOffsetToSymbolMap() {
 	return offsetmap;
 }
 
+//roundFloats
+//default round float: __real@XXXXXXXX, *@3MA
+//default round double: __real@XXXXXXXXXXXXXXXX, *@3NA
+//round *tf_XX* to XX bits.
 void Hunk::roundFloats(int defaultBits) {
+	map<int, Symbol*> offset_to_symbol = getOffsetToSymbolMap();
 	for(map<string, Symbol*>::iterator it = m_symbols.begin(); it != m_symbols.end(); it++) {
 		Symbol* s = it->second;
-		int bits = defaultBits;
-		string name = undecorateSymbolName(s->name.c_str());
-
-		//REMARK: a float with most significant byte = 0 could be trimmed down
-		//and thus not get truncated. Just ignore it. It only happens to numbers with norm < 10^-38
-		if(s->value < 0 | s->value > getRawSize()-4)	//sanity check.
+		if(!(s->flags & SYMBOL_IS_RELOCATEABLE))
 			continue;
 
-		//round __real@XXXXXXXX to default bits
-		//round tfXX_?? to XX bits
+		int bits = defaultBits;
+		string name = stripCrinklerSymbolPrefix(s->name.c_str());
+		string undecoratedName = undecorateSymbolName(s->name.c_str());
+		bool isDouble = false;
 		int a;
-		if(sscanf_s(s->name.c_str(), "__real@%8X", &a) && s->name.size() == (2+4+1+8)) {
+		if(startsWith(undecoratedName.c_str(), "tf_")) {
+			isDouble = endsWith(name.c_str(), "NA");
+		} else if(sscanf_s(undecoratedName.c_str(), "tf%d_", &bits) && bits >= 0 && bits <= 64) {
+			isDouble = endsWith(name.c_str(), "NA");
+		} else if((sscanf_s(name.c_str(), "__real@%16X", &a) && name.size() == (2+4+1+16)) ||
+			endsWith(name.c_str(), "@3NA")) {
+			isDouble = true;
 			bits = defaultBits;
-		} else if(sscanf_s(name.c_str(), "tf%d_", &bits) && bits >= 0 && bits <= 32) {
-			
+		} else if((sscanf_s(name.c_str(), "__real@%8X", &a) && name.size() == (2+4+1+8)) ||
+			endsWith(name.c_str(), "@3MA")) {
+			bits = defaultBits;
 		} else {
 			continue;
 		}
-		
-		float orgv = *(float*)&m_data[s->value];
-		float v = roundFloat(orgv, bits);
-		*(float*)&m_data[s->value] = v;
-		printf("symbol %s rounded to %d bits: %f -> %f (%.8X)\n", stripCrinklerSymbolPrefix(s->name.c_str()).c_str(), bits, orgv, v, *(unsigned int*)&v);
+
+		if(!isDouble && bits>=32)
+			continue;
+
+
+		//REMARK: a float with most significant byte = 0 could be trimmed down
+		//and thus not get truncated. Just ignore it. It only happens to numbers with norm < 10^-38
+		int address = s->value;
+		int type_size = isDouble ? sizeof(double) : sizeof(float);
+		while(address >= 0 && address <= getRawSize()-(isDouble ? sizeof(double) : sizeof(float))) {
+			for(int i = 1; i < type_size; i++) {
+				if(offset_to_symbol.find(address+i) != offset_to_symbol.end())
+					goto endit;
+			}
+			int* ptr = (int*)&m_data[address];
+			if(isDouble) {
+				double orgf = *(double*)ptr;
+				int orgi0 = ptr[0];
+				int orgi1 = ptr[1];
+				*(unsigned long long*)ptr = roundInt64(*(unsigned long long*)ptr, bits);
+				printf("%s[%d]: %f (0x%.8X%.8X 64 bits) -> %f (0x%.8X%.8X %d bits)\n",
+					name.c_str(), address - s->value, orgf, orgi1, orgi0, *(double*)ptr, ptr[1], ptr[0], bits);
+			} else {
+				float orgf = *(float*)ptr;
+				int orgi = ptr[0];
+				ptr[0] = roundInt64(ptr[0], 32+bits);
+				printf("%s[%d]: %f (0x%.8X 32 bits) -> %f (0x%.8X %d bits)\n",
+					name.c_str(), address - s->value, orgf, orgi, *(float*)ptr, ptr[0], bits);
+			}
+			address += type_size;
+			if(offset_to_symbol.find(address) != offset_to_symbol.end())
+				break;
+		}
+endit:
+		;
 	}
 }

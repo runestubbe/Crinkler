@@ -20,9 +20,9 @@ enum RelocationType {RELOCTYPE_ABS32, RELOCTYPE_REL32};
 const int RECORD_ROOT =			0x01;
 const int RECORD_SECTION =		0x02;
 const int RECORD_PUBLIC	=		0x04;
-const int RECORD_FUNCTION =		0x08;
 const int RECORD_OLD_SECTION =	0x10;
 const int RECORD_CODE =			0x20;
+const int RECORD_DUMMY =		0x40;		//record is a dummy record not in the actual file
 
 struct CompressionReportRecord {
 	std::string name;
@@ -32,8 +32,6 @@ struct CompressionReportRecord {
 	std::vector<CompressionReportRecord*> children;
 	int size;
 	int compressedSize;
-	int functionSize;
-	int compressedFunctionSize;
 	std::string miscString; //for holding extra textual information about the symbol e.g. a section name.
 
 	CompressionReportRecord(const char* name, int type, int pos, int compressedPos) {
