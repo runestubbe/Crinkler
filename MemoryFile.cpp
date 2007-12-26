@@ -4,8 +4,7 @@
 
 MemoryFile::MemoryFile(const char* filename) {
 	FILE* file;
-	fopen_s(&file, filename, "rb");
-	if(file) {
+	if(!fopen_s(&file, filename, "rb")) {
 		fseek(file, 0, SEEK_END);
 		int filesize = ftell(file);
 		fseek(file, 0, SEEK_SET);

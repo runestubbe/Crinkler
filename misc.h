@@ -4,7 +4,8 @@
 
 int align(int v, int alignmentBits);
 
-//round ptr to 'bits' bits
-float roundFloat(float ptr, int bits);
+//round integer to 'bits' bits
+unsigned long long roundInt64(unsigned long long v, int bits);
+
 
 #endif

@@ -19,12 +19,9 @@ const int CRINKLER_CODEBASE = CRINKLER_IMAGEBASE+2*CRINKLER_SECTIONSIZE;
 
 enum SubsystemType {SUBSYSTEM_CONSOLE, SUBSYSTEM_WINDOWS};
 
-const int VERBOSE_LABELS =			1;
-const int VERBOSE_IMPORTS =			2;
-const int VERBOSE_MODELS =			4;
-const int VERBOSE_FUNCTIONS =		8;
-const int VERBOSE_FUNCTIONS_BYSIZE =16;
-const int VERBOSE_FUNCTIONS_BYNAME =32;
+const int PRINT_LABELS =			1;
+const int PRINT_IMPORTS =			2;
+const int PRINT_MODELS =			4;
 
 #define CRINKLER_TITLE "Crinkler 1.1 (" __DATE__ ") (c) 2005-2007 Aske Simon Christensen & Rune Stubbe"
 const int CRINKLER_LINKER_VERSION = 0x3131;
@@ -39,7 +36,7 @@ class Crinkler {
 	int						m_hashsize;
 	int						m_hashtries;
 	int						m_hunktries;
-	int						m_verboseFlags;
+	int						m_printFlags;
 	bool					m_useSafeImporting;
 	CompressionType			m_compressionType;
 	std::vector<std::string>	m_rangeDlls;
@@ -66,7 +63,7 @@ public:
 
 	Crinkler* set1KMode(bool use1KMode);
 	Crinkler* setEntry(const char* entry);
-	Crinkler* setVerboseFlags(int verboseFlags);
+	Crinkler* setPrintFlags(int printFlags);
 	Crinkler* setSubsystem(SubsystemType subsystem);
 	Crinkler* setHashsize(int hashsize);
 	Crinkler* setHunktries(int hunktries);

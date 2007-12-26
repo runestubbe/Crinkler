@@ -6,27 +6,15 @@ int align(int v, int alignmentBits) {
 	return ((v + mask) >> alignmentBits)<<alignmentBits;
 }
 
-float roundFloat(float ptr, int bits) {
-	int truncBits = 32-bits;
-	float* v = &ptr;
-	double orgv = *v;
-	unsigned int* iv = (unsigned int*)v;
-
-	if(bits < 2) {
-		*iv = 0;
-	} else {
-		//round
-		//compare actual floating point values due to non-linearity
-		*iv >>= truncBits;
-		*iv <<= truncBits;
-		if(truncBits > 0) {
-			double v0 = *v;
-			(*iv) += 1<<truncBits;
-			double v1 = *v;
-			if(fabs(orgv-v0) < fabs(orgv-v1)) {
-				(*iv) -= 1<<truncBits;
-			}
-		}
+unsigned long long roundInt64(unsigned long long v, int bits) {
+	if(bits == 0)
+		return 0;
+	if(bits == 64)
+		return v;
+	unsigned long long remainder = v << bits;
+	unsigned long long quotient = v >> (64-bits);
+	if(remainder >= 0x8000000000000000) {
+		quotient++;
 	}
-	return *v;
+	return quotient<<(64-bits);
 }
