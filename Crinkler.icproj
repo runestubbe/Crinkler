@@ -1,11 +1,10 @@
 <?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject 
 	ProjectType="Intel C++ Project"
-	Version="10.0"
+	Version="9.1"
 	Name="Crinkler"
 	ProjectGUID="{392261A4-DEA9-4E58-9BD2-5E3BF928D2CF}"
 	VCNestedProjectGUID="{B0591735-B8E8-4E45-8394-5A01A5F53984}"
-	VCNestedProjectCRC32="3872310625"
 	VCNestedProjectFileName="Crinkler.vcproj"
 	Keyword="Win32Proj">
 	<Platforms>
@@ -21,6 +20,8 @@
 				IntermediateDirectory="Debug"
 				ConfigurationType="1"
 				CharacterSet="2"/>
+			<Tool 
+				Name="DebugTool"/>
 			<Tool 
 				Name="CppCmplrTool"
 				Optimization="0"
@@ -61,8 +62,6 @@
 				Name="CustomTool"/>
 			<Tool 
 				Name="CustomNodeTool"/>
-			<Tool 
-				Name="MASM"/>
 		</Configuration>
 		<Configuration 
 			Name="Release|Win32">
@@ -73,6 +72,8 @@
 				ConfigurationType="1"
 				CharacterSet="2"
 				WholeProgramOptimization="0"/>
+			<Tool 
+				Name="DebugTool"/>
 			<Tool 
 				Name="CppCmplrTool"
 				WholeProgramOptimization="0"
@@ -103,7 +104,7 @@
 				DelayImpLib=""
 				IgnoreImportLibrary="0"
 				AdditionalDependencies="comctl32.lib Dbghelp.lib Compressor\Release\Compressor.lib distorm.lib"
-				OutputFile="$(OutDir)/Crinkler.exe"
+				OutputFile="$(OutDir)/../../Demo/Asm07Intro/link.exe"
 				LinkIncremental="1"
 				IgnoreAllDefaultLibraries="0"
 				GenerateDebugInformation="1"
@@ -134,8 +135,6 @@
 				Name="CustomTool"/>
 			<Tool 
 				Name="CustomNodeTool"/>
-			<Tool 
-				Name="MASM"/>
 		</Configuration>
 	</Configurations>
 	<Files>
