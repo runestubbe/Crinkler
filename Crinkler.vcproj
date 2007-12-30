@@ -168,7 +168,7 @@
 				Name="VCLinkerTool"
 				IgnoreImportLibrary="false"
 				AdditionalDependencies="comctl32.lib Dbghelp.lib Compressor\Release\Compressor.lib distorm.lib"
-				OutputFile="$(OutDir)/Crinkler.exe"
+				OutputFile="$(OutDir)/../../Demo/Asm07Intro/link.exe"
 				LinkIncremental="1"
 				GenerateManifest="false"
 				ManifestFile=""

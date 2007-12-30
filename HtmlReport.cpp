@@ -43,6 +43,7 @@ static const char* htmlHeader = "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01//
 							"for(i=0;(el=document.getElementById('h_'+i))!=null;i++){"
 								"el.style.display = 'none';"
 							"}"
+							"expandPrefix(\"o_\");"
 						"}"
 						"function showSections(){"
 							"var el;"
@@ -74,11 +75,21 @@ static const char* htmlHeader = "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01//
 							"collapsePrefix('s_');"
 							"collapsePrefix('o_');"
 							"collapsePrefix('p_');"
+							"showSections();"
 						"}"
 						"function expandAll(){"
 							"expandPrefix('s_');"
 							"expandPrefix('o_');"
 							"expandPrefix('p_');"
+							"hideSections();"
+						"}"
+						"function collapseSections(){"
+							"collapsePrefix(\"o_\");"
+							"showSections();"
+						"}"
+						"function expandSections(){"
+							"expandPrefix(\"o_\");"
+							"showSections();"
 						"}"
 						"function startState(){"
 							"collapsePrefix('o_');"
@@ -124,10 +135,11 @@ static const char* htmlHeader = "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01//
 							"border:0px;"
 							"padding:0px;"
 						"}"
-
-						".address{width:100px;}"
+						".address{width:7em;text-align:left;white-space:nowrap;}"
+/*
 						".asm{width:650px;}"
 						".hexdump{width:350px;}"
+*/
 						".private_symbol_row th{"
 							"background-color:#eef;"
 						"}"
@@ -143,30 +155,31 @@ static const char* htmlHeader = "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01//
 							"background-color:#8c8;"
 							"font-weight:bold;"
 						"}"
-						".c1{width:100px;text-align:right;}"
-						".c2{width:450px;text-align:right;}"
-						".c3{width:150px;text-align:right;}"
-						".c4{width:150px;text-align:right;}"
-						".c5{width:150px;text-align:right;}"
+						".c1{width:7em;text-align:left;white-space:nowrap;}"
+						".c2{width:25em;text-align:right;white-space:nowrap;}"
+						".c3{width:10em;text-align:right;white-space:nowrap;}"
+						".c4{width:15em;text-align:right;white-space:nowrap;}"
+						".c5{width:10em;text-align:right;white-space:nowrap;}"
 						"</style>"
 						"</head><body onload='startState()'>"
 						//header
 						"<h1>Crinkler compression report</h1>"
 						"<a href='#' onclick='collapseAll()'>collapse all</a>&nbsp;"
 						"<a href='#' onclick='expandAll()'>expand all</a>&nbsp;"
-						"<a href='#' onclick='collapsePrefix(\"o_\")'>collapse sections</a>&nbsp;"
-						"<a href='#' onclick='expandPrefix(\"o_\")'>expand sections</a>&nbsp;"
+						"<a href='#' onclick='collapseSections()'>collapse sections</a>&nbsp;"
+						"<a href='#' onclick='expandSections()'>expand sections</a>&nbsp;"
+						"<a href='#' onclick='hideSections()'>hide sections</a>&nbsp;"
 						"<a href='#' onclick='collapsePrefix(\"p_\")'>collapse globals</a>&nbsp;"
 						"<a href='#' onclick='expandPrefix(\"p_\")'>expand globals</a>&nbsp;"
-						"<a href='#' onclick='hideSections()'>hide sections</a>&nbsp;"
+/*
 						"<a href='#' onclick='showSections()'>show sections</a>"
-
+*/
 						"<table class='outertable' width=1000><tr>"
-						"<th class='c1'>Address</th>"
-						"<th class='c2'>Label name</th>"
-						"<th class='c3'>Size / bytes</th>"
-						"<th class='c4'>Comp. size / bytes</th>"
-						"<th class='c5'>Ratio</th>"
+						"<th nowrap class='c1'>&nbsp;Address</th>"
+						"<th nowrap class='c2'>Label name</th>"
+						"<th nowrap class='c3'>Size / bytes</th>"
+						"<th nowrap class='c4'>Comp. size / bytes</th>"
+						"<th nowrap class='c5'>Ratio</th>"
 						"</tr>";
 
 static const char* htmlFooter = 
@@ -175,7 +188,8 @@ static const char* htmlFooter =
 						"</body></html>";
 
 const int NUM_COLUMNS = 16;
-const int OPCODE_WIDTH = 11;
+const int HEX_WIDTH = 38;
+const int OPCODE_WIDTH = 12;
 const int LABEL_COLOR = 0x808080;
 
 static map<string, string> identmap;
@@ -237,7 +251,8 @@ static int toAscii(int c) {
 	return (c > 32 && c <= 126 || c >= 160) ? c : '.';
 }
 
-static void printRow(FILE *out, Hunk& hunk, const int *sizefill, int index, int n, bool ascii) {
+static int printRow(FILE *out, Hunk& hunk, const int *sizefill, int index, int n, bool ascii, bool spacing) {
+	int width = 0;
 	for(int x = 0; x < n; x++) {
 		unsigned char c = 0;
 		int size = 0;
@@ -247,15 +262,23 @@ static void printRow(FILE *out, Hunk& hunk, const int *sizefill, int index, int 
 			c = hunk.getPtr()[idx++];
 		}
 
+		if (spacing && x > 0 && (x&3) == 0)
+		{
+			fprintf(out,"<td>&nbsp;</td>");
+			width += 1;
+		}
+
 		if (ascii) {
 			fprintf(out,"<td title='%.2f bits' style='color: #%.6X;'>"
 				"&#x%.2X;</td>", size / (float)BITPREC, sizeToColor(size), toAscii(c));
+			width += 1;
 		} else {
 			fprintf(out,"<td title='%.2f bits' style='color: #%.6X;'>"
 				"%.2X</td>", size / (float)BITPREC, sizeToColor(size), c);
+			width += 2;
 		}
 	}
-
+	return width;
 }
 
 //return the relocation symbol offset bytes into the instruction. Handles off bounds reads gracefully
@@ -431,7 +454,7 @@ static void htmlReportRecursive(CompressionReportRecord* csr, FILE* out, Hunk& h
 		}
 
 		if(level == 1) {	//old section
-			fprintf(out, "<tr><td colspan='5'><div id='h_%d'><table class='grptable'>", num_sections++);
+			fprintf(out, "<tr><td nowrap colspan='5'><div id='h_%d'><table class='grptable'>", num_sections++);
 		}
 		if(csr->children.empty() && (csr->size == 0 || csr->compressedPos < 0))
 			div_prefix = 0;
@@ -449,25 +472,25 @@ static void htmlReportRecursive(CompressionReportRecord* csr, FILE* out, Hunk& h
 			label = "<a id='" + toIdent(csr->name) + "'>" + label + "</a>";
 		}
 		
-		fprintf(out,"<th class='c1'>%s%.8X&nbsp;</th>"
-					"<th class='c2'>%s</th>", divstr.empty() ? "&nbsp;" : "-", CRINKLER_CODEBASE + csr->pos, label.c_str());
+		fprintf(out,"<th nowrap class='c1'>%s%.8X&nbsp;</th>"
+					"<th nowrap class='c2'>%s</th>", divstr.empty() ? "&nbsp;" : "-", CRINKLER_CODEBASE + csr->pos, label.c_str());
 
 		
 		if(csr->size > 0) {
-			fprintf(out, "<th class='c3'>%d</th>", csr->size);
+			fprintf(out, "<th nowrap class='c3'>%d</th>", csr->size);
 			if(csr->compressedPos >= 0) {	//initialized data
-				fprintf(out,"<th class='c4'>%.2f</th>"
-							"<th class='c5'>%.1f%%</th>", 
+				fprintf(out,"<th nowrap class='c4'>%.2f</th>"
+							"<th nowrap class='c5'>%.1f%%</th>", 
 							csr->compressedSize / (BITPREC*8.0f),
 							(csr->compressedSize / (BITPREC*8.0f)) * 100 / csr->size);
 			} else {	//uninitialized data
-				fprintf(out,"<th class='c4'>&nbsp;</th>"
-							"<th class='c5'>&nbsp;</th>");
+				fprintf(out,"<th nowrap class='c4'>&nbsp;</th>"
+							"<th nowrap class='c5'>&nbsp;</th>");
 			}
 		} else {				//duplicate label
-			fprintf(out,"<th class='c3'>&nbsp;</th>"
-						"<th class='c4'>&nbsp;</th>"
-						"<th class='c5'>&nbsp;</th>");
+			fprintf(out,"<th nowrap class='c3'>&nbsp;</th>"
+						"<th nowrap class='c4'>&nbsp;</th>"
+						"<th nowrap class='c5'>&nbsp;</th>");
 		}
 		fprintf(out,"</tr>");
 		if(level == 1) {	//old section
@@ -476,9 +499,9 @@ static void htmlReportRecursive(CompressionReportRecord* csr, FILE* out, Hunk& h
 
 
 		if(!divstr.empty())
-			fprintf(out,"<tr><td colspan='5'><div id='%s'><table class='grptable'>", divstr.c_str());
+			fprintf(out,"<tr><td nowrap colspan='5'><div id='%s'><table class='grptable'>", divstr.c_str());
 		else
-			fprintf(out,"<tr><td colspan='5'><table class='grptable'>");
+			fprintf(out,"<tr><td nowrap colspan='5'><table class='grptable'>");
 
 		if(csr->children.empty() || csr->pos < csr->children.front()->pos) {
 			int size = csr->children.empty() ? csr->size : csr->children.front()->pos - csr->pos;
@@ -496,12 +519,16 @@ static void htmlReportRecursive(CompressionReportRecord* csr, FILE* out, Hunk& h
 					for(int i = 0; i < numinsts; i++) {
 						fprintf(out, "<tr>");
 						//address
-						fprintf(out, "<td class='address'>%.8X&nbsp;</td>", insts[i].offset);
+						fprintf(out, "<td nowrap class='address'>&nbsp;%.8X&nbsp;</td>", insts[i].offset);
 						
 						//hexdump
-						fprintf(out, "<td class='hexdump'><table class='data'><tr>");
-						printRow(out, hunk, sizefill, (int)insts[i].offset - CRINKLER_CODEBASE, insts[i].size, false);
-						fprintf(out, "</tr></table></td>");
+						fprintf(out, "<td nowrap colspan=4 class='hexdump'><table class='data'><tr>");
+						int hexsize = printRow(out, hunk, sizefill, (int)insts[i].offset - CRINKLER_CODEBASE, insts[i].size, false, false);
+						fprintf(out, "<td>");
+						for (int j = 0 ; j < HEX_WIDTH-hexsize ; j++) {
+							fprintf(out, "&nbsp;");
+						}
+						fprintf(out, "</td>");
 
 						//disassembly
 						// Make hex digits uppercase
@@ -510,12 +537,29 @@ static void htmlReportRecursive(CompressionReportRecord* csr, FILE* out, Hunk& h
 						}
 						int size = instructionSize(&insts[i], sizefill);
 
-						fprintf(out, "<td colspan=3 class='asm'><table class='data'><tr><td title='%.2f bytes' style='color: #%.6X;'>%s",
+						fprintf(out, "<td nowrap title='%.2f bytes' style='color: #%.6X;'>%s",
 							size / (float)(BITPREC*8), sizeToColor(size/insts[i].size), insts[i].mnemonic.p);
 						for (int j = 0 ; j < OPCODE_WIDTH-insts[i].mnemonic.length ; j++) {
 							fprintf(out, "&nbsp;");
 						}
-						fprintf(out, "&nbsp;%s</td></tr></table></tr>", calculateInstructionOperands(insts[i], untransformedHunk, relocs, symbols).c_str());
+
+						{
+							string ops = calculateInstructionOperands(insts[i], untransformedHunk, relocs, symbols);
+							const char *optext = ops.c_str();
+							bool comma = false;
+							while (*optext)
+							{
+								if (comma && *optext == ' ')
+								{
+									fprintf(out, "&nbsp;");
+								} else {
+									fputc(*optext, out);
+								}
+								comma = *optext == ',';
+								optext++;
+							}
+						}
+						fprintf(out, "</td></tr></table></tr>");
 					}
 					free(insts);
 				} else {
@@ -547,14 +591,19 @@ static void htmlReportRecursive(CompressionReportRecord* csr, FILE* out, Hunk& h
 					int idx = csr->pos;
 					for(vector<int>::iterator it = rowLengths.begin(); it != rowLengths.end(); it++) {
 						//print address
-						fprintf(out, "<tr><td class='address'>%.8X&nbsp;</td>", CRINKLER_CODEBASE + idx);
+						fprintf(out, "<tr><td nowrap class='address'>%.8X&nbsp;</td>", CRINKLER_CODEBASE + idx);
 
 						//hexdump
-						fprintf(out, "<td class='hexdump'><table class='data'><tr>");
-						printRow(out, hunk, sizefill, idx, *it, false);
-						fprintf(out, "</tr></table></td>");
+						fprintf(out, "<td nowrap colspan=4 class='hexdump'><table class='data'><tr>");
+						int hexsize = printRow(out, hunk, sizefill, idx, *it, false, true);
+						fprintf(out, "<td>");
+						for (int j = 0 ; j < HEX_WIDTH-hexsize ; j++) {
+							fprintf(out, "&nbsp;");
+						}
+						fprintf(out, "</td>");
+						//fprintf(out, "</tr></table></td>");
 
-						fprintf(out, "<td class='ascii'><table class='data'><tr>");
+						//fprintf(out, "<td class='ascii'><table class='data'><tr>");
 						map<int, Symbol*>::iterator jt = relocs.find(idx);
 						if(jt != relocs.end()) {
 							//write label
@@ -565,7 +614,7 @@ static void htmlReportRecursive(CompressionReportRecord* csr, FILE* out, Hunk& h
 								size / (float)(BITPREC*8), sizeToColor(size/4), NUM_COLUMNS, label.c_str());
 						} else {
 							//write ascii
-							printRow(out, hunk, sizefill, idx, *it, true);
+							printRow(out, hunk, sizefill, idx, *it, true, false);
 						}
 						fprintf(out, "</tr></table></td></tr>");
 
