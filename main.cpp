@@ -147,8 +147,7 @@ static void runOriginalLinker(const char* linkerName) {
 
 const int TRANSFORM_CALLS = 0x01;
 #include "NameMangling.h"
-int main(int argc, char* argv[]) {	
-	printf("%s", undecorateSymbolName("?Main@Module1@@AAGXXZ").c_str());
+int main(int argc, char* argv[]) {
 	//find canonical name of the crinkler executable
 	char crinklerCanonicalName[1024];
 	{

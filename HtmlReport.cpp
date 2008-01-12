@@ -422,7 +422,7 @@ static void htmlReportRecursive(CompressionReportRecord* csr, FILE* out, Hunk& h
 		timeinfo = localtime ( &rawtime );
 		fprintf(out, htmlHeader1, exefilename, asctime(timeinfo));
 
-		fprintf(out, "<h3>Compression rate color codes:</h3><p><table>");
+		fprintf(out, "<h3>Compression rate color codes:</h3><table>");
 		int ncols = sizeof(sizecols)/sizeof(scol);
 		for (int i = 0 ; i < ncols ; i++) {
 			fprintf(out, "<tr><td bgcolor='#%.6X'>&nbsp;&nbsp;</td><td>", sizecols[i].color);
@@ -435,7 +435,7 @@ static void htmlReportRecursive(CompressionReportRecord* csr, FILE* out, Hunk& h
 			}
 			fprintf(out, "</td></tr>\n");
 		}
-		fprintf(out, "</table></p>\n");
+		fprintf(out, "</table>\n");
 
 		fprintf(out, htmlHeader2);
 	} else {

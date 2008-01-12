@@ -4,13 +4,13 @@ CRINKLER - Compressing linker for Windows specialized for 4k intros
 Aske Simon Christensen "Blueberry/Loonies"
 Rune L. H. Stubbe "Mentor/TBC"
 
-Version 1.1 (................)
+Version 1.1 (January 12, 2008)
 
 
 
 VERSION HISTORY
 ---------------
-??.??.??: 1.1:  Support for weak externals (virtual C++ destructors).
+12.01.08: 1.1:  Support for weak externals (virtual C++ destructors).
 		Fixed compatibility with Data Execution Prevention.		
                 /REPORT option for a colorful HTML compression report.
                 /TRUNCATEFLOATS option to mutilate float constants.
