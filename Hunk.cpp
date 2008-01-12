@@ -250,8 +250,9 @@ CompressionReportRecord* Hunk::getCompressionSummary(int* sizefill, int splittin
 	root->children.push_back(uninitSection);
 
 	for(vector<Symbol*>::iterator it = symbols.begin(); it != symbols.end(); it++) {
-		CompressionReportRecord* c = new CompressionReportRecord((*it)->name.c_str(), 
-			0, (*it)->value, ((*it)->value < getRawSize()) ? sizefill[(*it)->value] : -1);
+		Symbol* sym = *it;
+		CompressionReportRecord* c = new CompressionReportRecord(sym->name.c_str(), 
+			0, sym->value, (sym->value < getRawSize()) ? sizefill[sym->value] : -1);
 
 		//copy misc string
 		c->miscString = (*it)->miscString;
@@ -265,10 +266,10 @@ CompressionReportRecord* Hunk::getCompressionSummary(int* sizefill, int splittin
 		}
 
 		//find appropriate section
-		CompressionReportRecord* r;
-		if((*it)->value < splittingPoint) {
+		CompressionReportRecord* r;	//parent section
+		if(sym->value < splittingPoint) {
 			r = codeSection;
-		} else if((*it)->value < getRawSize()) {
+		} else if(sym->value < getRawSize()) {
 			r = dataSection;
 		} else {
 			r = uninitSection;
@@ -279,13 +280,23 @@ CompressionReportRecord* Hunk::getCompressionSummary(int* sizefill, int splittin
 			if(r->children.empty()) {	//add a dummy element if we skip a level
 				int level = r->getLevel()+1;
 				CompressionReportRecord* dummy = new CompressionReportRecord(r->name.c_str(), 
-					getType(level)|RECORD_DUMMY, (*it)->value, ((*it)->value < getRawSize()) ? sizefill[(*it)->value] : -1);
+					getType(level)|RECORD_DUMMY, sym->value, (sym->value < getRawSize()) ? sizefill[sym->value] : -1);
 				if(level == 1)
 					dummy->miscString = ".dummy";
 				r->children.push_back(dummy);
 			}
 			r = r->children.back();
 		}
+
+
+		//add public symbol to start of sections, if they don't have one already
+		if(sym->value < getRawSize() && (c->type & RECORD_OLD_SECTION) && sym->value < (*(it+1))->value) {
+			CompressionReportRecord* dummy = new CompressionReportRecord(c->name.c_str(), 
+				RECORD_PUBLIC|RECORD_DUMMY, (*it)->value, ((*it)->value < getRawSize()) ? sizefill[(*it)->value] : -1);
+			c->children.push_back(dummy);
+			printf("%s\n", r->name.c_str());
+		}
+
 
 		r->children.push_back(c);
 	}
@@ -329,6 +340,7 @@ map<int, Symbol*> Hunk::getOffsetToSymbolMap() {
 
 //roundFloats
 //default round float: __real@XXXXXXXX, *@3MA
+//default round float: tf_
 //default round double: __real@XXXXXXXXXXXXXXXX, *@3NA
 //round *tf_XX* to XX bits.
 void Hunk::roundFloats(int defaultBits) {
