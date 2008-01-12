@@ -422,7 +422,7 @@ void Crinkler::link(const char* filename) {
 	if(m_printFlags & PRINT_LABELS)
 		verboseLabels(csr);
 	if(!m_summaryFilename.empty())
-		htmlReport(csr, m_summaryFilename.c_str(), *phase1, *phase1Untransformed, sizefill);
+		htmlReport(csr, m_summaryFilename.c_str(), *phase1, *phase1Untransformed, sizefill, filename);
 	delete csr;
 	delete[] sizefill;
 	
