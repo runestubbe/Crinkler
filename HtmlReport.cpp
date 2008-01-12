@@ -109,14 +109,7 @@ static const char* htmlHeader = "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01//
 							"body{"
 							"font-family:monospace;"
 						"}"
-						
-						".outertable th{"
-							"background:#eee;"
-						"}"
-						
-						".outertable td{"
-							"border:#eee 1px solid;"
-						"}"
+
 						".data{"
 							"border-collapse:collapse;"
 						"}"
@@ -136,10 +129,6 @@ static const char* htmlHeader = "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01//
 							"padding:0px;"
 						"}"
 						".address{width:7em;text-align:left;white-space:nowrap;}"
-/*
-						".asm{width:650px;}"
-						".hexdump{width:350px;}"
-*/
 						".private_symbol_row th{"
 							"background-color:#eef;"
 						"}"
@@ -156,10 +145,10 @@ static const char* htmlHeader = "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01//
 							"font-weight:bold;"
 						"}"
 						".c1{width:7em;text-align:left;white-space:nowrap;}"
-						".c2{width:25em;text-align:right;white-space:nowrap;}"
-						".c3{width:10em;text-align:right;white-space:nowrap;}"
-						".c4{width:15em;text-align:right;white-space:nowrap;}"
-						".c5{width:10em;text-align:right;white-space:nowrap;}"
+						".c2{width:40em;text-align:right;white-space:nowrap;}"
+						".c3{width:7em;text-align:right;white-space:nowrap;}"
+						".c4{width:7em;text-align:right;white-space:nowrap;}"
+						".c5{width:7em;text-align:right;white-space:nowrap;}"
 						"</style>"
 						"</head><body onload='startState()'>"
 						//header
@@ -171,14 +160,11 @@ static const char* htmlHeader = "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01//
 						"<a href='#' onclick='hideSections()'>hide sections</a>&nbsp;"
 						"<a href='#' onclick='collapsePrefix(\"p_\")'>collapse globals</a>&nbsp;"
 						"<a href='#' onclick='expandPrefix(\"p_\")'>expand globals</a>&nbsp;"
-/*
-						"<a href='#' onclick='showSections()'>show sections</a>"
-*/
-						"<table class='outertable' width=1000><tr>"
+						"<table class='grptable'><tr>"
 						"<th nowrap class='c1'>&nbsp;Address</th>"
 						"<th nowrap class='c2'>Label name</th>"
-						"<th nowrap class='c3'>Size / bytes</th>"
-						"<th nowrap class='c4'>Comp. size / bytes</th>"
+						"<th nowrap class='c3'>Size</th>"
+						"<th nowrap class='c4'>Comp. size</th>"
 						"<th nowrap class='c5'>Ratio</th>"
 						"</tr>";
 
@@ -503,7 +489,7 @@ static void htmlReportRecursive(CompressionReportRecord* csr, FILE* out, Hunk& h
 		else
 			fprintf(out,"<tr><td nowrap colspan='5'><table class='grptable'>");
 
-		if(csr->children.empty() || csr->pos < csr->children.front()->pos) {
+		if(csr->children.empty() || csr->pos < csr->children.front()->pos) {	//
 			int size = csr->children.empty() ? csr->size : csr->children.front()->pos - csr->pos;
 			
 			if(csr->compressedPos >= 0 && size > 0) {
@@ -591,7 +577,7 @@ static void htmlReportRecursive(CompressionReportRecord* csr, FILE* out, Hunk& h
 					int idx = csr->pos;
 					for(vector<int>::iterator it = rowLengths.begin(); it != rowLengths.end(); it++) {
 						//print address
-						fprintf(out, "<tr><td nowrap class='address'>%.8X&nbsp;</td>", CRINKLER_CODEBASE + idx);
+						fprintf(out, "<tr><td nowrap class='address'>&nbsp;%.8X&nbsp;</td>", CRINKLER_CODEBASE + idx);
 
 						//hexdump
 						fprintf(out, "<td nowrap colspan=4 class='hexdump'><table class='data'><tr>");
