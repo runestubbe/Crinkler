@@ -13,23 +13,24 @@ Licens:
 	+formuler Crinkler-licens
 
 Code:
-	summary: layout ved lange idents
+	+summary: layout ved lange idents
 	*summary: lav relocs til links
 		*escape idents
 	+summary: colapse/expand
-	summary: lav sidste justeringer af layout og skriv forklaringstekst
-	summary: adskillelse af dwords i hexdump
+	+summary: lav sidste justeringer af layout og skriv forklaringstekst
+	+summary: adskillelse af dwords i hexdump
 	summary: highlight af trunkerede floats
 
-	max ordertries
+	+max ordertries
+	button in progressgui to skip phase
 
-	truncation?
+	+truncation?
 	+verbose -> ?
 	combine identical read-only symbols
         -verbose:functions
 
 
 test:
-	Test weak externals support
-	recursive call bug
+	+Test weak externals support
+	+recursive call bug
 	+Windows Server 2003
