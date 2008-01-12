@@ -15,7 +15,7 @@ VERSION HISTORY
                 /REPORT option for a colorful HTML compression report.
                 /TRUNCATEFLOATS option to mutilate float constants.
                 /SAFEIMPORT is now default, disabled with /UNSAFEIMPORT.
-                Slightly smaller header if range importing is not used.
+                Slightly smaller overhead if range importing is not used.
                 Fixed some problems with compressing very small files.
                 /VERBOSE:FUNCTIONS removed, as it is subsumed by /REPORT.
                 Remaining /VERBOSE options renamed to /PRINT.
@@ -449,13 +449,13 @@ specified under Linker/Command Line/Additional Options:
 
 /REPORT:[HTML file name]
 
-    Write an HTML file with a detailed, colorful report on the
-    compression result. The code section will be shown as hex dump and
-    disassembly of the code, and the data section will be shown as hex
-    and ascii dump. All bytes will be colored to show how much that
-    byte was compressed. This report can be useful in determining
-    which parts of the executable take up the most space and which
-    things to change to reduce the size.
+    Write an HTML file with a detailed, colorful, interactive report
+    on the compression result. The code section will be shown as hex
+    dump and disassembly of the code, and the data section will be
+    shown as hex and ascii dump. All bytes will be colored to show how
+    much that byte was compressed. This report can be useful in
+    determining which parts of the executable take up the most space
+    and which things to change to reduce the size.
 
 /PRINT:LABELS
 

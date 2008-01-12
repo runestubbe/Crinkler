@@ -1,19 +1,16 @@
 
 Crinkler - compressing linker for Windows
-Copyright 2005-2007 Aske Simon Christensen and Rune L. H. Stubbe.
+Copyright 2005-2008 Aske Simon Christensen and Rune L. H. Stubbe.
 
 
 DISTRIBUTION
 
 Crinkler is freeware. You may distribute it freely, as long as the
-Crinkler executable and all accompanying documentation files are left
-intact. You may not distribute modified versions or any kind of
-derived work based on Crinkler or its documentation. You may not
-include Crinkler or its documentation in any other archive or
-bundle. All parts of Crinkler that get embedded into any output files
-produced by Crinkler (such as PE file header data, decompression code,
-import code and HTML template data) are in the public domain and are
-not covered by any distribution restrictions.
+Crinkler executable and all accompanying documentation files are kept
+together and intact. You may not distribute modified versions or any
+kind of derived work based on Crinkler or its documentation. You may
+not include Crinkler or its documentation in any other archive or
+bundle.
 
 USE AND AUTHOR RIGHTS
 
@@ -34,10 +31,10 @@ on current and/or future versions of Windows.
 
 LICENSE OF DISTORM
 
-Crinkler uses the BSD-licensed Distorm disassembler library for
+Crinkler uses the BSD-licensed diStorm disassembler library for
 producing disassembly output of the compressed code. The license for
-Distorm requires that the license below is included with derivative
-works. The license below only applies to Distorm and not to Crinkler
+diStorm requires that the license below is included with derivative
+works. The license below applies only to diStorm and not to Crinkler
 as a whole.
 
 
