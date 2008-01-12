@@ -242,9 +242,9 @@ CompressionReportRecord* Hunk::getCompressionSummary(int* sizefill, int splittin
 	sort(symbols.begin(), symbols.end(), symbolComparator);
 
 	CompressionReportRecord* root = new CompressionReportRecord("root", RECORD_ROOT, 0, 0);
-	CompressionReportRecord* codeSection = new CompressionReportRecord("Code section", RECORD_SECTION|RECORD_CODE, 0, 0);
-	CompressionReportRecord* dataSection = new CompressionReportRecord("Data section", RECORD_SECTION, splittingPoint, sizefill[splittingPoint]);
-	CompressionReportRecord* uninitSection = new CompressionReportRecord("Uninitialized section", RECORD_SECTION, getRawSize(), -1);
+	CompressionReportRecord* codeSection = new CompressionReportRecord("Code sections", RECORD_SECTION|RECORD_CODE, 0, 0);
+	CompressionReportRecord* dataSection = new CompressionReportRecord("Data sections", RECORD_SECTION, splittingPoint, sizefill[splittingPoint]);
+	CompressionReportRecord* uninitSection = new CompressionReportRecord("Uninitialized sections", RECORD_SECTION, getRawSize(), -1);
 	root->children.push_back(codeSection);
 	root->children.push_back(dataSection);
 	root->children.push_back(uninitSection);
