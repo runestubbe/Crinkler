@@ -164,7 +164,7 @@ int main(int argc, char* argv[]) {
 	CmdParamInt hashtriesArg("HASHTRIES", "number of hashing tries", "number of hashing tries", 0,
 							0, 10000, 20);
 	CmdParamInt hunktriesArg("ORDERTRIES", "", "number of section reordering tries", 0,
-							0, 100000, 0);
+							0, 10000, 0);
 	CmdParamInt truncateFloats("TRUNCATEFLOATS", "truncates floats", "bits", PARAM_ALLOW_NO_ARGUMENT_DEFAULT,
 							0, 64, 64);
 	CmdParamString entryArg("ENTRY", "name of the entrypoint", "symbol", 

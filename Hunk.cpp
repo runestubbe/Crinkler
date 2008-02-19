@@ -378,11 +378,12 @@ void Hunk::roundFloats(int defaultBits) {
 		//and thus not get truncated. Just ignore it. It only happens to numbers with norm < 10^-38
 		int address = s->value;
 		int type_size = isDouble ? sizeof(double) : sizeof(float);
-		while(address >= 0 && address <= getRawSize()-(isDouble ? sizeof(double) : sizeof(float))) {
+		while(address >= 0 && address <= getRawSize()-type_size) {
 			for(int i = 1; i < type_size; i++) {
 				if(offset_to_symbol.find(address+i) != offset_to_symbol.end())
 					goto endit;
 			}
+
 			int* ptr = (int*)&m_data[address];
 			if(isDouble) {
 				double orgf = *(double*)ptr;
