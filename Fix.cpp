@@ -55,7 +55,11 @@ void FixFile(const char *filename, const char *outfile) {
 		switch (minorlv) {
 		case '0':
 			break;
+		default:
+			printf("No fixing necessary.\n");
+			return;
 		}
+		break;
 	default:
 		printf("No fixing necessary.\n");
 		return;
