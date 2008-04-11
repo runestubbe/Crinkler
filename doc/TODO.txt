@@ -13,13 +13,16 @@ Licens:
 	+formuler Crinkler-licens
 
 Code:
-	+summary: layout ved lange idents
-	*summary: lav relocs til links
+	+report: layout ved lange idents
+	*report: lav relocs til links
 		*escape idents
-	+summary: colapse/expand
-	+summary: lav sidste justeringer af layout og skriv forklaringstekst
-	+summary: adskillelse af dwords i hexdump
-	summary: highlight af trunkerede floats
+	+report: colapse/expand
+	+report: lav sidste justeringer af layout og skriv forklaringstekst
+	+report: adskillelse af dwords i hexdump
+	report: highlight af trunkerede floats og absolutte jump offsets
+	report: hand cursor on labels
+	report: include compression options in report
+	report: fix size table to include highest category
 
 	+max ordertries
 	button in progressgui to skip phase

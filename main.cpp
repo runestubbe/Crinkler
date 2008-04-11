@@ -231,6 +231,7 @@ int main(int argc, char* argv[]) {
 		cmdline2.setCmdParameters(argc, argv);
 		if(cmdline2.parse()) {
 			const char* infilename = filesArg.getValue();
+			filesArg.next();
 			if(infilename == NULL || filesArg.hasNext() != 0) {
 				Log::error(0, "", "Crinkler fix takes exactly one file argument");
 				return 1;
