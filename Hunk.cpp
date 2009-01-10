@@ -208,15 +208,20 @@ void Hunk::trim() {
 		farestReloc = max(it->offset+relocSize, farestReloc);
 	}
 
+	int oldsize = m_data.size();
 	while(m_data.size() > farestReloc && m_data.back() == 0)
 		m_data.pop_back();
+}
+
+void Hunk::appendZeroes(int num) {
+	while(num--)
+		m_data.push_back(0);
 }
 
 //chop of x bytes from the initialized data
 void Hunk::chop(int size) {
 	m_data.erase((m_data.end()-size), m_data.end());
 }
-
 
 static int getType(int level) {
 	switch(level) {
@@ -251,6 +256,7 @@ CompressionReportRecord* Hunk::getCompressionSummary(int* sizefill, int splittin
 
 	for(vector<Symbol*>::iterator it = symbols.begin(); it != symbols.end(); it++) {
 		Symbol* sym = *it;
+		printf("%8X: %s\n", sym->value, sym->name.c_str());
 		CompressionReportRecord* c = new CompressionReportRecord(sym->name.c_str(), 
 			0, sym->value, (sym->value < getRawSize()) ? sizefill[sym->value] : -1);
 
@@ -294,7 +300,6 @@ CompressionReportRecord* Hunk::getCompressionSummary(int* sizefill, int splittin
 			CompressionReportRecord* dummy = new CompressionReportRecord(c->name.c_str(), 
 				RECORD_PUBLIC|RECORD_DUMMY, (*it)->value, ((*it)->value < getRawSize()) ? sizefill[(*it)->value] : -1);
 			c->children.push_back(dummy);
-			printf("%s\n", r->name.c_str());
 		}
 
 
@@ -317,7 +322,7 @@ map<int, Symbol*> Hunk::getOffsetToRelocationMap() {
 		Symbol* s = findSymbol(it->symbolname.c_str());
 		if(s && s->secondaryName.size() > 0)
 			s = findSymbol(s->secondaryName.c_str());
-		if(s->flags & SYMBOL_IS_RELOCATEABLE && s->flags & SYMBOL_IS_SECTION)
+		if(s && s->flags & SYMBOL_IS_RELOCATEABLE && s->flags & SYMBOL_IS_SECTION)
 			s = symbolmap.find(s->value)->second;	//replace relocation to section with non-section
 		offsetmap.insert(make_pair(it->offset, s));
 	}

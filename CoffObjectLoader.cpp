@@ -91,13 +91,14 @@ HunkList* CoffObjectLoader::load(const char* data, int size, const char* module)
 		int nRelocs = sectionHeaders[i].PointerToRelocations ? sectionHeaders[i].NumberOfRelocations : 0;
 		for(int j = 0; j < nRelocs; j++) {
 			relocation r;
-			const IMAGE_SYMBOL* symbol = &symbolTable[relocs[j].SymbolTableIndex];
+			int symbolIndex = relocs[j].SymbolTableIndex;
+			const IMAGE_SYMBOL* symbol = &symbolTable[symbolIndex];
 			string symbolName = getSymbolName(symbol, stringTable);
 			if(symbol->StorageClass == IMAGE_SYM_CLASS_STATIC || 
 				symbol->StorageClass == IMAGE_SYM_CLASS_LABEL) {	//local symbol reference
 				//construct local name
 				char name[1000];
-				sprintf_s(name, 1000, "l[%s]!%s", module, symbolName.c_str());
+				sprintf_s(name, 1000, "l[%s(%d)]!%s", module, symbolIndex, symbolName.c_str());
 				r.symbolname = name;
 			} else {
 				r.symbolname = symbolName;
@@ -146,7 +147,7 @@ HunkList* CoffObjectLoader::load(const char* data, int size, const char* module)
 				sym->StorageClass == IMAGE_SYM_CLASS_LABEL) {
 
 				char symname[1000];
-				sprintf_s(symname, 1000, "l[%s]!%s", module, s->name.c_str());
+				sprintf_s(symname, 1000, "l[%s(%d)]!%s", module, i, s->name.c_str());
 				s->name = symname;
 				s->flags |= SYMBOL_IS_LOCAL;
 				if(sym->StorageClass == IMAGE_SYM_CLASS_STATIC && sym->NumberOfAuxSymbols == 1) {

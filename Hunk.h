@@ -111,6 +111,7 @@ public:
 	void trim();
 	void chop(int size);
 	void roundFloats(int defaultBits);
+	void appendZeroes(int num);
 
 	CompressionReportRecord* getCompressionSummary(int* sizefill, int splittingPoint);
 

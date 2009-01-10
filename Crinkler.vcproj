@@ -1,11 +1,12 @@
 <?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="8,00"
+	Version="9,00"
 	Name="Crinkler"
 	ProjectGUID="{B0591735-B8E8-4E45-8394-5A01A5F53984}"
 	RootNamespace="Crinkler"
 	Keyword="Win32Proj"
+	TargetFrameworkVersion="0"
 	>
 	<Platforms>
 		<Platform
@@ -14,7 +15,7 @@
 	</Platforms>
 	<ToolFiles>
 		<DefaultToolFile
-			FileName="masm.rules"
+			FileName="asmrulefile.rules"
 		/>
 	</ToolFiles>
 	<Configurations>
@@ -33,7 +34,7 @@
 				Name="VCCustomBuildTool"
 			/>
 			<Tool
-				Name="MASM"
+				Name="Asm"
 			/>
 			<Tool
 				Name="VCXMLDataGeneratorTool"
@@ -95,9 +96,6 @@
 				Name="VCAppVerifierTool"
 			/>
 			<Tool
-				Name="VCWebDeploymentTool"
-			/>
-			<Tool
 				Name="VCPostBuildEventTool"
 			/>
 		</Configuration>
@@ -117,7 +115,7 @@
 				Name="VCCustomBuildTool"
 			/>
 			<Tool
-				Name="MASM"
+				Name="Asm"
 			/>
 			<Tool
 				Name="VCXMLDataGeneratorTool"
@@ -131,7 +129,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				UseUnicodeResponseFiles="false"
-				AdditionalOptions=""
+				AdditionalOptions="/MP"
 				Optimization="2"
 				InlineFunctionExpansion="1"
 				EnableIntrinsicFunctions="true"
@@ -200,9 +198,6 @@
 			/>
 			<Tool
 				Name="VCAppVerifierTool"
-			/>
-			<Tool
-				Name="VCWebDeploymentTool"
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
@@ -450,34 +445,162 @@
 			<File
 				RelativePath=".\modules\calltrans.asm"
 				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					ExcludedFromBuild="true"
+					>
+					<Tool
+						Name="Asm"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32"
+					ExcludedFromBuild="true"
+					>
+					<Tool
+						Name="Asm"
+					/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\modules\header10_1k.asm"
 				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					ExcludedFromBuild="true"
+					>
+					<Tool
+						Name="Asm"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32"
+					ExcludedFromBuild="true"
+					>
+					<Tool
+						Name="Asm"
+					/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\modules\header11.asm"
 				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					ExcludedFromBuild="true"
+					>
+					<Tool
+						Name="Asm"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32"
+					ExcludedFromBuild="true"
+					>
+					<Tool
+						Name="Asm"
+					/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\modules\import10-range.asm"
 				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					ExcludedFromBuild="true"
+					>
+					<Tool
+						Name="Asm"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32"
+					ExcludedFromBuild="true"
+					>
+					<Tool
+						Name="Asm"
+					/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\modules\import10-safe-range.asm"
 				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					ExcludedFromBuild="true"
+					>
+					<Tool
+						Name="Asm"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32"
+					ExcludedFromBuild="true"
+					>
+					<Tool
+						Name="Asm"
+					/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\modules\import10-safe.asm"
 				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					ExcludedFromBuild="true"
+					>
+					<Tool
+						Name="Asm"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32"
+					ExcludedFromBuild="true"
+					>
+					<Tool
+						Name="Asm"
+					/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\modules\import10.asm"
 				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					ExcludedFromBuild="true"
+					>
+					<Tool
+						Name="Asm"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32"
+					ExcludedFromBuild="true"
+					>
+					<Tool
+						Name="Asm"
+					/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\modules\import10_1k.asm"
 				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					ExcludedFromBuild="true"
+					>
+					<Tool
+						Name="Asm"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32"
+					ExcludedFromBuild="true"
+					>
+					<Tool
+						Name="Asm"
+					/>
+				</FileConfiguration>
 			</File>
 		</Filter>
 		<Filter

@@ -28,8 +28,6 @@ _Import:
 	mov		eax, [eax+1ch]
 	mov		eax, [byte eax+00h]		; forward to next LIST_ENTRY
 	mov		ebp, [eax+08h]			; Kernel32 base memory
-	
-	cld
 DLLLoop:
 	pusha
 

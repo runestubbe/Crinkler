@@ -219,7 +219,7 @@ ModelList ApproximateModels(const unsigned char* data, int datasize, int basepro
 	return models;
 }
 
-int compress1K(unsigned char* data, int size, unsigned char* compressed, int compressed_size, int* modeldata, int b0, int b1, int boost_factor, int nmodels) {
+int compress1K(unsigned char* data, int size, unsigned char* compressed, int compressed_size, int* modeldata, int b0, int b1, int boost_factor, unsigned int modelmask) {
 	AritState as;
 	memset(compressed, 0, compressed_size);	
 	AritCodeInit(&as, compressed);
@@ -236,14 +236,18 @@ int compress1K(unsigned char* data, int size, unsigned char* compressed, int com
 		} else {
 			n[0] = b1; n[1] = b0;
 		}
-		for(int m = 0; m <= nmodels; m++) {
-			int c[2] = {modeldata[(bitlength*m+i)*2], modeldata[(bitlength*m+i)*2+1]};
-			if(c[0]*c[1] == 0) {
-				c[0]*=boost_factor;
-				c[1]*=boost_factor;
+		unsigned int mmask = modelmask;
+		for(int m = 31; m >= 0; m--) {
+			if(mmask & 0x80000000) {
+				int c[2] = {modeldata[(bitlength*m+i)*2], modeldata[(bitlength*m+i)*2+1]};
+				if(c[0]*c[1] == 0) {
+					c[0]*=boost_factor;
+					c[1]*=boost_factor;
+				}
+				n[0] += c[0];
+				n[1] += c[1];
 			}
-			n[0] += c[0];
-			n[1] += c[1];
+			mmask *= 2;
 		}
 
 		AritCode(&as, n[bit], n[!bit], bit);
@@ -252,13 +256,13 @@ int compress1K(unsigned char* data, int size, unsigned char* compressed, int com
 }
 
 void TinyCompress(unsigned char* org_data, int size, unsigned char* compressed, int& compressed_size,
-				  int& best_boost, int& best_b0, int& best_b1, int& best_nmodels) {
+				  int& best_boost, int& best_b0, int& best_b1, unsigned int& best_modelmask) {
 	unsigned char* data = new unsigned char[size+8];
 	memset(data, 0, 8);
 	data += 8;
 	memcpy(data, org_data, size);
 
-	const int NUM_MODELS = 16;
+	const int NUM_MODELS = 32;
 	int bitlength = size*8;
 	int* modeldata = new int[bitlength*NUM_MODELS*2];
 
@@ -298,8 +302,7 @@ void TinyCompress(unsigned char* org_data, int size, unsigned char* compressed, 
 
 					if(match) {
 						c[prediction_bit]++;
-						if(c[!prediction_bit] > 1)
-							c[!prediction_bit]>>=1;
+						c[!prediction_bit] = (c[!prediction_bit]+1) / 2;
 					}
 				}
 
@@ -313,29 +316,49 @@ void TinyCompress(unsigned char* org_data, int size, unsigned char* compressed, 
 	}
 
 	int best_size = INT_MAX;
-	for(int nmodels = 0; nmodels < NUM_MODELS; nmodels++) {
-		for(int boost_factor = 1; boost_factor < 8; boost_factor++) {
-			for(int b0 = 1; b0 < 10; b0++) {
-				for(int b1 = 1; b1 < 10; b1++) {
-					int testsize = compress1K(data, size, compressed, compressed_size,
-						modeldata, b0, b1, boost_factor, nmodels);
-					if(testsize < best_size) {
-						best_size = testsize;
-						best_boost = boost_factor;
-						best_b0 = b0;
-						best_b1 = b1;
-						best_nmodels = nmodels;
-						printf("baseprob: (%d, %d) boost: %d nmodels: %d compressed size: %d bytes\n", best_b0, best_b1, best_boost, best_nmodels, best_size);
+
+	best_modelmask = 0xFFFFFFFF;
+	
+	int best_exclude;
+	do {
+		best_exclude = -1;
+		unsigned int prev_best_modelmask = best_modelmask;
+		#pragma omp parallel for
+		for(int i = 0; i < 31; i++) {
+			unsigned int modelmask = prev_best_modelmask ^ (1<<i);
+			#pragma omp parallel for
+			for(int boost_factor = 4; boost_factor < 8; boost_factor++) {
+				#pragma omp parallel for
+				for(int b0 = 3; b0 < 8; b0++) {
+					#pragma omp parallel for
+					for(int b1 = 3; b1 < 8; b1++) {
+						int testsize = compress1K(data, size, compressed, compressed_size,
+							modeldata, b0, b1, boost_factor, modelmask);
+
+						#pragma omp critical (update)
+						{
+							if(testsize < best_size) {
+								best_size = testsize;
+								best_boost = boost_factor;
+								best_b0 = b0;
+								best_b1 = b1;
+								best_modelmask = modelmask;
+								best_exclude = i;
+								printf("baseprob: (%d, %d) boost: %d modelmask: %8X compressed size: %d bytes\n", best_b0, best_b1, best_boost, best_modelmask, best_size);
+							}
+						}
 					}
 				}
 			}
 		}
-	}
+	} while(best_exclude != -1);
 	
 	compressed_size = compress1K(data, size, compressed, compressed_size,
-		modeldata, best_b0, best_b1, best_boost, best_nmodels);
+		modeldata, best_b0, best_b1, best_boost, best_modelmask);
 
-	printf("baseprob: (%d, %d) boost: %d nmodels: %d compressed size: %d bytes\n", best_b0, best_b1, best_boost, best_nmodels, best_size);
+	best_modelmask <<= 1;
+
+	printf("baseprob: (%d, %d) boost: %d modelmask: %8X compressed size: %d bytes\n", best_b0, best_b1, best_boost, best_modelmask, best_size);
 
 	delete[] modeldata;
 

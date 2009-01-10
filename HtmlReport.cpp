@@ -618,9 +618,7 @@ static void htmlReportRecursive(CompressionReportRecord* csr, FILE* out, Hunk& h
 							fprintf(out, "&nbsp;");
 						}
 						fprintf(out, "</td>");
-						//fprintf(out, "</tr></table></td>");
 
-						//fprintf(out, "<td class='ascii'><table class='data'><tr>");
 						map<int, Symbol*>::iterator jt = relocs.find(idx);
 						if(jt != relocs.end()) {
 							//write label

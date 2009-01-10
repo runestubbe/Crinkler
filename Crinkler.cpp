@@ -277,13 +277,17 @@ void Crinkler::link(const char* filename) {
 	if (m_1KMode) {
 		int compressed_size = 1024*1024;
 		unsigned char* compressed_data = new unsigned char[compressed_size];
+		char* ptr = phase1->getPtr();
+		if(ptr[phase1->getRawSize()-1] != 0) {
+			phase1->appendZeroes(1);
+		}
 		
 		int baseprob0;
 		int baseprob1;
 		int boostfactor;
-		int num_models;
+		unsigned int modelmask;
 		TinyCompress((unsigned char*)phase1->getPtr(), phase1->getRawSize(), compressed_data, compressed_size,
-			boostfactor, baseprob0, baseprob1, num_models);
+			boostfactor, baseprob0, baseprob1, modelmask);
 		Hunk* phase1Compressed = new Hunk("compressed data", (char*)compressed_data, 0, 0, compressed_size, compressed_size);
 		phase1Compressed->addSymbol(new Symbol("_PackedData", 0, SYMBOL_IS_RELOCATEABLE, phase1Compressed));
 		delete[] compressed_data;
@@ -306,10 +310,10 @@ void Crinkler::link(const char* filename) {
 			phase2->addSymbol(new Symbol("_DepackEndPosition", CRINKLER_CODEBASE+phase1->getRawSize(), 0, phase2));
 			phase2->addSymbol(new Symbol("_VirtualSize", virtualSize, 0, phase2));
 			phase2->addSymbol(new Symbol("_ImageBase", CRINKLER_IMAGEBASE, 0, phase2));
+			phase2->addSymbol(new Symbol("_ModelMask", modelmask, 0, phase2));
 
 			*(phase2->getPtr() + phase2->findSymbol("_BaseProbPtr0")->value) = baseprob0;
 			*(phase2->getPtr() + phase2->findSymbol("_BaseProbPtr1")->value) = baseprob1;
-			*(phase2->getPtr() + phase2->findSymbol("_NumModelsPtr")->value) = num_models;
 			*(phase2->getPtr() + phase2->findSymbol("_BoostFactorPtr")->value) = boostfactor;
 
 		}

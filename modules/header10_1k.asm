@@ -5,13 +5,14 @@ extern	_UnpackedData
 extern	_VirtualSize
 extern	_ImageBase
 extern _DepackEndPosition
+extern	_ModelMask
 
 global	_header
 global	_DepackEntry
 global	_SubsystemTypePtr
 global	_BaseProbPtr0
 global	_BaseProbPtr1
-global	_NumModelsPtr	
+
 global  _BoostFactorPtr
 
 BaseProbDummy	equ	13
@@ -53,7 +54,7 @@ AritDecode:
 	test eax,eax		;msb of interval != 0
 	jns	short AritDecodeLoop	;loop while msb of interval == 0
 	add	ebx, edx		;ebx = p0 + p1
-	std
+	nop ;std
 	push eax			;push interval_size
 	mul	edx				;edx:eax = p0 * interval_size
 	jmp short AritDecode2
@@ -140,7 +141,6 @@ dd 0E00000E0h		;Characteristics (contains everything, is executable, readable an
 ;decode bit
 AritDecodeJumpPad:
 	jmp short AritDecode
-
 one:
 	sub	eax, edx		;eax = interval_size - threshold, cf=0
 	bts [esi], ecx		;write bit
@@ -168,47 +168,50 @@ BaseProbPtrP0:
 	push byte BaseProbDummy
 BaseProbPtrP1:
 	
-	mov bl, NUM_MODELS
-NumModelsPtrP:
-model_loop:
+	mov edx, _ModelMask
+	mov bl, 31
+model_loop:	
 	pusha
-	
 	;clear eax, edx
 	xor eax, eax
-	cdq ;clear edx
+	cdq 		;edx := 0
 	
 	mov edi, dword [esp+10*4]
 	;edi: start
 	;esi: current ptr
 
-.context_loop:
-	bt [edi], ecx
-	sbb ebp, ebp	;ebp: -bit
-	
+.context_loop:	
 	;try to match
 	pusha
 	inc ecx			;bitpos \in {8..1}
-	.matchloop:
-	lodsb
+.matchloop:
+	mov al, byte [esi]
 	xor al, byte [edi]
 	shr al, cl
 	jnz short .no_match
-	dec edi
+.skip:
 	mov ecx, 0		;b8-bb: must be zero
+	dec esi
+	dec edi
 	shr bl, byte 1
 	jc short .matchloop
-	mov cl, byte 8
-	jnz short .matchloop
-
-	;update
-	inc dword [esp+7*4+ebp*8]
-	not ebp
-	shr dword [esp+7*4+ebp*8], byte 1
-	jnz short .no_match
-	rcl	dword [esp+7*4+ebp*8], byte 1
+	jnz short .skip
 	
 	.no_match:
 	popa
+
+	;update
+	jnz .end
+	inc eax
+	inc edx
+	bt [edi], ecx
+	jc .one
+		shr edx, byte 1 
+		jmp short .end
+	.one:
+		shr eax, byte 1
+	.end:
+	
 	inc edi
 	cmp esi, edi
 	jg short .context_loop
@@ -223,11 +226,12 @@ model_loop:
 		test eax, eax		; :/
 		popa
 		loope .add_loop		;loop BOOST_FACTOR times, if c0*c1 = 0
-		
-.skip_model:
 	popa
-	dec bl
-	jge short model_loop
+.skip_model:
+	dec ebx
+	add edx, edx
+	jc model_loop
+	jnz .skip_model
 	
 	pop edx
 	pop ebx
@@ -239,5 +243,4 @@ _UnpackedDataLength:
 	
 _BaseProbPtr0	equ	BaseProbPtrP0-1
 _BaseProbPtr1	equ	BaseProbPtrP1-1
-_NumModelsPtr	equ NumModelsPtrP-1
-_BoostFactorPtr	equ BoostFactorPtrP-1
+_BoostFactorPtr	equ BoostFactorPtrP-1 
