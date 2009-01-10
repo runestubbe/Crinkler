@@ -4,14 +4,19 @@ CRINKLER - Compressing linker for Windows specialized for 4k intros
 Aske Simon Christensen "Blueberry/Loonies"
 Rune L. H. Stubbe "Mentor/TBC"
 
-Version 1.1 (January 12, 2008)
+Version 1.1a (January 12, 2009)
 
 
 
 VERSION HISTORY
 ---------------
+12.01.09: 1.1a: Fixed /TRUNCATEFLOATS crashing in some cases.
+                Some sections were misplaced in the HTML report.
+                Various corrections to the HTML report.
+                The /FIX option can input and output to the same file.
+
 12.01.08: 1.1:  Support for weak externals (virtual C++ destructors).
-		Fixed compatibility with Data Execution Prevention.
+                Fixed compatibility with Data Execution Prevention.
                 /REPORT option for a colorful HTML compression report.
                 /TRUNCATEFLOATS option to mutilate float constants.
                 /SAFEIMPORT is now default, disabled with /UNSAFEIMPORT.
@@ -208,17 +213,16 @@ following:
   name, such as the one used with the Intel C++ compiler, call it
   whatever the name of the linker is.
 
-- If you are using Visual Studio 2005, select Tools/Options... and go
-  to Projects and Solutions/VC++ Directories. At the top of the list
-  for Executable files, add $(SolutionDir). This will make sure that
-  the project directory is searched for the linker executable.
+- Select Tools/Options... and go to Projects and Solutions/VC++
+  Directories. At the top of the list for Executable files, add
+  $(SolutionDir). This will make sure that the project directory is
+  searched for the linker executable.
 
 - In the Release configuration (or whichever configuration you want to
   enable compression), under Linker/Command Line/Additional Options,
   type in /CRINKLER, along with any other Crinkler options you want to
-  set. See the next section for more details on options. If you are
-  using Visual Studio 2005, set Linker/Manifest File/Generate Manifest
-  to No.
+  set. See the next section for more details on options. Set
+  Linker/Manifest File/Generate Manifest to No.
 
 If you have Visual Studio installed but want to run Crinkler from the
 commandline, the easiest way is to use the Visual Studio Command
@@ -581,6 +585,12 @@ horribly. You shouldn't use it for such big files anyway.
 
 Crinkler does not support the whole program optimization feature of
 Visual Studio (General/Whole Program Optimization). Do not turn it on.
+
+The standard runtime libraries for Visual Studio 2005 or newer will
+not work with Crinkler-compressed executables, since these runtime
+libraries require a manifest in the executable, and Crinkler does not
+support manifests. Avoid using a standard runtime library or link to a
+Visual Studio 6 version of msvcrt.lib.
 
 
 

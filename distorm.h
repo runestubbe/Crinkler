@@ -1,13 +1,16 @@
-/* diStorm64 1.7.26 */
+/* diStorm64 1.7.30 */
 
 /*
 distorm.h
 
-Copyright (C) 2003-2006 Gil Dabah, http://ragestorm.net/distorm/
+Copyright (C) 2003-2008 Gil Dabah, http://ragestorm.net/distorm/
 This library is licensed under the BSD license. See the file COPYING.
 
 This file is used in win32proj and linuxproj.
 */
+
+#ifndef DISTORM_H
+#define DISTORM_H
 
 /*
  * 64 bit offsets support:
@@ -16,9 +19,13 @@ This file is used in win32proj and linuxproj.
  * SUPPORT_64BIT_OFFSET
  * Otherwise comment it out, or you will get a linker error of an unresolved symbol...
  */
-// TINYC has a problem with some 64bits library functions, so pass.
+
+/* TINYC has a problem with some 64bits library functions, so pass. */
 #ifndef __TINYC__
-	#define SUPPORT_64BIT_OFFSET
+    /* Make sure it wasn't already defined by the compiler itself. */
+    #ifndef SUPPORT_64BIT_OFFSET
+	    #define SUPPORT_64BIT_OFFSET
+    #endif
 #endif
 
 /* If your compiler doesn't support stdint.h, define your own 64 bits type. */
@@ -102,3 +109,5 @@ unsigned int distorm_version();
 #ifdef __cplusplus
 } /* End Of Extern */
 #endif
+
+#endif /* DISTORM_H */
