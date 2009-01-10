@@ -256,7 +256,6 @@ CompressionReportRecord* Hunk::getCompressionSummary(int* sizefill, int splittin
 
 	for(vector<Symbol*>::iterator it = symbols.begin(); it != symbols.end(); it++) {
 		Symbol* sym = *it;
-		printf("%8X: %s\n", sym->value, sym->name.c_str());
 		CompressionReportRecord* c = new CompressionReportRecord(sym->name.c_str(), 
 			0, sym->value, (sym->value < getRawSize()) ? sizefill[sym->value] : -1);
 
