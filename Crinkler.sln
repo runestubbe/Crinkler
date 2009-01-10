@@ -1,5 +1,5 @@
-Microsoft Visual Studio Solution File, Format Version 9.00
-# Visual Studio 2005
+Microsoft Visual Studio Solution File, Format Version 10.00
+# Visual Studio 2008
 Project("{EAF909A5-FA59-4C3D-9431-0FCC20D5BCF9}") = "Crinkler", "Crinkler.icproj", "{392261A4-DEA9-4E58-9BD2-5E3BF928D2CF}"
 	ProjectSection(ProjectDependencies) = postProject
 		{A28AF165-4907-43A7-BB47-E90F652B8143} = {A28AF165-4907-43A7-BB47-E90F652B8143}
@@ -21,10 +21,14 @@ Global
 		{A28AF165-4907-43A7-BB47-E90F652B8143}.Debug|Win32.Build.0 = Debug|Win32
 		{A28AF165-4907-43A7-BB47-E90F652B8143}.Release|Win32.ActiveCfg = Release|Win32
 		{A28AF165-4907-43A7-BB47-E90F652B8143}.Release|Win32.Build.0 = Release|Win32
-		{B0591735-B8E8-4E45-8394-5A01A5F53984}.Debug|Win32.ActiveCfg = Debug|Win32
+		{B0591735-B8E8-4E45-8394-5A01A5F53984}.Release|Win32.Build.0 = Release|Win32
 		{B0591735-B8E8-4E45-8394-5A01A5F53984}.Release|Win32.ActiveCfg = Release|Win32
-		{869F3A10-26E8-49E6-980F-FE72F642714F}.Debug|Win32.ActiveCfg = Debug|Win32
+		{B0591735-B8E8-4E45-8394-5A01A5F53984}.Debug|Win32.Build.0 = Debug|Win32
+		{B0591735-B8E8-4E45-8394-5A01A5F53984}.Debug|Win32.ActiveCfg = Debug|Win32
+		{869F3A10-26E8-49E6-980F-FE72F642714F}.Release|Win32.Build.0 = Release|Win32
 		{869F3A10-26E8-49E6-980F-FE72F642714F}.Release|Win32.ActiveCfg = Release|Win32
+		{869F3A10-26E8-49E6-980F-FE72F642714F}.Debug|Win32.Build.0 = Debug|Win32
+		{869F3A10-26E8-49E6-980F-FE72F642714F}.Debug|Win32.ActiveCfg = Debug|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

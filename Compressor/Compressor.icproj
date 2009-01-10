@@ -1,10 +1,11 @@
 <?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject 
 	ProjectType="Intel C++ Project"
-	Version="9.1"
+	Version="10.1"
 	Name="Compressor"
 	ProjectGUID="{A28AF165-4907-43A7-BB47-E90F652B8143}"
 	VCNestedProjectGUID="{869F3A10-26E8-49E6-980F-FE72F642714F}"
+	VCNestedProjectCRC32="2883999295"
 	VCNestedProjectFileName="Compressor.vcproj"
 	Keyword="Win32Proj">
 	<Platforms>
@@ -19,9 +20,8 @@
 				OutputDirectory="Debug"
 				IntermediateDirectory="Debug"
 				ConfigurationType="4"
-				CharacterSet="2"/>
-			<Tool 
-				Name="DebugTool"/>
+				CharacterSet="2"
+				InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"/>
 			<Tool 
 				Name="CppCmplrTool"
 				Optimization="0"
@@ -65,9 +65,8 @@
 				OutputDirectory="Release"
 				IntermediateDirectory="Release"
 				ConfigurationType="4"
-				CharacterSet="2"/>
-			<Tool 
-				Name="DebugTool"/>
+				CharacterSet="2"
+				InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"/>
 			<Tool 
 				Name="CppCmplrTool"
 				WholeProgramOptimization="0"
