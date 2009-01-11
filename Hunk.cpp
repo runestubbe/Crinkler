@@ -139,6 +139,10 @@ void Hunk::fixate() {
 static string HelpMessage(const char* name) {
 	if(startsWith(name, "__RTC_")) {
 		return "Disable 'Basic Runtime Checks' in the compiler options.";
+	} else if(startsWith(name, "__security_cookie")) {
+		return "Disable 'Buffer Security Check' in the compiler options.";
+	} else if(startsWith(name, "_crt_debugger_hook")) {
+		return "Define your own entry point.";
 	} else if(startsWith(name, "__ftol")) {
 		return "Suppress _ftol calls with the /QIfist compiler option.";
 	} else if(startsWith(name, "__Cxx")) {
@@ -160,7 +164,7 @@ void Hunk::relocate(int imageBase) {
 			if(help.empty()) {
 				Log::error("", "Cannot find symbol '%s'", r.symbolname.c_str());
 			} else {
-				Log::error("", "Cannot find symbol '%s'. %s", r.symbolname.c_str(), help.c_str());
+				Log::error("", "Cannot find symbol '%s'.\n * HINT: %s", r.symbolname.c_str(), help.c_str());
 			}
 			
 		}
