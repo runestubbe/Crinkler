@@ -141,6 +141,8 @@ static string HelpMessage(const char* name) {
 		return "Disable 'Basic Runtime Checks' in the compiler options.";
 	} else if(startsWith(name, "__ftol")) {
 		return "Suppress _ftol calls with the /QIfist compiler option.";
+	} else if(startsWith(name, "__Cxx")) {
+		return "Don't use exceptions.";
 	}
 	return "";
 }

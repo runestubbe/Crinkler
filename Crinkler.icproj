@@ -5,7 +5,7 @@
 	Name="Crinkler"
 	ProjectGUID="{392261A4-DEA9-4E58-9BD2-5E3BF928D2CF}"
 	VCNestedProjectGUID="{B0591735-B8E8-4E45-8394-5A01A5F53984}"
-	VCNestedProjectCRC32="2820246779"
+	VCNestedProjectCRC32="3086768155"
 	VCNestedProjectFileName="Crinkler.vcproj"
 	Keyword="Win32Proj">
 	<Platforms>
@@ -25,7 +25,7 @@
 			<Tool 
 				Name="CppCmplrTool"
 				Optimization="0"
-				PreprocessorDefinitions="WIN32;_DEBUG;_CONSOLE;D3D_DEBUG_INFO"
+				PreprocessorDefinitions="WIN32;_DEBUG;_CONSOLE;D3D_DEBUG_INFO;_CRT_SECURE_NO_WARNINGS"
 				MinimalRebuild="1"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="1"
@@ -84,7 +84,7 @@
 				EnableIntrinsicFunctions="1"
 				FavorSizeOrSpeed="1"
 				OmitFramePointers="1"
-				PreprocessorDefinitions="WIN32;NDEBUG;_CONSOLE"
+				PreprocessorDefinitions="WIN32;NDEBUG;_CONSOLE;_CRT_SECURE_NO_WARNINGS"
 				StringPooling="1"
 				ExceptionHandling="0"
 				RuntimeLibrary="0"
@@ -169,6 +169,8 @@
 			RelativePath=".\distorm.h"/>
 		<File 
 			RelativePath=".\Fix.h"/>
+		<File 
+			RelativePath=".\HtmlReport.h"/>
 		<File 
 			RelativePath=".\Hunk.h"/>
 		<File 
@@ -350,8 +352,6 @@
 			RelativePath=".\Fix.cpp"/>
 		<File 
 			RelativePath=".\HtmlReport.cpp"/>
-		<File 
-			RelativePath=".\HtmlReport.h"/>
 		<File 
 			RelativePath=".\Hunk.cpp"/>
 		<File 
