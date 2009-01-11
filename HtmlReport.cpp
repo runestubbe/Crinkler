@@ -206,6 +206,7 @@ struct scol {
 	{ 7.0f, 0x0000a0 },
 	{ 9.0f, 0x000000 },
 	{ 12.0f, 0x900000 },
+	{ 1000000.0f, 0xff0000 },
 };
 
 //converts a string to an unique identifier consisting of only ['A'-Z']
