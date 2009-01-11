@@ -219,7 +219,7 @@ ModelList ApproximateModels(const unsigned char* data, int datasize, int basepro
 	return models;
 }
 
-int compress1K(unsigned char* data, int size, unsigned char* compressed, int compressed_size, int* modeldata, int b0, int b1, int boost_factor, unsigned int modelmask) {
+int compress1K(unsigned char* data, int size, unsigned char* compressed, int compressed_size, int* modeldata, int b0, int b1, int boost_factor, unsigned int modelmask, int* sizefill) {
 	AritState as;
 	memset(compressed, 0, compressed_size);	
 	AritCodeInit(&as, compressed);
@@ -250,13 +250,19 @@ int compress1K(unsigned char* data, int size, unsigned char* compressed, int com
 			mmask *= 2;
 		}
 
+		if((i & 7) == 0 && sizefill)
+			*sizefill++ = AritCodePos(&as)/(BITPREC_TABLE/BITPREC);
 		AritCode(&as, n[bit], n[!bit], bit);
 	}
+
+	if(sizefill)
+		*sizefill++ = AritCodePos(&as)/(BITPREC_TABLE/BITPREC);
+
 	return (AritCodeEnd(&as) + 7) / 8;
 }
 
 void TinyCompress(unsigned char* org_data, int size, unsigned char* compressed, int& compressed_size,
-				  int& best_boost, int& best_b0, int& best_b1, unsigned int& best_modelmask) {
+				  int& best_boost, int& best_b0, int& best_b1, unsigned int& best_modelmask, int* sizefill) {
 	unsigned char* data = new unsigned char[size+8];
 	memset(data, 0, 8);
 	data += 8;
@@ -333,7 +339,7 @@ void TinyCompress(unsigned char* org_data, int size, unsigned char* compressed, 
 					#pragma omp parallel for
 					for(int b1 = 3; b1 < 8; b1++) {
 						int testsize = compress1K(data, size, compressed, compressed_size,
-							modeldata, b0, b1, boost_factor, modelmask);
+							modeldata, b0, b1, boost_factor, modelmask, NULL);
 
 						#pragma omp critical (update)
 						{
@@ -354,7 +360,7 @@ void TinyCompress(unsigned char* org_data, int size, unsigned char* compressed, 
 	} while(best_exclude != -1);
 	
 	compressed_size = compress1K(data, size, compressed, compressed_size,
-		modeldata, best_b0, best_b1, best_boost, best_modelmask);
+		modeldata, best_b0, best_b1, best_boost, best_modelmask, sizefill);
 
 	best_modelmask <<= 1;
 

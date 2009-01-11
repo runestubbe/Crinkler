@@ -249,6 +249,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\LTCGLoader.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\main.cpp"
 				>
 			</File>
@@ -284,6 +288,10 @@
 			</File>
 			<File
 				RelativePath=".\ImportHandler.h"
+				>
+			</File>
+			<File
+				RelativePath=".\LTCGLoader.h"
 				>
 			</File>
 			<File

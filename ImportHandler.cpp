@@ -18,7 +18,7 @@ using namespace std;
 char *LoadDLL(const char *name) {
 	char* module = (char *)((int)LoadLibraryEx(name, 0, DONT_RESOLVE_DLL_REFERENCES) & -4096);
 	if(module == 0) {
-		Log::error(0, "", "Could not open DLL '%s'", name);
+		Log::error("", "Cannot open DLL '%s'", name);
 	}
 	return module;
 }
@@ -41,7 +41,7 @@ int getOrdinal(const char* function, const char* dll) {
 		}
 	}
 
-	Log::error(0, "", "import '%s' could not be found in '%s'", function, dll);
+	Log::error("", "Import '%s' cannot be found in '%s'", function, dll);
 	return -1;
 }
 
@@ -68,7 +68,7 @@ bool isForwardRVA(const char* dll, const char* function) {
 		}
 	}
 
-	Log::error(0, "", "import '%s' could not be found in '%s'", function, dll);
+	Log::error("", "Import '%s' cannot be found in '%s'", function, dll);
 	return false;
 }
 
@@ -123,7 +123,7 @@ HunkList* ImportHandler::createImportHunks(HunkList* hunklist, Hunk* hashHunk, c
 		Hunk* hunk = (*hunklist)[i];
 		if(hunk->getFlags() & HUNK_IS_IMPORT) {
 			if(isForwardRVA(hunk->getImportDll(), hunk->getImportName())) {
-				Log::error(0, "", "import '%s' from '%s' uses forwarded RVA. This feature is not supported by crinkler (yet)", 
+				Log::error("", "Import '%s' from '%s' uses forwarded RVA. This feature is not supported by crinkler (yet)", 
 					hunk->getImportName(), hunk->getImportDll());
 			}
 
@@ -143,7 +143,7 @@ HunkList* ImportHandler::createImportHunks(HunkList* hunklist, Hunk* hashHunk, c
 	{
 		for(int i = 0; i < rangeDlls.size(); i++) {
 			if(!usedRangeDlls[i]) {
-				Log::warning(0, "", "no functions were imported from range dll '%s'", rangeDlls[i].c_str());
+				Log::warning("", "No functions were imported from range dll '%s'", rangeDlls[i].c_str());
 			}
 		}
 	}
@@ -324,7 +324,7 @@ HunkList* ImportHandler::createImportHunks1K(HunkList* hunklist, bool verbose) {
 		if(hunk->getFlags() & HUNK_IS_IMPORT) {
 			dlls.insert(hunk->getImportDll());
 			if(isForwardRVA(hunk->getImportDll(), hunk->getImportName())) {
-				Log::error(0, "", "import '%s' from '%s' uses forwarded RVA. This feature is not supported by crinkler (yet)", 
+				Log::error("", "Import '%s' from '%s' uses forwarded RVA. This feature is not supported by crinkler (yet)", 
 					hunk->getImportName(), hunk->getImportDll());
 			}
 			importHunks.push_back(hunk);
@@ -341,7 +341,7 @@ HunkList* ImportHandler::createImportHunks1K(HunkList* hunklist, bool verbose) {
 		}
 	}
 
-	Hunk* importList = new Hunk("ImportListHunk", 0, HUNK_IS_WRITEABLE, 2, 0, 65536*256);
+	Hunk* importList = new Hunk("ImportListHunk", 0, HUNK_IS_WRITEABLE, 8, 0, 65536*256);
 	importList->addSymbol(new Symbol("_HashFamily", family, 0, importList));
 	importList->addSymbol(new Symbol("_ImportList", 0, SYMBOL_IS_RELOCATEABLE, importList));
 	for(vector<Hunk*>::iterator it = importHunks.begin(); it != importHunks.end(); it++) {

@@ -14,7 +14,7 @@ void FixFile(const char *filename, const char *outfile) {
 	MemoryFile file(filename);
 	char *data = file.getPtr();
 	if (data == 0) {
-		Log::error(0, "", "Could not open file '%s'\n", filename);
+		Log::error("", "Cannot open file '%s'\n", filename);
 	}
 	int length = file.getSize();
 
@@ -26,7 +26,7 @@ void FixFile(const char *filename, const char *outfile) {
 
 	if (majorlv < '0' || majorlv > '9' ||
 		minorlv < '0' || minorlv > '9') {
-		Log::error(0, "", "Input file is not a Crinkler compressed executable");
+		Log::error("", "Input file is not a Crinkler compressed executable");
 	}
 
 	if (majorlv == '0' && minorlv == '6') {
@@ -87,6 +87,6 @@ void FixFile(const char *filename, const char *outfile) {
 	if (file.write(outfile)) {
 		printf("Fixed file written to '%s'\n", outfile);
 	} else {
-		Log::error(0, "", "Could not open output file '%s'\n", outfile);
+		Log::error("", "Cannot open output file '%s'\n", outfile);
 	}
 }

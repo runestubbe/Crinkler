@@ -113,6 +113,8 @@ public:
 	void roundFloats(int defaultBits);
 	void appendZeroes(int num);
 
+	void markHunkAsLibrary();
+
 	CompressionReportRecord* getCompressionSummary(int* sizefill, int splittingPoint);
 
 

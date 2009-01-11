@@ -5,7 +5,7 @@
 using namespace std;
 
 Symbol::Symbol(const char* name, int value, unsigned int flags, Hunk* hunk, const char* miscString) :
-	name(name), value(value), flags(flags), hunk(hunk)
+	name(name), value(value), flags(flags), hunk(hunk), fromLibrary(false)
 {
 	if(miscString)
 		this->miscString = miscString;

@@ -12,7 +12,7 @@ public:
 	~MultiLoader();
 
 	bool clicks(const char* data, int size);
-	HunkList* load(const char* data, int size, const char* origin);
+	HunkList* load(const char* data, int size, const char* module);
 };
 
 #endif

@@ -10,7 +10,7 @@ public:
 	virtual bool clicks(const char* data, int size) = 0;
 	bool clicksFromFile(const char* filename);
 
-	virtual HunkList* load(const char* data, int size, const char* origin) = 0;
+	virtual HunkList* load(const char* data, int size, const char* module) = 0;
 	HunkList* loadFromFile(const char* filename);
 };
 

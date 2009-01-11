@@ -32,6 +32,8 @@ public:
 	void removeImportHunks();
 	void clear();
 
+	void markHunksAsLibrary();
+
 	void trim();
 	void printHunks();
 	void roundFloats(int defaultBits);
