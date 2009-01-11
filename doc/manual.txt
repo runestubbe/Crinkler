@@ -382,11 +382,11 @@ Linker/Command Line/Additional Options:
 
     Whenever a function is imported from oldDLL, import it from newDLL
     instead. DLL replacement is useful when the end user might not
-    have the version of the DLL that you are linking to. Typical
-    examples are replacing msvcr70, msvcr71 or msvcr80 by msvcrt and
-    replacing one version of d3dx9_?? by another. Only use this option
-    if you know that the two DLLs are compatible. When REPLACEDLL and
-    RANGE are used together, RANGE must refer to the new DLL.
+    have the version of the DLL that you are linking to. A typical use
+    is to replace one version of d3dx9_?? by another. Only use this
+    option if you know that the two DLLs are compatible. When
+    REPLACEDLL and RANGE are used together, RANGE must refer to the
+    new DLL.
 
 /UNSAFEIMPORT
 
@@ -515,7 +515,9 @@ Generation/Runtime Library to Multi-threaded DLL (/MD).
 Note however, that the standard runtime libraries for Visual Studio
 2005 or newer will not work with Crinkler-compressed executables,
 since these runtime libraries require a manifest in the executable,
-and Crinkler does not support manifests.
+and Crinkler does not support manifests. Furthermore, these DLLs are
+not present by default on Windows installations, so you will usually
+not want your program to be dependent on them.
 
 To work around this, link to the Visual Studio 6 runtime library -
 msvcrt.dll - which is distributed with all Windows versions. This is
@@ -543,6 +545,8 @@ Generation:
 - Basic Runtime Checks: Default
 - Buffer Security Check: No (/GS-)
 
+Also, do not use C++ exception handling in your code.
+
 Finally, even when using the DLL-based runtime, not all support code
 is linked dynamically. The runtime library contains an entry function
 which is included into the executable and takes care of things like
@@ -555,10 +559,10 @@ overhead, define your own entry function, either by defining a
 function called mainCRTStartup or WinMainCRTStartup (depending on
 which Windows subsystem you use) or by using the /ENTRY option.
 
-The best option is of course to avoid linking to a runtime DLL at all,
-assuming you can do without any of the functions provided by the
-standard runtime library. This will save the space for importing
-the runtime DLL.
+The best strategy is of course to avoid linking to a runtime DLL at
+all, assuming you can do without the functions provided by the
+standard runtime library. This will save the space for importing the
+runtime DLL.
 
 To reduce the dependencies on the standard runtime DLL as much as
 possible, set the following options:
