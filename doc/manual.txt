@@ -11,11 +11,12 @@ Version 1.1a (January 12, 2009)
 VERSION HISTORY
 ---------------
 12.01.09: 1.1a: Fixed /TRUNCATEFLOATS crashing in some cases.
-                Some sections were misplaced in the HTML report.
+                Sometimes sections were misplaced in the HTML report.
                 Various corrections to the HTML report.
                 The /FIX option can input and output to the same file.
                 Helpful error messages for various unsupported features.
-                Prefer custom entry point to a standard library one.
+                Prefer a custom entry point to a standard library one.
+                New section in the manual about runtime libraries.
 
 12.01.08: 1.1:  Support for weak externals (virtual C++ destructors).
                 Fixed compatibility with Data Execution Prevention.
@@ -223,8 +224,9 @@ following:
 - In the Release configuration (or whichever configuration you want to
   enable compression), under Linker/Command Line/Additional Options,
   type in /CRINKLER, along with any other Crinkler options you want to
-  set. See the next section for more details on options. Set
-  Linker/Manifest File/Generate Manifest to No.
+  set. See the next section for more details on options. Also set
+  Linker/Manifest File/Generate Manifest to No and
+  C/C++/Optimization/Whole Program Optimization to No.
 
 If you have Visual Studio installed but want to run Crinkler from the
 commandline, the easiest way is to use the Visual Studio Command
@@ -499,17 +501,88 @@ crinkler.exe /OUT:micropolis.exe /SUBSYSTEM:WINDOWS /RANGE:opengl32
 
 
 
+STANDARD RUNTIME LIBRARIES
+--------------------------
+
+Under normal circumstances, the Visual Studio compiler generates code
+that requires a C runtime library containing standard C functions and
+various support functions. These functions can either be linked in
+statically (included into the executable) or dynamically via a runtime
+DLL. For size-sensitive applications, you should always link
+dynamically, which is achieved by setting C/C++/Code
+Generation/Runtime Library to Multi-threaded DLL (/MD).
+
+Note however, that the standard runtime libraries for Visual Studio
+2005 or newer will not work with Crinkler-compressed executables,
+since these runtime libraries require a manifest in the executable,
+and Crinkler does not support manifests.
+
+To work around this, link to the Visual Studio 6 runtime library -
+msvcrt.dll - which is distributed with all Windows versions. This is
+done by using the Visual Studio 6 version of msvcrt.lib, which can be
+obtained thus:
+
+- Download Service Pack 6 for Visual Studio 6.0 at
+  http://msdn.microsoft.com/en-us/vstudio/aa718364.aspx
+- Place the downloaded self-extractor in an empty directory and run
+  it, or open it using an archive tool such as WinRAR.
+- Open the VS6sp61.cab file and go to the vc98\lib directory. There
+  you will find the msvcrt.lib file.
+- Rename this file to something else (such as msvcrt_old.lib) and
+  place it in your project directory.
+- Add msvcrt_old.lib to the list of libraries to link to at
+  Linker/Input/Additional Dependencies.
+
+There are a couple of caveats to using an older runtime library than
+the comnpiler expects, though. With out-of-the-box compilation
+options, the Visual Studio compiler generates code that requires some
+support functions which are only present in newer runtime DLLs. To
+avoid these dependencies, set the following options under C/C++/Code
+Generation:
+
+- Basic Runtime Checks: Default
+- Buffer Security Check: No (/GS-)
+
+Finally, even when using the DLL-based runtime, not all support code
+is linked dynamically. The runtime library contains an entry function
+which is included into the executable and takes care of things like
+parsing the commandline and executing static initializers. The entry
+function then calls the main function.
+
+The standard entry function is around half a kilobyte in size and is
+usually not needed for intro code to function properly. To avoid this
+overhead, define your own entry function, either by defining a
+function called mainCRTStartup or WinMainCRTStartup (depending on
+which Windows subsystem you use) or by using the /ENTRY option.
+
+The best option is of course to avoid linking to a runtime DLL at all,
+assuming you can do without any of the functions provided by the
+standard runtime library. This will save the space for importing
+the runtime DLL.
+
+To reduce the dependencies on the standard runtime DLL as much as
+possible, set the following options:
+
+- C/C++/Optimization/Enable Intrinsic Functions: Yes (/Oi). This will
+  cause several standard functions (mainly math, string and memory
+  functions) to generate inline code rather than a function call.
+- C/C++/Code Generation/Floating Point Model: Fast (/fp:fast).
+- C/C++/Command Line: Add the option /QIfist. This will cause
+  conversions from floating point to integer to use the FIST
+  instruction rather than calling a conversion function. Note that
+  this changes the semantics of conversions from truncation to
+  round-to-nearest (unless you explicitly change the rounding mode of
+  the FPU). On the other hand, it will also give a considerable speed
+  boost.
+
+
+
 RECOMMENDATIONS
 ---------------
 
 There are a number of things you can do as intro programmer to boost
 the compression achieved by Crinkler even further. This section
 gives some advice on these.
-
-- Do not use a standard runtime library. If you really need some
-  standard library functions, use msvcrt.lib and use your own entry
-  point using the /ENTRY option. This will skip the standard startup
-  code, saving you around half a kilobyte.
 
 - Since much of the effectiveness of Crinkler comes from separating
   code and data into different parts of the file and compressing each
@@ -584,15 +657,6 @@ Crinkler unable to link with libc. What a loss.
 
 The final compressed size must be less than 64k, or Crinkler will fail
 horribly. You shouldn't use it for such big files anyway.
-
-Crinkler does not support the whole program optimization feature of
-Visual Studio (General/Whole Program Optimization). Do not turn it on.
-
-The standard runtime libraries for Visual Studio 2005 or newer will
-not work with Crinkler-compressed executables, since these runtime
-libraries require a manifest in the executable, and Crinkler does not
-support manifests. Avoid using a standard runtime library or link to
-the Visual Studio 6 version of msvcrt.lib.
 
 
 
