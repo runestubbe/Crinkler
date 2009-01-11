@@ -136,13 +136,13 @@ static void runOriginalLinker(const char* linkerName) {
 			printf("Launching default linker at '%s'\n\n", it->c_str());
 			fflush(stdout);
 			if(!runExecutable(it->c_str()))
-				Log::error(0, "", "failed to launch default linker, errorcode: %X", GetLastError());
+				Log::error("", "Failed to launch default linker, errorcode: %X", GetLastError());
 			return;
 		}
 	}
 
 	//Linker not found
-	Log::error(0, "", "could not find default linker '%s' in path", linkerName);
+	Log::error("", "Cannot find default linker '%s' in path", linkerName);
 }
 
 const int TRANSFORM_CALLS = 0x01;
@@ -233,7 +233,7 @@ int main(int argc, char* argv[]) {
 			const char* infilename = filesArg.getValue();
 			filesArg.next();
 			if(infilename == NULL || filesArg.hasNext() != 0) {
-				Log::error(0, "", "Crinkler fix takes exactly one file argument");
+				Log::error("", "Crinkler fix takes exactly one file argument");
 				return 1;
 			}
 
@@ -362,7 +362,7 @@ int main(int argc, char* argv[]) {
 			filesArg.next();
 			list<string> res = findFileInPath(filename, lib.c_str());
 			if(res.size() == 0) {
-				Log::error(1104, "", "cannot open file '%s'", filename);
+				Log::error(filename, "Cannot open file");
 				return -1;
 			} else {
 				printf("  %s", filename);

@@ -64,7 +64,7 @@ void Crinkler::replaceDlls(HunkList& hunklist) {
 	//warn about unused replace DLLs
 	for(map<string, string>::iterator it = m_replaceDlls.begin(); it != m_replaceDlls.end(); it++) {
 		if(usedDlls.find(it->first) == usedDlls.end()) {
-			Log::warning(0, "", "no functions were imported from replaced dll '%s'", it->first.c_str());
+			Log::warning("", "No functions were imported from replaced dll '%s'", it->first.c_str());
 		}
 	}
 }
@@ -76,7 +76,7 @@ void Crinkler::load(const char* filename) {
 		m_hunkPool.append(hunkList);
 		delete hunkList;
 	} else {
-		Log::error(0, "", "failed to load file '%s'", filename);
+		Log::error(filename, "Unsupported file type");
 	}
 }
 
@@ -86,30 +86,19 @@ void Crinkler::load(const char* data, int size, const char* module) {
 	delete hunkList;
 }
 
-Symbol* Crinkler::findUndecoratedSymbol(const char* name) const {
-	Symbol* s = m_hunkPool.findUndecoratedSymbol(name);
-	if(s)
-		return s;
-	else {
-		Log::error(0, "", "could not find symbol '%s'", name);
-		return NULL;
-	}
-}
-
-
-Symbol* Crinkler::getEntrySymbol() const {
-	if(m_entry.size() == 0) {
+std::string Crinkler::getEntrySymbolName() const {
+	if(m_entry.empty()) {
 		switch(m_subsytem) {
 			case SUBSYSTEM_CONSOLE:
-				return findUndecoratedSymbol("mainCRTStartup");
+				return "mainCRTStartup";
 			case SUBSYSTEM_WINDOWS:
-				return findUndecoratedSymbol("WinMainCRTStartup");
+				return "WinMainCRTStartup";
 		}
-		return NULL;
-	} else {
-		return findUndecoratedSymbol(m_entry.c_str());
+		return "";
 	}
+	return m_entry;
 }
+
 
 static int getPreciseTime() {
 	LARGE_INTEGER time;
@@ -159,20 +148,21 @@ void Crinkler::link(const char* filename) {
 	//open output file now, just to be sure :)
 	FILE* outfile;
 	if(fopen_s(&outfile, filename, "wb")) {
-		Log::error(0, "", "could not open '%s' for writing", filename);
+		Log::error("", "Cannot open '%s' for writing", filename);
 		return;
 	}
 
 	//place entry point in the beginning
-	Symbol* entry = getEntrySymbol();
+	string entryName = getEntrySymbolName();
+	Symbol* entry = m_hunkPool.findUndecoratedSymbol(entryName.c_str());
 	if(entry == NULL) {
-		Log::error(0, "", "could not find entry symbol");
+		Log::error("", "Cannot find entry point '%s'. See manual for details.", entryName.c_str());
 		return;
 	}
 
 	//add a jump to the entry point, if the entry point is not at the beginning of a hunk
 	if(entry->value > 0) {
-		Log::warning(0, "", "Could not move entry point to beginning of code, inserted jump");
+		Log::warning("", "Could not move entry point to beginning of code, inserted jump");
 		unsigned char jumpCode[5] = {0xE9, 0x00, 0x00, 0x00, 0x00};
 		Hunk* jumpHunk = new Hunk("jump_to_entry_point", (char*)jumpCode, HUNK_IS_CODE, 0, 5, 5);
 		Symbol* newEntry = new Symbol("jumpEntry", 0, SYMBOL_IS_RELOCATEABLE, jumpHunk);
@@ -190,7 +180,7 @@ void Crinkler::link(const char* filename) {
 
 	//1byte aligned entry point
 	if(entry->hunk->getAlignmentBits() > 0) {
-		Log::warning(0, "", "entry point hunk has alignment greater than 1, forcing alignment of 1");
+		Log::warning("", "Entry point hunk has alignment greater than 1, forcing alignment of 1");
 		entry->hunk->setAlignmentBits(0);
 	}
 
@@ -249,7 +239,7 @@ void Crinkler::link(const char* filename) {
 				load(importObj, importObj_end - importObj, "crinkler import");
 	}
 
-	Symbol* import = findUndecoratedSymbol("Import");
+	Symbol* import = m_hunkPool.findSymbol("_Import");
 	m_hunkPool.removeHunk(import->hunk);
 	m_hunkPool.addHunkFront(import->hunk);
 	import->hunk->fixate();
@@ -269,6 +259,10 @@ void Crinkler::link(const char* filename) {
 	Hunk* phase1, *phase1Untransformed;
 	m_transform->linkAndTransform(&m_hunkPool, CRINKLER_CODEBASE, phase1, phase1Untransformed, &splittingPoint);
 
+	int maxsize = phase1->getRawSize()*10;	//allocate plenty of memory
+	
+	int* sizefill = new int[maxsize];
+
 	printf("\nUncompressed size of code: %5d\n", splittingPoint);
 	printf("Uncompressed size of data: %5d\n", phase1->getRawSize() - splittingPoint);
 
@@ -287,7 +281,7 @@ void Crinkler::link(const char* filename) {
 		int boostfactor;
 		unsigned int modelmask;
 		TinyCompress((unsigned char*)phase1->getPtr(), phase1->getRawSize(), compressed_data, compressed_size,
-			boostfactor, baseprob0, baseprob1, modelmask);
+			boostfactor, baseprob0, baseprob1, modelmask, sizefill);
 		Hunk* phase1Compressed = new Hunk("compressed data", (char*)compressed_data, 0, 0, compressed_size, compressed_size);
 		phase1Compressed->addSymbol(new Symbol("_PackedData", 0, SYMBOL_IS_RELOCATEABLE, phase1Compressed));
 		delete[] compressed_data;
@@ -306,7 +300,6 @@ void Crinkler::link(const char* filename) {
 			printf("packed data offset: %x\n", packedDataOffset);
 			printf("image size: %x\n", phase1->getRawSize());
 			phase2->addSymbol(new Symbol("_UnpackedData", CRINKLER_CODEBASE, 0, phase2));
-			//phase2->addSymbol(new Symbol("_PackedDataOffset", packedDataOffset, 0, phase2));
 			phase2->addSymbol(new Symbol("_DepackEndPosition", CRINKLER_CODEBASE+phase1->getRawSize(), 0, phase2));
 			phase2->addSymbol(new Symbol("_VirtualSize", virtualSize, 0, phase2));
 			phase2->addSymbol(new Symbol("_ImageBase", CRINKLER_IMAGEBASE, 0, phase2));
@@ -324,6 +317,14 @@ void Crinkler::link(const char* filename) {
 
 		printf("\nFinal file size: %d\n\n", phase2->getRawSize());
 
+		CompressionReportRecord* csr = phase1->getCompressionSummary(sizefill, splittingPoint);
+		if(m_printFlags & PRINT_LABELS)
+			verboseLabels(csr);
+		if(!m_summaryFilename.empty())
+			htmlReport(csr, m_summaryFilename.c_str(), *phase1, *phase1Untransformed, sizefill, filename);
+		delete csr;
+		delete[] sizefill;
+
 		delete headerHunks;
 		delete phase1;
 		delete phase2;
@@ -338,13 +339,11 @@ void Crinkler::link(const char* filename) {
 	for(int i = 0; i < 8; i++)
 		baseprobs[i] = baseprob;	//flat baseprob
 
+	unsigned char* data = new unsigned char[maxsize];
 	int best_hashsize = previousPrime(m_hashsize/2)*2;
 	int modelskip = 0;
 	ModelList ml1, ml2;
 	Hunk* phase1Compressed, *models;
-	int maxsize = phase1->getRawSize()*10;	//allocate plenty of memory
-	unsigned char* data = new unsigned char[maxsize];
-	int* sizefill = new int[phase1->getRawSize()*2];
 	int size, idealsize = 0;
 	if (m_compressionType == COMPRESSION_INSTANT) {
 		ml1 = InstantModels();

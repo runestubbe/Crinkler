@@ -49,8 +49,7 @@ class Crinkler {
 	bool					m_truncateFloats;
 	int						m_truncateBits;
 	
-	Symbol* getEntrySymbol() const;
-	Symbol* findUndecoratedSymbol(const char* name) const;
+	std::string getEntrySymbolName() const;
 	void replaceDlls(HunkList& hunkslist);
 
 public:

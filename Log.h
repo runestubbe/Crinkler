@@ -5,8 +5,8 @@
 class Log
 {
 public:
-	static void warning(int code, const char* from, const char* msg, ...);
-	static void error(int code, const char* from, const char* msg, ...);
+	static void warning(const char* from, const char* msg, ...);
+	static void error(const char* from, const char* msg, ...);
 };
 
 #endif

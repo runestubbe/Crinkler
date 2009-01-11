@@ -20,6 +20,7 @@ public:
 	unsigned int	flags;
 	Hunk*			hunk;
 	int				size;
+	bool			fromLibrary;
 
 	//unmangles the vc decorations
 	std::string getUndecoratedName();

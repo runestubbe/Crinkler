@@ -10,9 +10,6 @@
 
 using namespace std;
 
-CoffLibraryLoader::~CoffLibraryLoader() {
-}
-
 bool CoffLibraryLoader::clicks(const char* data, int size) {
 	const char* ptr = data;
 
@@ -146,6 +143,8 @@ HunkList* CoffLibraryLoader::load(const char* data, int size, const char* module
 			}
 		}
 	}
+
+	hunklist->markHunksAsLibrary();
 
 	return hunklist;
 }

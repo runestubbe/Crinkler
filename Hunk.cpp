@@ -135,6 +135,16 @@ void Hunk::fixate() {
 	m_flags |= HUNK_IS_FIXED;
 }
 
+//generates a help message based on the symbol name
+static string HelpMessage(const char* name) {
+	if(startsWith(name, "__RTC_")) {
+		return "Disable 'Basic Runtime Checks' in the compiler options.";
+	} else if(startsWith(name, "__ftol")) {
+		return "Suppress _ftol calls with the /QIfist compiler option.";
+	}
+	return "";
+}
+
 void Hunk::relocate(int imageBase) {
 	for(list<relocation>::const_iterator it = m_relocations.begin(); it != m_relocations.end(); it++) {
 		relocation r = *it;
@@ -144,7 +154,13 @@ void Hunk::relocate(int imageBase) {
 		if(s && s->secondaryName.size() > 0)
 			s = findSymbol(s->secondaryName.c_str());
 		if(s == NULL) {
-			Log::error(0, "", "could not find symbol '%s'\n", r.symbolname.c_str());
+			string help = HelpMessage(r.symbolname.c_str());
+			if(help.empty()) {
+				Log::error("", "Cannot find symbol '%s'", r.symbolname.c_str());
+			} else {
+				Log::error("", "Cannot find symbol '%s'. %s", r.symbolname.c_str(), help.c_str());
+			}
+			
 		}
 
 		//perform relocation
@@ -301,6 +317,13 @@ CompressionReportRecord* Hunk::getCompressionSummary(int* sizefill, int splittin
 			c->children.push_back(dummy);
 		}
 
+		//add public symbol to start of sections, if they don't have one already
+		if(sym->value < getRawSize() && (c->type & RECORD_PUBLIC) && sym->value < (*(it+1))->value) {
+			CompressionReportRecord* dummy = new CompressionReportRecord(c->name.c_str(), 
+				RECORD_DUMMY, (*it)->value, ((*it)->value < getRawSize()) ? sizefill[(*it)->value] : -1);
+			c->children.push_back(dummy);
+		}
+
 
 		r->children.push_back(c);
 	}
@@ -409,5 +432,11 @@ void Hunk::roundFloats(int defaultBits) {
 		}
 endit:
 		;
+	}
+}
+
+void Hunk::markHunkAsLibrary() {
+	for(map<string, Symbol*>::iterator it = m_symbols.begin(); it != m_symbols.end(); it++) {
+		it->second->fromLibrary = true;
 	}
 }

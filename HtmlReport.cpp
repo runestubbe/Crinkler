@@ -661,7 +661,7 @@ void htmlReport(CompressionReportRecord* csr, const char* filename, Hunk& hunk, 
 	FILE* out;
 	map<string, int> opcodeCounters;
 	if(fopen_s(&out, filename, "wb")) {
-		Log::error(0, "", "could not open '%s' for writing", filename);
+		Log::error("filename", "Cannot open file for writing");
 		return;
 	}
 	htmlReportRecursive(csr, out, hunk, untransformedHunk, sizefill, false, relocs, symbols, opcodeCounters, exefilename);

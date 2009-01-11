@@ -130,15 +130,32 @@ Hunk* HunkList::toHunk(const char* name, int* splittingPoint) const {
 
 
 Symbol* HunkList::findUndecoratedSymbol(const char* name) const {
+	//weak libs (0) < weak (1) < libs (2) < normal (3)
+	int best_level = -1;
 	Symbol* res = NULL;
 	for(vector<Hunk*>::const_iterator it = m_hunks.begin(); it != m_hunks.end(); it++) {
 		Symbol* s = (*it)->findUndecoratedSymbol(name);
 		if(s != NULL) {
-			if(s->secondaryName.size() == 0)
-				return s;
-			else
+			int level = 0;
+			if(s->fromLibrary) {
+				if(s->secondaryName.empty()) {
+					level = 2;
+				} else {
+					level = 0;
+				}
+			} else {
+				if(s->secondaryName.empty()) {
+					level = 3;
+				} else {
+					level = 1;
+				}
+			}
+			if(level > best_level) {
+				best_level = level;
 				res = s;
+			}
 		}
+		
 	}
 
 	return res;
@@ -224,4 +241,9 @@ void HunkList::printHunks() {
 void HunkList::roundFloats(int defaultBits) {
 	for(vector<Hunk*>::iterator it = m_hunks.begin(); it != m_hunks.end(); it++)
 		(*it)->roundFloats(defaultBits);
+}
+
+void HunkList::markHunksAsLibrary() {
+	for(vector<Hunk*>::iterator it = m_hunks.begin(); it != m_hunks.end(); it++)
+		(*it)->markHunkAsLibrary();
 }

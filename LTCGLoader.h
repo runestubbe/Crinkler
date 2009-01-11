@@ -1,14 +1,12 @@
 #pragma once
-#ifndef _COFF_OBJECT_LOADER_H_
-#define _COFF_OBJECT_LOADER_H_
+#ifndef _LTCG_LOADER_H_
+#define _LTCG_LOADER_H_
 
 #include "HunkLoader.h"
-
 class HunkList;
-class CoffObjectLoader : public HunkLoader {
-public:
-	virtual ~CoffObjectLoader();
 
+class LTCGLoader : public HunkLoader {
+public:
 	virtual bool clicks(const char* data, int size);
 	virtual HunkList* load(const char* data, int size, const char* module);
 };
