@@ -1,6 +1,6 @@
 
 Crinkler - compressing linker for Windows
-Copyright 2005-2008 Aske Simon Christensen and Rune L. H. Stubbe.
+Copyright 2005-2009 Aske Simon Christensen and Rune L. H. Stubbe.
 
 
 DISTRIBUTION
@@ -40,7 +40,7 @@ as a whole.
 
 :[diStorm64}:
 The ultimate disassembler library.
-Copyright (c) 2003,2004,2005,2006,2007, Gil Dabah
+Copyright (c) 2003,2004,2005,2006,2007,2008, Gil Dabah
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:

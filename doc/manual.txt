@@ -14,6 +14,8 @@ VERSION HISTORY
                 Some sections were misplaced in the HTML report.
                 Various corrections to the HTML report.
                 The /FIX option can input and output to the same file.
+                Helpful error messages for various unsupported features.
+                Prefer custom entry point to a standard library one.
 
 12.01.08: 1.1:  Support for weak externals (virtual C++ destructors).
                 Fixed compatibility with Data Execution Prevention.
@@ -589,8 +591,8 @@ Visual Studio (General/Whole Program Optimization). Do not turn it on.
 The standard runtime libraries for Visual Studio 2005 or newer will
 not work with Crinkler-compressed executables, since these runtime
 libraries require a manifest in the executable, and Crinkler does not
-support manifests. Avoid using a standard runtime library or link to a
-Visual Studio 6 version of msvcrt.lib.
+support manifests. Avoid using a standard runtime library or link to
+the Visual Studio 6 version of msvcrt.lib.
 
 
 
