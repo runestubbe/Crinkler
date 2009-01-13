@@ -135,18 +135,31 @@ static const char* htmlHeader1 =
 							"background-color:#eef;"
 						"}"
 						".public_symbol_row th{"
+							"background-color:#99c;"
+							"font-weight:bold;"
+						"}"
+						".oldsection_symbol_row th{"
+							"background-color:#c88;"
+							"font-weight:bold;"
+						"}"
+						".section_symbol_row th{"
+							"background-color:#8c8;"
+							"font-weight:bold;"
+						"}"
+
+						".public_symbol_row_expandable th{"
 							"cursor: pointer;"
 							"cursor: hand;"
 							"background-color:#99c;"
 							"font-weight:bold;"
 						"}"
-						".oldsection_symbol_row th{"
+						".oldsection_symbol_row_expandable th{"
 							"cursor: pointer;"
 							"cursor: hand;"
 							"background-color:#c88;"
 							"font-weight:bold;"
 						"}"
-						".section_symbol_row th{"
+						".section_symbol_row_expandable th{"
 							"cursor: pointer;"
 							"cursor: hand;"
 							"background-color:#8c8;"
@@ -486,7 +499,7 @@ static void htmlReportRecursive(CompressionReportRecord* csr, FILE* out, Hunk& h
 			stringstream ss;
 			ss << div_prefix << "_" << num_divs[level]++;
 			divstr = ss.str();
-			fprintf(out, "<tr class='%s' onclick=\"switchMenu('%s');\">", css_class.c_str(), divstr.c_str());
+			fprintf(out, "<tr class='%s_expandable' onclick=\"switchMenu('%s');\">", css_class.c_str(), divstr.c_str());
 		} else {
 			fprintf(out, "<tr class='%s'>", css_class.c_str());
 		}
