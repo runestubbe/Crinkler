@@ -40,4 +40,6 @@ ModelList InstantModels();
 void TinyCompress(unsigned char* org_data, int size, unsigned char* compressed, int& compressed_size,
 				  int& best_boost, int& best_b0, int& best_b1, unsigned int& best_modelmask, int* sizefill);
 
+const char *compTypeName(CompressionType ct);
+
 #endif
