@@ -20,6 +20,20 @@ BOOL APIENTRY DllMain( HANDLE,
 }
 
 
+const char *compTypeName(CompressionType ct)
+{
+	switch(ct) {
+		case COMPRESSION_INSTANT:
+			return "INSTANT";
+		case COMPRESSION_FAST:
+			return "FAST";
+		case COMPRESSION_SLOW:
+			return "SLOW";
+	}
+	return "UNKNOWN";
+}
+
+
 unsigned char swapBitsInByte(unsigned char m) {
 	m = (unsigned char) (((m&0x0f)<<4)|((m&0xf0)>>4));
 	m = (unsigned char) (((m&0x33)<<2)|((m&0xcc)>>2));

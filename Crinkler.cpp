@@ -28,7 +28,7 @@
 using namespace std;
 
 Crinkler::Crinkler() {
-	m_subsytem = SUBSYSTEM_WINDOWS;
+	m_subsystem = SUBSYSTEM_WINDOWS;
 	m_hashsize = 50*1024*1024;
 	m_compressionType = COMPRESSION_FAST;
 	m_useSafeImporting = false;
@@ -88,7 +88,7 @@ void Crinkler::load(const char* data, int size, const char* module) {
 
 std::string Crinkler::getEntrySymbolName() const {
 	if(m_entry.empty()) {
-		switch(m_subsytem) {
+		switch(m_subsystem) {
 			case SUBSYSTEM_CONSOLE:
 				return "mainCRTStartup";
 			case SUBSYSTEM_WINDOWS:
@@ -321,7 +321,7 @@ void Crinkler::link(const char* filename) {
 		if(m_printFlags & PRINT_LABELS)
 			verboseLabels(csr);
 		if(!m_summaryFilename.empty())
-			htmlReport(csr, m_summaryFilename.c_str(), *phase1, *phase1Untransformed, sizefill, filename);
+			htmlReport(csr, m_summaryFilename.c_str(), *phase1, *phase1Untransformed, sizefill, filename, this);
 		delete csr;
 		delete[] sizefill;
 
@@ -425,7 +425,7 @@ void Crinkler::link(const char* filename) {
 	if(m_printFlags & PRINT_LABELS)
 		verboseLabels(csr);
 	if(!m_summaryFilename.empty())
-		htmlReport(csr, m_summaryFilename.c_str(), *phase1, *phase1Untransformed, sizefill, filename);
+		htmlReport(csr, m_summaryFilename.c_str(), *phase1, *phase1Untransformed, sizefill, filename, this);
 	delete csr;
 	delete[] sizefill;
 	
@@ -474,7 +474,7 @@ void Crinkler::link(const char* filename) {
 
 		*(phase2->getPtr() + phase2->findSymbol("_BaseProbPtr")->value) = baseprob;
 		*(phase2->getPtr() + phase2->findSymbol("_ModelSkipPtr")->value) = modelskip;
-		*(phase2->getPtr() + phase2->findSymbol("_SubsystemTypePtr")->value) = m_subsytem == SUBSYSTEM_WINDOWS ? IMAGE_SUBSYSTEM_WINDOWS_GUI : IMAGE_SUBSYSTEM_WINDOWS_CUI;
+		*(phase2->getPtr() + phase2->findSymbol("_SubsystemTypePtr")->value) = m_subsystem == SUBSYSTEM_WINDOWS ? IMAGE_SUBSYSTEM_WINDOWS_GUI : IMAGE_SUBSYSTEM_WINDOWS_CUI;
 		*((short*)(phase2->getPtr() + phase2->findSymbol("_LinkerVersionPtr")->value)) = CRINKLER_LINKER_VERSION;
 	}
 	phase2->relocate(CRINKLER_IMAGEBASE);
@@ -506,7 +506,7 @@ Crinkler* Crinkler::setSummary(const char* summaryFilename) {
 }
 
 Crinkler* Crinkler::setSubsystem(SubsystemType subsystem) {
-	m_subsytem = subsystem;
+	m_subsystem = subsystem;
 	return this;
 }
 
@@ -578,4 +578,33 @@ Crinkler* Crinkler::setTruncateFloats(bool enabled) {
 Crinkler* Crinkler::setTruncateBits(int bits) {
 	m_truncateBits = bits;
 	return this;
+}
+
+void Crinkler::printOptions(FILE *out) {
+	fprintf(out, " /SUBSYSTEM:%s", m_subsystem == SUBSYSTEM_CONSOLE ? "CONSOLE" : "WINDOWS");
+	if (!m_entry.empty()) {
+		fprintf(out, " /ENTRY:%s", m_entry.c_str());
+	}
+	fprintf(out, " /COMPMODE:%s", compTypeName(m_compressionType));
+	fprintf(out, " /HASHSIZE:%d", m_hashsize/1048576);
+	if (m_compressionType != COMPRESSION_INSTANT) {
+		fprintf(out, " /HASHTRIES:%d", m_hashtries);
+		fprintf(out, " /HUNKTRIES:%d", m_hunktries);
+	}
+	for(int i = 0; i < m_rangeDlls.size(); i++) {
+		fprintf(out, " /RANGE:%s", m_rangeDlls[i].c_str());
+	}
+	for(map<string, string>::iterator it = m_replaceDlls.begin(); it != m_replaceDlls.end(); it++) {
+		fprintf(out, " /REPLACEDLL:%s=%s", it->first.c_str(), it->second.c_str());
+	}
+	if (!m_useSafeImporting) {
+		fprintf(out, " /UNSAFEIMPORT");
+	}
+	if (m_transform->getDetransformer() != NULL) {
+		// TODO: Make the transform tell its name properly
+		fprintf(out, " /TRANSFORM:CALLS");
+	}
+	if (m_truncateFloats) {
+		fprintf(out, " /TRUNCATEFLOATS:%d", m_truncateBits);
+	}
 }

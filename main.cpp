@@ -280,18 +280,7 @@ int main(int argc, char* argv[]) {
 	//print some info
 	printf("Target: %s\n", outArg.getValue());
 	printf("Subsystem type: %s\n", subsystemArg.getValue() == SUBSYSTEM_CONSOLE ? "CONSOLE" : "WINDOWS");
-	printf("Compression mode: ");
-	switch(compmodeArg.getValue()) {
-		case COMPRESSION_INSTANT:
-			printf("INSTANT\n");
-			break;
-		case COMPRESSION_FAST:
-			printf("FAST\n");
-			break;
-		case COMPRESSION_SLOW:
-			printf("SLOW\n");
-			break;
-	}
+	printf("Compression mode: %s\n", compTypeName((CompressionType)compmodeArg.getValue()));
 	printf("Hash size: %d MB\n", hashsizeArg.getValue());
 	printf("Hash tries: %d\n", hashtriesArg.getValue());
 	printf("Order tries: %d\n", hunktriesArg.getValue());

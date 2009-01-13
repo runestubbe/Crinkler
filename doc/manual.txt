@@ -12,7 +12,7 @@ VERSION HISTORY
 ---------------
 12.01.09: 1.1a: Fixed /TRUNCATEFLOATS crashing in some cases.
                 Sometimes sections were misplaced in the HTML report.
-                Various corrections to the HTML report.
+                Various improvements to the HTML report.
                 The /FIX option can input and output to the same file.
                 Helpful error messages for various unsupported features.
                 Prefer a custom entry point to a standard library one.

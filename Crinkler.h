@@ -4,6 +4,7 @@
 
 #include <map>
 #include <string>
+#include <cstdio>
 
 #include "MultiLoader.h"
 #include "HunkList.h"
@@ -33,7 +34,7 @@ class Crinkler {
 	HunkList				m_hunkPool;
 	std::string				m_entry;
 	std::string				m_summaryFilename;
-	SubsystemType			m_subsytem;
+	SubsystemType			m_subsystem;
 	int						m_hashsize;
 	int						m_hashtries;
 	int						m_hunktries;
@@ -78,8 +79,9 @@ public:
 	Crinkler* setSummary(const char* summaryFilename);
 	Crinkler* setTruncateFloats(bool enabled);
 	Crinkler* setTruncateBits(int bits);
-
 	Crinkler* setTransform(Transform* transform);
+
+	void printOptions(FILE *out);
 };
 
 #endif
