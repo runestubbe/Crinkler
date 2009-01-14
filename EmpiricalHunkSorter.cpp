@@ -14,13 +14,11 @@ EmpiricalHunkSorter::EmpiricalHunkSorter() {
 EmpiricalHunkSorter::~EmpiricalHunkSorter() {
 }
 
-int EmpiricalHunkSorter::tryHunkCombination(HunkList* hunklist, ModelList& codeModels, ModelList& dataModels, int baseprobs[8]) {
+int EmpiricalHunkSorter::tryHunkCombination(HunkList* hunklist, Transform& transform, ModelList& codeModels, ModelList& dataModels, int baseprobs[8]) {
 	int splittingPoint;
-	int imageBase = 0x400000;
-	int sectionSize = CRINKLER_SECTIONSIZE;
 
-	Hunk* phase1 = hunklist->toHunk("linkedHunk", &splittingPoint);
-	phase1->relocate(imageBase+sectionSize*2);
+	Hunk* phase1;
+	transform.linkAndTransform(hunklist, CRINKLER_CODEBASE, phase1, NULL, &splittingPoint, false);
 	
 	char contexts[2][8];
 	memset(contexts[0], 0, 8);
@@ -134,9 +132,7 @@ void randomPermute(HunkList* hunklist) {
 	}
 }
 
-
-
-void EmpiricalHunkSorter::sortHunkList(HunkList* hunklist, ModelList& codeModels, ModelList& dataModels, int baseprobs[8], int numIterations, ProgressBar* progress) {
+void EmpiricalHunkSorter::sortHunkList(HunkList* hunklist, Transform& transform, ModelList& codeModels, ModelList& dataModels, int baseprobs[8], int numIterations, ProgressBar* progress) {
 	int sections[3];
 	int fixedHunks = 0;
 	int nHunks = hunklist->getNumHunks();
@@ -148,7 +144,7 @@ void EmpiricalHunkSorter::sortHunkList(HunkList* hunklist, ModelList& codeModels
 		fixedHunks++;
 	nHunks -= fixedHunks;
 
-	int bestsize = tryHunkCombination(hunklist, codeModels, dataModels, baseprobs);
+	int bestsize = tryHunkCombination(hunklist, transform, codeModels, dataModels, baseprobs);
 	
 	if(progress)
 		progress->beginTask("Reordering sections");
@@ -163,7 +159,7 @@ void EmpiricalHunkSorter::sortHunkList(HunkList* hunklist, ModelList& codeModels
 		permuteHunklist(hunklist);
 		//randomPermute(hunklist);
 
-		int size = tryHunkCombination(hunklist, codeModels, dataModels, baseprobs);
+		int size = tryHunkCombination(hunklist, transform, codeModels, dataModels, baseprobs);
 		//printf("size: %5.2f\n", size / (BITPREC * 8.0f));
 		if(size < bestsize) {
 			printf("  Iteration: %5d  Size: %5.2f\n", i, size / (BITPREC * 8.0f));

@@ -13,7 +13,7 @@ Hunk* CallTransform::getDetransformer() {
 	return h;
 }
 
-bool CallTransform::transform(Hunk* hunk, int splittingPoint) {
+bool CallTransform::transform(Hunk* hunk, int splittingPoint, bool verbose) {
 	unsigned char* data = (unsigned char*)hunk->getPtr();
 	int size = splittingPoint;
 
@@ -30,6 +30,7 @@ bool CallTransform::transform(Hunk* hunk, int splittingPoint) {
 		}
 	}
 	*(hunk->getPtr() + hunk->findSymbol("_CallTrans")->value+5) = num;
-	printf("\nCalls transformed: %d\n", num);
+	if(verbose)
+		printf("\nCalls transformed: %d\n", num);
 	return num > 0;
 }

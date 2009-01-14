@@ -3,7 +3,7 @@
 #include "HunkList.h"
 #include "Log.h"
 
-bool Transform::linkAndTransform(HunkList* hunklist, int baseAddress, Hunk* &transformedHunk, Hunk* &untransformedHunk, int* splittingPoint) {	
+bool Transform::linkAndTransform(HunkList* hunklist, int baseAddress, Hunk* &transformedHunk, Hunk** untransformedHunk, int* splittingPoint, bool verbose) {
 	Hunk* detrans = getDetransformer();
 
 	if(detrans)
@@ -11,12 +11,13 @@ bool Transform::linkAndTransform(HunkList* hunklist, int baseAddress, Hunk* &tra
 	int sp;
 	transformedHunk = hunklist->toHunk("linked", &sp);
 	transformedHunk->relocate(baseAddress);
-	untransformedHunk = new Hunk(*transformedHunk);
+	if(untransformedHunk)
+		*untransformedHunk = new Hunk(*transformedHunk);
 	
 	hunklist->removeHunk(detrans);
 	delete detrans;
 	if(splittingPoint)
 		*splittingPoint = sp;
 
-	return transform(transformedHunk, sp);
+	return transform(transformedHunk, sp, verbose);
 }
