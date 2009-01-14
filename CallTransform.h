@@ -8,7 +8,7 @@ class CallTransform : public Transform {
 public:
 	Hunk* getDetransformer();
 	int getFlags();
-	bool transform(Hunk* hunk, int splittingPoint);
+	bool transform(Hunk* hunk, int splittingPoint, bool verbose);
 };
 
 #endif

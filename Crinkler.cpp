@@ -257,7 +257,7 @@ void Crinkler::link(const char* filename) {
 	int splittingPoint;
 
 	Hunk* phase1, *phase1Untransformed;
-	m_transform->linkAndTransform(&m_hunkPool, CRINKLER_CODEBASE, phase1, phase1Untransformed, &splittingPoint);
+	m_transform->linkAndTransform(&m_hunkPool, CRINKLER_CODEBASE, phase1, &phase1Untransformed, &splittingPoint, true);
 
 	int maxsize = phase1->getRawSize()*10;	//allocate plenty of memory
 	
@@ -371,10 +371,10 @@ void Crinkler::link(const char* filename) {
 		printf("\nIdeal compressed total size: %d\n", idealsize / BITPREC / 8);
 
 		if(m_hunktries > 0) {
-			EmpiricalHunkSorter::sortHunkList(&m_hunkPool, ml1, ml2, baseprobs, m_hunktries, m_showProgressBar ? &windowBar : NULL);
+			EmpiricalHunkSorter::sortHunkList(&m_hunkPool, *m_transform, ml1, ml2, baseprobs, m_hunktries, m_showProgressBar ? &windowBar : NULL);
 			delete phase1;
 			delete phase1Untransformed;
-			m_transform->linkAndTransform(&m_hunkPool, CRINKLER_CODEBASE, phase1, phase1Untransformed, &splittingPoint);
+			m_transform->linkAndTransform(&m_hunkPool, CRINKLER_CODEBASE, phase1, &phase1Untransformed, &splittingPoint, true);
 			//reestimate models
 			progressBar.beginTask("Reestimating models for code");
 			ml1 = ApproximateModels((unsigned char*)phase1->getPtr(), splittingPoint, baseprobs, &size, &progressBar, m_printFlags & PRINT_MODELS, m_compressionType, m_modelbits);

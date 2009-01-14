@@ -9,6 +9,6 @@ Hunk* IdentityTransform::getDetransformer() {
 	return NULL;
 }
 
-bool IdentityTransform::transform(Hunk* hunk, int splittingPoint) {
+bool IdentityTransform::transform(Hunk* hunk, int splittingPoint, bool verbose) {
 	return true;
 }
