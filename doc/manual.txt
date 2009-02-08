@@ -4,13 +4,14 @@ CRINKLER - Compressing linker for Windows specialized for 4k intros
 Aske Simon Christensen "Blueberry/Loonies"
 Rune L. H. Stubbe "Mentor/TBC"
 
-Version 1.1a (January 12, 2009)
+Version 1.1a (January 14, 2009)
 
 
 
 VERSION HISTORY
 ---------------
-12.01.09: 1.1a: Fixed /TRUNCATEFLOATS crashing in some cases.
+14.01.09: 1.1a: Fixed /TRUNCATEFLOATS crashing in some cases.
+                Improved /ORDERTRIES estimation when call transform is used.
                 Sometimes sections were misplaced in the HTML report.
                 Various improvements to the HTML report.
                 The /FIX option can input and output to the same file.
