@@ -491,7 +491,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath=".\modules\header11.asm"
+				RelativePath=".\modules\header12.asm"
 				>
 				<FileConfiguration
 					Name="Debug|Win32"
@@ -511,7 +511,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath=".\modules\import10-range.asm"
+				RelativePath=".\modules\import12-range.asm"
 				>
 				<FileConfiguration
 					Name="Debug|Win32"
@@ -531,7 +531,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath=".\modules\import10-safe-range.asm"
+				RelativePath=".\modules\import12-safe-range.asm"
 				>
 				<FileConfiguration
 					Name="Debug|Win32"
@@ -551,7 +551,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath=".\modules\import10-safe.asm"
+				RelativePath=".\modules\import12-safe.asm"
 				>
 				<FileConfiguration
 					Name="Debug|Win32"
@@ -571,7 +571,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath=".\modules\import10.asm"
+				RelativePath=".\modules\import12.asm"
 				>
 				<FileConfiguration
 					Name="Debug|Win32"
@@ -591,7 +591,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath=".\modules\import10_1k.asm"
+				RelativePath=".\modules\import12_1k.asm"
 				>
 				<FileConfiguration
 					Name="Debug|Win32"
@@ -609,34 +609,6 @@
 						Name="Asm"
 					/>
 				</FileConfiguration>
-			</File>
-		</Filter>
-		<Filter
-			Name="ProgressBars"
-			>
-			<File
-				RelativePath=".\CompositeProgressBar.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\CompositeProgressBar.h"
-				>
-			</File>
-			<File
-				RelativePath=".\ConsoleProgressBar.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\ConsoleProgressBar.h"
-				>
-			</File>
-			<File
-				RelativePath=".\WindowProgressBar.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\WindowProgressBar.h"
-				>
 			</File>
 		</Filter>
 		<Filter
@@ -710,13 +682,41 @@
 						Name="VCCustomBuildTool"
 						Description="Assembling data.."
 						CommandLine="nasmw -f win32 -Xvc modules/calltrans.asm -o modules/calltrans.obj&#x0D;&#x0A;nasmw -f win32 -Xvc modules/header11.asm -o modules/header11.obj&#x0D;&#x0A;nasmw -f win32 -Xvc modules/header10_1k.asm -o modules/header10_1k.obj&#x0D;&#x0A;nasmw -f win32 -Xvc modules/import10_1k.asm -o modules/import10_1k.obj&#x0D;&#x0A;nasmw -f win32 -Xvc modules/import10.asm -o modules/import10.obj&#x0D;&#x0A;nasmw -f win32 -Xvc modules/import10-range.asm -o modules/import10-range.obj&#x0D;&#x0A;nasmw -f win32 -Xvc modules/import10-safe-range.asm -o modules/import10-safe-range.obj&#x0D;&#x0A;nasmw -f win32 -Xvc modules/import10-safe.asm -o modules/import10-safe.obj&#x0D;&#x0A;&#x0D;&#x0A;nasmw -f win32 -Xvc $(InputPath) -o $(TargetDir)\$(InputName).obj&#x0D;&#x0A;"
-						AdditionalDependencies="modules/calltrans.asm; modules/header11.asm; modules/header10_1k.asm; modules/import10-range.asm; modules/import10-safe-range.asm; modules/import10-safe.asm; modules/import10.asm; modules/import10_1k.asm"
+						AdditionalDependencies="modules/calltrans.asm; modules/header12.asm; modules/header10_1k.asm; modules/import12-range.asm; modules/import12-safe-range.asm; modules/import12-safe.asm; modules/import12.asm; modules/import12_1k.asm"
 						Outputs="$(TargetDir)\$(InputName).obj"
 					/>
 				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\data.h"
+				>
+			</File>
+		</Filter>
+		<Filter
+			Name="ProgressBars"
+			>
+			<File
+				RelativePath=".\CompositeProgressBar.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\CompositeProgressBar.h"
+				>
+			</File>
+			<File
+				RelativePath=".\ConsoleProgressBar.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\ConsoleProgressBar.h"
+				>
+			</File>
+			<File
+				RelativePath=".\WindowProgressBar.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\WindowProgressBar.h"
 				>
 			</File>
 		</Filter>
