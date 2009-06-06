@@ -1,5 +1,6 @@
 #include "EmpiricalHunkSorter.h"
 #include <ctime>
+#include <cmath>
 #include "HunkList.h"
 #include "Hunk.h"
 #include "Compressor/CompressionStream.h"
@@ -43,11 +44,12 @@ int EmpiricalHunkSorter::tryHunkCombination(HunkList* hunklist, Transform& trans
 	return size;
 }
 
-void permuteHunklist(HunkList* hunklist) {
-	bool done = false;
-	int fixedHunks;
-	int h1i, h2i;
-	do {
+void permuteHunklist(HunkList* hunklist, int strength) {
+	int n_permutes = (rand() % strength) + 1;
+	for (int p = 0 ; p < n_permutes ; p++)
+	{
+		int fixedHunks;
+		int h1i, h2i;
 		int sections[3];
 		int nHunks = hunklist->getNumHunks();
 		fixedHunks = 0;
@@ -68,28 +70,41 @@ void permuteHunklist(HunkList* hunklist) {
 			uninitHunks = nHunks - dataHunks;
 			dataHunks -= codeHunks;
 			codeHunks -= fixedHunks;
+			if (codeHunks < 2 && dataHunks < 2 && uninitHunks < 2) return;
 			sections[0] = codeHunks;
 			sections[1] = dataHunks;
 			sections[2] = uninitHunks;
 			nHunks -= fixedHunks;
 		}
 
-		h1i = rand() % nHunks;
-		int s = 0;
-		int accum = 0;
-		//find section
-		while(h1i >= accum + sections[s]) {
-			accum += sections[s];
-			s++;
+		int s;
+		do {
+			s = rand() % 3;
+		} while (sections[s] < 2);
+		int max_n = sections[s]/2;
+		if (max_n > strength) max_n = strength;
+		int n = (rand() % max_n) + 1;
+		h1i = rand() % (sections[s] - n + 1);
+		do {
+			h2i = rand() % (sections[s] - n + 1);
+		} while (h2i == h1i);
+		int base = fixedHunks + (s > 0 ? sections[0] : 0) + (s > 1 ? sections[1] : 0);
+
+		if (h2i < h1i)
+		{
+			// Insert before
+			for (int i = 0 ; i < n ; i++)
+			{
+				hunklist->insertHunk(base+h2i+i, hunklist->removeHunk((*hunklist)[base+h1i+i]));
+			}
+		} else {
+			// Insert after
+			for (int i = 0 ; i < n ; i++)
+			{
+				hunklist->insertHunk(base+h2i+n-1, hunklist->removeHunk((*hunklist)[base+h1i]));
+			}
 		}
-		assert(s < 3);
-
-		h2i = rand() % sections[s] + accum;
-		if(h1i != h2i)
-			done = true;
-	} while(!done);	
-
-	hunklist->insertHunk(h2i+fixedHunks, hunklist->removeHunk((*hunklist)[h1i+fixedHunks]));
+	}
 }
 
 void randomPermute(HunkList* hunklist) {
@@ -156,7 +171,7 @@ void EmpiricalHunkSorter::sortHunkList(HunkList* hunklist, Transform& transform,
 		for(int j = 0; j < nHunks; j++)
 			backup[j] = (*hunklist)[j+fixedHunks];
 
-		permuteHunklist(hunklist);
+		permuteHunklist(hunklist, 2/*(int)sqrt((double)fails)/10+1*/);
 		//randomPermute(hunklist);
 
 		int size = tryHunkCombination(hunklist, transform, codeModels, dataModels, baseprobs);
