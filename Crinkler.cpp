@@ -589,7 +589,7 @@ void Crinkler::printOptions(FILE *out) {
 	fprintf(out, " /HASHSIZE:%d", m_hashsize/1048576);
 	if (m_compressionType != COMPRESSION_INSTANT) {
 		fprintf(out, " /HASHTRIES:%d", m_hashtries);
-		fprintf(out, " /HUNKTRIES:%d", m_hunktries);
+		fprintf(out, " /ORDERTRIES:%d", m_hunktries);
 	}
 	for(int i = 0; i < m_rangeDlls.size(); i++) {
 		fprintf(out, " /RANGE:%s", m_rangeDlls[i].c_str());
