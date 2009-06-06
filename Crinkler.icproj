@@ -5,7 +5,7 @@
 	Name="Crinkler"
 	ProjectGUID="{392261A4-DEA9-4E58-9BD2-5E3BF928D2CF}"
 	VCNestedProjectGUID="{B0591735-B8E8-4E45-8394-5A01A5F53984}"
-	VCNestedProjectCRC32="612094810"
+	VCNestedProjectCRC32="1369971238"
 	VCNestedProjectFileName="Crinkler.vcproj"
 	Keyword="Win32Proj">
 	<Platforms>
@@ -156,7 +156,7 @@
 				<Tool 
 					Name="CustomTool"
 					Description="Assembling data.."
-					CommandLine="nasmw -f win32 -Xvc modules/calltrans.asm -o modules/calltrans.obj&#xA;nasmw -f win32 -Xvc modules/header11.asm -o modules/header11.obj&#xA;nasmw -f win32 -Xvc modules/header10_1k.asm -o modules/header10_1k.obj&#xA;nasmw -f win32 -Xvc modules/import10_1k.asm -o modules/import10_1k.obj&#xA;nasmw -f win32 -Xvc modules/import10.asm -o modules/import10.obj&#xA;nasmw -f win32 -Xvc modules/import10-range.asm -o modules/import10-range.obj&#xA;nasmw -f win32 -Xvc modules/import10-safe-range.asm -o modules/import10-safe-range.obj&#xA;nasmw -f win32 -Xvc modules/import10-safe.asm -o modules/import10-safe.obj&#xA;&#xA;nasmw -f win32 -Xvc $(InputPath) -o $(TargetDir)\$(InputName).obj&#xA;"
+					CommandLine="nasmw -f win32 -Xvc modules/calltrans.asm -o modules/calltrans.obj&#xA;nasmw -f win32 -Xvc modules/header12.asm -o modules/header12.obj&#xA;nasmw -f win32 -Xvc modules/header10_1k.asm -o modules/header10_1k.obj&#xA;nasmw -f win32 -Xvc modules/import12_1k.asm -o modules/import12_1k.obj&#xA;nasmw -f win32 -Xvc modules/import12.asm -o modules/import12.obj&#xA;nasmw -f win32 -Xvc modules/import12-range.asm -o modules/import12-range.obj&#xA;nasmw -f win32 -Xvc modules/import12-safe-range.asm -o modules/import12-safe-range.obj&#xA;nasmw -f win32 -Xvc modules/import12-safe.asm -o modules/import12-safe.obj&#xA;&#xA;nasmw -f win32 -Xvc $(InputPath) -o $(TargetDir)\$(InputName).obj"
 					AdditionalDependencies="modules/calltrans.asm; modules/header12.asm; modules/header10_1k.asm; modules/import12-range.asm; modules/import12-safe-range.asm; modules/import12-safe.asm; modules/import12.asm; modules/import12_1k.asm"
 					Outputs="$(TargetDir)\$(InputName).obj"/>
 			</FileConfiguration>

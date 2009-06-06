@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="9,00"
+	Version="9.00"
 	Name="Crinkler"
 	ProjectGUID="{B0591735-B8E8-4E45-8394-5A01A5F53984}"
 	RootNamespace="Crinkler"
@@ -681,7 +681,7 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="Assembling data.."
-						CommandLine="nasmw -f win32 -Xvc modules/calltrans.asm -o modules/calltrans.obj&#x0D;&#x0A;nasmw -f win32 -Xvc modules/header11.asm -o modules/header11.obj&#x0D;&#x0A;nasmw -f win32 -Xvc modules/header10_1k.asm -o modules/header10_1k.obj&#x0D;&#x0A;nasmw -f win32 -Xvc modules/import10_1k.asm -o modules/import10_1k.obj&#x0D;&#x0A;nasmw -f win32 -Xvc modules/import10.asm -o modules/import10.obj&#x0D;&#x0A;nasmw -f win32 -Xvc modules/import10-range.asm -o modules/import10-range.obj&#x0D;&#x0A;nasmw -f win32 -Xvc modules/import10-safe-range.asm -o modules/import10-safe-range.obj&#x0D;&#x0A;nasmw -f win32 -Xvc modules/import10-safe.asm -o modules/import10-safe.obj&#x0D;&#x0A;&#x0D;&#x0A;nasmw -f win32 -Xvc $(InputPath) -o $(TargetDir)\$(InputName).obj&#x0D;&#x0A;"
+						CommandLine="nasmw -f win32 -Xvc modules/calltrans.asm -o modules/calltrans.obj&#x0D;&#x0A;nasmw -f win32 -Xvc modules/header12.asm -o modules/header12.obj&#x0D;&#x0A;nasmw -f win32 -Xvc modules/header10_1k.asm -o modules/header10_1k.obj&#x0D;&#x0A;nasmw -f win32 -Xvc modules/import12_1k.asm -o modules/import12_1k.obj&#x0D;&#x0A;nasmw -f win32 -Xvc modules/import12.asm -o modules/import12.obj&#x0D;&#x0A;nasmw -f win32 -Xvc modules/import12-range.asm -o modules/import12-range.obj&#x0D;&#x0A;nasmw -f win32 -Xvc modules/import12-safe-range.asm -o modules/import12-safe-range.obj&#x0D;&#x0A;nasmw -f win32 -Xvc modules/import12-safe.asm -o modules/import12-safe.obj&#x0D;&#x0A;&#x0D;&#x0A;nasmw -f win32 -Xvc $(InputPath) -o $(TargetDir)\$(InputName).obj&#x0D;&#x0A;"
 						AdditionalDependencies="modules/calltrans.asm; modules/header12.asm; modules/header10_1k.asm; modules/import12-range.asm; modules/import12-safe-range.asm; modules/import12-safe.asm; modules/import12.asm; modules/import12_1k.asm"
 						Outputs="$(TargetDir)\$(InputName).obj"
 					/>
