@@ -10,6 +10,8 @@ extern	_ImageBase
 
 global	_header
 global	_DepackEntry
+global	_WriteBit
+global	_ClearHash
 global  _LinkerVersionPtr
 global	_SubsystemTypePtr
 global	_ModelSkipPtr
@@ -88,6 +90,7 @@ _SubsystemTypePtr:
 	mov		esi, _Models
 	push	byte 0
 	pop		ecx
+EndCheckJump:
 	jmp		_DepackEntry
 	dw		0
 
@@ -98,19 +101,38 @@ dd 3				;Number of RVAs and Sizes
 
 ;Data directories
 ;directory 0 (export table)
-dd "HASH";HeaderRVA(DummyDLL)		;RVA
-dd "HASH";HeaderRVA(DummyImport)	;Size
+;dd HeaderRVA(DummyDLL)		;RVA
+;dd HeaderRVA(DummyImport)	;Size
 ;directory 1 (import table)
-dd 0;HeaderRVA(DummyImportTable)	;RVA
+;dd HeaderRVA(DummyImportTable)	;RVA
+_WriteBit:
+	js	.zero
+	push edi
+	xor edi, byte 7
+	bts	[edx], edi
+	pop edi
+.zero:
+	jmp short .nextbit
 db "HASH"			;Size
 ;directory 2
-dd 0h				;RVA
-dd 0h				;Size
-
+;dd 0h				;RVA
+.nextbit:
+	inc	edi
+	jmp	short EndCheckJump
+	db 0
+;dd 0h				;Size
 ;Section headers
 ;Name
-DummyDLL:
-dd "HASH","HASH";db "lz32.dll"
+;db "lz32.dll"
+_ClearHash:
+	rep stosw
+	or	al, [esi]
+	popa
+	lea	esi, [esi + ModelSkipDummy]
+ModelSkipPtrP1:
+	jpo	EndCheckJump
+	ret
+
 dd _VirtualSize+10000h;Virtual size (= Section size)
 dd 00010000h		;Virtual address (= Section alignment)
 dd 200h				;Size of raw data
@@ -132,25 +154,25 @@ ModelEnd:
 	jg	AritDecode
 
 	pop	edx
-	push	edx
-	js	.zero
-	push edi
-	xor edi, byte 7
-	bts	[edx], edi
-	pop edi
-.zero:
-	inc	edi
-	jmp	short EndCheck
+	push edx
+	jmp near _WriteBit
+;	js	.zero
+;	push edi
+;	xor edi, byte 7
+;	bts	[edx], edi
+;	pop edi
+;.zero:
+;	inc	edi
+;	jmp	short EndCheck
 
-ClearHash:
-	rep stosw
-	or	al, [esi]
-	popa
-	lea	esi, [esi + ModelSkipDummy]
-ModelSkipPtrP1:
-	jpo	EndCheck
-
-	ret
+;ClearHash:
+;	rep stosw
+;	or	al, [esi]
+;	popa
+;	lea	esi, [esi + ModelSkipDummy]
+;ModelSkipPtrP1:
+;	jpo	EndCheck
+;	ret
 
 	;; ebp = source bit index
 	;; edi = dest bit index
@@ -250,7 +272,7 @@ IncreaseWeight:
 InitHash:
 	mov	edi, _HashTable
 	mov	ecx, _HashTableSize
-	jnc	ClearHash
+	jnc	near _ClearHash
 
 	div	ecx
 	;; edx = hash
