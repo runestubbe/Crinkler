@@ -15,15 +15,15 @@ SoftwareCompressionStateEvaluator::~SoftwareCompressionStateEvaluator() {
 	delete[] m_sums;
 }
 
-bool SoftwareCompressionStateEvaluator::init(ModelPredictions* models, int length, int baseprobs[8])
+bool SoftwareCompressionStateEvaluator::init(ModelPredictions* models, int length, int baseprob)
 {
 	m_length = length;
 	m_models = models;
-	memcpy(m_baseprobs, baseprobs, sizeof(baseprobs));
+	m_baseprob = baseprob;
 
 	m_sums = new CounterPair[length];
 	for(int i = 0; i < length; i++) {
-		m_sums[i].p0 = m_sums[i].p1 = baseprobs[i&7];
+		m_sums[i].p0 = m_sums[i].p1 = baseprob;
 		m_sums[i].old_size = BITPREC_TABLE;
 	}
 	m_compressedSize = BITPREC_TABLE*length;

@@ -10,14 +10,14 @@ class SoftwareCompressionStateEvaluator : public CompressionStateEvaluator {
 	int						m_length;
 	CounterPair*			m_sums;
 	long long				m_compressedSize;
-	int						m_baseprobs[8];
+	int						m_baseprob;
 
 	long long changeWeight(int modelIndex, int diffw);
 public:
 	SoftwareCompressionStateEvaluator();
 	~SoftwareCompressionStateEvaluator();
 
-	bool init(ModelPredictions* models, int length, int baseprobs[8]);
+	bool init(ModelPredictions* models, int length, int baseprob);
 	long long evaluate(const ModelList& models);
 };
 

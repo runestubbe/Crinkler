@@ -16,6 +16,7 @@ public:
 	void update(int n, int max);
 
 	void addProgressBar(ProgressBar* progressBar);
+	void clearProgressBars() { m_progressBars.clear(); };
 };
 
 #endif

@@ -6,6 +6,9 @@ extern "C" {
 	char headerObj[];
 	char headerObj_end[];
 
+	char header11Obj[];
+	char header11Obj_end[];
+
 	char header1KObj[];
 	char header1KObj_end[];
 

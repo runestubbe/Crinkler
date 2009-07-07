@@ -11,7 +11,7 @@ class CompressionState {
 	CompressionStateEvaluator* m_stateEvaluator;
 	ModelPredictions	applyModel(const unsigned char* data, int bitlength, unsigned char mask);
 public:
-	CompressionState(const unsigned char* data, int size, int baseprobs[8], CompressionStateEvaluator* evaluator);
+	CompressionState(const unsigned char* data, int size, int baseprob, CompressionStateEvaluator* evaluator);
 	~CompressionState();
 	
 	int setModels(const ModelList& models);

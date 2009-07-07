@@ -18,6 +18,7 @@
 #include "IdentityTransform.h"
 #include "Fix.h"
 #include "MemoryFile.h"
+#include "misc.h"
 
 using namespace std;
 
@@ -175,6 +176,7 @@ int main(int argc, char* argv[]) {
 						PARAM_IS_SWITCH|PARAM_FORBID_MULTIPLE_DEFINITIONS, "");
 	CmdParamSwitch crinklerFlag("CRINKLER", "enables crinkler", 0);
 	CmdParamSwitch fixFlag("FIX", "fix old crinkler files", 0);
+	CmdParamSwitch recompressFlag("RECOMPRESS", "recompress a crinkler file", 0);
 	CmdParamSwitch unsafeImportArg("UNSAFEIMPORT", "crash if a dll is missing", 0);
 	CmdParamSwitch showProgressArg("PROGRESSGUI", "shows a progressbar", 0);
 	CmdParamSwitch tinyCompressor("1K", "1k mode", PARAM_HIDE_IN_PARAM_LIST);
@@ -201,7 +203,7 @@ int main(int argc, char* argv[]) {
 
 	cmdline.addParams(&crinklerFlag, &hashsizeArg, &hashtriesArg, &hunktriesArg, &entryArg, &outArg, &summaryArg, &unsafeImportArg,
 						&subsystemArg, &truncateFloats, &compmodeArg, &printArg, &transformArg, &libpathArg, 
-						&rangeImportArg, &replaceDllArg, &filesArg, &priorityArg, &showProgressArg, 
+						&rangeImportArg, &replaceDllArg, &filesArg, &priorityArg, &showProgressArg, &recompressFlag,
 #ifdef INCLUDE_1K_PACKER
 						&tinyCompressor,
 #endif
@@ -232,7 +234,7 @@ int main(int argc, char* argv[]) {
 		if(cmdline2.parse()) {
 			const char* infilename = filesArg.getValue();
 			filesArg.next();
-			if(infilename == NULL || filesArg.hasNext() != 0) {
+			if(infilename == NULL || filesArg.hasNext()) {
 				Log::error("", "Crinkler fix takes exactly one file argument");
 				return 1;
 			}
@@ -244,21 +246,64 @@ int main(int argc, char* argv[]) {
 		return 1;
 	}
 
-	if(!cmdline.parse()) {
-		return 1;
-	}
-
-
 	//set priority
 	SetPriorityClass(GetCurrentProcess(), priorityArg.getValue());
 
 	Crinkler crinkler;
 
+
+	//recompress
+	if(cmdline.removeToken("/RECOMPRESS")) {
+		CmdLineInterface cmdline2(CRINKLER_TITLE, CMDI_PARSE_FILES);
+		outArg.setDefault("fixed.exe");
+		hashsizeArg.setDefault(-1);
+		compmodeArg.setDefault(COMPRESSION_INSTANT);
+
+		cmdline2.addParams(&recompressFlag, &outArg, &hashsizeArg, &compmodeArg, &summaryArg, &showProgressArg, &filesArg, NULL);
+		cmdline2.setCmdParameters(argc, argv);
+		if(cmdline2.parse()) {
+			crinkler.setHashsize(hashsizeArg.getValue());
+			crinkler.setCompressionType((CompressionType)compmodeArg.getValue());
+			crinkler.setSummary(summaryArg.getValue());
+			crinkler.showProgressBar(showProgressArg.getValue());
+
+			IdentityTransform identTransform;
+			crinkler.setTransform(&identTransform);
+
+			const char* infilename = filesArg.getValue();
+			filesArg.next();
+			if(infilename == NULL || filesArg.hasNext()) {
+				printf("%s\n", filesArg.getValue());
+				Log::error("", "Crinkler recompression takes exactly one file argument");
+				return 1;
+			}
+
+			printf("Target: %s\n", outArg.getValue());
+			printf("Compression mode: %s\n", compTypeName((CompressionType)compmodeArg.getValue()));
+
+			if(hashsizeArg.getValue() == -1)
+				printf("Hash size: Inherited from binary\n");
+			else
+				printf("Hash size: %d MB\n", hashsizeArg.getValue());
+
+			printf("Hash tries: %d\n", hashtriesArg.getValue());
+			printf("Report: %s\n", strlen(summaryArg.getValue()) > 0 ? summaryArg.getValue() : "NONE");
+
+			crinkler.recompress(infilename, outArg.getValue());
+			return 0;
+		}
+
+		return 1;
+	}
+
+	if(!cmdline.parse()) {
+		return 1;
+	}
+
 	//set crinkler options
 	crinkler.set1KMode(tinyCompressor.getValue());
 	crinkler.setImportingType(!unsafeImportArg.getValue());
 	crinkler.setEntry(entryArg.getValue());
-	crinkler.setSummary(summaryArg.getValue());
 	crinkler.setHashsize(hashsizeArg.getValue());
 	crinkler.setSubsystem((SubsystemType)subsystemArg.getValue());
 	crinkler.setCompressionType((CompressionType)compmodeArg.getValue());
@@ -268,6 +313,9 @@ int main(int argc, char* argv[]) {
 	crinkler.showProgressBar(showProgressArg.getValue());
 	crinkler.setTruncateFloats(truncateFloats.getNumMatches() > 0);
 	crinkler.setTruncateBits(truncateFloats.getValue());
+	crinkler.setSummary(summaryArg.getValue());
+
+
 
 	//transforms
 	IdentityTransform identTransform;
@@ -276,6 +324,7 @@ int main(int argc, char* argv[]) {
 		crinkler.setTransform(&callTransform);
 	else
 		crinkler.setTransform(&identTransform);
+
 
 	//print some info
 	printf("Target: %s\n", outArg.getValue());
@@ -364,5 +413,7 @@ int main(int argc, char* argv[]) {
 		printf("\n");
 	}
 
+	int stime = GetTickCount();
 	crinkler.link(outArg.getValue());
+	printf("time spent: %dms\n", GetTickCount()-stime);
 }

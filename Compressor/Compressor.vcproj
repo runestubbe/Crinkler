@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="9.00"
+	Version="9,00"
 	Name="Compressor"
 	ProjectGUID="{869F3A10-26E8-49E6-980F-FE72F642714F}"
 	RootNamespace="Compressor"
@@ -307,14 +307,6 @@
 				>
 			</File>
 			<File
-				RelativePath=".\GPUCompressionStateEvaluator.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\GPUCompressionStateEvaluator.h"
-				>
-			</File>
-			<File
 				RelativePath=".\SoftwareCompressionStateEvaluator.cpp"
 				>
 			</File>
@@ -325,18 +317,6 @@
 			<Filter
 				Name="Shaders"
 				>
-				<File
-					RelativePath=".\downscale_ps.hlsl"
-					>
-				</File>
-				<File
-					RelativePath=".\shader_ps.hlsl"
-					>
-				</File>
-				<File
-					RelativePath=".\shader_vs.hlsl"
-					>
-				</File>
 			</Filter>
 		</Filter>
 	</Files>

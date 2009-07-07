@@ -14,6 +14,7 @@ public:
 	int parse(const char* str, char* errorMsg, int buffsize);
 
 	const char* getValue();
+	void setDefault(const char* str) { m_strings.clear(); m_strings.push_back(str); m_it = m_strings.begin();}
 	void next();
 	bool hasNext() const;
 	std::list<std::string> getList();

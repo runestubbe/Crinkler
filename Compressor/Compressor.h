@@ -10,13 +10,8 @@ enum CompressionType {COMPRESSION_INSTANT, COMPRESSION_FAST, COMPRESSION_SLOW, C
 #include "aritcode.h"
 #include "CompressionStream.h"
 #include "ProgressBar.h"
-
-struct DataPacket {
-	char* data;
-	int size;
-};
-
 #include "ModelList.h"
+
 class CompressedData {
 	char* m_data;
 	int m_size;
@@ -34,7 +29,7 @@ public:
 };
 
 //Approximates the models for a given data chunk
-ModelList ApproximateModels(const unsigned char* data, int datasize, int baseprobs[8], int* compsize, ProgressBar* progressBar, bool verbose, CompressionType compressionType, int modelbits);
+ModelList ApproximateModels(const unsigned char* data, int datasize, int baseprob, int* compsize, ProgressBar* progressBar, bool verbose, CompressionType compressionType);
 ModelList InstantModels();
 
 void TinyCompress(unsigned char* org_data, int size, unsigned char* compressed, int& compressed_size,

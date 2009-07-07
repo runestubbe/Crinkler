@@ -4,8 +4,6 @@ bits	32
 	global	_Import
 
 	extern __imp__LoadLibraryA@4
-
-
 	extern	_DLLNames
 	extern	_ImportList
 	extern  _HashFamily
@@ -43,7 +41,7 @@ DLLLoop:
 ScanProcedureNamesLoop:
 	mov		eax, [edi + 20h]		; edi = name pointers table offset
 	add		eax, ebp				; edi = name pointers table address
-	mov		esi, [eax + ecx*4]		; esi = name pointer offset
+	mov		esi, [eax + ecx*4 - 4]		; esi = name pointer offset
 	add		esi, ebp				; esi = name pointer address
 	xor		edx, edx
 CalculateHashLoop:
@@ -58,7 +56,7 @@ CalculateHashLoop:
 	; Found, get the address from the table
 	mov		eax, [edi + 24h]		; eax = ordinals table RNA offset
 	add		eax, ebp				; eax = ordinals table RNA address
-	movzx	ebx, word [eax + ecx*2]		; ecx = function ordinal
+	movzx	ebx, word [eax + ecx*2 - 2]		; exc = function ordinal
 	mov		eax, [edi + 1ch]		; eax = address table RVA offset
 	add		eax, ebp				; eax = address table RVA address
 	mov		eax, [eax + ebx*4]		; ebp = address of function RVA address
