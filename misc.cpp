@@ -18,3 +18,14 @@ unsigned long long roundInt64(unsigned long long v, int bits) {
 	}
 	return quotient<<(64-bits);
 }
+
+int numberOfModelsInWeightMask(unsigned int mask) {
+	int n = -1;
+	do {
+		while(mask & 0x80000000)
+			mask <<= 1;
+		mask <<= 1;
+		n++;
+	} while(mask);
+	return n;
+}

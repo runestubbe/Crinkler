@@ -26,6 +26,10 @@ ModelList::ModelList(const ModelList& ml) {
 		memcpy(m_models, ml.m_models, nmodels*sizeof(Model));
 }
 
+ModelList::ModelList(const unsigned char* models, int weightmask) {
+	setFromModelsAndMask(models, weightmask);
+}
+
 ModelList& ModelList::operator=(const ModelList& ml) {
 	this->nmodels = ml.nmodels;
 	if(nmodels > 0)
@@ -76,4 +80,22 @@ unsigned int ModelList::getMaskList(unsigned char* masks, bool terminate) const 
 	}
 
 	return weightmask & (-2 + (terminate ^ parity(weightmask)));
+}
+
+void ModelList::setFromModelsAndMask(const unsigned char* models, int weightmask) {
+	nmodels = 0;
+	int weight = 0;
+	do {
+		while(weightmask & 0x80000000) {
+			weight++;
+			weightmask <<= 1;
+		}
+		weightmask <<= 1;
+
+		if(weightmask) {
+			Model m = {weight, models[nmodels]};
+			m_models[nmodels] = m;
+			nmodels++;
+		}
+	} while(weightmask);
 }

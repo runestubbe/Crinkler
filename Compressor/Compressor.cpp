@@ -3,7 +3,6 @@
 #include "Compressor.h"
 #include "CompressionState.h"
 #include "SoftwareCompressionStateEvaluator.h"
-#include "GPUCompressionStateEvaluator.h"
 #include "ModelList.h"
 #include "aritcode.h"
 #include "model.h"
@@ -110,7 +109,7 @@ unsigned int optimizeWeights(CompressionState& cs, ModelList& models) {
 	return bestsize;
 }
 
-unsigned int tryWeights(CompressionState& cs, ModelList& models, int bestsize, CompressionType compressionType, int modelbits) {
+unsigned int tryWeights(CompressionState& cs, ModelList& models, int bestsize, CompressionType compressionType) {
 	unsigned int size;
 	switch (compressionType) {
 	case COMPRESSION_FAST:
@@ -121,7 +120,7 @@ unsigned int tryWeights(CompressionState& cs, ModelList& models, int bestsize, C
 		size = optimizeWeights(cs, models);
 		break;
 	}
-	size += modelbits*BITPREC*models.nmodels;
+	size += BITPREC*models.nmodels;
 	return size;
 }
 
@@ -142,7 +141,7 @@ ModelList InstantModels() {
 	return models;
 }
 
-ModelList ApproximateModels(const unsigned char* data, int datasize, int baseprobs[8], int* compsize, ProgressBar* progressBar, bool verbose, CompressionType compressionType, int modelbits) {
+ModelList ApproximateModels(const unsigned char* data, int datasize, int baseprob, int* compsize, ProgressBar* progressBar, bool verbose, CompressionType compressionType) {
 	unsigned char masks[256];
 	int i,m;
 	int mask;
@@ -152,7 +151,7 @@ ModelList ApproximateModels(const unsigned char* data, int datasize, int basepro
 	ModelList models;
 	SoftwareCompressionStateEvaluator evaluator;
 
-	CompressionState cs(data, datasize, baseprobs, &evaluator);
+	CompressionState cs(data, datasize, baseprob, &evaluator);
 
 	for (m = 0 ; m <= 255 ; m++) {
 		mask = m;
@@ -179,7 +178,7 @@ ModelList ApproximateModels(const unsigned char* data, int datasize, int basepro
 			models[models.nmodels].weight = 0;
 			models.nmodels++;
 
-			size = tryWeights(cs, models, bestsize, compressionType, modelbits);
+			size = tryWeights(cs, models, bestsize, compressionType);
 
 			if (size < bestsize) {
 				bestsize = size;
@@ -189,7 +188,7 @@ ModelList ApproximateModels(const unsigned char* data, int datasize, int basepro
 					Model rmod = models[m];
 					models.nmodels -= 1;
 					models[m] = models[models.nmodels];
-					size = tryWeights(cs, models, bestsize, compressionType, modelbits);
+					size = tryWeights(cs, models, bestsize, compressionType);
 					if (size < bestsize) {
 						bestsize = size;
 					} else {
@@ -204,7 +203,7 @@ ModelList ApproximateModels(const unsigned char* data, int datasize, int basepro
 					for (m = models.nmodels-1 ; m >= 0 ; m--) {
 						Model rmod = models[m];
 						models[m] = models[models.nmodels];
-						size = tryWeights(cs, models, bestsize, compressionType, modelbits);
+						size = tryWeights(cs, models, bestsize, compressionType);
 						if (size < bestsize) {
 							bestsize = size;
 							break;
@@ -344,7 +343,7 @@ void TinyCompress(unsigned char* org_data, int size, unsigned char* compressed, 
 		best_exclude = -1;
 		unsigned int prev_best_modelmask = best_modelmask;
 		#pragma omp parallel for
-		for(int i = 0; i < 31; i++) {
+		for(int i = 0; i < 32; i++) {
 			unsigned int modelmask = prev_best_modelmask ^ (1<<i);
 			#pragma omp parallel for
 			for(int boost_factor = 4; boost_factor < 8; boost_factor++) {

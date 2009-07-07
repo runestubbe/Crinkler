@@ -219,6 +219,10 @@ void Hunk::setVirtualSize(int size) {
 	m_virtualsize = size;
 }
 
+void Hunk::setRawSize(int size) {
+	m_data.resize(size);
+}
+
 void Hunk::setAlignmentBits(int alignmentBits) {
 	m_alignmentBits = alignmentBits;
 }

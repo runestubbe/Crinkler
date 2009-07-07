@@ -48,7 +48,7 @@ inline int AritSize2(int right_prob, int wrong_prob) {
 
 	int right_len, total_len;
 	int total_prob = right_prob + wrong_prob;
-	if(total_prob < 4096) {
+	if(total_prob < BITPREC_TABLE) {
 		return LogTable[total_prob] - LogTable[right_prob];
 	}
 	right_len = BitScanReverse_MY(right_prob);

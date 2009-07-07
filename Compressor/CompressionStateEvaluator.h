@@ -22,7 +22,7 @@ struct ModelPredictions {
 class CompressionStateEvaluator {
 public:
 	virtual ~CompressionStateEvaluator() {};
-	virtual bool init(ModelPredictions* models, int length, int baseprobs[8]) = 0;
+	virtual bool init(ModelPredictions* models, int length, int baseprob) = 0;
 	virtual long long evaluate(const ModelList& models) = 0;
 };
 

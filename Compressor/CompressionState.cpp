@@ -81,7 +81,7 @@ ModelPredictions CompressionState::applyModel(const unsigned char* data, int bit
 	return mp;
 }
 
-CompressionState::CompressionState(const unsigned char* data, int size, int baseprobs[8], CompressionStateEvaluator* evaluator) :
+CompressionState::CompressionState(const unsigned char* data, int size, int baseprob, CompressionStateEvaluator* evaluator) :
 	m_size(size*8), m_stateEvaluator(evaluator)
 {	
 	//create temporary data buffer with heading zeros
@@ -95,7 +95,7 @@ CompressionState::CompressionState(const unsigned char* data, int size, int base
 		m_models[mask] = applyModel(data2+8, m_size, (unsigned char)mask);
 	}
 	delete[] data2;
-	m_stateEvaluator->init(m_models, size*8, baseprobs);
+	m_stateEvaluator->init(m_models, size*8, baseprob);
 	m_compressedsize = BITPREC_TABLE*(long long)m_size;
 }
 

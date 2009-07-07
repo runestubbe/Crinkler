@@ -333,10 +333,12 @@ HunkList* ImportHandler::createImportHunks1K(HunkList* hunklist, bool verbose) {
 	int family = findCollisionFreeHashFamily(dlls, importHunks);
 
 	string dllnames;
+	const int MAX_NAME_LENGTH = 9;
 	for(set<string>::iterator it = dlls.begin(); it != dlls.end(); it++) {
+		while(dllnames.size() % MAX_NAME_LENGTH)
+			dllnames.push_back(0);
 		if(it->compare("kernel32")) {
 			string name = *it;
-			name.resize(9);
 			dllnames += name;
 		}
 	}
@@ -351,7 +353,7 @@ HunkList* ImportHandler::createImportHunks1K(HunkList* hunklist, bool verbose) {
 	}
 
 	HunkList* newHunks = new HunkList;
-	Hunk* dllNamesHunk = new Hunk("DllNames", dllnames.c_str(), HUNK_IS_WRITEABLE, 0, dllnames.size(), dllnames.size());
+	Hunk* dllNamesHunk = new Hunk("DllNames", dllnames.c_str(), HUNK_IS_WRITEABLE, 0, dllnames.size()+1, dllnames.size()+1);
 	dllNamesHunk->addSymbol(new Symbol("_DLLNames", 0, SYMBOL_IS_RELOCATEABLE, dllNamesHunk));
 	newHunks->addHunkBack(dllNamesHunk);
 	newHunks->addHunkBack(importList);

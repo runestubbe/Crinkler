@@ -17,11 +17,10 @@ public:
 	CompressionStream(unsigned char* data, int* sizefill, int maxsize);
 	~CompressionStream();
 
-	void Compress(const unsigned char* data, int size, const ModelList& models, int baseprobs[8], int hashsize, bool finish);
-	int EvaluateSize(const unsigned char* d, int size, const ModelList& models, int baseprobs[8], char* context);
-	int EvaluateSizeQuick(const unsigned char* d, int size, const ModelList& models, int baseprobs[8], char* context, int bitpos);
-	int EvaluateSizeQuick_OLD(const unsigned char* d, int size, const ModelList& models, int baseprobs[8], char* context);
-	int close();
+	void Compress(const unsigned char* data, int size, const ModelList& models, int baseprob, int hashsize, bool finish);
+	int EvaluateSize(const unsigned char* data, int size, const ModelList& models, int baseprob, char* context);
+	int EvaluateSizeQuick(const unsigned char* data, int size, const ModelList& models, int baseprob, char* context, int bitpos);
+	int Close();
 };
 
 #endif

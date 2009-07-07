@@ -7,12 +7,12 @@ class ModelList;
 class ProgressBar;
 class Transform;
 class EmpiricalHunkSorter {
-	static int tryHunkCombination(HunkList* hunklist, Transform& transform, ModelList& codeModels, ModelList& dataModels, int baseprobs[8]);
+	static int tryHunkCombination(HunkList* hunklist, Transform& transform, ModelList& codeModels, ModelList& dataModels, int baseprob);
 public:
 	EmpiricalHunkSorter();
 	~EmpiricalHunkSorter();
 
-	static void sortHunkList(HunkList* hunklist, Transform& transform, ModelList& codeModels, ModelList& dataModels, int baseprobs[8], int numIterations, ProgressBar* progress);
+	static void sortHunkList(HunkList* hunklist, Transform& transform, ModelList& codeModels, ModelList& dataModels, int baseprob, int numIterations, ProgressBar* progress);
 };
 
 #endif

@@ -15,7 +15,7 @@ EmpiricalHunkSorter::EmpiricalHunkSorter() {
 EmpiricalHunkSorter::~EmpiricalHunkSorter() {
 }
 
-int EmpiricalHunkSorter::tryHunkCombination(HunkList* hunklist, Transform& transform, ModelList& codeModels, ModelList& dataModels, int baseprobs[8]) {
+int EmpiricalHunkSorter::tryHunkCombination(HunkList* hunklist, Transform& transform, ModelList& codeModels, ModelList& dataModels, int baseprob) {
 	int splittingPoint;
 
 	Hunk* phase1;
@@ -31,9 +31,9 @@ int EmpiricalHunkSorter::tryHunkCombination(HunkList* hunklist, Transform& trans
 	#pragma omp parallel for
 	for(int i = 0; i < 16; i++) {
 		if(i < 8)
-			sizes[i] = cs.EvaluateSizeQuick((unsigned char*)phase1->getPtr(), splittingPoint, codeModels, baseprobs, contexts[0], i);
+			sizes[i] = cs.EvaluateSizeQuick((unsigned char*)phase1->getPtr(), splittingPoint, codeModels, baseprob, contexts[0], i);
 		else
-			sizes[i] = cs.EvaluateSizeQuick((unsigned char*)phase1->getPtr()+splittingPoint, phase1->getRawSize()-splittingPoint, dataModels, baseprobs, contexts[1], i - 8);
+			sizes[i] = cs.EvaluateSizeQuick((unsigned char*)phase1->getPtr()+splittingPoint, phase1->getRawSize()-splittingPoint, dataModels, baseprob, contexts[1], i - 8);
 	}
 	delete phase1;
 
@@ -147,7 +147,7 @@ void randomPermute(HunkList* hunklist) {
 	}
 }
 
-void EmpiricalHunkSorter::sortHunkList(HunkList* hunklist, Transform& transform, ModelList& codeModels, ModelList& dataModels, int baseprobs[8], int numIterations, ProgressBar* progress) {
+void EmpiricalHunkSorter::sortHunkList(HunkList* hunklist, Transform& transform, ModelList& codeModels, ModelList& dataModels, int baseprob, int numIterations, ProgressBar* progress) {
 	int sections[3];
 	int fixedHunks = 0;
 	int nHunks = hunklist->getNumHunks();
@@ -159,7 +159,7 @@ void EmpiricalHunkSorter::sortHunkList(HunkList* hunklist, Transform& transform,
 		fixedHunks++;
 	nHunks -= fixedHunks;
 
-	int bestsize = tryHunkCombination(hunklist, transform, codeModels, dataModels, baseprobs);
+	int bestsize = tryHunkCombination(hunklist, transform, codeModels, dataModels, baseprob);
 	
 	if(progress)
 		progress->beginTask("Reordering sections");
@@ -174,7 +174,7 @@ void EmpiricalHunkSorter::sortHunkList(HunkList* hunklist, Transform& transform,
 		permuteHunklist(hunklist, 2/*(int)sqrt((double)fails)/10+1*/);
 		//randomPermute(hunklist);
 
-		int size = tryHunkCombination(hunklist, transform, codeModels, dataModels, baseprobs);
+		int size = tryHunkCombination(hunklist, transform, codeModels, dataModels, baseprob);
 		//printf("size: %5.2f\n", size / (BITPREC * 8.0f));
 		if(size < bestsize) {
 			printf("  Iteration: %5d  Size: %5.2f\n", i, size / (BITPREC * 8.0f));

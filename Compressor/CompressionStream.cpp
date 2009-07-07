@@ -34,7 +34,7 @@ struct TinyHashEntry {
 	unsigned char used;
 };
 
-void CompressionStream::Compress(const unsigned char* d, int size, const ModelList& models, int baseprobs[8], int hashsize, bool finish) {
+void CompressionStream::Compress(const unsigned char* d, int size, const ModelList& models, int baseprob, int hashsize, bool finish) {
 	hashsize /= 2;
 	int bitlength = size*8;
 	unsigned char* data = new unsigned char[size+MAX_CONTEXT_LENGTH];
@@ -72,7 +72,7 @@ void CompressionStream::Compress(const unsigned char* d, int size, const ModelLi
 		}
 
 		// Query models
-		unsigned int probs[2] = { baseprobs[bitpos&7], baseprobs[bitpos&7]};
+		unsigned int probs[2] = { baseprob, baseprob };
 		for(int m = 0 ; m < nmodels; m++) {
 			unsigned int hash = ModelHash(data, bitpos, weightmasks[m]) % hashsize;
 			unsigned int tinyHash = hash & (tinyhashsize-1);
@@ -118,7 +118,7 @@ void CompressionStream::Compress(const unsigned char* d, int size, const ModelLi
 	delete[] data;
 }
 
-int CompressionStream::EvaluateSize(const unsigned char* d, int size, const ModelList& models, int baseprobs[8], char* context) {
+int CompressionStream::EvaluateSize(const unsigned char* d, int size, const ModelList& models, int baseprob, char* context) {
 	int bitlength = size*8;
 	unsigned char* data = new unsigned char[size+MAX_CONTEXT_LENGTH];
 	memcpy(data, context, MAX_CONTEXT_LENGTH);
@@ -146,8 +146,8 @@ int CompressionStream::EvaluateSize(const unsigned char* d, int size, const Mode
 
 	unsigned int* sums = new unsigned int[bitlength*2];	//summed predictions
 	for(int i = 0; i < bitlength; i++) {
-		sums[i*2] = baseprobs[i & 7];
-		sums[i*2+1] = baseprobs[i & 7];
+		sums[i*2] = baseprob;
+		sums[i*2+1] = baseprob;
 	}
 
 	unsigned int tinyhashsize = previousPowerOf2(bitlength*2);
@@ -209,7 +209,7 @@ inline unsigned int QuickHash(const byte *data, int pos, __m64 mask, int bytemas
 	return contexthash + ((unsigned int)databyte);
 }
 
-int CompressionStream::EvaluateSizeQuick(const unsigned char* d, int size, const ModelList& models, int baseprobs[8], char* context, int bitpos) {
+int CompressionStream::EvaluateSizeQuick(const unsigned char* d, int size, const ModelList& models, int baseprob, char* context, int bitpos) {
 	int bitlength = size*8;
 	unsigned char* data = new unsigned char[size+MAX_CONTEXT_LENGTH];
 	memcpy(data, context, MAX_CONTEXT_LENGTH);
@@ -225,8 +225,8 @@ int CompressionStream::EvaluateSizeQuick(const unsigned char* d, int size, const
 	unsigned int* sums = new unsigned int[size*2];	//summed predictions
 
 	for(int i = 0; i < size; i++) {
-		sums[i*2] = baseprobs[bitpos];
-		sums[i*2+1] = baseprobs[bitpos];
+		sums[i*2] = baseprob;
+		sums[i*2+1] = baseprob;
 	}
 
 	int bytemask = (0xff00 >> bitpos);
@@ -304,6 +304,6 @@ CompressionStream::CompressionStream(unsigned char* data, int* sizefill, int max
 CompressionStream::~CompressionStream() {
 }
 
-int CompressionStream::close(void) {
+int CompressionStream::Close(void) {
 	return (AritCodeEnd(&m_aritstate) + 7) / 8;
 }

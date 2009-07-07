@@ -1,5 +1,7 @@
 global _headerObj
 global _headerObj_end
+global _header11Obj
+global _header11Obj_end
 global _header1KObj
 global _header1KObj_end
 global _import1KObj
@@ -20,6 +22,10 @@ section	.data
 _headerObj:
 	incbin "modules/header12.obj"
 _headerObj_end:
+
+_header11Obj:
+	incbin "modules/header11.obj"
+_header11Obj_end:
 
 _header1KObj:
 	incbin "modules/header10_1k.obj"

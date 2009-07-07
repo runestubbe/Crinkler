@@ -14,6 +14,7 @@ public:
 				int minimumValue, int maximumValue, int defaultValue);
 
 	int getValue() const;
+	void setDefault(int v) { m_defaultValue = v; m_value = v; }
 
 	int parse(const char* str, char* errorMsg, int buffsize);
 	std::string toString() const;

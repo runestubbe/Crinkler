@@ -107,6 +107,7 @@ public:
 	void printSymbols() const;
 	void relocate(int imageBase);
 	void setVirtualSize(int size);
+	void setRawSize(int size);
 	void setAlignmentBits(int alignmentBits);
 	void trim();
 	void chop(int size);
