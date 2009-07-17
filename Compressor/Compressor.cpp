@@ -120,7 +120,7 @@ unsigned int tryWeights(CompressionState& cs, ModelList& models, int bestsize, C
 		size = optimizeWeights(cs, models);
 		break;
 	}
-	size += BITPREC*models.nmodels;
+	size += 8*BITPREC*models.nmodels;
 	return size;
 }
 

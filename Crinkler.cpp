@@ -27,7 +27,7 @@ using namespace std;
 
 Crinkler::Crinkler():
 	m_subsystem(SUBSYSTEM_WINDOWS),
-	m_hashsize(50*1024*1024),
+	m_hashsize(100*1024*1024),
 	m_compressionType(COMPRESSION_FAST),
 	m_useSafeImporting(false),
 	m_hashtries(0),
@@ -701,7 +701,7 @@ void Crinkler::link(const char* filename) {
 		idealsize = estimateModels((unsigned char*)phase1->getPtr(), phase1->getRawSize(), splittingPoint, false);
 
 		if(m_hunktries > 0) {
-			EmpiricalHunkSorter::sortHunkList(&m_hunkPool, *m_transform, m_modellist1, m_modellist2, CRINKLER_BASEPROB, m_hunktries, m_showProgressBar ? &m_progressBar : NULL);
+			EmpiricalHunkSorter::sortHunkList(&m_hunkPool, *m_transform, m_modellist1, m_modellist2, CRINKLER_BASEPROB, m_hunktries, m_showProgressBar ? &m_windowBar : NULL);
 			delete phase1;
 			delete phase1Untransformed;
 			m_transform->linkAndTransform(&m_hunkPool, CRINKLER_CODEBASE, phase1, &phase1Untransformed, &splittingPoint, true);
