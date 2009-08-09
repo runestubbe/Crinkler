@@ -20,9 +20,9 @@ Code:
 	+report: lav sidste justeringer af layout og skriv forklaringstekst
 	+report: adskillelse af dwords i hexdump
 	report: highlight af trunkerede floats og absolutte jump offsets
-	report: hand cursor on labels
-	report: include compression options in report
-	report: fix size table to include highest category
+	+report: hand cursor on labels
+	+report: include compression options in report
+	+report: fix size table to include highest category
 
 	+max ordertries
 	button in progressgui to skip phase
@@ -32,6 +32,14 @@ Code:
 	combine identical read-only symbols
         -verbose:functions
 
+	Remove 64k limit on uncompressed size (unfix BSS address)
+
+	Make forwarded RVA a warning instead of error? (For Wine crosscompilation)
+
+	automatic dynamic initializers
+
+	hint for security_cookie
+	hint for alloca
 
 test:
 	+Test weak externals support
