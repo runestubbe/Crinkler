@@ -1,8 +1,0 @@
-/OUT:test\parsec.exe
-/SUBSYSTEM:CONSOLE
-/ORDERTRIES:5000
-/COMPMODE:SLOW
-/LIBPATH:"C:\Program Files\Microsoft DirectX SDK (August 2008)\Lib\x86"
-/LIBPATH:"C:\Program Files\Microsoft SDKs\Windows\v6.0A\Lib"
-d3d9.lib gdi32.lib winmm.lib user32.lib d3dx9.lib kernel32.lib
-test\parsec\intro.obj

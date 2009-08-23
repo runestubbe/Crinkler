@@ -1,1 +1,0 @@
-/OUT:test\micropolis.exe /SUBSYSTEM:WINDOWS kernel32.lib user32.lib gdi32.lib opengl32.lib glu32.lib winmm.lib test\micropolis\startup.obj test\micropolis\render.obj test\micropolis\render-asm.obj test\micropolis\sound.obj test\micropolis\sound-asm.obj

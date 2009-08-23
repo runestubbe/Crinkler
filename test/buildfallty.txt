@@ -1,7 +1,0 @@
-/OUT:test\fallty.exe
-/SUBSYSTEM:WINDOWS
-/REPORT:report.html
-/ORDERTRIES:500
-/LIBPATH:"C:\Program Files\Microsoft SDKs\Windows\v6.0A\Lib"
-kernel32.lib user32.lib gdi32.lib opengl32.lib glu32.lib winmm.lib
-test\fallty\main.obj test\fallty\kzgwave.obj test\fallty\module.obj test\fallty\miniglsl.obj

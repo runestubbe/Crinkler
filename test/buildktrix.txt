@@ -1,1 +1,0 @@
-/OUT:test\ktrix.exe /ENTRY:main kernel32.lib user32.lib gdi32.lib opengl32.lib glu32.lib msvcrt.lib dsound.lib test\ktrix\intro.obj 
