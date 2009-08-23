@@ -3,6 +3,7 @@
 #define _MODEL_LIST_
 
 class Compressor;
+enum CompressionType;
 
 const int MAX_MODELS = 256;
 
@@ -25,6 +26,7 @@ public:
 	void setFromModelsAndMask(const unsigned char* models, int weightmask);
 	void print() const;
 	unsigned int getMaskList(unsigned char* masks, bool terminate) const;
+	CompressionType detectCompressionType() const;
 };
 
 #endif
