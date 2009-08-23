@@ -82,13 +82,12 @@ CalculateHashLoop:
 	mov		cx, [eax + ecx*2]		; ecx = function ordinal
 	mov		eax, [edx + 1ch]		; ebx = address table RVA offset
 	add		eax, ebp				; ebx = address table RVA address
-	lea		eax, [eax + ecx*4]		; ebp = address of function RVA address
+	mov		eax, [eax + ecx*4]		; ebp = function RVA address
 
-	mov		[esp + 20], eax			; stack position of edx
+	mov		[esp + 28], eax			; stack position of eax
 	popa
 
-	mov		eax,	[edx]
-	add		eax,	ebp
+	add		eax, ebp
 	stosd
 	
 NextHash:

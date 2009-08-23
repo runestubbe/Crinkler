@@ -38,8 +38,9 @@ Code:
 
 	automatic dynamic initializers
 
-	hint for security_cookie
-	hint for alloca
+	+hint for security_cookie
+	+hint for alloca, __chkstk
+	+hint for ImageBase
 
 test:
 	+Test weak externals support

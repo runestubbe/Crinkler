@@ -141,12 +141,14 @@ static string HelpMessage(const char* name) {
 		return "Disable 'Basic Runtime Checks' in the compiler options.";
 	} else if(startsWith(name, "__security_cookie")) {
 		return "Disable 'Buffer Security Check' in the compiler options.";
-	} else if(startsWith(name, "_crt_debugger_hook")) {
+	} else if(startsWith(name, "_crt_debugger_hook") || startsWith(name, "___ImageBase")) {
 		return "Define your own entry point.";
 	} else if(startsWith(name, "__ftol")) {
 		return "Suppress _ftol calls with the /QIfist compiler option.";
 	} else if(startsWith(name, "__Cxx")) {
 		return "Don't use exceptions.";
+	} else if(startsWith(name, "__alloca") || startsWith(name, "__chkstk")) {
+		return "Avoid declaring large arrays or structs inside functions. Use global variables instead.";
 	}
 	return "";
 }
