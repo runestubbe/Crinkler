@@ -336,7 +336,7 @@ int Crinkler::optimizeHashsize(unsigned char* data, int datasize, int hashsize, 
 
 int Crinkler::estimateModels(unsigned char* data, int datasize, int splittingPoint, bool reestimate) {
 	int size1, size2;
-	m_progressBar.beginTask(reestimate ? "Restimating models for code" : "Estimating models for code");
+	m_progressBar.beginTask(reestimate ? "Reestimating models for code" : "Estimating models for code");
 	m_modellist1 = ApproximateModels(data, splittingPoint, CRINKLER_BASEPROB, &size1, &m_progressBar, m_printFlags & PRINT_MODELS, m_compressionType);
 	m_progressBar.endTask();
 
@@ -345,7 +345,7 @@ int Crinkler::estimateModels(unsigned char* data, int datasize, int splittingPoi
 	m_progressBar.endTask();
 
 	int idealsize = size1+size2;
-	printf(reestimate ? "\nRestimated ideal compressed total size: %d\n" :
+	printf(reestimate ? "\nReestimated ideal compressed total size: %d\n" :
 						"\nEstimated ideal compressed total size: %d\n", 
 						idealsize / BITPREC / 8);
 	return idealsize;
