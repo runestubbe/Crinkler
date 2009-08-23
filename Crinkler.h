@@ -34,7 +34,7 @@ const int PRINT_MODELS =			4;
 #define CRINKLER_TITLE "Crinkler 1.2 (" __DATE__ ") (c) 2005-2009 Aske Simon Christensen & Rune Stubbe"
 #define CRINKLER_WITH_VERSION "Crinkler 1.2"
 const int CRINKLER_LINKER_VERSION = 0x3231;
-#define INCLUDE_1K_PACKER
+//#define INCLUDE_1K_PACKER
 
 class Crinkler {
 	MultiLoader				m_hunkLoader;

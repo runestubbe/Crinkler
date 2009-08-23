@@ -149,7 +149,7 @@ static void runOriginalLinker(const char* linkerName) {
 const int TRANSFORM_CALLS = 0x01;
 #include "NameMangling.h"
 int main(int argc, char* argv[]) {
-	//find canonical name of the crinkler executable
+	//find canonical name of the Crinkler executable
 	char crinklerCanonicalName[1024];
 	{
 		char tmp[1024];
@@ -174,12 +174,13 @@ int main(int argc, char* argv[]) {
 						PARAM_IS_SWITCH|PARAM_FORBID_MULTIPLE_DEFINITIONS, "out.exe");
 	CmdParamString summaryArg("REPORT", "report html filename", "filename", 
 						PARAM_IS_SWITCH|PARAM_FORBID_MULTIPLE_DEFINITIONS, "");
-	CmdParamSwitch crinklerFlag("CRINKLER", "enables crinkler", 0);
-	CmdParamSwitch fixFlag("FIX", "fix old crinkler files", 0);
-	CmdParamSwitch recompressFlag("RECOMPRESS", "recompress a crinkler file", 0);
-	CmdParamSwitch unsafeImportArg("UNSAFEIMPORT", "crash if a dll is missing", 0);
-	CmdParamSwitch showProgressArg("PROGRESSGUI", "shows a progressbar", 0);
+	CmdParamSwitch crinklerFlag("CRINKLER", "enables Crinkler", 0);
+	CmdParamSwitch recompressFlag("RECOMPRESS", "recompress a Crinkler file", 0);
+	CmdParamSwitch unsafeImportArg("UNSAFEIMPORT", "crash if a DLL is missing", 0);
+	CmdParamSwitch showProgressArg("PROGRESSGUI", "show a graphical progress bar", 0);
+#ifdef INCLUDE_1K_PACKER
 	CmdParamSwitch tinyCompressor("1K", "1k mode", PARAM_HIDE_IN_PARAM_LIST);
+#endif
 	CmdParamFlags subsystemArg("SUBSYSTEM", "select subsystem", PARAM_FORBID_MULTIPLE_DEFINITIONS, SUBSYSTEM_CONSOLE, 
 						"WINDOWS", SUBSYSTEM_WINDOWS, "CONSOLE", SUBSYSTEM_CONSOLE, NULL);
 	CmdParamFlags priorityArg("PRIORITY", "select priority", PARAM_FORBID_MULTIPLE_DEFINITIONS, BELOW_NORMAL_PRIORITY_CLASS, 
@@ -219,31 +220,10 @@ int main(int argc, char* argv[]) {
 	cmdline.printHeader();
 	fflush(stdout);
 
-	//Run default linker or crinkler?
+	//Run default linker or Crinkler?
 	if(!cmdline.removeToken("/CRINKLER") && toUpper(crinklerFilename).compare("CRINKLER.EXE") != 0) {
 		runOriginalLinker(crinklerFilename.c_str());
 		return 0;
-	}
-
-	//Fix mode
-	if(cmdline.removeToken("/FIX")) {
-		CmdLineInterface cmdline2(CRINKLER_TITLE, CMDI_PARSE_FILES);
-
-		cmdline2.addParams(&fixFlag, &outArg, &filesArg, NULL);
-		cmdline2.setCmdParameters(argc, argv);
-		if(cmdline2.parse()) {
-			const char* infilename = filesArg.getValue();
-			filesArg.next();
-			if(infilename == NULL || filesArg.hasNext()) {
-				Log::error("", "Crinkler fix takes exactly one file argument");
-				return 1;
-			}
-
-			FixFile(infilename, outArg.getValue());
-			return 0;
-		}
-
-		return 1;
 	}
 
 	//set priority
@@ -257,15 +237,18 @@ int main(int argc, char* argv[]) {
 		CmdLineInterface cmdline2(CRINKLER_TITLE, CMDI_PARSE_FILES);
 		outArg.setDefault("fixed.exe");
 		hashsizeArg.setDefault(-1);
-		compmodeArg.setDefault(COMPRESSION_INSTANT);
+		subsystemArg.setDefault(-1);
+		compmodeArg.setDefault(-1);
 
-		cmdline2.addParams(&recompressFlag, &outArg, &hashsizeArg, &compmodeArg, &summaryArg, &showProgressArg, &filesArg, NULL);
+		cmdline2.addParams(&recompressFlag, &outArg, &hashsizeArg, &hashtriesArg, &subsystemArg, &compmodeArg, &summaryArg, &priorityArg, &showProgressArg, &filesArg, NULL);
 		cmdline2.setCmdParameters(argc, argv);
 		if(cmdline2.parse()) {
 			crinkler.setHashsize(hashsizeArg.getValue());
+			crinkler.setSubsystem((SubsystemType)subsystemArg.getValue());
 			crinkler.setCompressionType((CompressionType)compmodeArg.getValue());
-			crinkler.setSummary(summaryArg.getValue());
+			crinkler.setHashtries(hashtriesArg.getValue());
 			crinkler.showProgressBar(showProgressArg.getValue());
+			crinkler.setSummary(summaryArg.getValue());
 
 			IdentityTransform identTransform;
 			crinkler.setTransform(&identTransform);
@@ -279,15 +262,24 @@ int main(int argc, char* argv[]) {
 			}
 
 			printf("Target: %s\n", outArg.getValue());
-			printf("Compression mode: %s\n", compTypeName((CompressionType)compmodeArg.getValue()));
-
-			if(hashsizeArg.getValue() == -1)
-				printf("Hash size: Inherited from binary\n");
-			else
+			if(subsystemArg.getValue() == -1) {
+				printf("Subsystem type: Inherited from original\n");
+			} else {
+				printf("Subsystem type: %s\n", subsystemArg.getValue() == SUBSYSTEM_CONSOLE ? "CONSOLE" : "WINDOWS");
+			}
+			if(compmodeArg.getValue() == -1) {
+				printf("Compression mode: Models inherited from original\n");
+			} else {
+				printf("Compression mode: %s\n", compTypeName((CompressionType)compmodeArg.getValue()));
+			}
+			if(hashsizeArg.getValue() == -1) {
+				printf("Hash size: Inherited from original\n");
+			} else {
 				printf("Hash size: %d MB\n", hashsizeArg.getValue());
-
-			printf("Hash tries: %d\n", hashtriesArg.getValue());
+				printf("Hash tries: %d\n", hashtriesArg.getValue());
+			}
 			printf("Report: %s\n", strlen(summaryArg.getValue()) > 0 ? summaryArg.getValue() : "NONE");
+			printf("\n");
 
 			crinkler.recompress(infilename, outArg.getValue());
 			return 0;
@@ -300,8 +292,10 @@ int main(int argc, char* argv[]) {
 		return 1;
 	}
 
-	//set crinkler options
+	//set Crinkler options
+#ifdef INCLUDE_1K_PACKER
 	crinkler.set1KMode(tinyCompressor.getValue());
+#endif
 	crinkler.setImportingType(!unsafeImportArg.getValue());
 	crinkler.setEntry(entryArg.getValue());
 	crinkler.setHashsize(hashsizeArg.getValue());

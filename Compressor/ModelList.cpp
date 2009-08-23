@@ -1,6 +1,7 @@
 #include <memory>
 #include <cassert>
 #include "ModelList.h"
+#include "Compressor.h"
 
 using namespace std;
 
@@ -99,3 +100,33 @@ void ModelList::setFromModelsAndMask(const unsigned char* models, int weightmask
 		}
 	} while(weightmask);
 }
+
+CompressionType ModelList::detectCompressionType() const {
+	// This ocde does not work, as FAST mode has a single
+	// weight optimization at the end.
+	ModelList instant = InstantModels();
+	bool is_instant = true;
+	bool is_fast = true;
+	for (int i = 0 ; i < nmodels ; i++)
+	{
+		bool found_instant = false;
+		for (int j = 0 ; j < instant.nmodels ; j++)
+		{
+			if (m_models[i].mask == instant.m_models[j].mask &&
+				m_models[i].weight == instant.m_models[j].weight)
+			{
+				found_instant = true;
+			}
+		}
+		if (!found_instant) is_instant = false;
+		int n_bits = m_models[i].mask;
+		n_bits = (n_bits & 0x55) + ((n_bits & 0xaa) >> 1);
+		n_bits = (n_bits & 0x33) + ((n_bits & 0xcc) >> 2);
+		n_bits = (n_bits & 0x0f) + ((n_bits & 0xf0) >> 4);
+		if (n_bits != m_models[i].weight) is_fast = false;
+	}
+	if (is_instant) return COMPRESSION_INSTANT;
+	if (is_fast) return COMPRESSION_FAST;
+	return COMPRESSION_SLOW;
+}
+

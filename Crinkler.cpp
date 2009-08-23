@@ -428,46 +428,50 @@ void Crinkler::recompress(const char* input_filename, const char* output_filenam
 	int virtualSize = (*(int*)&indata[0x5C]) - 0x20000;
 	int hashtable_size = -1;
 	int return_offset = -1;
+	int models_address = -1;
 	int depacker_start = -1;
 	for(int i = 0; i < 0x200; i++) {
 		if(indata[i] == 0xbf && indata[i+5] == 0xb9 && hashtable_size == -1) {
 			hashtable_size = (*(int*)&indata[i+6]) * 2;
 		}
-		if(indata[i] == 0x7B && indata[i+2] == 0xC3 && return_offset==-1) {
+		if(indata[i] == 0x7B && indata[i+2] == 0xC3 && return_offset == -1) {
 			indata[i+2] = 0xCC;
 			return_offset = i+2;
 		}
 		if(indata[i] == 0x4b && indata[i+1] == 0x61 && indata[i+2] == 0x7F) {
 			depacker_start = i;
 		}
+		if(indata[i] == 0xbe && indata[i+3] == 0x40 && indata[i+4] == 0x00) {
+			models_address = *(int*)&indata[i+1];
+		}
 	}
-	if(hashtable_size == -1 || return_offset == -1 || depacker_start == -1)
+	if(hashtable_size == -1 || return_offset == -1 || depacker_start == -1 || models_address == -1)
 		notCrinklerFileError();
 
-	printf("Virtual size: %d\n", virtualSize);
-	if(virtualSize < 0x04EC0000) {
-		printf("new header requires virtual size to be at least 0x4EC0000 - resizing\n");
-		virtualSize = 0x04EC0000;
-	}
-	printf("Intro Hashtable size: %d\n", hashtable_size);
-	if(m_hashsize < 0)
-		m_hashsize = hashtable_size;
-	int models_address = *(int*)&indata[0x6E];
-	int subsystem_version = indata[0x68];
-
 	int models_offset = models_address-0x400000;
-	int splittingPoint = (*(int*)&indata[models_offset]) / 8;
-	
 	unsigned int weightmask1 = *(unsigned int*)&indata[models_offset+4];
 	unsigned char* models1 = &indata[models_offset+8];
 	m_modellist1.setFromModelsAndMask(models1, weightmask1);
 	int modelskip = 8 + m_modellist1.nmodels;
-	int rawsize = (*(int*)&indata[models_offset+modelskip]) / 8;
-
 	unsigned int weightmask2 = *(unsigned int*)&indata[models_offset+modelskip+4];
 	unsigned char* models2 = &indata[models_offset+modelskip+8];
 	m_modellist2.setFromModelsAndMask(models2, weightmask2);
-		
+
+	CompressionType compmode = m_modellist1.detectCompressionType();
+	int subsystem_version = indata[0x68];
+
+	printf("Original Virtual size: %d\n", virtualSize);
+	if(virtualSize < 0x04EC0000) {
+		printf("new header requires virtual size to be at least %d - resizing\n", 0x4EC0000);
+		virtualSize = 0x04EC0000;
+	}
+	printf("Original Subsystem type: %s\n", subsystem_version == 3 ? "CONSOLE" : "WINDOWS");
+	printf("Original Compression mode: %s\n", compmode == COMPRESSION_INSTANT ? "INSTANT" : "FAST/SLOW");
+	printf("Original Hash size: %d\n", hashtable_size);
+
+	int rawsize = (*(int*)&indata[models_offset+modelskip]) / 8;
+	int splittingPoint = (*(int*)&indata[models_offset]) / 8;
+
 	printf("Code size: %d\n", splittingPoint);
 	printf("Data size: %d\n", rawsize-splittingPoint);
 
@@ -520,15 +524,21 @@ void Crinkler::recompress(const char* input_filename, const char* output_filenam
 													0x0C, 0x8B, 0x40, 0x1C, 0x8B, 0x40, 0x00, 0x8B,
 													0x68, 0x08};
 	static const unsigned char new_import_code[] = {0x64, 0x67, 0x8B, 0x47, 0x30, 0x8B, 0x40, 0x0C, 0x8B, 0x40, 0x0C, 0x8B, 0x00, 0x8B, 0x00, 0x8B, 0x68, 0x18};
-	if(memcmp(rawdata+0x0F, old_import_code, sizeof(old_import_code)) == 0) {			//no calltrans
+	if (memcmp(rawdata+0x0F, old_import_code, sizeof(old_import_code)) == 0) {			//no calltrans
 		memcpy(rawdata+0x0F, new_import_code, sizeof(new_import_code));
-	} else if(memcmp(rawdata+0x27, old_import_code, sizeof(old_import_code)) == 0) {	//with calltrans
+		printf("Import code successfully patched.\n");
+	} else if (memcmp(rawdata+0x27, old_import_code, sizeof(old_import_code)) == 0) {	//with calltrans
 		memcpy(rawdata+0x27, new_import_code, sizeof(new_import_code));
+		printf("Import code successfully patched.\n");
+	} else if (memcmp(rawdata+0x0F, new_import_code, sizeof(new_import_code)) == 0 ||
+			   memcmp(rawdata+0x27, new_import_code, sizeof(new_import_code)) == 0)
+	{
+		printf("Import code does not need patching.\n");
 	} else {
 		Log::error("", "Cannot find old import code to patch\n");
 	}
 	
-	printf("Import code successfully patched, recompressing...\n");
+	printf("Recompressing...\n");
 
 	Hunk* phase1 = new Hunk("linked", (char*)rawdata, HUNK_IS_CODE|HUNK_IS_WRITEABLE, 0, rawsize, virtualSize);
 	delete[] rawdata;
@@ -541,25 +551,48 @@ void Crinkler::recompress(const char* input_filename, const char* output_filenam
 	const int baseprob = 10;
 
 	unsigned char* data = new unsigned char[maxsize];
-	int best_hashsize = previousPrime(m_hashsize/2)*2;
+	int best_hashsize;
 	Hunk* phase1Compressed;
 	int size, idealsize = 0;
-	if (m_compressionType != COMPRESSION_INSTANT) {
-		initProgressBar();
-		idealsize = estimateModels((unsigned char*)phase1->getPtr(), phase1->getRawSize(), splittingPoint, false);
-		
-		//hashing time
-		best_hashsize = optimizeHashsize((unsigned char*)phase1->getPtr(), phase1->getRawSize(), best_hashsize, splittingPoint, m_hashtries);
-		deinitProgressBar();
+	if (m_compressionType < 0)
+	{
+		// Keep models
+		if (m_hashsize < 0) {
+			// Use original optimized hash size
+			setHashsize((hashtable_size-1)/(1024*1024)+1);
+			best_hashsize = hashtable_size;
+			setHashtries(0);
+		} else {
+			best_hashsize = previousPrime(m_hashsize/2)*2;
+			initProgressBar();
+
+			//rehashing time
+			best_hashsize = optimizeHashsize((unsigned char*)phase1->getPtr(), phase1->getRawSize(), best_hashsize, splittingPoint, m_hashtries);
+			deinitProgressBar();
+		}
+	} else {
+		if (m_hashsize < 0) {
+			setHashsize((hashtable_size-1)/(1024*1024)+1);
+		}
+		best_hashsize = previousPrime(m_hashsize/2)*2;
+		if (m_compressionType != COMPRESSION_INSTANT) {
+			initProgressBar();
+			idealsize = estimateModels((unsigned char*)phase1->getPtr(), phase1->getRawSize(), splittingPoint, false);
+			
+			//hashing time
+			best_hashsize = optimizeHashsize((unsigned char*)phase1->getPtr(), phase1->getRawSize(), best_hashsize, splittingPoint, m_hashtries);
+			deinitProgressBar();
+		}
 	}
 
 	CompressionStream cs(data, sizefill, maxsize);
 	cs.Compress((unsigned char*)phase1->getPtr(), splittingPoint, m_modellist1, baseprob, best_hashsize, false);
 	cs.Compress((unsigned char*)phase1->getPtr() + splittingPoint, phase1->getRawSize() - splittingPoint, m_modellist2, baseprob, best_hashsize, true);
 	size = cs.Close();
-	if(m_compressionType != COMPRESSION_INSTANT)
+	if(m_compressionType != -1 && m_compressionType != COMPRESSION_INSTANT)
 		printf("Real compressed total size: %d\nBytes lost to hashing: %d\n", size, size - idealsize / BITPREC / 8);
 
+	setCompressionType(compmode);
 	CompressionReportRecord* csr = phase1->getCompressionSummary(sizefill, splittingPoint);
 	if(m_printFlags & PRINT_LABELS)
 		verboseLabels(csr);
