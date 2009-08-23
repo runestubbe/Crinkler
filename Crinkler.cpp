@@ -264,18 +264,18 @@ void Crinkler::compress1K(Hunk* phase1, const char* filename, FILE* outfile) {
 void Crinkler::loadImportCode(bool useSafeImporting, bool useRangeImport) {
 	//do imports
 	if(m_1KMode) {
-		load(import1KObj, import1KObj_end - import1KObj, "crinkler import");
+		load(import1KObj, import1KObj_end - import1KObj, "Crinkler import");
 	} else {
 		if(useSafeImporting)
 			if(useRangeImport)
-				load(importSafeRangeObj, importSafeRangeObj_end - importSafeRangeObj, "crinkler import");
+				load(importSafeRangeObj, importSafeRangeObj_end - importSafeRangeObj, "Crinkler import");
 			else
-				load(importSafeObj, importSafeObj_end - importSafeObj, "crinkler import");
+				load(importSafeObj, importSafeObj_end - importSafeObj, "Crinkler import");
 		else
 			if(useRangeImport)
-				load(importRangeObj, importRangeObj_end - importRangeObj, "crinkler import");
+				load(importRangeObj, importRangeObj_end - importRangeObj, "Crinkler import");
 			else
-				load(importObj, importObj_end - importObj, "crinkler import");
+				load(importObj, importObj_end - importObj, "Crinkler import");
 	}
 }
 
@@ -351,8 +351,8 @@ int Crinkler::estimateModels(unsigned char* data, int datasize, int splittingPoi
 	return idealsize;
 }
 
-void Crinkler::setHeaderConstants(Hunk* header, int rawsize, int hashsize, int subsystem_version) {
-	int virtualSize = align(max(header->getVirtualSize(), header->getRawSize()+hashsize), 16);
+void Crinkler::setHeaderConstants(Hunk* header, Hunk* phase1, int hashsize, int subsystem_version) {
+	int virtualSize = align(max(phase1->getVirtualSize(), phase1->getRawSize()+hashsize), 16);
 	header->addSymbol(new Symbol("_HashTableSize", hashsize/2, 0, header));
 	header->addSymbol(new Symbol("_UnpackedData", CRINKLER_CODEBASE, 0, header));
 	header->addSymbol(new Symbol("_VirtualSize", virtualSize, 0, header));
@@ -399,6 +399,8 @@ void Crinkler::recompress(const char* input_filename, const char* output_filenam
 		minorlv = '0';
 	}
 
+	printf("File compressed with Crinkler version %c.%c\n", majorlv, minorlv);
+
 	switch(majorlv) {
 		case '0':
 			switch(minorlv) {
@@ -442,7 +444,6 @@ void Crinkler::recompress(const char* input_filename, const char* output_filenam
 	if(hashtable_size == -1 || return_offset == -1 || depacker_start == -1)
 		notCrinklerFileError();
 
-	printf("File compressed with crinkler version %c.%c\n", majorlv, minorlv);
 	printf("Virtual size: %d\n", virtualSize);
 	if(virtualSize < 0x04EC0000) {
 		printf("new header requires virtual size to be at least 0x4EC0000 - resizing\n");
@@ -600,7 +601,7 @@ void Crinkler::recompress(const char* input_filename, const char* output_filenam
 	header->addSymbol(new Symbol("_HashTable", CRINKLER_SECTIONSIZE*2+phase1->getRawSize(), SYMBOL_IS_RELOCATEABLE, header));
 
 	Hunk* phase2 = phase2list.toHunk("final");
-	setHeaderConstants(phase2, phase1->getRawSize(), best_hashsize, subsystem_version);
+	setHeaderConstants(phase2, phase1, best_hashsize, subsystem_version);
 	phase2->relocate(CRINKLER_IMAGEBASE);
 
 	fwrite(phase2->getPtr(), 1, phase2->getRawSize(), outfile);
@@ -743,7 +744,7 @@ void Crinkler::link(const char* filename) {
 
 	Hunk* phase2 = phase2list.toHunk("final");
 	//add constants
-	setHeaderConstants(phase2, phase1->getRawSize(), best_hashsize, m_subsystem == SUBSYSTEM_WINDOWS ? IMAGE_SUBSYSTEM_WINDOWS_GUI : IMAGE_SUBSYSTEM_WINDOWS_CUI);
+	setHeaderConstants(phase2, phase1, best_hashsize, m_subsystem == SUBSYSTEM_WINDOWS ? IMAGE_SUBSYSTEM_WINDOWS_GUI : IMAGE_SUBSYSTEM_WINDOWS_CUI);
 	phase2->relocate(CRINKLER_IMAGEBASE);
 
 	fwrite(phase2->getPtr(), 1, phase2->getRawSize(), outfile);
