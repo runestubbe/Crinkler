@@ -1,1 +1,0 @@
-/OUT:test\buzzie.exe /SUBSYSTEM:WINDOWS kernel32.lib user32.lib gdi32.lib opengl32.lib glu32.lib winmm.lib test\buzzie\common.obj test\buzzie\intro.obj test\buzzie\liquid.obj test\buzzie\pow.obj

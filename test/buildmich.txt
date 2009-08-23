@@ -1,4 +1,0 @@
-/OUT:test\mich.exe  /LIBPATH:"C:\Program files\Microsoft DirectX SDK (August 2008)\Lib\x86" 
-/LIBPATH:"C:\Program Files\Microsoft SDKs\Windows\v6.0A\Lib" /SUBSYSTEM:CONSOLE /ENTRY:main msvcrt_old.lib gdi32.lib kernel32.lib user32.lib dsound.lib d3d9.lib d3dx9.lib test\mich\logo.obj test\mich\main.obj test\mich\meshgenerator.obj test\mich\song.obj
-
-/TRANSFORM:CALLS
