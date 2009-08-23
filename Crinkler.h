@@ -76,7 +76,7 @@ class Crinkler {
 
 	int optimizeHashsize(unsigned char* data, int datasize, int hashsize, int splittingPoint, int tries);
 	int estimateModels(unsigned char* data, int datasize, int splittingPoint, bool reestimate);
-	void setHeaderConstants(Hunk* header, int rawsize, int hashsize, int subsystem_version);
+	void setHeaderConstants(Hunk* header, Hunk* phase1, int hashsize, int subsystem_version);
 
 public:
 	Crinkler();
