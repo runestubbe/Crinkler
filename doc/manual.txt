@@ -4,12 +4,18 @@ CRINKLER - Compressing linker for Windows specialized for 4k intros
 Aske Simon Christensen "Blueberry/Loonies"
 Rune L. H. Stubbe "Mentor/TBC"
 
-Version 1.1a (January 14, 2009)
+Version 1.2 (?? ??, 2009)
 
 
 
 VERSION HISTORY
 ---------------
+??.??.09: 1.2:  Output EXE files are now Windows 7 compatible.
+                Output EXE files are no longer Windows 2000 compatible.
+                /RECOMPRESS option to recompress Crinkler-compressed
+                executables, optionally with different parameters.
+                /FIX removed, as it is subsumed by /RECOMPRESS.
+
 14.01.09: 1.1a: Fixed /TRUNCATEFLOATS crashing in some cases.
                 Improved /ORDERTRIES estimation when call transform is used.
                 Sometimes sections were misplaced in the HTML report.
@@ -308,14 +314,18 @@ Linker/Command Line/Additional Options:
     this option is enabled by default, otherwise it is disabled by
     default.
 
-/FIX
+/RECOMPRESS
 
-    Fix a program compressed using an older version of Crinkler so
-    that it works on all versions of Windows 2000, XP and Vista and is
-    compatible with Data Execution Prevention. When this option is
-    specified, all other options except /OUT are ignored, and Crinkler
-    takes a single file argument, which must be an output EXE file
-    from Crinkler 0.3 or newer.
+    Decompress a Crinkler-compressed executable and recompress it
+    using the given options. The resulting executable will work on
+    Windows XP, Windows Vista and Windows 7 and will be compatible
+    with Data Execution Prevention, but it will not work on Windows
+    2000. When this option is specified, Crinkler takes a single file
+    argument, which must be an EXE file produced by Crinkler 0.4 or
+    newer.
+
+    See the section on recompression below for a description of the
+    options that can be given to control the decompression process.
 
 /PRIORITY:IDLE
 /PRIORITY:BELOWNORMAL
@@ -499,6 +509,84 @@ crinkler.exe /OUT:micropolis.exe /SUBSYSTEM:WINDOWS /RANGE:opengl32
  micropolis\startup.obj micropolis\render.obj
  micropolis\render-asm.obj micropolis\sound.obj
  micropolis\sound-asm.obj
+
+
+
+RECOMPRESSION
+-------------
+
+A new feature in Crinkler 1.2 is the abillity to recompress an already
+Crinkler-compressed executable. The main purpose for the feature is to
+patch an executable compressed using an earlier version of Crinkler so
+that it runs on Windows Vista and Windows 7. But it can also be used
+more generally to change some of the compression parameters of a
+compressed program without performing the whole linking and
+compression process from scratch and without access to the original
+object files. Particularly, if your output executable after a long
+time spent compressing is just a few bytes too big due to bytes lost
+to hashing, you can recompress the output executable, specifying a
+higher value for /HASHSIZE and/or /HASHTRIES, and thus avoid running
+through the whole compression process again.
+
+Recompression mode is activated by the /RECOMPRESS option. When this
+option is specified, Crinkler takes a single file argument, which must
+be an EXE file produced by Crinkler 0.4 or newer. Most options then
+take on slightly different meanings, as described here.
+
+The /CRINKLER, /PRIORITY, @commandfile and /PROGRESSGUI options work
+as normally.  The /ENTRY, /LIBPATH, /ORDERTRIES, /RANGE, /REPLACEDLL,
+/UNSAFEIMPORT, /TRANSFORM:CALLS and /TRUNCATEFLOATS options are
+ignored, as the parameters specified by these options cannot be
+changed via recompression. The /PRINT options are also ignored. The
+remaining options work as follows:
+
+/SUBSYSTEM:CONSOLE
+/SUBSYSTEM:WINDOWS
+
+    If this option is given, it specifies the Windows subsystem to use
+    as normally. If it is omitted, the original subsystem will be
+    used.
+
+/OUT:[file]
+
+    Specify the name of the resulting executable file. The default
+    name is fixed.exe.
+
+/COMPMODE:INSTANT
+/COMPMODE:FAST
+/COMPMODE:SLOW
+
+    If this option is specified, the compression models will be
+    reestimated using the specified compression mode. If the option is
+    omitted, the models used for the original compression will be used
+    for the recompression, and no model estimation will be performed.
+    If the executable was originally produced by Crinkler 1.0 or
+    newer, this will typically yield a compression ratio similar to
+    the original compression.
+
+/HASHSIZE:[memory size]
+
+    If neither this option nor a compression mode is specified, the
+    original, optimized hash size will be used. Recompression speed
+    will be similar to INSTANT compression mode in this case.
+
+    If a compression mode is specified but this option is omitted,
+    hash size optimization will be performed using the hash size
+    specified for the original file.
+
+    If this option is given, hash size optimization takes place
+    normally, using the specified maximum size.
+
+/HASHTRIES:[number of retries]
+
+    If hash size optimization takes place, this option specifies the
+    number of tries as normally. Otherwise it is ignored.
+
+/REPORT:[HTML file name]
+
+    Writes out an HTML file as normally. Since no symbol information
+    is available, this will be a plain disassembly/hex dump without
+    labels or cross-linking.
 
 
 

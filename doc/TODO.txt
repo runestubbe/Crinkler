@@ -24,6 +24,9 @@ Code:
 	+report: include compression options in report
 	+report: fix size table to include highest category
 
+	better report for recompression
+	replacedll for recompression
+
 	+max ordertries
 	button in progressgui to skip phase
 
