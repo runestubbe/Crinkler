@@ -12,6 +12,7 @@ VERSION HISTORY
 ---------------
 ??.??.09: 1.2:  Output EXE files are now Windows 7 compatible.
                 Output EXE files are no longer Windows 2000 compatible.
+                Header size reduced by 16 bytes.
                 /RECOMPRESS option to recompress Crinkler-compressed
                 executables, optionally with different parameters.
                 /FIX removed, as it is subsumed by /RECOMPRESS.

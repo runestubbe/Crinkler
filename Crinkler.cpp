@@ -461,9 +461,9 @@ void Crinkler::recompress(const char* input_filename, const char* output_filenam
 	int subsystem_version = indata[0x68];
 
 	printf("Original Virtual size: %d\n", virtualSize);
-	if(virtualSize < 0x04EC0000) {
-		printf("new header requires virtual size to be at least %d - resizing\n", 0x4EC0000);
-		virtualSize = 0x04EC0000;
+	if(virtualSize < 0x05000000) {
+		printf("New header requires virtual size to be at least 80 MB - resizing\n");
+		virtualSize = 0x05000000;
 	}
 	printf("Original Subsystem type: %s\n", subsystem_version == 3 ? "CONSOLE" : "WINDOWS");
 	printf("Original Compression mode: %s\n", compmode == COMPRESSION_INSTANT ? "INSTANT" : "FAST/SLOW");
