@@ -634,6 +634,9 @@ void Crinkler::recompress(const char* input_filename, const char* output_filenam
 	header->addSymbol(new Symbol("_HashTable", CRINKLER_SECTIONSIZE*2+phase1->getRawSize(), SYMBOL_IS_RELOCATEABLE, header));
 
 	Hunk* phase2 = phase2list.toHunk("final");
+	if(m_subsystem >= 0) {
+		subsystem_version = (m_subsystem == SUBSYSTEM_WINDOWS) ? IMAGE_SUBSYSTEM_WINDOWS_GUI : IMAGE_SUBSYSTEM_WINDOWS_CUI;
+	}
 	setHeaderConstants(phase2, phase1, best_hashsize, subsystem_version);
 	phase2->relocate(CRINKLER_IMAGEBASE);
 
