@@ -1,4 +1,5 @@
 Manual:
+	credit til gloom
 	+safeimport -> unsafeimport
 	+beskriv summary
 	+verbose -> ?
@@ -23,6 +24,8 @@ Code:
 	+report: hand cursor on labels
 	+report: include compression options in report
 	+report: fix size table to include highest category
+
+	-revert to old non-range import code?
 
 	better report for recompression
 	replacedll for recompression
