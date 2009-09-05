@@ -4,15 +4,17 @@ CRINKLER - Compressing linker for Windows specialized for 4k intros
 Aske Simon Christensen "Blueberry/Loonies"
 Rune L. H. Stubbe "Mentor/TBC"
 
-Version 1.2 (?? ??, 2009)
+Version 1.2 (September 5, 2009)
 
 
 
 VERSION HISTORY
 ---------------
-??.??.09: 1.2:  Output EXE files are now Windows 7 compatible.
+05.09.09: 1.2:  Output EXE files are now Windows 7 compatible.
                 Output EXE files are no longer Windows 2000 compatible.
                 Header size reduced by 16 bytes.
+                Non-range import code is (usually) slightly smaller.
+                Slightly improved section ordering estimation.
                 /RECOMPRESS option to recompress Crinkler-compressed
                 executables, optionally with different parameters.
                 /FIX removed, as it is subsumed by /RECOMPRESS.
