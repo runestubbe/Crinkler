@@ -161,7 +161,7 @@ int main(int argc, char* argv[]) {
 	
 	//cmdline parameters
 	CmdParamInt hashsizeArg("HASHSIZE", "number of megabytes for hashing", "size in mb", PARAM_SHOW_CONSTRAINTS,
-							80, 1000, 100);
+							1, 1000, 100);
 	CmdParamInt hashtriesArg("HASHTRIES", "number of hashing tries", "number of hashing tries", 0,
 							0, 10000, 20);
 	CmdParamInt hunktriesArg("ORDERTRIES", "", "number of section reordering tries", 0,
