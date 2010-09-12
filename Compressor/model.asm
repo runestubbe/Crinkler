@@ -15,20 +15,20 @@ _ModelHash@12:
 	;; eax = model mask
 
 	mov	ecx, edi
+	not ecx
 	and	ecx, byte 7	; get bit pos
+	inc ecx
+	
 	shr	edi, 3		; byte pos in output
 	add	edi, [esp + (2+1)*4]
 	
-	;mov edx, 0xFF
-	;shl edx, cl
-	mov edx, 0xFF0000
-	shr edx, cl
-	
-	mov dl, al
-	and	dh, [edi]
-	xor	al, dh
+	mov ebx, 0x100
+	mov bl, [edi]
+	shr ebx, cl
+
+	xor	al, bl
 	rol	eax, 9
-	add	al, dh
+	add	al, bl
 	sub eax, byte 1
 	jmp	.next
 .hashloop:
@@ -43,8 +43,6 @@ _ModelHash@12:
 	jc	.hashloop
 	jnz	.next
 	
-	ror	eax, cl
-	add	al, cl
 	;; eax = hash
 
 	pop ebx

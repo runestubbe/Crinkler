@@ -293,11 +293,11 @@ Hunk* Crinkler::createModelHunk(int splittingPoint, int rawsize) {
 	models = new Hunk("models", 0, 0, 1, modelsSize, modelsSize);
 	models->addSymbol(new Symbol("_Models", 0, SYMBOL_IS_RELOCATEABLE, models));
 	char* ptr = models->getPtr();
-	*(unsigned int*)ptr = splittingPoint*8;			ptr += sizeof(unsigned int);
+	*(unsigned int*)ptr = CRINKLER_CODEBASE+splittingPoint;			ptr += sizeof(unsigned int);
 	*(unsigned int*)ptr = w1;						ptr += sizeof(unsigned int);
 	for(int m = 0; m < m_modellist1.nmodels; m++)
 		*ptr++ = masks1[m];
-	*(unsigned int*)ptr = rawsize*8;	ptr += sizeof(unsigned int);
+	*(unsigned int*)ptr = CRINKLER_CODEBASE+rawsize;	ptr += sizeof(unsigned int);
 	*(unsigned int*)ptr = w2;						ptr += sizeof(unsigned int);
 	for(int m = 0; m < m_modellist2.nmodels; m++)
 		*ptr++ = masks2[m];
@@ -461,10 +461,7 @@ void Crinkler::recompress(const char* input_filename, const char* output_filenam
 	int subsystem_version = indata[0x68];
 
 	printf("Original Virtual size: %d\n", virtualSize);
-	if(virtualSize < 0x05000000) {
-		printf("New header requires virtual size to be at least 80 MB - resizing\n");
-		virtualSize = 0x05000000;
-	}
+
 	printf("Original Subsystem type: %s\n", subsystem_version == 3 ? "CONSOLE" : "WINDOWS");
 	printf("Original Compression mode: %s\n", compmode == COMPRESSION_INSTANT ? "INSTANT" : "FAST/SLOW");
 	printf("Original Hash size: %d\n", hashtable_size);
