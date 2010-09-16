@@ -34,7 +34,7 @@ struct TinyHashEntry {
 	unsigned char used;
 };
 
-void CompressionStream::Compress(const unsigned char* d, int size, const ModelList& models, int baseprob, int hashsize, bool finish) {
+void CompressionStream::Compress(const unsigned char* d, int size, const ModelList& models, int baseprob, int hashsize, bool first, bool finish) {
 	hashsize /= 2;
 	int bitlength = size*8;
 	unsigned char* data = new unsigned char[size+MAX_CONTEXT_LENGTH];
@@ -63,6 +63,42 @@ void CompressionStream::Compress(const unsigned char* d, int size, const ModelLi
 	TinyHashEntry* hashtable = new TinyHashEntry[tinyhashsize];
 	memset(hashtable, 0, tinyhashsize*sizeof(TinyHashEntry));
 	TinyHashEntry* hashEntries[MAX_N_MODELS];
+
+	if(first) {	//encode start bit
+		int bit = 1;
+
+		// Query models
+		unsigned int probs[2] = { baseprob, baseprob };
+		for(int m = 0 ; m < nmodels; m++) {
+			unsigned int hash = ModelHashStart(weightmasks[m]) % hashsize;
+			unsigned int tinyHash = hash & (tinyhashsize-1);
+			TinyHashEntry *he = &hashtable[tinyHash];
+			while(he->hash != hash && he->used == 1) {
+				tinyHash++;
+				if(tinyHash >= tinyhashsize)
+					tinyHash = 0;
+				he = &hashtable[tinyHash];
+			}
+
+			he->hash = hash;
+			he->used = 1;
+			hashEntries[m] = he;
+
+			int fac = weights[m];
+			unsigned int shift = (1 - (((he->prob[0]+255)&(he->prob[1]+255)) >> 8))*2 + fac;
+			probs[0] += ((unsigned int)he->prob[0] << shift);
+			probs[1] += ((unsigned int)he->prob[1] << shift);
+		}
+
+		// Encode bit
+		AritCode(&m_aritstate, probs[0], probs[1], bit);
+
+		// Update models
+		for(int m = 0; m < models.nmodels; m++) {
+			updateWeights((Weights*)hashEntries[m]->prob, bit);
+		}
+	}
+	
 
 	for(int bitpos = 0 ; bitpos < bitlength; bitpos++) {
 		int bit = GetBit(data, bitpos);
