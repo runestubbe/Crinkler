@@ -317,8 +317,8 @@ int Crinkler::optimizeHashsize(unsigned char* data, int datasize, int hashsize, 
 	for(int i = 0; i < tries; i++) {
 		CompressionStream cs(buff, NULL, maxsize);
 		hashsize = previousPrime(hashsize/2)*2;
-		cs.Compress(data, splittingPoint, m_modellist1, CRINKLER_BASEPROB, hashsize, false);
-		cs.Compress(data + splittingPoint, datasize - splittingPoint, m_modellist2, CRINKLER_BASEPROB, hashsize, true);
+		cs.Compress(data, splittingPoint, m_modellist1, CRINKLER_BASEPROB, hashsize, true, false);
+		cs.Compress(data + splittingPoint, datasize - splittingPoint, m_modellist2, CRINKLER_BASEPROB, hashsize, false, true);
 
 		int size = cs.Close();
 		if(size <= bestsize) {
@@ -583,8 +583,8 @@ void Crinkler::recompress(const char* input_filename, const char* output_filenam
 	}
 
 	CompressionStream cs(data, sizefill, maxsize);
-	cs.Compress((unsigned char*)phase1->getPtr(), splittingPoint, m_modellist1, baseprob, best_hashsize, false);
-	cs.Compress((unsigned char*)phase1->getPtr() + splittingPoint, phase1->getRawSize() - splittingPoint, m_modellist2, baseprob, best_hashsize, true);
+	cs.Compress((unsigned char*)phase1->getPtr(), splittingPoint, m_modellist1, baseprob, best_hashsize, true, false);
+	cs.Compress((unsigned char*)phase1->getPtr() + splittingPoint, phase1->getRawSize() - splittingPoint, m_modellist2, baseprob, best_hashsize, false, true);
 	size = cs.Close();
 	if(m_compressionType != -1 && m_compressionType != COMPRESSION_INSTANT)
 		printf("Real compressed total size: %d\nBytes lost to hashing: %d\n", size, size - idealsize / BITPREC / 8);
@@ -749,8 +749,8 @@ void Crinkler::link(const char* filename) {
 	}
 
 	CompressionStream cs(data, sizefill, maxsize);
-	cs.Compress((unsigned char*)phase1->getPtr(), splittingPoint, m_modellist1, CRINKLER_BASEPROB, best_hashsize, false);
-	cs.Compress((unsigned char*)phase1->getPtr() + splittingPoint, phase1->getRawSize() - splittingPoint, m_modellist2, CRINKLER_BASEPROB, best_hashsize, true);
+	cs.Compress((unsigned char*)phase1->getPtr(), splittingPoint, m_modellist1, CRINKLER_BASEPROB, best_hashsize, true, false);
+	cs.Compress((unsigned char*)phase1->getPtr() + splittingPoint, phase1->getRawSize() - splittingPoint, m_modellist2, CRINKLER_BASEPROB, best_hashsize, false, true);
 	size = cs.Close();
 	if(m_compressionType != COMPRESSION_INSTANT)
 		printf("Real compressed total size: %d\nBytes lost to hashing: %d\n", size, size - idealsize / BITPREC / 8);

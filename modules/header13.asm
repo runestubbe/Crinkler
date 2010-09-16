@@ -78,8 +78,8 @@ dd 00010000h		;Size of headers (= Section alignment)
 	;Checksum
 DepackInit2:
     push eax
-    stc
 	inc  eax
+	nop ;db 0xCC
 
 	db		0xbb ; mov ebx, const
 _SubsystemTypePtr:
@@ -94,7 +94,7 @@ _SubsystemTypePtr:
 	push	byte 0
 	pop		ecx
 EndCheckJump:
-	jmp		WriteBit	;Depackentry :)
+	jmp		_DepackEntry
 	dw		0
 
 LoaderFlags:
@@ -103,19 +103,11 @@ db "HASH"			;Loader flags
 dd 3				;Number of RVAs and Sizes
 
 ;Data directories
-;directory 0 (export table)
-;dd HeaderRVA(DummyDLL)		;RVA
-;dd HeaderRVA(DummyImport)	;Size
-;directory 1 (import table)
-;dd HeaderRVA(DummyImportTable)	;RVA
-db "HASH"        ;Exports RVA
-;db "HASH"        ;Exports size
-;dd 0             ;Imports RVA
-de:
-	jmp	_DepackEntry
-	db 0xF0,0x01,0
-db "HASH"        ;Imports size
-dd 0             ;Resources RVA
+db "HASH"						;Exports RVA
+db "HASH"						;Exports size
+dd 0x0001F000					;Imports rva
+db "HASH"						;Imports size
+dd 0							;Resources RVA
 
 ;Section headers
 ;Name
@@ -126,7 +118,7 @@ _ClearHash:
 	popa
 	lea	esi, [esi + ModelSkipDummy]
 ModelSkipPtrP1:
-	jpo	de
+	jpo	EndCheckJump
 	ret
 
 dd _VirtualSize+10000h;Virtual size (= Section size)
@@ -210,7 +202,7 @@ BaseProbPtrP1:
 ModelLoop:
 	dec	ebp
 IncreaseWeight:
-	inc	ebp			;weight++
+	inc	ebp				;weight++
 	add	eax, eax		;check next bit in model weight mask
 	jc	IncreaseWeight
 	jnz	NotModelEnd		;
