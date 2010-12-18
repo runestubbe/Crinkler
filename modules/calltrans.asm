@@ -3,12 +3,11 @@ bits 32
 
 	global	_CallTrans
 
-	section	ct	align=1
+	section	ct text align=1
 
 _CallTrans:
-	mov		edi, edx
-	sub		ecx, ecx
-	mov		cl, 0
+	mov		edi, [esp-4]
+	mov		ecx, dword 0
 tloop:
 	mov		al, 0e8h
 	scasb

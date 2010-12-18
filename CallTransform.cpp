@@ -25,11 +25,10 @@ bool CallTransform::transform(Hunk* hunk, int splittingPoint, bool verbose) {
 				*offset = (int)(short)(*offset + i+1);
 				i += 4;
 				num++;
-				if (num == 255) break;
 			}
 		}
 	}
-	*(hunk->getPtr() + hunk->findSymbol("_CallTrans")->value+5) = num;
+	*(int *)(hunk->getPtr() + hunk->findSymbol("_CallTrans")->value+5) = num;
 	if(verbose)
 		printf("\nCalls transformed: %d\n", num);
 	return num > 0;
