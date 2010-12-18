@@ -45,9 +45,13 @@ Code:
 
 	automatic dynamic initializers
 
-	place import code freely (test using KK's code)
+	+place import code freely (test using KK's code)
 
+	+more than 255 transformed calls
 	do not apply call transform when there are no calls
+	Use header space for extra push for call trans address
+
+	upgrade alignments to 256 and 65536
 
 	+hint for security_cookie
 	+hint for alloca, __chkstk
