@@ -24,6 +24,7 @@ Code:
 	+report: hand cursor on labels
 	+report: include compression options in report
 	+report: fix size table to include highest category
+	report: place labels into right section
 
 	-revert to old non-range import code?
 
@@ -43,6 +44,10 @@ Code:
 	Make forwarded RVA a warning instead of error? (For Wine crosscompilation)
 
 	automatic dynamic initializers
+
+	place import code freely (test using KK's code)
+
+	do not apply call transform when there are no calls
 
 	+hint for security_cookie
 	+hint for alloca, __chkstk
