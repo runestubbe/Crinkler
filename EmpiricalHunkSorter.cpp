@@ -19,7 +19,8 @@ int EmpiricalHunkSorter::tryHunkCombination(HunkList* hunklist, Transform& trans
 	int splittingPoint;
 
 	Hunk* phase1;
-	transform.linkAndTransform(hunklist, CRINKLER_CODEBASE, phase1, NULL, &splittingPoint, false);
+	Symbol* import = hunklist->findSymbol("_Import");
+	transform.linkAndTransform(hunklist, import, CRINKLER_CODEBASE, phase1, NULL, &splittingPoint, false);
 	
 	char contexts[2][8];
 	memset(contexts[0], 0, 8);

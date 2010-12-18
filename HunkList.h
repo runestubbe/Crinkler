@@ -29,6 +29,8 @@ public:
 	Symbol* findUndecoratedSymbol(const char* name) const;
 	void removeUnreferencedHunks(std::list<Hunk*> startHunks);
 
+	bool needsContinuationJump(std::vector<Hunk*>::const_iterator &it) const;
+
 	void removeImportHunks();
 	void clear();
 

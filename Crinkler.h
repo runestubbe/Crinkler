@@ -31,9 +31,9 @@ const int PRINT_LABELS =			1;
 const int PRINT_IMPORTS =			2;
 const int PRINT_MODELS =			4;
 
-#define CRINKLER_TITLE "Crinkler 1.2 (" __DATE__ ") (c) 2005-2009 Aske Simon Christensen & Rune Stubbe"
-#define CRINKLER_WITH_VERSION "Crinkler 1.2"
-const int CRINKLER_LINKER_VERSION = 0x3231;
+#define CRINKLER_TITLE "Crinkler 1.3 (" __DATE__ ") (c) 2005-2010 Aske Simon Christensen & Rune Stubbe"
+#define CRINKLER_WITH_VERSION "Crinkler 1.3"
+const int CRINKLER_LINKER_VERSION = 0x3331;
 //#define INCLUDE_1K_PACKER
 
 class Crinkler {
@@ -62,7 +62,7 @@ class Crinkler {
 	WindowProgressBar		m_windowBar;
 	CompositeProgressBar	m_progressBar;
 
-	Symbol*	moveEntryPointToFront();
+	Symbol*	findEntryPoint();
 	void removeUnreferencedHunks(Hunk* base);
 	std::string getEntrySymbolName() const;
 	void replaceDlls(HunkList& hunkslist);

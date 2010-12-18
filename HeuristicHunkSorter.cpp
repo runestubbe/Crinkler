@@ -1,6 +1,7 @@
 #include "HeuristicHunkSorter.h"
 #include "HunkList.h"
 #include "Hunk.h"
+#include "Symbol.h"
 #include <vector>
 #include <algorithm>
 
@@ -40,6 +41,12 @@ void HeuristicHunkSorter::sortHunkList(HunkList* hunklist) {
 	vector<Hunk*> hunks;
 	vector<Hunk*> fixedHunks;
 
+	Hunk *import_hunk = hunklist->findSymbol("_Import")->hunk;
+	Hunk *entry_hunk = import_hunk->getContinuation()->hunk;
+
+	hunklist->removeHunk(import_hunk);
+	hunklist->removeHunk(entry_hunk);
+
 	//move hunks to vector
 	for(int i = 0; i < hunklist->getNumHunks(); i++) {
 		Hunk* h = (*hunklist)[i];
@@ -49,6 +56,10 @@ void HeuristicHunkSorter::sortHunkList(HunkList* hunklist) {
 			hunks.push_back(h);
 	}
 	hunklist->clear();
+
+	// Place import and entry point hunks first
+	fixedHunks.push_back(import_hunk);
+	fixedHunks.push_back(entry_hunk);
 
 	//sort hunks
 	sort(hunks.begin(), hunks.end(), hunkRelation);
