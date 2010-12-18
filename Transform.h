@@ -4,6 +4,7 @@
 
 class Hunk;
 class HunkList;
+class Symbol;
 class Transform {
 public:
 	virtual ~Transform() {};
@@ -12,7 +13,7 @@ public:
 
 	//links and transforms a hunklist. provides both a transformed and non-transformed linked version.
 	//returns true if the transform succeeds
-	bool linkAndTransform(HunkList* hunklist, int baseAddress, Hunk* &transformedHunk, Hunk** untransformedHunk, int* splittingPoint, bool verbose);
+	bool linkAndTransform(HunkList* hunklist, Symbol *entry_label, int baseAddress, Hunk* &transformedHunk, Hunk** untransformedHunk, int* splittingPoint, bool verbose);
 };
 
 #endif

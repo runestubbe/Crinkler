@@ -16,7 +16,8 @@ using namespace std;
 Hunk::Hunk(const Hunk& h) : 
 	m_alignmentBits(h.m_alignmentBits), m_flags(h.m_flags), m_data(h.m_data),
 	m_virtualsize(h.m_virtualsize), m_relocations(h.m_relocations), m_name(h.m_name),
-	m_importName(h.m_importName), m_importDll(h.m_importDll), m_numReferences(0)
+	m_importName(h.m_importName), m_importDll(h.m_importDll), m_numReferences(0),
+	m_continuation(NULL)
 {
 	//deep copy symbols
 	for(map<std::string, Symbol*>::const_iterator it = h.m_symbols.begin(); it != h.m_symbols.end(); it++) {
@@ -30,7 +31,8 @@ Hunk::Hunk(const Hunk& h) :
 Hunk::Hunk(const char* symbolName, const char* importName, const char* importDll) :
 	m_name(symbolName), m_virtualsize(0),
 	m_flags(HUNK_IS_IMPORT), m_alignmentBits(0), m_importName(importName),
-	m_importDll(importDll), m_numReferences(0)
+	m_importDll(importDll), m_numReferences(0),
+	m_continuation(NULL)
 {
 	addSymbol(new Symbol(symbolName, 0, SYMBOL_IS_RELOCATEABLE, this));
 }
@@ -38,7 +40,8 @@ Hunk::Hunk(const char* symbolName, const char* importName, const char* importDll
 
 Hunk::Hunk(const char* name, const char* data, unsigned int flags, int alignmentBits, int rawsize, int virtualsize) :
 	m_name(name), m_flags(flags), m_alignmentBits(alignmentBits),
-	m_virtualsize(virtualsize), m_numReferences(0)
+	m_virtualsize(virtualsize), m_numReferences(0),
+	m_continuation(NULL)
 {
 	m_data.resize(rawsize);
 	if(data != NULL)
@@ -73,6 +76,14 @@ void Hunk::addRelocation(relocation r) {
 	assert(r.offset >= 0);
 	assert(r.offset <= getRawSize()-4);
 	m_relocations.push_back(r);
+}
+
+void Hunk::setContinuation(Symbol* s) {
+	m_continuation = s;
+}
+
+Symbol* Hunk::getContinuation() const {
+	return m_continuation;
 }
 
 const char* Hunk::getName() const {

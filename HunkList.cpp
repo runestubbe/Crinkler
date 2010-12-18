@@ -71,6 +71,19 @@ void HunkList::append(HunkList* hunklist) {
 	}
 }
 
+bool HunkList::needsContinuationJump(vector<Hunk*>::const_iterator &it) const {
+	Hunk *h = *it;
+	Symbol *cont = h->getContinuation();
+	if (cont != NULL) {
+		vector<Hunk*>::const_iterator next_it = it+1;
+		return
+			// Continuation symbol is not at the start of the next hunk
+			cont->value > 0 || next_it == m_hunks.end() || *next_it != cont->hunk;
+	}
+	return false;
+}
+
+
 Hunk* HunkList::toHunk(const char* name, int* splittingPoint) const {
 	//calculate raw size
 	int rawsize = 0;
@@ -83,6 +96,10 @@ Hunk* HunkList::toHunk(const char* name, int* splittingPoint) const {
 		if(h->getRawSize() > 0)
 			rawsize = virtualsize + h->getRawSize();
 		virtualsize += h->getVirtualSize();
+		if (needsContinuationJump(it)) {
+			rawsize += 5;
+			virtualsize = rawsize;
+		}
 		alignmentBits = max(alignmentBits, h->getAlignmentBits());
 		if(h->getFlags() & HUNK_IS_CODE)
 			flags |= HUNK_IS_CODE;
@@ -121,7 +138,15 @@ Hunk* HunkList::toHunk(const char* name, int* splittingPoint) const {
 			*splittingPoint = address;
 
 		memcpy(&newHunk->getPtr()[address], h->getPtr(), h->getRawSize());
-		address += h->getVirtualSize();
+		if (needsContinuationJump(it)) {
+			unsigned char jumpCode[5] = {0xE9, 0x00, 0x00, 0x00, 0x00};
+			memcpy(&newHunk->getPtr()[address+h->getRawSize()], jumpCode, 5);
+			relocation r = {h->getContinuation()->name.c_str(), address+h->getRawSize()+1, RELOCTYPE_REL32};
+			newHunk->addRelocation(r);
+			address += h->getRawSize()+5;
+		} else {
+			address += h->getVirtualSize();
+		}
 	}
 	newHunk->trim();
 

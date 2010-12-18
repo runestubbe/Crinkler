@@ -87,6 +87,7 @@ class Hunk {
 	std::vector<char>	m_data;
 	std::list<relocation> m_relocations;
 	std::map<std::string, Symbol*> m_symbols;
+	Symbol* m_continuation;
 	std::string m_name;
 	std::string m_importName;
 	std::string m_importDll;
@@ -100,6 +101,8 @@ public:
 
 	void addRelocation(relocation r);
 	void addSymbol(Symbol* s);
+	void setContinuation(Symbol *s);
+	Symbol* getContinuation() const;
 	Symbol* findUndecoratedSymbol(const char* name) const;
 	Symbol* findSymbol(const char* name) const;
 	Symbol* findSymbolWithWeak(const char* name) const;

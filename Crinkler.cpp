@@ -99,7 +99,7 @@ std::string Crinkler::getEntrySymbolName() const {
 	return m_entry;
 }
 
-Symbol*	Crinkler::moveEntryPointToFront() {
+Symbol*	Crinkler::findEntryPoint() {
 	//place entry point in the beginning
 	string entryName = getEntrySymbolName();
 	Symbol* entry = m_hunkPool.findUndecoratedSymbol(entryName.c_str());
@@ -108,29 +108,16 @@ Symbol*	Crinkler::moveEntryPointToFront() {
 		return NULL;
 	}
 
-	//add a jump to the entry point, if the entry point is not at the beginning of a hunk
-	if(entry->value > 0) {
-		Log::warning("", "Could not move entry point to beginning of code, inserted jump");
-		unsigned char jumpCode[5] = {0xE9, 0x00, 0x00, 0x00, 0x00};
-		Hunk* jumpHunk = new Hunk("jump_to_entry_point", (char*)jumpCode, HUNK_IS_CODE, 0, 5, 5);
-		Symbol* newEntry = new Symbol("jumpEntry", 0, SYMBOL_IS_RELOCATEABLE, jumpHunk);
-		jumpHunk->addSymbol(newEntry);
-		relocation r = {entry->name.c_str(), 1, RELOCTYPE_REL32};
-		jumpHunk->addRelocation(r);
-		jumpHunk->fixate();
-		m_hunkPool.addHunkFront(jumpHunk);
-		entry = newEntry;	//jumphunk is the new entry :)
-	} else {
-		m_hunkPool.removeHunk(entry->hunk);
-		m_hunkPool.addHunkFront(entry->hunk);
-		entry->hunk->fixate();
-	}
-
 	//1byte aligned entry point
 	if(entry->hunk->getAlignmentBits() > 0) {
 		Log::warning("", "Entry point hunk has alignment greater than 1, forcing alignment of 1");
 		entry->hunk->setAlignmentBits(0);
 	}
+
+	if(entry->value > 0) {
+		Log::warning("", "Entry point not at start of section, jump necessary");
+	}
+
 	return entry;
 }
 
@@ -660,7 +647,7 @@ void Crinkler::link(const char* filename) {
 	fseek(outfile, 0, SEEK_SET);
 
 	//find entry hunk and move it to front
-	Symbol* entry = moveEntryPointToFront();
+	Symbol* entry = findEntryPoint();
 	if(entry == NULL)
 		return;
 	
@@ -694,8 +681,8 @@ void Crinkler::link(const char* filename) {
 	Symbol* import = m_hunkPool.findSymbol("_Import");
 	m_hunkPool.removeHunk(import->hunk);
 	m_hunkPool.addHunkFront(import->hunk);
-	import->hunk->fixate();
-	import->hunk->addSymbol(new Symbol("_ImageBase", CRINKLER_IMAGEBASE, 0, import->hunk));
+	import->hunk->setAlignmentBits(0);
+	import->hunk->setContinuation(entry);
 
 	//truncate floats
 	if(m_truncateFloats) {
@@ -709,7 +696,7 @@ void Crinkler::link(const char* filename) {
 	//create phase 1 data hunk
 	int splittingPoint;
 	Hunk* phase1, *phase1Untransformed;
-	m_transform->linkAndTransform(&m_hunkPool, CRINKLER_CODEBASE, phase1, &phase1Untransformed, &splittingPoint, true);
+	m_transform->linkAndTransform(&m_hunkPool, import, CRINKLER_CODEBASE, phase1, &phase1Untransformed, &splittingPoint, true);
 	int maxsize = phase1->getRawSize()*2+1000;	//allocate plenty of memory	
 
 	printf("\nUncompressed size of code: %5d\n", splittingPoint);
@@ -738,7 +725,7 @@ void Crinkler::link(const char* filename) {
 			EmpiricalHunkSorter::sortHunkList(&m_hunkPool, *m_transform, m_modellist1, m_modellist2, CRINKLER_BASEPROB, m_hunktries, m_showProgressBar ? &m_windowBar : NULL);
 			delete phase1;
 			delete phase1Untransformed;
-			m_transform->linkAndTransform(&m_hunkPool, CRINKLER_CODEBASE, phase1, &phase1Untransformed, &splittingPoint, true);
+			m_transform->linkAndTransform(&m_hunkPool, import, CRINKLER_CODEBASE, phase1, &phase1Untransformed, &splittingPoint, true);
 
 			idealsize = estimateModels((unsigned char*)phase1->getPtr(), phase1->getRawSize(), splittingPoint, true);
 		}
