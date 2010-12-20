@@ -37,7 +37,9 @@ Crinkler::Crinkler():
 	m_1KMode(false),
 	m_summaryFilename(""),
 	m_truncateFloats(false),
-	m_truncateBits(32)
+	m_truncateBits(32),
+	m_overrideAlignments(false),
+	m_alignmentBits(0)
 {
 	m_modellist1 = InstantModels();
 	m_modellist2 = InstantModels();
@@ -69,6 +71,13 @@ void Crinkler::replaceDlls(HunkList& hunklist) {
 	}
 }
 
+
+void Crinkler::overrideAlignments(HunkList& hunklist) {
+	for(int i = 0; i < hunklist.getNumHunks(); i++) {
+		Hunk* hunk = hunklist[i];
+		hunk->overrideAlignment(m_alignmentBits);
+	}
+}
 
 void Crinkler::load(const char* filename) {
 	HunkList* hunkList = m_hunkLoader.loadFromFile(filename);
@@ -209,7 +218,7 @@ void Crinkler::compress1K(Hunk* phase1, const char* filename, FILE* outfile) {
 	phase2list.addHunkBack(header);
 	phase2list.addHunkBack(phase1Compressed);
 
-	Hunk* phase2 = phase2list.toHunk("final");
+	Hunk* phase2 = phase2list.toHunk("final", CRINKLER_IMAGEBASE);
 	//add constants
 	{
 		int virtualSize = align(phase1->getVirtualSize(), 16);
@@ -617,7 +626,7 @@ void Crinkler::recompress(const char* input_filename, const char* output_filenam
 	phase2list.addHunkBack(phase1Compressed);
 	header->addSymbol(new Symbol("_HashTable", CRINKLER_SECTIONSIZE*2+phase1->getRawSize(), SYMBOL_IS_RELOCATEABLE, header));
 
-	Hunk* phase2 = phase2list.toHunk("final");
+	Hunk* phase2 = phase2list.toHunk("final", CRINKLER_IMAGEBASE);
 	if(m_subsystem >= 0) {
 		subsystem_version = (m_subsystem == SUBSYSTEM_WINDOWS) ? IMAGE_SUBSYSTEM_WINDOWS_GUI : IMAGE_SUBSYSTEM_WINDOWS_CUI;
 	}
@@ -657,6 +666,8 @@ void Crinkler::link(const char* filename) {
 	//replace dlls
 	replaceDlls(m_hunkPool);
 
+	if (m_overrideAlignments) overrideAlignments(m_hunkPool);
+
 	//load appropriate header
 	HunkList* headerHunks = m_1KMode ?	m_hunkLoader.load(header1KObj, header1KObj_end - header1KObj, "crinkler header") :
 										m_hunkLoader.load(headerObj, headerObj_end - headerObj, "crinkler header");
@@ -683,6 +694,8 @@ void Crinkler::link(const char* filename) {
 	m_hunkPool.addHunkFront(import->hunk);
 	import->hunk->setAlignmentBits(0);
 	import->hunk->setContinuation(entry);
+	// Make sure import code has access to the _ImageBase address
+	import->hunk->addSymbol(new Symbol("_ImageBase", CRINKLER_IMAGEBASE, 0, import->hunk));
 
 	//truncate floats
 	if(m_truncateFloats) {
@@ -762,7 +775,7 @@ void Crinkler::link(const char* filename) {
 	phase2list.addHunkBack(phase1Compressed);
 	header->addSymbol(new Symbol("_HashTable", CRINKLER_SECTIONSIZE*2+phase1->getRawSize(), SYMBOL_IS_RELOCATEABLE, header));
 
-	Hunk* phase2 = phase2list.toHunk("final");
+	Hunk* phase2 = phase2list.toHunk("final", CRINKLER_IMAGEBASE);
 	//add constants
 	setHeaderConstants(phase2, phase1, best_hashsize, m_subsystem == SUBSYSTEM_WINDOWS ? IMAGE_SUBSYSTEM_WINDOWS_GUI : IMAGE_SUBSYSTEM_WINDOWS_CUI);
 	phase2->relocate(CRINKLER_IMAGEBASE);

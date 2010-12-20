@@ -8,6 +8,7 @@ Manual:
 	-nævn at verbose functions ikke virker i vs8
 	skriv faq
 	+ws2003
+	truncate default 64
 
 Licens:
 	+inkluder Distorm-licens
@@ -25,6 +26,7 @@ Code:
 	+report: include compression options in report
 	+report: fix size table to include highest category
 	report: place labels into right section
+	report: size of selected range
 
 	-revert to old non-range import code?
 
@@ -33,6 +35,8 @@ Code:
 
 	+max ordertries
 	button in progressgui to skip phase
+	Sensible total time printing
+	Remove delay on exit?
 
 	+truncation?
 	+verbose -> ?
@@ -51,7 +55,10 @@ Code:
 	do not apply call transform when there are no calls
 	Use header space for extra push for call trans address
 
-	upgrade alignments to 256 and 65536
+	+override alignments
+	+alignment not at the start of section
+	+align absolute address
+	+/OVERRIDEALIGNMENTS option
 
 	+hint for security_cookie
 	+hint for alloca, __chkstk

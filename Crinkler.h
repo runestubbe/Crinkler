@@ -55,6 +55,8 @@ class Crinkler {
 	bool					m_1KMode;
 	bool					m_truncateFloats;
 	int						m_truncateBits;
+	bool					m_overrideAlignments;
+	int						m_alignmentBits;
 	ModelList				m_modellist1;
 	ModelList				m_modellist2;
 
@@ -66,6 +68,7 @@ class Crinkler {
 	void removeUnreferencedHunks(Hunk* base);
 	std::string getEntrySymbolName() const;
 	void replaceDlls(HunkList& hunkslist);
+	void overrideAlignments(HunkList& hunklist);
 
 	void compress1K(Hunk* phase1, const char* filename, FILE* outfile);
 
@@ -110,6 +113,8 @@ public:
 	void setSummary(const char* summaryFilename)			{ m_summaryFilename = summaryFilename; }
 	void setTruncateFloats(bool enabled)					{ m_truncateFloats = enabled; }
 	void setTruncateBits(int bits)							{ m_truncateBits = bits; }
+	void setOverrideAlignments(bool enabled)				{ m_overrideAlignments = enabled; }
+	void setAlignmentBits(int bits)							{ m_alignmentBits = bits; }
 	void setTransform(Transform* transform)					{ m_transform = transform; }
 	void setPrintFlags(int printFlags)						{ m_printFlags = printFlags; }
 

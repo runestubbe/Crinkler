@@ -168,6 +168,8 @@ int main(int argc, char* argv[]) {
 							0, 100000, 0);
 	CmdParamInt truncateFloats("TRUNCATEFLOATS", "truncates floats", "bits", PARAM_ALLOW_NO_ARGUMENT_DEFAULT,
 							0, 64, 64);
+	CmdParamInt overrideAlignments("OVERRIDEALIGNMENTS", "override section alignments using align labels", "bits",  PARAM_ALLOW_NO_ARGUMENT_DEFAULT,
+							0, 24, -1);
 	CmdParamString entryArg("ENTRY", "name of the entrypoint", "symbol", 
 						PARAM_IS_SWITCH|PARAM_FORBID_MULTIPLE_DEFINITIONS, "");
 	CmdParamString outArg("OUT", "output filename", "filename", 
@@ -203,7 +205,7 @@ int main(int argc, char* argv[]) {
 	CmdLineInterface cmdline(CRINKLER_TITLE, CMDI_PARSE_FILES);
 
 	cmdline.addParams(&crinklerFlag, &hashsizeArg, &hashtriesArg, &hunktriesArg, &entryArg, &outArg, &summaryArg, &unsafeImportArg,
-						&subsystemArg, &truncateFloats, &compmodeArg, &printArg, &transformArg, &libpathArg, 
+						&subsystemArg, &truncateFloats, &overrideAlignments, &compmodeArg, &printArg, &transformArg, &libpathArg, 
 						&rangeImportArg, &replaceDllArg, &filesArg, &priorityArg, &showProgressArg, &recompressFlag,
 #ifdef INCLUDE_1K_PACKER
 						&tinyCompressor,
@@ -307,6 +309,8 @@ int main(int argc, char* argv[]) {
 	crinkler.showProgressBar(showProgressArg.getValue());
 	crinkler.setTruncateFloats(truncateFloats.getNumMatches() > 0);
 	crinkler.setTruncateBits(truncateFloats.getValue());
+	crinkler.setOverrideAlignments(overrideAlignments.getNumMatches() > 0);
+	crinkler.setAlignmentBits(overrideAlignments.getValue());
 	crinkler.setSummary(summaryArg.getValue());
 
 
