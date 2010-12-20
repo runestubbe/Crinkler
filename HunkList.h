@@ -22,7 +22,7 @@ public:
 	void append(HunkList* hunklist);
 	void setHunk(int index, Hunk* h);
 	int getNumHunks() const;
-	Hunk* toHunk(const char* name, int* splittingPoint = NULL) const;
+	Hunk* toHunk(const char* name, int base_address = 0, int* splittingPoint = NULL) const;
 	void insertHunk(int index, Hunk* hunk);
 
 	Symbol* findSymbol(const char* name) const;

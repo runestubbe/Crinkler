@@ -84,7 +84,7 @@ bool HunkList::needsContinuationJump(vector<Hunk*>::const_iterator &it) const {
 }
 
 
-Hunk* HunkList::toHunk(const char* name, int* splittingPoint) const {
+Hunk* HunkList::toHunk(const char* name, int baseAddress, int* splittingPoint) const {
 	//calculate raw size
 	int rawsize = 0;
 	int virtualsize = 0;
@@ -92,7 +92,12 @@ Hunk* HunkList::toHunk(const char* name, int* splittingPoint) const {
 	unsigned int flags = 0;
 	for(vector<Hunk*>::const_iterator it = m_hunks.begin(); it != m_hunks.end(); it++) {
 		Hunk* h = *it;
+		// align
+		virtualsize += baseAddress - h->getAlignmentOffset();
 		virtualsize = align(virtualsize, h->getAlignmentBits());
+		virtualsize -= baseAddress - h->getAlignmentOffset();
+
+		// section contents
 		if(h->getRawSize() > 0)
 			rawsize = virtualsize + h->getRawSize();
 		virtualsize += h->getVirtualSize();
@@ -100,6 +105,8 @@ Hunk* HunkList::toHunk(const char* name, int* splittingPoint) const {
 			rawsize += 5;
 			virtualsize = rawsize;
 		}
+
+		// max alignment and flags
 		alignmentBits = max(alignmentBits, h->getAlignmentBits());
 		if(h->getFlags() & HUNK_IS_CODE)
 			flags |= HUNK_IS_CODE;
@@ -115,7 +122,10 @@ Hunk* HunkList::toHunk(const char* name, int* splittingPoint) const {
 
 	for(vector<Hunk*>::const_iterator it = m_hunks.begin(); it != m_hunks.end(); it++) {
 		Hunk* h = *it;
+		// align
+		address += baseAddress - h->getAlignmentOffset();
 		address = align(address, h->getAlignmentBits());
+		address -= baseAddress - h->getAlignmentOffset();
 
 		//copy symbols
 		for(map<string, Symbol*>::const_iterator jt = h->m_symbols.begin(); jt != h->m_symbols.end(); jt++) {

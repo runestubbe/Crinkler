@@ -81,6 +81,7 @@ struct relocation {
 class Hunk {
 	friend class HunkList;
 	int				m_alignmentBits;
+	int				m_alignmentOffset;
 	unsigned int	m_flags;
 	int				m_virtualsize;
 
@@ -112,9 +113,11 @@ public:
 	void setVirtualSize(int size);
 	void setRawSize(int size);
 	void setAlignmentBits(int alignmentBits);
+	void setAlignmentOffset(int alignmentOffset);
 	void trim();
 	void chop(int size);
 	void roundFloats(int defaultBits);
+	void overrideAlignment(int defaultBits);
 	void appendZeroes(int num);
 
 	void markHunkAsLibrary();
@@ -123,6 +126,7 @@ public:
 
 
 	int getAlignmentBits() const;
+	int getAlignmentOffset() const;
 	unsigned int getFlags() const;
 	const char* getName() const;
 	char* getPtr();

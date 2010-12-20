@@ -201,6 +201,10 @@ int Hunk::getAlignmentBits() const {
 	return m_alignmentBits;
 }
 
+int Hunk::getAlignmentOffset() const {
+	return m_alignmentOffset;
+}
+
 char* Hunk::getPtr() {
 	if(!m_data.empty())
 		return &m_data[0];
@@ -238,6 +242,10 @@ void Hunk::setRawSize(int size) {
 
 void Hunk::setAlignmentBits(int alignmentBits) {
 	m_alignmentBits = alignmentBits;
+}
+
+void Hunk::setAlignmentOffset(int alignmentOffset) {
+	m_alignmentOffset = alignmentOffset;
 }
 
 void Hunk::trim() {
@@ -456,6 +464,44 @@ void Hunk::roundFloats(int defaultBits) {
 endit:
 		;
 	}
+}
+
+void Hunk::overrideAlignment(int defaultBits) {
+	bool align_label = false;
+	for(map<string, Symbol*>::const_iterator jt = m_symbols.begin(); jt != m_symbols.end(); jt++) {
+		Symbol* s = jt->second;
+		string sname = s->getUndecoratedName();
+		size_t apos = sname.find("align");
+		if (apos != string::npos) {
+			int align_bits = 0;
+			int align_offset = 0;
+			int n = sscanf_s(&sname.c_str()[apos+5], "%d_%d", &align_bits, &align_offset);
+			if (n >= 1) {
+				// align label match
+				if (align_bits < 0 || align_bits > 24) {
+					Log::error("", "Alignment label '%s' outside legal range for number of bits (0-24)", sname.c_str());
+				}
+				if (align_label) {
+					Log::error("", "More than one alignment label in section '%s'", getName());
+				}
+				int offset = align_offset - s->value;
+				setAlignmentBits(align_bits);
+				setAlignmentOffset(offset);
+				printf("Alignment of section '%s' overridden to %d bits", getName(), align_bits);
+				if (offset > 0) printf(" + %d", offset);
+				if (offset < 0) printf(" - %d", -offset);
+				printf("\n");
+				align_label = true;
+			}
+		}
+	}
+
+	if (!align_label && defaultBits != -1 && !(m_flags & HUNK_IS_CODE) && getRawSize() == 0) {
+		// override uninitialized section alignment
+		setAlignmentBits(defaultBits);
+		printf("Alignment of section '%s' overridden to default %d bits\n", getName(), defaultBits);
+	}
+
 }
 
 void Hunk::markHunkAsLibrary() {
