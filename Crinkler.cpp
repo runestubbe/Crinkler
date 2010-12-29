@@ -521,6 +521,19 @@ void Crinkler::recompress(const char* input_filename, const char* output_filenam
 	CloseHandle(pi.hProcess);
 	CloseHandle(pi.hThread);
 
+	//patch calltrans code
+	if (rawdata[0] == 0x89 && rawdata[1] == 0xD7) { // MOV EDI, EDX
+		// Old calltrans code - convert to new
+		unsigned int ncalls = rawdata[5];
+		rawdata[0] = 0x5F; // POP EDI
+		rawdata[1] = 0xB9; // MOV ECX, DWORD
+		*((unsigned int *)&rawdata[2]) = ncalls;
+		printf("Call transformation code successfully patched.\n");
+	} else if (rawdata[0] == 0x5F) { // POP EDI
+		// New calltrans code
+		printf("Call transformation code does not need patching.\n");
+	}
+
 	//patch import code
 	static const unsigned char old_import_code[] = {0x31, 0xC0, 0x64, 0x8B, 0x40, 0x30, 0x8B, 0x40, 
 													0x0C, 0x8B, 0x40, 0x1C, 0x8B, 0x40, 0x00, 0x8B,
