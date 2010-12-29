@@ -150,6 +150,8 @@ static void runOriginalLinker(const char* linkerName) {
 
 const int TRANSFORM_CALLS = 0x01;
 int main(int argc, char* argv[]) {
+	int time1 = GetTickCount();
+
 	//find canonical name of the Crinkler executable
 	char crinklerCanonicalName[1024];
 	{
@@ -414,7 +416,9 @@ int main(int argc, char* argv[]) {
 		printf("\n");
 	}
 
-	int stime = GetTickCount();
 	crinkler.link(outArg.getValue());
-	printf("time spent: %dms\n", GetTickCount()-stime);
+
+	int time2 = GetTickCount();
+	int time = (time2-time1+500)/1000;
+	printf("time spent: %dm%02ds\n", time/60, time%60);
 }

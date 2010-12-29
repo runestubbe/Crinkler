@@ -430,6 +430,7 @@ void Crinkler::recompress(const char* input_filename, const char* output_filenam
 	int return_offset = -1;
 	int models_address = -1;
 	int depacker_start = -1;
+	int depacker_start2 = -1;
 	for(int i = 0; i < 0x200; i++) {
 		if(indata[i] == 0xbf && indata[i+5] == 0xb9 && hashtable_size == -1) {
 			hashtable_size = (*(int*)&indata[i+6]) * 2;
@@ -438,15 +439,24 @@ void Crinkler::recompress(const char* input_filename, const char* output_filenam
 			indata[i+2] = 0xCC;
 			return_offset = i+2;
 		}
-		if(indata[i] == 0x4b && indata[i+1] == 0x61 && indata[i+2] == 0x7F) {
+		if(indata[i] == 0x4B && indata[i+1] == 0x61 && indata[i+2] == 0x7F) {
+			// start of pre-1.3 depacker
 			depacker_start = i;
 		}
-		if(indata[i] == 0xbe && indata[i+3] == 0x40 && indata[i+4] == 0x00) {
+		if(indata[i] == 0x0F && indata[i+1] == 0xA3 && indata[i+2] == 0x2D) {
+			// start of post-1.3 depacker
+			depacker_start2 = i;
+		}
+		if(indata[i] == 0xBE && indata[i+3] == 0x40 && indata[i+4] == 0x00) {
 			models_address = *(int*)&indata[i+1];
 		}
 	}
-	if(hashtable_size == -1 || return_offset == -1 || depacker_start == -1 || models_address == -1)
+	if(hashtable_size == -1 || return_offset == -1 || (depacker_start == -1 && depacker_start2 == -1) || models_address == -1)
 		notCrinklerFileError();
+	if (depacker_start == -1) {
+		// post-1.3
+		depacker_start = depacker_start2;
+	}
 
 	int models_offset = models_address-0x400000;
 	unsigned int weightmask1 = *(unsigned int*)&indata[models_offset+4];
@@ -466,12 +476,15 @@ void Crinkler::recompress(const char* input_filename, const char* output_filenam
 	printf("Original Compression mode: %s\n", compmode == COMPRESSION_INSTANT ? "INSTANT" : "FAST/SLOW");
 	printf("Original Hash size: %d\n", hashtable_size);
 
-	int rawsize = (*(int*)&indata[models_offset+modelskip]) / 8;
-	int splittingPoint = (*(int*)&indata[models_offset]) / 8;
+	int rawsize;
+	int splittingPoint;
 
 	if(majorlv > '1' || (majorlv == '1' && minorlv >= '3')) {
-		rawsize = -rawsize;
-		splittingPoint = -splittingPoint;
+		rawsize = -(*(int*)&indata[models_offset+modelskip])-CRINKLER_CODEBASE;
+		splittingPoint = -(*(int*)&indata[models_offset])-CRINKLER_CODEBASE;
+	} else {
+		rawsize = (*(int*)&indata[models_offset+modelskip]) / 8;
+		splittingPoint = (*(int*)&indata[models_offset]) / 8;
 	}
 
 	printf("Code size: %d\n", splittingPoint);
@@ -538,18 +551,25 @@ void Crinkler::recompress(const char* input_filename, const char* output_filenam
 	static const unsigned char old_import_code[] = {0x31, 0xC0, 0x64, 0x8B, 0x40, 0x30, 0x8B, 0x40, 
 													0x0C, 0x8B, 0x40, 0x1C, 0x8B, 0x40, 0x00, 0x8B,
 													0x68, 0x08};
-	static const unsigned char new_import_code[] = {0x64, 0x67, 0x8B, 0x47, 0x30, 0x8B, 0x40, 0x0C, 0x8B, 0x40, 0x0C, 0x8B, 0x00, 0x8B, 0x00, 0x8B, 0x68, 0x18};
-	if (memcmp(rawdata+0x0F, old_import_code, sizeof(old_import_code)) == 0) {			//no calltrans
-		memcpy(rawdata+0x0F, new_import_code, sizeof(new_import_code));
-		printf("Import code successfully patched.\n");
-	} else if (memcmp(rawdata+0x27, old_import_code, sizeof(old_import_code)) == 0) {	//with calltrans
-		memcpy(rawdata+0x27, new_import_code, sizeof(new_import_code));
-		printf("Import code successfully patched.\n");
-	} else if (memcmp(rawdata+0x0F, new_import_code, sizeof(new_import_code)) == 0 ||
-			   memcmp(rawdata+0x27, new_import_code, sizeof(new_import_code)) == 0)
-	{
-		printf("Import code does not need patching.\n");
-	} else {
+	static const unsigned char new_import_code[] = {0x64, 0x67, 0x8B, 0x47, 0x30, 0x8B, 0x40, 0x0C,
+													0x8B, 0x40, 0x0C, 0x8B, 0x00, 0x8B, 0x00, 0x8B,
+													0x68, 0x18};
+	bool found_import = false;
+	for (int i = 0 ; i < splittingPoint-sizeof(old_import_code) ; i++) {
+		if (memcmp(rawdata+i, old_import_code, sizeof(old_import_code)) == 0) {			//no calltrans
+			memcpy(rawdata+i, new_import_code, sizeof(new_import_code));
+			printf("Import code successfully patched.\n");
+			found_import = true;
+			break;
+		}
+		if (memcmp(rawdata+i, new_import_code, sizeof(new_import_code)) == 0)
+		{
+			printf("Import code does not need patching.\n");
+			found_import = true;
+			break;
+		}
+	}
+	if (!found_import) {
 		Log::error("", "Cannot find old import code to patch\n");
 	}
 	
