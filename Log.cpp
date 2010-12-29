@@ -22,6 +22,6 @@ void Log::error(const char* from, const char* msg, ...) {
 	
 	fprintf(stdout, "\n%s: error: LNK: %s\n", from, buff);
 	fflush(stdout);
-	Sleep(5000);
+	//Sleep(5000);
 	exit(-1);
 }

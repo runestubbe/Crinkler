@@ -37,7 +37,7 @@ Crinkler::Crinkler():
 	m_1KMode(false),
 	m_summaryFilename(""),
 	m_truncateFloats(false),
-	m_truncateBits(32),
+	m_truncateBits(64),
 	m_overrideAlignments(false),
 	m_alignmentBits(0)
 {
@@ -358,6 +358,10 @@ void Crinkler::setHeaderConstants(Hunk* header, Hunk* phase1, int hashsize, int 
 	*(header->getPtr() + header->findSymbol("_ModelSkipPtr")->value) = m_modellist1.nmodels+8;
 	*(header->getPtr() + header->findSymbol("_SubsystemTypePtr")->value) = subsystem_version;
 	*((short*)(header->getPtr() + header->findSymbol("_LinkerVersionPtr")->value)) = CRINKLER_LINKER_VERSION;
+	if (phase1->getPtr()[0] == 0x5F) {
+		// Code starts with POP EDI => call transform
+		*(header->getPtr() + header->findSymbol("_SpareNopPtr")->value) = 0x57; // PUSH EDI
+	}
 }
 
 void Crinkler::recompress(const char* input_filename, const char* output_filename) {
@@ -714,7 +718,12 @@ void Crinkler::link(const char* filename) {
 	//create phase 1 data hunk
 	int splittingPoint;
 	Hunk* phase1, *phase1Untransformed;
-	m_transform->linkAndTransform(&m_hunkPool, import, CRINKLER_CODEBASE, phase1, &phase1Untransformed, &splittingPoint, true);
+	if (!m_transform->linkAndTransform(&m_hunkPool, import, CRINKLER_CODEBASE, phase1, &phase1Untransformed, &splittingPoint, true)) {
+		// Transform failed, run again
+		delete phase1;
+		delete phase1Untransformed;
+		m_transform->linkAndTransform(&m_hunkPool, import, CRINKLER_CODEBASE, phase1, &phase1Untransformed, &splittingPoint, false);
+	}
 	int maxsize = phase1->getRawSize()*2+1000;	//allocate plenty of memory	
 
 	printf("\nUncompressed size of code: %5d\n", splittingPoint);

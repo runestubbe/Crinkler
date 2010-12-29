@@ -16,6 +16,7 @@ global  _LinkerVersionPtr
 global	_SubsystemTypePtr
 global	_ModelSkipPtr
 global	_BaseProbPtr
+global	_SpareNopPtr
 
 BaseProbDummy	equ	13
 ModelSkipDummy	equ	23
@@ -77,9 +78,10 @@ dd 00010000h		;Size of headers (= Section alignment)
 
 	;Checksum
 DepackInit2:
+_SpareNopPtr:
+	nop ;db 0xCC
     push eax
 	inc  eax
-	nop ;db 0xCC
 
 	db		0xbb ; mov ebx, const
 _SubsystemTypePtr:

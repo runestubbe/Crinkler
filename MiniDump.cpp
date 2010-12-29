@@ -32,6 +32,7 @@ LONG WINAPI ExitWithDump(struct _EXCEPTION_POINTERS* exceptionInfo)
 	CloseHandle(file_full);
 
 	printf("\nOops! Crinkler has crashed.\nDump files written to %s and %s.\n", filename_mini, filename_full);
+	fflush(stdout);
 	ExitProcess(-1);
 	return EXCEPTION_CONTINUE_SEARCH;
 }

@@ -5,6 +5,7 @@
 
 class Hunk;
 class CallTransform : public Transform {
+	bool disabled;
 public:
 	Hunk* getDetransformer();
 	int getFlags();
