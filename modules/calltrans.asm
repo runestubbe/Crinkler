@@ -2,11 +2,12 @@
 bits 32
 
 	global	_CallTrans
+	global	_CallTransEnd
 
 	section	ct text align=1
 
 _CallTrans:
-	mov		edi, [esp-4]
+	pop		edi
 	mov		ecx, dword 0
 tloop:
 	mov		al, 0e8h
@@ -20,3 +21,4 @@ tloop:
 	cwde
 	stosd
 	loop	tloop
+_CallTransEnd:

@@ -4,6 +4,7 @@
 #include "data.h"
 #include "HunkList.h"
 #include "Symbol.h"
+#include "Log.h"
 
 Hunk* CallTransform::getDetransformer() {
 	CoffObjectLoader loader;
@@ -28,8 +29,19 @@ bool CallTransform::transform(Hunk* hunk, int splittingPoint, bool verbose) {
 			}
 		}
 	}
-	*(int *)(hunk->getPtr() + hunk->findSymbol("_CallTrans")->value+5) = num;
-	if(verbose)
-		printf("\nCalls transformed: %d\n", num);
-	return num > 0;
+	if (num > 0) {
+		*(int *)(hunk->getPtr() + hunk->findSymbol("_CallTrans")->value+2) = num;
+		if(verbose)
+			printf("\nCalls transformed: %d\n", num);
+		return true;
+	} else {
+		int start = hunk->findSymbol("_CallTrans")->value;
+		int end = hunk->findSymbol("_CallTransEnd")->value;
+		memset(hunk->getPtr()+start, 0x90, end-start);
+		if (verbose)
+			Log::warning("", "No calls - call transformation not applied");
+		// Do not run call trans next time
+		disable();
+		return false;
+	}
 }
