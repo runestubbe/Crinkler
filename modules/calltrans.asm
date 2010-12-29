@@ -2,7 +2,7 @@
 bits 32
 
 	global	_CallTrans
-	global	_CallTransEnd
+	global	_CallTransSize
 
 	section	ct text align=1
 
@@ -22,3 +22,5 @@ tloop:
 	stosd
 	loop	tloop
 _CallTransEnd:
+
+_CallTransSize	equ	_CallTransEnd-_CallTrans
