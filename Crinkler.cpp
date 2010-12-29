@@ -289,12 +289,12 @@ Hunk* Crinkler::createModelHunk(int splittingPoint, int rawsize) {
 	models = new Hunk("models", 0, 0, 1, modelsSize, modelsSize);
 	models->addSymbol(new Symbol("_Models", 0, SYMBOL_IS_RELOCATEABLE, models));
 	char* ptr = models->getPtr();
-	*(unsigned int*)ptr = CRINKLER_CODEBASE+splittingPoint;			ptr += sizeof(unsigned int);
-	*(unsigned int*)ptr = w1;						ptr += sizeof(unsigned int);
+	*(unsigned int*)ptr = -(CRINKLER_CODEBASE+splittingPoint);		ptr += sizeof(unsigned int);
+	*(unsigned int*)ptr = w1;										ptr += sizeof(unsigned int);
 	for(int m = 0; m < m_modellist1.nmodels; m++)
 		*ptr++ = masks1[m];
-	*(unsigned int*)ptr = CRINKLER_CODEBASE+rawsize;	ptr += sizeof(unsigned int);
-	*(unsigned int*)ptr = w2;						ptr += sizeof(unsigned int);
+	*(unsigned int*)ptr = -(CRINKLER_CODEBASE+rawsize);				ptr += sizeof(unsigned int);
+	*(unsigned int*)ptr = w2;										ptr += sizeof(unsigned int);
 	for(int m = 0; m < m_modellist2.nmodels; m++)
 		*ptr++ = masks2[m];
 	return models;
@@ -464,6 +464,11 @@ void Crinkler::recompress(const char* input_filename, const char* output_filenam
 
 	int rawsize = (*(int*)&indata[models_offset+modelskip]) / 8;
 	int splittingPoint = (*(int*)&indata[models_offset]) / 8;
+
+	if(majorlv > '1' || (majorlv == '1' && minorlv >= '3')) {
+		rawsize = -rawsize;
+		splittingPoint = -splittingPoint;
+	}
 
 	printf("Code size: %d\n", splittingPoint);
 	printf("Data size: %d\n", rawsize-splittingPoint);

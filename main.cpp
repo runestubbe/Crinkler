@@ -19,6 +19,8 @@
 #include "Fix.h"
 #include "MemoryFile.h"
 #include "misc.h"
+#include "NameMangling.h"
+#include "MiniDump.h"
 
 using namespace std;
 
@@ -147,7 +149,6 @@ static void runOriginalLinker(const char* linkerName) {
 }
 
 const int TRANSFORM_CALLS = 0x01;
-#include "NameMangling.h"
 int main(int argc, char* argv[]) {
 	//find canonical name of the Crinkler executable
 	char crinklerCanonicalName[1024];
@@ -156,6 +157,8 @@ int main(int argc, char* argv[]) {
 		GetModuleFileName(NULL, tmp, sizeof(tmp));
 		GetFullPathName(tmp, sizeof(crinklerCanonicalName), crinklerCanonicalName, NULL);
 	}
+
+	EnableMiniDumps();
 	
 	string crinklerFilename = stripPath(crinklerCanonicalName);
 	

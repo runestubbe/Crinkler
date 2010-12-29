@@ -180,9 +180,9 @@ EndCheck:
 	pusha
 
     lodsd
-    sub  eax,edi
+    add  eax,edi
     je   InitHash            ;if (block_end == unpacked_byte_offset) InitHash
-
+    ; carry = 1
 
 Model:
 	;; Find probs from model
@@ -232,11 +232,11 @@ NotModelEnd:
 	jc	.hashloop
 	jnz	.next
 	
-	stc
+	;stc
 InitHash:
 	mov	edi, _HashTable
 	mov	ecx, _HashTableSize
-	jnc	near _ClearHash
+	jc	near _ClearHash
 
 	div	ecx
 	;; edx = hash

@@ -14,9 +14,6 @@
 		/>
 	</Platforms>
 	<ToolFiles>
-		<DefaultToolFile
-			FileName="asmrulefile.rules"
-		/>
 	</ToolFiles>
 	<Configurations>
 		<Configuration
@@ -32,9 +29,6 @@
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
-			/>
-			<Tool
-				Name="Asm"
 			/>
 			<Tool
 				Name="VCXMLDataGeneratorTool"
@@ -56,7 +50,7 @@
 				UsePrecompiledHeader="0"
 				WarningLevel="3"
 				Detect64BitPortabilityProblems="false"
-				DebugInformationFormat="1"
+				DebugInformationFormat="3"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -116,9 +110,6 @@
 				Name="VCCustomBuildTool"
 			/>
 			<Tool
-				Name="Asm"
-			/>
-			<Tool
 				Name="VCXMLDataGeneratorTool"
 			/>
 			<Tool
@@ -151,7 +142,7 @@
 				AssemblerOutput="0"
 				WarningLevel="3"
 				Detect64BitPortabilityProblems="false"
-				DebugInformationFormat="1"
+				DebugInformationFormat="3"
 				CallingConvention="0"
 			/>
 			<Tool
@@ -325,6 +316,14 @@
 				>
 			</File>
 			<File
+				RelativePath=".\MiniDump.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\MiniDump.h"
+				>
+			</File>
+			<File
 				RelativePath=".\misc.cpp"
 				>
 			</File>
@@ -460,7 +459,7 @@
 					ExcludedFromBuild="true"
 					>
 					<Tool
-						Name="Asm"
+						Name="VCCustomBuildTool"
 					/>
 				</FileConfiguration>
 				<FileConfiguration
@@ -468,7 +467,7 @@
 					ExcludedFromBuild="true"
 					>
 					<Tool
-						Name="Asm"
+						Name="VCCustomBuildTool"
 					/>
 				</FileConfiguration>
 			</File>
@@ -480,7 +479,7 @@
 					ExcludedFromBuild="true"
 					>
 					<Tool
-						Name="Asm"
+						Name="VCCustomBuildTool"
 					/>
 				</FileConfiguration>
 				<FileConfiguration
@@ -488,7 +487,7 @@
 					ExcludedFromBuild="true"
 					>
 					<Tool
-						Name="Asm"
+						Name="VCCustomBuildTool"
 					/>
 				</FileConfiguration>
 			</File>
@@ -500,7 +499,7 @@
 					ExcludedFromBuild="true"
 					>
 					<Tool
-						Name="Asm"
+						Name="VCCustomBuildTool"
 					/>
 				</FileConfiguration>
 				<FileConfiguration
@@ -508,7 +507,7 @@
 					ExcludedFromBuild="true"
 					>
 					<Tool
-						Name="Asm"
+						Name="VCCustomBuildTool"
 					/>
 				</FileConfiguration>
 			</File>
@@ -520,7 +519,7 @@
 					ExcludedFromBuild="true"
 					>
 					<Tool
-						Name="Asm"
+						Name="VCCustomBuildTool"
 					/>
 				</FileConfiguration>
 				<FileConfiguration
@@ -528,7 +527,7 @@
 					ExcludedFromBuild="true"
 					>
 					<Tool
-						Name="Asm"
+						Name="VCCustomBuildTool"
 					/>
 				</FileConfiguration>
 			</File>
@@ -540,7 +539,7 @@
 					ExcludedFromBuild="true"
 					>
 					<Tool
-						Name="Asm"
+						Name="VCCustomBuildTool"
 					/>
 				</FileConfiguration>
 				<FileConfiguration
@@ -548,7 +547,7 @@
 					ExcludedFromBuild="true"
 					>
 					<Tool
-						Name="Asm"
+						Name="VCCustomBuildTool"
 					/>
 				</FileConfiguration>
 			</File>
@@ -560,7 +559,7 @@
 					ExcludedFromBuild="true"
 					>
 					<Tool
-						Name="Asm"
+						Name="VCCustomBuildTool"
 					/>
 				</FileConfiguration>
 				<FileConfiguration
@@ -568,7 +567,7 @@
 					ExcludedFromBuild="true"
 					>
 					<Tool
-						Name="Asm"
+						Name="VCCustomBuildTool"
 					/>
 				</FileConfiguration>
 			</File>
@@ -580,7 +579,7 @@
 					ExcludedFromBuild="true"
 					>
 					<Tool
-						Name="Asm"
+						Name="VCCustomBuildTool"
 					/>
 				</FileConfiguration>
 				<FileConfiguration
@@ -588,7 +587,7 @@
 					ExcludedFromBuild="true"
 					>
 					<Tool
-						Name="Asm"
+						Name="VCCustomBuildTool"
 					/>
 				</FileConfiguration>
 			</File>
@@ -600,7 +599,7 @@
 					ExcludedFromBuild="true"
 					>
 					<Tool
-						Name="Asm"
+						Name="VCCustomBuildTool"
 					/>
 				</FileConfiguration>
 				<FileConfiguration
@@ -608,7 +607,7 @@
 					ExcludedFromBuild="true"
 					>
 					<Tool
-						Name="Asm"
+						Name="VCCustomBuildTool"
 					/>
 				</FileConfiguration>
 			</File>
@@ -620,7 +619,7 @@
 					ExcludedFromBuild="true"
 					>
 					<Tool
-						Name="Asm"
+						Name="VCCustomBuildTool"
 					/>
 				</FileConfiguration>
 				<FileConfiguration
@@ -628,7 +627,7 @@
 					ExcludedFromBuild="true"
 					>
 					<Tool
-						Name="Asm"
+						Name="VCCustomBuildTool"
 					/>
 				</FileConfiguration>
 			</File>
@@ -694,6 +693,7 @@
 						Name="VCCustomBuildTool"
 						Description="Assembling data.."
 						CommandLine="nasmw -f win32 $(InputPath) -o $(TargetDir)\$(InputName).obj&#x0D;&#x0A;"
+						AdditionalDependencies="modules\header13.obj"
 						Outputs="$(TargetDir)\$(InputName).obj"
 					/>
 				</FileConfiguration>
