@@ -9,6 +9,7 @@ Manual:
 	skriv faq
 	+ws2003
 	truncate default 64
+	credit Rrrola
 
 Licens:
 	+inkluder Distorm-licens
@@ -25,21 +26,23 @@ Code:
 	+report: hand cursor on labels
 	+report: include compression options in report
 	+report: fix size table to include highest category
-	report: place labels into right section
+	+report: place labels into right section
 	report: size of selected range
 
 	-revert to old non-range import code?
+
+	+header optimizations
 
 	better report for recompression
 	replacedll for recompression
 
 	+patch calltrans code in recompression
-	handle recompression of 1.3
-	(identify import code at arbitrary position)
+	+handle recompression of 1.3
+	+(identify import code at arbitrary position)
 
 	+max ordertries
 	button in progressgui to skip phase
-	Sensible total time printing
+	+Sensible total time printing
 	+Remove delay on exit?
 
 	+truncation?

@@ -70,8 +70,7 @@ dd 00000200h		;File alignment (on disk)
 db "HASH"			;Major/minor OS version
 db "HASH"			;Major/minor image version
 
-DummyImport:
-dw 4,8000h			;Major/minor subsystem version
+dw 4,0			;Major/minor subsystem version
 dd 0h				;Reserved
 dd _VirtualSize+20000h;Size of image (= Section size + Section alignment)
 dd 00010000h		;Size of headers (= Section alignment)
@@ -80,7 +79,7 @@ dd 00010000h		;Size of headers (= Section alignment)
 DepackInit2:
 _SpareNopPtr:
 	nop ;db 0xCC
-    push eax
+	push eax
 	inc  eax
 
 	db		0xbb ; mov ebx, const
@@ -95,34 +94,55 @@ _SubsystemTypePtr:
 	mov		esi, _Models
 	push	byte 0
 	pop		ecx
-EndCheckJump:
 	jmp		_DepackEntry
 	dw		0
 
 LoaderFlags:
-DummyImportTable equ LoaderFlags-4
 db "HASH"			;Loader flags
 dd 3				;Number of RVAs and Sizes
 
 ;Data directories
-db "HASH"						;Exports RVA
-db "HASH"						;Exports size
-dd 0x0001F000					;Imports rva
+;Exports RVA
+;Exports size
+;Imports RVA
+_AritCalculate:
+	add	ebx, edx		;ebx = p0 + p1
+	push	eax			;push interval_size
+	mul	edx			;edx:eax = p0 * interval_size
+	div	ebx			;eax = (p0 * interval_size) / (p0 + p1)
+	;; eax = threshold value between 0 and 1
+
+	xor	ebx, ebx		;ebx = 0
+	jmp	short _AritCalculate2
+	db 0
+
+;db "HASH"						;Exports RVA
+;db "HASH"						;Exports size
+;dd 0x0001F000					;Imports rva
 db "HASH"						;Imports size
 dd 0							;Resources RVA
 
 ;Section headers
 ;Name
 ;db "lz32.dll"
-_ClearHash:
-	rep stosw
-	or	al, [esi]
-	popa
-	lea	esi, [esi + ModelSkipDummy]
-ModelSkipPtrP1:
-	jpo	EndCheckJump
-	ret
 
+_AritCalculate2:
+	pop	edx			;edx = interval_size
+	cmp	ecx, eax		;data < threshold?
+	jb	.zero
+	
+	;one
+	sub	ecx, eax		;data -= threshold
+	
+	xchg	eax, edx		;eax = interval_size, edx = threshold
+	sub	eax, edx		;eax = interval_size - threshold
+	inc	ebx			;ebx = 1
+.zero:
+	;; ebx = bit
+	;; ecx = new data
+	;; eax = new interval size
+	ret
+		
 dd _VirtualSize+10000h;Virtual size (= Section size)
 dd 00010000h		;Virtual address (= Section alignment)
 dd 200h				;Size of raw data
@@ -153,28 +173,7 @@ AritDecodeLoop:
 AritDecode:
 	test	eax, eax		;msb of interval != 0
 	jns	AritDecodeLoop		;loop while msb of interval == 0
-	
-	add	ebx, edx		;ebx = p0 + p1
-	push	eax			;push interval_size
-	mul	edx			;edx:eax = p0 * interval_size
-	div	ebx			;eax = (p0 * interval_size) / (p0 + p1)
-	;; eax = threshold value between 0 and 1
-
-	xor	ebx, ebx		;ebx = 0
-	pop	edx			;edx = interval_size
-	cmp	ecx, eax		;data < threshold?
-	jb	.zero
-	
-	;one
-	sub	ecx, eax		;data -= threshold
-	
-	xchg	eax, edx		;eax = interval_size, edx = threshold
-	sub	eax, edx		;eax = interval_size - threshold
-	inc	ebx			;ebx = 1
-.zero:
-	;; ebx = bit
-	;; ecx = new data
-	;; eax = new interval size
+	call	_AritCalculate
 
 _DepackEntry:
 
@@ -238,8 +237,18 @@ NotModelEnd:
 InitHash:
 	mov	edi, _HashTable
 	mov	ecx, _HashTableSize
-	jc	near _ClearHash
+	jnc	short UpdateHash
 
+_ClearHash:
+	rep stosw
+	or	al, [esi]
+	popa
+	lea	esi, [esi + ModelSkipDummy]
+ModelSkipPtrP1:
+	jpo	EndCheck
+	ret
+
+UpdateHash:
 	div	ecx
 	;; edx = hash
 	lea	edi, [edi + edx*2]	;edi = hashTableEntry
