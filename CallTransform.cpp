@@ -36,8 +36,8 @@ bool CallTransform::transform(Hunk* hunk, int splittingPoint, bool verbose) {
 		return true;
 	} else {
 		int start = hunk->findSymbol("_CallTrans")->value;
-		int end = hunk->findSymbol("_CallTransEnd")->value;
-		memset(hunk->getPtr()+start, 0x90, end-start);
+		int size = hunk->findSymbol("_CallTransSize")->value;
+		memset(hunk->getPtr()+start, 0x90, size);
 		if (verbose)
 			Log::warning("", "No calls - call transformation not applied");
 		// Do not run call trans next time
