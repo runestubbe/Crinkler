@@ -133,6 +133,7 @@ Hunk* HunkList::toHunk(const char* name, int baseAddress, int* splittingPoint) c
 			s->hunk = newHunk;
 			if(s->flags & SYMBOL_IS_RELOCATEABLE) {
 				s->value += address;
+				s->hunk_offset = jt->second->hunk_offset + address;
 			}
 			newHunk->addSymbol(s);
 		}

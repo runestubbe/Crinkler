@@ -20,6 +20,7 @@ public:
 	unsigned int	flags;
 	Hunk*			hunk;
 	int				size;
+	int				hunk_offset;	//for compression report
 	bool			fromLibrary;
 
 	//unmangles the vc decorations

@@ -39,6 +39,11 @@ static list<string> findFileInPath(const char* filename, const char* path) {
 	list<string> res;
 	string str = path;
 
+	char canonicalName[1024];
+	if(GetFullPathName(filename, sizeof(canonicalName), canonicalName, NULL) && fileExists(canonicalName)) {
+		res.push_back(toUpper(canonicalName));
+	}
+
 	string delimiters = ";";
 	string::size_type lastPos = str.find_first_not_of(delimiters, 0);
 	string::size_type pos     = str.find_first_of(delimiters, lastPos);
@@ -51,7 +56,6 @@ static list<string> findFileInPath(const char* filename, const char* path) {
 			token += "\\";
 		token += filename;
 
-		char canonicalName[1024];
 		GetFullPathName(
 			token.c_str(),
 			sizeof(canonicalName),
@@ -119,8 +123,7 @@ static bool runExecutable(const char* filename) {
 }
 
 static void runOriginalLinker(const char* linkerName) {
-	string path = ".;" + getEnv("PATH");
-	list<string> res = findFileInPath(linkerName, path.c_str());
+	list<string> res = findFileInPath(linkerName, getEnv("PATH").c_str());
 	const char* needle = "Crinkler";
 	const int needleLength = strlen(needle);
 
@@ -237,7 +240,6 @@ int main(int argc, char* argv[]) {
 	SetPriorityClass(GetCurrentProcess(), priorityArg.getValue());
 
 	Crinkler crinkler;
-
 
 	//recompress
 	if(cmdline.removeToken("/RECOMPRESS")) {
@@ -381,7 +383,7 @@ int main(int argc, char* argv[]) {
 	printf("\n");
 
 	//build search library+object search path
-	string lib = ";.;";
+	string lib = "";
 	char drive[3] = "?:";
 	drive[0] = (char) (_getdrive()+'A'-1);
 	lib += string(drive) + ";";

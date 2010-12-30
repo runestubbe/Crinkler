@@ -91,15 +91,18 @@ const char* Hunk::getName() const {
 }
 
 //sort symbols by address, then by type (section < global < local) and finally by name
-static bool symbolComparator(Symbol*& first, Symbol*& second) {
-	if(first->value != second->value)
+static bool symbolComparator(const Symbol*& first, const Symbol*& second) {
+	if(first->value != second->value) {
 		return first->value < second->value;
-	else
-		if((first->flags & SYMBOL_IS_SECTION) || (second->flags & SYMBOL_IS_SECTION))
+	} else if(first->hunk_offset != second->hunk_offset) {
+		return first->hunk_offset < second->hunk_offset;
+	} else {
+		if((first->flags & SYMBOL_IS_SECTION) != (second->flags & SYMBOL_IS_SECTION))
 			return first->flags & SYMBOL_IS_SECTION;
-		if((first->flags & SYMBOL_IS_LOCAL) || (second->flags & SYMBOL_IS_LOCAL))
+		if((first->flags & SYMBOL_IS_LOCAL) != (second->flags & SYMBOL_IS_LOCAL))
 			return !(first->flags & SYMBOL_IS_LOCAL);
 		return first->name < second->name;
+	}
 }
 
 
