@@ -117,12 +117,6 @@ Symbol*	Crinkler::findEntryPoint() {
 		return NULL;
 	}
 
-	//1byte aligned entry point
-	if(entry->hunk->getAlignmentBits() > 0) {
-		Log::warning("", "Entry point hunk has alignment greater than 1, forcing alignment of 1");
-		entry->hunk->setAlignmentBits(0);
-	}
-
 	if(entry->value > 0) {
 		Log::warning("", "Entry point not at start of section, jump necessary");
 	}
@@ -709,6 +703,12 @@ void Crinkler::link(const char* filename) {
 	replaceDlls(m_hunkPool);
 
 	if (m_overrideAlignments) overrideAlignments(m_hunkPool);
+
+	//1byte aligned entry point
+	if(entry->hunk->getAlignmentBits() > 0) {
+		Log::warning("", "Entry point hunk has alignment greater than 1, forcing alignment of 1");
+		entry->hunk->setAlignmentBits(0);
+	}
 
 	//load appropriate header
 	HunkList* headerHunks = m_1KMode ?	m_hunkLoader.load(header1KObj, header1KObj_end - header1KObj, "crinkler header") :

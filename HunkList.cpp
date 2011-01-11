@@ -90,21 +90,25 @@ Hunk* HunkList::toHunk(const char* name, int baseAddress, int* splittingPoint) c
 	int virtualsize = 0;
 	int alignmentBits = 0;
 	unsigned int flags = 0;
+	bool overflow = false;
 	for(vector<Hunk*>::const_iterator it = m_hunks.begin(); it != m_hunks.end(); it++) {
 		Hunk* h = *it;
 		// align
 		virtualsize += baseAddress - h->getAlignmentOffset();
 		virtualsize = align(virtualsize, h->getAlignmentBits());
 		virtualsize -= baseAddress - h->getAlignmentOffset();
+		if (virtualsize < 0) { overflow = true; break; }
 
 		// section contents
 		if(h->getRawSize() > 0)
 			rawsize = virtualsize + h->getRawSize();
 		virtualsize += h->getVirtualSize();
+		if (virtualsize < 0) { overflow = true; break; }
 		if (needsContinuationJump(it)) {
 			rawsize += 5;
 			virtualsize = rawsize;
 		}
+		if (virtualsize < 0) { overflow = true; break; }
 
 		// max alignment and flags
 		alignmentBits = max(alignmentBits, h->getAlignmentBits());
@@ -112,6 +116,10 @@ Hunk* HunkList::toHunk(const char* name, int baseAddress, int* splittingPoint) c
 			flags |= HUNK_IS_CODE;
 		if(h->getFlags() & HUNK_IS_WRITEABLE)
 			flags |= HUNK_IS_WRITEABLE;
+	}
+
+	if (overflow) {
+		Log::error("", "Virtual size overflows 2GB limit");
 	}
 
 	//copy data
