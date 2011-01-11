@@ -177,7 +177,7 @@ int main(int argc, char* argv[]) {
 	CmdParamInt truncateFloats("TRUNCATEFLOATS", "truncates floats", "bits", PARAM_ALLOW_NO_ARGUMENT_DEFAULT,
 							0, 64, 64);
 	CmdParamInt overrideAlignments("OVERRIDEALIGNMENTS", "override section alignments using align labels", "bits",  PARAM_ALLOW_NO_ARGUMENT_DEFAULT,
-							0, 24, -1);
+							0, 30, -1);
 	CmdParamString entryArg("ENTRY", "name of the entrypoint", "symbol", 
 						PARAM_IS_SWITCH|PARAM_FORBID_MULTIPLE_DEFINITIONS, "");
 	CmdParamString outArg("OUT", "output filename", "filename", 

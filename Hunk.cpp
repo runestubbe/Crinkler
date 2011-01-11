@@ -481,8 +481,8 @@ void Hunk::overrideAlignment(int defaultBits) {
 			int n = sscanf_s(&sname.c_str()[apos+5], "%d_%d", &align_bits, &align_offset);
 			if (n >= 1) {
 				// align label match
-				if (align_bits < 0 || align_bits > 24) {
-					Log::error("", "Alignment label '%s' outside legal range for number of bits (0-24)", sname.c_str());
+				if (align_bits < 0 || align_bits > 30) {
+					Log::error("", "Alignment label '%s' outside legal range for number of bits (0-30)", sname.c_str());
 				}
 				if (align_label) {
 					Log::error("", "More than one alignment label in section '%s'", getName());
@@ -499,7 +499,7 @@ void Hunk::overrideAlignment(int defaultBits) {
 		}
 	}
 
-	if (!align_label && defaultBits != -1 && !(m_flags & HUNK_IS_CODE) && getRawSize() == 0) {
+	if (!align_label && defaultBits != -1 && defaultBits > getAlignmentBits() && !(m_flags & HUNK_IS_CODE) && getRawSize() == 0) {
 		// override uninitialized section alignment
 		setAlignmentBits(defaultBits);
 		printf("Alignment of section '%s' overridden to default %d bits\n", getName(), defaultBits);

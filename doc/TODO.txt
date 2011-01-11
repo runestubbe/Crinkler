@@ -1,5 +1,5 @@
 Manual:
-	credit til gloom
+	+credit til gloom
 	+safeimport -> unsafeimport
 	+beskriv summary
 	+verbose -> ?
@@ -8,8 +8,9 @@ Manual:
 	-nævn at verbose functions ikke virker i vs8
 	skriv faq
 	+ws2003
-	truncate default 64
-	credit Rrrola
+	+truncate default 64
+	+credit Rrrola
+	dump
 
 Licens:
 	+inkluder Distorm-licens
@@ -68,6 +69,9 @@ Code:
 	+alignment not at the start of section
 	+align absolute address
 	+/OVERRIDEALIGNMENTS option
+	+virtual size overflow check
+	+alignment up to 30 bits (labels, argument, manual)
+	+check and describe alignment of code and data
 
 	+hint for security_cookie
 	+hint for alloca, __chkstk
