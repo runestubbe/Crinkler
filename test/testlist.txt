@@ -5,6 +5,7 @@ buzzie		/SUBSYSTEM:WINDOWS buzzie\common.obj buzzie\intro.obj buzzie\liquid.obj 
 diffuse		/SUBSYSTEM:WINDOWS diffusioncurves\comcall.obj diffusioncurves\draw.obj diffusioncurves\DXinit.obj diffusioncurves\effect.obj diffusioncurves\Main.obj diffusioncurves\picture.obj
 fallty		/SUBSYSTEM:WINDOWS fallty\main.obj fallty\kzgwave.obj fallty\module.obj fallty\miniglsl.obj
 galv		/SUBSYSTEM:CONSOLE /ENTRY:tinyentry galv\comcall.obj galv\DXinit.obj galv\intro.obj galv\intro_asm.obj galv\font_asm.obj galv\texturegen2.obj galv\shader.obj galv\resources.obj galv\text.obj galv\beatdata.obj galv\timing.obj
+kk		/SUBSYSTEM:WINDOWS kk\intro4k.obj
 ktrix		/SUBSYSTEM:WINDOWS /ENTRY:main ktrix\intro.obj
 mich		/SUBSYSTEM:CONSOLE /ENTRY:main mich\logo.obj mich\main.obj mich\meshgenerator.obj mich\song.obj
 micropolis	/SUBSYSTEM:WINDOWS micropolis\startup.obj micropolis\render.obj micropolis\render-asm.obj micropolis\sound.obj micropolis\sound-asm.obj

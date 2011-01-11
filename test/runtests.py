@@ -19,7 +19,7 @@ LIBS = [
     'winmm.lib'
 ]
 
-FIXED_OPTIONS = ['/COMPMODE:SLOW', '/ORDERTRIES:10000', '/HASHSIZE:300', '/HASHTRIES:1000', '/PROGRESSGUI', '/PRINT:IMPORTS', '/LIBPATH:C:\\Program Files (x86)\\Microsoft Visual Studio 8\\VC\\ATLMFC\\LIB;C:\\Program Files (x86)\\Microsoft Visual Studio 8\\VC\\LIB;C:\\Program Files (x86)\\Microsoft Visual Studio 8\\VC\\PlatformSDK\\lib;C:\\Program Files (x86)\\Microsoft Visual Studio 8\\SDK\\v2.0\\lib;C:\\Program Files (x86)\\Microsoft DirectX SDK (June 2008)\\Lib\\x86;']
+FIXED_OPTIONS = ['/COMPMODE:SLOW', '/ORDERTRIES:10000', '/HASHSIZE:300', '/HASHTRIES:1000', '/PROGRESSGUI', '/PRINT:IMPORTS', '/PRINT:MODELS', '/PRIORITY:IDLE', '/LIBPATH:C:\\Program Files (x86)\\Microsoft Visual Studio 8\\VC\\ATLMFC\\LIB;C:\\Program Files (x86)\\Microsoft Visual Studio 8\\VC\\LIB;C:\\Program Files (x86)\\Microsoft Visual Studio 8\\VC\\PlatformSDK\\lib;C:\\Program Files (x86)\\Microsoft Visual Studio 8\\SDK\\v2.0\\lib;C:\\Program Files (x86)\\Microsoft DirectX SDK (June 2008)\\Lib\\x86;']
 
 VARYING_OPTIONS = [[], ['/TRANSFORM:CALLS'], ['/RANGE:opengl32', '/RANGE:d3dx9_38'], ['/TRANSFORM:CALLS', '/RANGE:opengl32', '/RANGE:d3dx9_38']]
 VARYING_OPTION_NAMES = ['_', 'T', 'R', 'TR']
