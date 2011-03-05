@@ -4,19 +4,21 @@ CRINKLER - Compressing linker for Windows specialized for 4k intros
 Aske Simon Christensen "Blueberry/Loonies"
 Rune L. H. Stubbe "Mentor/TBC"
 
-Version 1.3 (January ??, 2011)
+Version 1.3 (March 5, 2011)
 
 
 
 VERSION HISTORY
 ---------------
-??.01.11: 1.3:  Fixed Crinkler crash on some AMD systems.
-                Header size reduced by 22 bytes.
+05.03.11: 1.3:  Fixed Crinkler crash on some AMD systems.
+                Header size reduced by 21 bytes.
+                Slightly improved model hash function.
                 /OVERRIDEALIGNMENTS option to specify label alignments.
                 No limit on the number of calls in call transform.
                 Import code and entry point movable by section reordering.
-                Fixed bug in handling files with absolute path.
+                Fixed bug in handling of files with absolute path.
                 Fixed labels in report showing up in the wrong section.
+                Crinkler writes .dmp files in case of a crash.
 
 05.09.09: 1.2:  Output EXE files are now Windows 7 compatible.
                 Output EXE files are no longer Windows 2000 compatible.
@@ -828,6 +830,12 @@ http://www.pouet.net/prod.php?which=18158
 
 If you want to contact us directly, e.g. for sending us a file, write
 to authors@crinkler.net.
+
+If Crinkler crashes, it will write two dump files named
+dump<n>_mini.dmp and dump<n>_full.dmp, where <n> is an integer making
+the file name unique. These files contain information about the
+execution state of Crinkler at the time of the crash. When reporting a
+crash, please include at least the mini dump, or, if possible, both.
 
 The newest released version of Crinkler can always be found at
 http://www.crinkler.net.
