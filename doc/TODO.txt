@@ -77,6 +77,13 @@ Code:
 	+hint for alloca, __chkstk
 	+hint for ImageBase
 
+	+ny hashfunktion
+
+	+Skriv input filnavn i recompress
+	-Skriv bytes lost to hashing i recompress
+
+	Husk PDB!!
+
 test:
 	+Test weak externals support
 	+recursive call bug

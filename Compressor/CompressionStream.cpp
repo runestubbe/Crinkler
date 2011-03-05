@@ -70,7 +70,7 @@ void CompressionStream::Compress(const unsigned char* d, int size, const ModelLi
 		// Query models
 		unsigned int probs[2] = { baseprob, baseprob };
 		for(int m = 0 ; m < nmodels; m++) {
-			unsigned int hash = ModelHashStart(weightmasks[m]) % hashsize;
+			unsigned int hash = ModelHashStart(weightmasks[m], HASH_MULTIPLIER) % hashsize;
 			unsigned int tinyHash = hash & (tinyhashsize-1);
 			TinyHashEntry *he = &hashtable[tinyHash];
 			while(he->hash != hash && he->used == 1) {
@@ -110,7 +110,7 @@ void CompressionStream::Compress(const unsigned char* d, int size, const ModelLi
 		// Query models
 		unsigned int probs[2] = { baseprob, baseprob };
 		for(int m = 0 ; m < nmodels; m++) {
-			unsigned int hash = ModelHash(data, bitpos, weightmasks[m]) % hashsize;
+			unsigned int hash = ModelHash(data, bitpos, weightmasks[m], HASH_MULTIPLIER) % hashsize;
 			unsigned int tinyHash = hash & (tinyhashsize-1);
 			TinyHashEntry *he = &hashtable[tinyHash];
 			while(he->hash != hash && he->used == 1) {
@@ -196,7 +196,7 @@ int CompressionStream::EvaluateSize(const unsigned char* d, int size, const Mode
 		for(int bitpos = 0; bitpos < bitlength; bitpos++) {
 			int bit = GetBit(data, bitpos);
 
-			unsigned int hash = ModelHash(data, bitpos, weightmasks[modeli]);
+			unsigned int hash = ModelHash(data, bitpos, weightmasks[modeli], HASH_MULTIPLIER);
 			unsigned int tinyHash = hash & (tinyhashsize-1);
 			TinyHashEntry *he = &hashtable[tinyHash];
 			while(he->hash != hash && he->used == 1) {

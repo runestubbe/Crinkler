@@ -24,8 +24,10 @@ int EmpiricalHunkSorter::tryHunkCombination(HunkList* hunklist, Transform& trans
 	
 	char contexts[2][8];
 	memset(contexts[0], 0, 8);
-	assert(splittingPoint >= 8);
-	memcpy(contexts[1], phase1->getPtr()+splittingPoint-8, 8);
+	memset(contexts[1], 0, 8);
+	int context_size = 8;
+	if (splittingPoint < 8) context_size = splittingPoint;
+	memcpy(contexts[1]+(8-context_size), phase1->getPtr()+splittingPoint-context_size, context_size);
 
 	CompressionStream cs(NULL, NULL, 0);
 	int sizes[16];

@@ -270,6 +270,7 @@ int main(int argc, char* argv[]) {
 				return 1;
 			}
 
+			printf("Source: %s\n", infilename);
 			printf("Target: %s\n", outArg.getValue());
 			if(subsystemArg.getValue() == -1) {
 				printf("Subsystem type: Inherited from original\n");

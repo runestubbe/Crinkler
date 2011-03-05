@@ -1,9 +1,9 @@
-	global	_ModelHash@12
-	global	_ModelHashStart@4
+	global	_ModelHash@16
+	global	_ModelHashStart@8
 
 	section	model text
-	;; data, bitpos, model mask
-_ModelHash@12:
+	;; data, bitpos, model mask, hashmul
+_ModelHash@16:
 	push edi
 	push ebx
 	
@@ -27,14 +27,14 @@ _ModelHash@12:
 	shr ebx, cl
 
 	xor	al, bl
-	rol	eax, 9
+	imul eax, dword [esp + (2+4)*4]
 	add	al, bl
 	sub eax, byte 1
 	jmp	.next
 .hashloop:
 	movzx ebx, byte [edi]
 	xor eax, ebx
-	rol eax, 9
+	imul eax, dword [esp + (2+4)*4]
 	add al, bl
 	sub eax, byte 1
 .next:
@@ -47,20 +47,20 @@ _ModelHash@12:
 
 	pop ebx
 	pop edi
-	ret 12
+	ret 16
 
 
-	;; model mask
-_ModelHashStart@4:	
+	;; model mask, hashmul
+_ModelHashStart@8:	
 	mov	eax, [esp + (1)*4]
 	mov	edx, eax
 	;; eax = model mask
 
-	rol	eax, 9
+	imul eax, dword [esp + (2)*4]
 	sub eax, byte 1
 	jmp	.next
 .hashloop:
-	rol eax, 9
+	imul eax, dword [esp + (2)*4]
 	sub eax, byte 1
 .next:
 	add	dl,dl
@@ -69,5 +69,5 @@ _ModelHashStart@4:
 	
 	;; eax = hash
 
-	ret 4
+	ret 8
 
