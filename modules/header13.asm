@@ -18,6 +18,8 @@ global	_ModelSkipPtr
 global	_BaseProbPtr
 global	_SpareNopPtr
 
+HASH_MULTIPLIER	equ 111
+
 BaseProbDummy	equ	13
 ModelSkipDummy	equ	23
 
@@ -224,7 +226,7 @@ NotModelEnd:
 
 .hashloop:
 	xor	al, [edi]
-	rol	eax, 9
+	imul eax, byte HASH_MULTIPLIER
 	add	al, [edi]
 	dec	eax
 .next:
