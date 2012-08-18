@@ -1,90 +1,49 @@
 Manual:
-	+credit til gloom
-	+safeimport -> unsafeimport
-	+beskriv summary
-	+verbose -> ?
-	+truncation?
 	credit til flere personer?
-	-nævn at verbose functions ikke virker i vs8
 	skriv faq
-	+ws2003
-	+truncate default 64
-	+credit Rrrola
-	dump
 
 Licens:
-	+inkluder Distorm-licens
-	+formuler Crinkler-licens
 
 Code:
-	+report: layout ved lange idents
-	*report: lav relocs til links
-		*escape idents
-	+report: colapse/expand
-	+report: lav sidste justeringer af layout og skriv forklaringstekst
-	+report: adskillelse af dwords i hexdump
 	report: highlight af trunkerede floats og absolutte jump offsets
-	+report: hand cursor on labels
-	+report: include compression options in report
-	+report: fix size table to include highest category
-	+report: place labels into right section
 	report: size of selected range
+	report: choose name of first global label in section from local label
+	report: size
+	report: time spent
 
-	-revert to old non-range import code?
-
-	+header optimizations
+	decimals on sizes
+	include header in sizes
 
 	better report for recompression
 	replacedll for recompression
 
-	+patch calltrans code in recompression
-	+handle recompression of 1.3
-	+(identify import code at arbitrary position)
-
-	+max ordertries
 	button in progressgui to skip phase
-	+Sensible total time printing
-	+Remove delay on exit?
+	ask for compression mode
 
-	+truncation?
-	+verbose -> ?
+	zero-section header
+	ABS coding
+	PEB from EBX
+
 	combine identical read-only symbols
-        -verbose:functions
 
-	Remove 64k limit on uncompressed size (unfix BSS address)
+	Remove 64k limit on uncompressed size (unfix BSS/HashTable address)
 	Remove 64k limit on compressed size (Adjustable CodeBase)
 
 	Make forwarded RVA a warning instead of error? (For Wine crosscompilation)
 
 	automatic dynamic initializers
 
-	+place import code freely (test using KK's code)
+	Copy calltrans header to untransformed for correct disassembly of number
 
-	+more than 255 transformed calls
-	+do not apply call transform when there are no calls
-	+Use header space for extra push for call trans address
-	Copy calltrans header to untransformed for correct disassembly
+	Report site of unresolved reference
+	hint for security_cookie: do not use dxerr.lib
+	hint for __chkstk: /Gs option
 
-	+override alignments
-	+alignment not at the start of section
-	+align absolute address
-	+/OVERRIDEALIGNMENTS option
-	+virtual size overflow check
-	+alignment up to 30 bits (labels, argument, manual)
-	+check and describe alignment of code and data
+	Use models from last run
 
-	+hint for security_cookie
-	+hint for alloca, __chkstk
-	+hint for ImageBase
-
-	+ny hashfunktion
-
-	+Skriv input filnavn i recompress
-	-Skriv bytes lost to hashing i recompress
+	Fix: Detect bad lib files or report error if there are no imports
 
 	Husk PDB!!
 
+
 test:
-	+Test weak externals support
-	+recursive call bug
-	+Windows Server 2003
