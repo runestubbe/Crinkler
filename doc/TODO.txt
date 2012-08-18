@@ -1,49 +1,46 @@
+
 Manual:
-	credit til flere personer?
-	skriv faq
+	credit more people?
+	faq
 
-Licens:
+License:
 
-Code:
-	report: highlight af trunkerede floats og absolutte jump offsets
-	report: size of selected range
-	report: choose name of first global label in section from local label
-	report: size
-	report: time spent
+Report:
+	highlight of truncated floats and absolute jump offsets
+	size of selected range
+	choose name of first global label in section from local label
+	size
+	time spent
+	imported function label names for recompression
+	Copy calltrans header to untransformed for correct disassembly of number
 
+Output/UI:
 	decimals on sizes
 	include header in sizes
-
-	better report for recompression
-	replacedll for recompression
-
 	button in progressgui to skip phase
 	ask for compression mode
 
+Headers:
 	zero-section header
 	ABS coding
 	PEB from EBX
+	Large address aware
 
+Linker:
 	combine identical read-only symbols
-
 	Remove 64k limit on uncompressed size (unfix BSS/HashTable address)
 	Remove 64k limit on compressed size (Adjustable CodeBase)
-
 	Make forwarded RVA a warning instead of error? (For Wine crosscompilation)
-
 	automatic dynamic initializers
-
-	Copy calltrans header to untransformed for correct disassembly of number
-
+	Detect bad lib files or report error if there are no imports
 	Report site of unresolved reference
 	hint for security_cookie: do not use dxerr.lib
 	hint for __chkstk: /Gs option
 
+Misc:
+	replacedll for recompression
 	Use models from last run
+	PDB!!
 
-	Fix: Detect bad lib files or report error if there are no imports
-
-	Husk PDB!!
-
-
-test:
+Test:
+	Windows 8
