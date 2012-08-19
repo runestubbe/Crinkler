@@ -91,7 +91,7 @@ const char* Hunk::getName() const {
 }
 
 //sort symbols by address, then by type (section < global < local) and finally by name
-static bool symbolComparator(const Symbol*& first, const Symbol*& second) {
+static bool symbolComparator(Symbol* first, Symbol* second) {
 	if(first->value != second->value) {
 		return first->value < second->value;
 	} else if(first->hunk_offset != second->hunk_offset) {
@@ -168,7 +168,7 @@ static string HelpMessage(const char* name) {
 }
 
 void Hunk::relocate(int imageBase) {
-	for(list<relocation>::const_iterator it = m_relocations.begin(); it != m_relocations.end(); it++) {
+	for(vector<relocation>::const_iterator it = m_relocations.begin(); it != m_relocations.end(); it++) {
 		relocation r = *it;
 
 		//find symbol
@@ -253,7 +253,7 @@ void Hunk::setAlignmentOffset(int alignmentOffset) {
 
 void Hunk::trim() {
 	int farestReloc = 0;
-	for(list<relocation>::const_iterator it = m_relocations.begin(); it != m_relocations.end(); it++) {
+	for(vector<relocation>::const_iterator it = m_relocations.begin(); it != m_relocations.end(); it++) {
 		int relocSize = 4;
 		farestReloc = max(it->offset+relocSize, farestReloc);
 	}
@@ -374,7 +374,7 @@ void Hunk::setImportDll(const char* dll) {
 map<int, Symbol*> Hunk::getOffsetToRelocationMap() {
 	map<int, Symbol*> offsetmap;
 	map<int, Symbol*> symbolmap = getOffsetToSymbolMap();
-	for(list<relocation>::iterator it = m_relocations.begin(); it != m_relocations.end(); it++) {
+	for(vector<relocation>::iterator it = m_relocations.begin(); it != m_relocations.end(); it++) {
 		Symbol* s = findSymbol(it->symbolname.c_str());
 		if(s && s->secondaryName.size() > 0)
 			s = findSymbol(s->secondaryName.c_str());

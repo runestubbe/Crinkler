@@ -86,7 +86,7 @@ class Hunk {
 	int				m_virtualsize;
 
 	std::vector<char>	m_data;
-	std::list<relocation> m_relocations;
+	std::vector<relocation> m_relocations;
 	std::map<std::string, Symbol*> m_symbols;
 	Symbol* m_continuation;
 	std::string m_name;
@@ -101,6 +101,8 @@ public:
 	~Hunk();
 
 	void addRelocation(relocation r);
+	int getNumRelocations() const { return m_relocations.size(); }
+	relocation* getRelocations() { return &m_relocations[0]; }
 	void addSymbol(Symbol* s);
 	void setContinuation(Symbol *s);
 	Symbol* getContinuation() const;

@@ -74,6 +74,7 @@ class Crinkler {
 
 	void loadImportCode(bool useSafeImporting, bool useRangeImport);
 	Hunk* createModelHunk(int splittingPoint, int rawsize);
+	Hunk* createDynamicInitializerHunk();
 	void initProgressBar();
 	void deinitProgressBar();
 
