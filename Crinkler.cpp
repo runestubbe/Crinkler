@@ -124,7 +124,8 @@ Symbol*	Crinkler::findEntryPoint() {
 	return entry;
 }
 
-void Crinkler::removeUnreferencedHunks(Hunk* base) {
+void Crinkler::removeUnreferencedHunks(Hunk* base)
+{
 	//check dependencies and remove unused hunks
 	list<Hunk*> startHunks;
 	startHunks.push_back(base);
@@ -132,10 +133,13 @@ void Crinkler::removeUnreferencedHunks(Hunk* base) {
 	//hack to ensure that LoadLibrary & MessageBox is there to be used in the import code
 	Symbol* loadLibrary = m_hunkPool.findSymbol("__imp__LoadLibraryA@4"); 
 	Symbol* messageBox = m_hunkPool.findSymbol("__imp__MessageBoxA@16");
+	Symbol* dynamicInitializers = m_hunkPool.findSymbol("__DynamicInitializers");
 	if(loadLibrary != NULL)
 		startHunks.push_back(loadLibrary->hunk);
 	if(m_useSafeImporting && messageBox != NULL)
 		startHunks.push_back(messageBox->hunk);
+	if(dynamicInitializers != NULL)
+		startHunks.push_back(dynamicInitializers->hunk);
 
 	m_hunkPool.removeUnreferencedHunks(startHunks);
 }
@@ -678,6 +682,51 @@ void Crinkler::recompress(const char* input_filename, const char* output_filenam
 	delete phase2;
 }
 
+Hunk* Crinkler::createDynamicInitializerHunk()
+{
+	const int num_hunks = m_hunkPool.getNumHunks();
+	std::vector<Symbol*> symbols;
+	for(int i = 0; i < num_hunks; i++)
+	{
+		Hunk* hunk = m_hunkPool[i];
+		if(endsWith(hunk->getName(), "CRT$XCU"))
+		{
+			int num_relocations = hunk->getNumRelocations();
+			relocation* relocations = hunk->getRelocations();
+			for(int i = 0; i < num_relocations; i++)
+			{
+				symbols.push_back(m_hunkPool.findSymbol(relocations[i].symbolname.c_str()));
+			}
+		}
+	}
+
+	if(!symbols.empty())
+	{
+		const int num_symbols = symbols.size();
+		const int hunk_size = num_symbols*5;
+		Hunk* hunk = new Hunk("dynamic initializer calls", NULL, HUNK_IS_CODE, 0, hunk_size, hunk_size);
+
+		char* ptr = hunk->getPtr();
+		for(int i = 0; i < num_symbols; i++)
+		{
+			*ptr++ = 0xE8;
+			*ptr++ = 0x00;
+			*ptr++ = 0x00;
+			*ptr++ = 0x00;
+			*ptr++ = 0x00;
+			
+			relocation r;
+			r.offset = i*5+1;
+			r.symbolname = symbols[i]->name;
+			r.type = RELOCTYPE_REL32;
+			hunk->addRelocation(r);
+		}
+		hunk->addSymbol(new Symbol("__DynamicInitializers", 0, SYMBOL_IS_RELOCATEABLE, hunk));
+		return hunk;
+	}
+	return NULL;
+}
+
 void Crinkler::link(const char* filename) {
 	//open output file now, just to be sure :)
 	FILE* outfile;
@@ -695,7 +744,14 @@ void Crinkler::link(const char* filename) {
 	Symbol* entry = findEntryPoint();
 	if(entry == NULL)
 		return;
-	
+
+
+	Hunk* dynamicInitializersHunk = createDynamicInitializerHunk();
+	if(dynamicInitializersHunk)
+	{
+		m_hunkPool.addHunkBack(dynamicInitializersHunk);
+	}
+
 	//color hunks from entry hunk
 	removeUnreferencedHunks(entry->hunk);
 
@@ -732,10 +788,18 @@ void Crinkler::link(const char* filename) {
 	loadImportCode(m_useSafeImporting, usesRangeImport);
 
 	Symbol* import = m_hunkPool.findSymbol("_Import");
+
+	if(dynamicInitializersHunk)
+	{		
+		m_hunkPool.removeHunk(dynamicInitializersHunk);
+		m_hunkPool.addHunkFront(dynamicInitializersHunk);
+		dynamicInitializersHunk->setContinuation(entry);
+	}
+
 	m_hunkPool.removeHunk(import->hunk);
 	m_hunkPool.addHunkFront(import->hunk);
 	import->hunk->setAlignmentBits(0);
-	import->hunk->setContinuation(entry);
+	import->hunk->setContinuation(dynamicInitializersHunk ? dynamicInitializersHunk->findSymbol("__DynamicInitializers") : entry);
 	// Make sure import code has access to the _ImageBase address
 	import->hunk->addSymbol(new Symbol("_ImageBase", CRINKLER_IMAGEBASE, 0, import->hunk));
 

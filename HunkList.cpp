@@ -147,7 +147,7 @@ Hunk* HunkList::toHunk(const char* name, int baseAddress, int* splittingPoint) c
 		}
 
 		//copy relocations
-		for(list<relocation>::const_iterator jt = h->m_relocations.begin(); jt != h->m_relocations.end(); jt++) {
+		for(vector<relocation>::const_iterator jt = h->m_relocations.begin(); jt != h->m_relocations.end(); jt++) {
 			relocation r = *jt;
 			r.offset += address;
 			newHunk->addRelocation(r);
@@ -232,7 +232,7 @@ void HunkList::removeUnreferencedHunks(list<Hunk*> startHunks) {
 		Hunk* h = stak.top();
 		stak.pop();
 
-		for(list<relocation>::iterator it = h->m_relocations.begin(); it != h->m_relocations.end(); it++) {
+		for(vector<relocation>::iterator it = h->m_relocations.begin(); it != h->m_relocations.end(); it++) {
 			Symbol* s = findSymbol(it->symbolname.c_str());
 			
 			if(s) {
