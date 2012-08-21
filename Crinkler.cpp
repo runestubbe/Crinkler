@@ -800,8 +800,9 @@ void Crinkler::link(const char* filename) {
 	m_hunkPool.addHunkFront(import->hunk);
 	import->hunk->setAlignmentBits(0);
 	import->hunk->setContinuation(dynamicInitializersHunk ? dynamicInitializersHunk->findSymbol("__DynamicInitializers") : entry);
-	// Make sure import code has access to the _ImageBase address
+	// Make sure import and startup code has access to the _ImageBase address
 	import->hunk->addSymbol(new Symbol("_ImageBase", CRINKLER_IMAGEBASE, 0, import->hunk));
+	import->hunk->addSymbol(new Symbol("___ImageBase", CRINKLER_IMAGEBASE, 0, import->hunk));
 
 	//truncate floats
 	if(m_truncateFloats) {
