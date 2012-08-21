@@ -28,14 +28,18 @@ Headers:
 
 Linker:
 	combine identical read-only symbols
-	Remove 64k limit on uncompressed size (unfix BSS/HashTable address)
+	+Remove 64k limit on uncompressed size (unfix BSS/HashTable address)
 	Remove 64k limit on compressed size (Adjustable CodeBase)
-	Make forwarded RVA a warning instead of error? (For Wine crosscompilation)
-	automatic dynamic initializers
+	+automatic dynamic initializers
+	option to disable initializers
 	Detect bad lib files or report error if there are no imports
 	Report site of unresolved reference
 	hint for security_cookie: do not use dxerr.lib
 	hint for __chkstk: /Gs option
+	hint for error: LNK: Cannot open DLL 'msvcr90' etc.
+	/QIfist hint: note that it changes semantics
+	+Forward forwarded RVA at link time
+	+Define ___ImageBase
 
 Misc:
 	replacedll for recompression

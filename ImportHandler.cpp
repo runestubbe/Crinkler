@@ -45,7 +45,7 @@ int getOrdinal(const char* function, const char* dll) {
 	return -1;
 }
 
-bool isForwardRVA(const char* dll, const char* function) {
+char *getForwardRVA(const char* dll, const char* function) {
 	char* module = LoadDLL(dll);
 	IMAGE_DOS_HEADER* pDH = (PIMAGE_DOS_HEADER)module;
 	IMAGE_NT_HEADERS* pNTH = (PIMAGE_NT_HEADERS)(module + pDH->e_lfanew);
@@ -63,8 +63,8 @@ bool isForwardRVA(const char* dll, const char* function) {
 			DWORD address = addressTableRVAOffset[ordinal];
 			if(address >= pNTH->OptionalHeader.DataDirectory[0].VirtualAddress &&
 				address < pNTH->OptionalHeader.DataDirectory[0].VirtualAddress + pNTH->OptionalHeader.DataDirectory[0].Size)
-				return true;
-			return false;
+				return module + address;
+			return NULL;
 		}
 	}
 
@@ -122,10 +122,19 @@ HunkList* ImportHandler::createImportHunks(HunkList* hunklist, Hunk* hashHunk, c
 	for(int i = 0; i <hunklist->getNumHunks(); i++) {
 		Hunk* hunk = (*hunklist)[i];
 		if(hunk->getFlags() & HUNK_IS_IMPORT) {
-			if(isForwardRVA(hunk->getImportDll(), hunk->getImportName())) {
-				Log::error("", "Import '%s' from '%s' uses forwarded RVA. This feature is not supported by crinkler (yet)", 
-					hunk->getImportName(), hunk->getImportDll());
-			}
+			do {
+				char *forward = getForwardRVA(hunk->getImportDll(), hunk->getImportName());
+				if (forward == NULL) break;
+
+				string dllName, functionName;
+				int sep = strstr(forward, ".")-forward;
+				dllName.append(forward, sep);
+				dllName = toLower(dllName);
+				functionName.append(&forward[sep+1], strlen(forward)-(sep+1));
+				Log::warning("", "Import '%s' from '%s' uses forwarded RVA. Replaced by '%s' from '%s'", 
+					hunk->getImportName(), hunk->getImportDll(), functionName.c_str(), dllName.c_str());
+				hunk = new Hunk(hunk->getName(), functionName.c_str(), dllName.c_str());
+			} while (true);
 
 			//is the dll a range dll?
 			for(int i = 0; i < rangeDlls.size(); i++) {
@@ -323,7 +332,7 @@ HunkList* ImportHandler::createImportHunks1K(HunkList* hunklist, bool verbose) {
 		Hunk* hunk = (*hunklist)[i];
 		if(hunk->getFlags() & HUNK_IS_IMPORT) {
 			dlls.insert(hunk->getImportDll());
-			if(isForwardRVA(hunk->getImportDll(), hunk->getImportName())) {
+			if(getForwardRVA(hunk->getImportDll(), hunk->getImportName()) != NULL) {
 				Log::error("", "Import '%s' from '%s' uses forwarded RVA. This feature is not supported by crinkler (yet)", 
 					hunk->getImportName(), hunk->getImportDll());
 			}
