@@ -9,8 +9,9 @@ Report:
 	highlight of truncated floats and absolute jump offsets
 	size of selected range
 	choose name of first global label in section from local label
-	size
-	time spent
+	automatic labels at referred positions unless inside instruction
+	print resulting size
+	print time spent
 	imported function label names for recompression
 	Copy calltrans header to untransformed for correct disassembly of number
 
@@ -19,6 +20,7 @@ Output/UI:
 	include header in sizes
 	button in progressgui to skip phase
 	ask for compression mode
+	Target size option
 
 Headers:
 	zero-section header
@@ -31,15 +33,24 @@ Linker:
 	+Remove 64k limit on uncompressed size (unfix BSS/HashTable address)
 	Remove 64k limit on compressed size (Adjustable CodeBase)
 	+automatic dynamic initializers
+	+more initializer section names?
 	option to disable initializers
-	Detect bad lib files or report error if there are no imports
+	merge crt header initializer labels?
+	option to unalign code sections
 	Report site of unresolved reference
+	+Forward forwarded RVA at link time
+	+Define ___ImageBase
+	Don't crash on big input files
+
+Warnings/hints:
+	Detect bad lib files or report error if there are no imports
+	warning when lib entry point detected but initializers are enabled?
 	hint for security_cookie: do not use dxerr.lib
 	hint for __chkstk: /Gs option
 	hint for error: LNK: Cannot open DLL 'msvcr90' etc.
+	hint for __imp_??1exception@std@@UAE@XZ: don't use STL
 	/QIfist hint: note that it changes semantics
-	+Forward forwarded RVA at link time
-	+Define ___ImageBase
+	Detect and hint about whole-program optimization
 
 Misc:
 	replacedll for recompression
