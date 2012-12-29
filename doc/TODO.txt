@@ -11,7 +11,7 @@ License:
 Report:
 	highlight of truncated floats and absolute jump offsets
 	size of selected range
-*	choose name of first global label in section from local label
+*	+choose name of first global label in section from local label
 ?	automatic labels at referred positions unless inside instruction
 	print resulting size
 	print time spent
