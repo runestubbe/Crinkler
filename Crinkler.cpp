@@ -339,9 +339,10 @@ int Crinkler::estimateModels(unsigned char* data, int datasize, int splittingPoi
 	m_progressBar.endTask();
 
 	int idealsize = size1+size2;
-	printf(reestimate ? "\nReestimated ideal compressed total size: %d\n" :
-						"\nEstimated ideal compressed total size: %d\n", 
-						idealsize / BITPREC / 8);
+	float bytesize = idealsize / (float) (BITPREC * 8);
+	printf(reestimate ? "\nReestimated ideal compressed total size: %.2f\n" :
+						"\nEstimated ideal compressed total size: %.2f\n", 
+						bytesize);
 	return idealsize;
 }
 
@@ -622,8 +623,10 @@ void Crinkler::recompress(const char* input_filename, const char* output_filenam
 	cs.Compress((unsigned char*)phase1->getPtr(), splittingPoint, m_modellist1, baseprob, best_hashsize, true, false);
 	cs.Compress((unsigned char*)phase1->getPtr() + splittingPoint, phase1->getRawSize() - splittingPoint, m_modellist2, baseprob, best_hashsize, false, true);
 	size = cs.Close();
-	if(m_compressionType != -1 && m_compressionType != COMPRESSION_INSTANT)
-		printf("Real compressed total size: %d\nBytes lost to hashing: %d\n", size, size - idealsize / BITPREC / 8);
+	if(m_compressionType != -1 && m_compressionType != COMPRESSION_INSTANT) {
+		float byteslost = size - idealsize / (float) (BITPREC * 8);
+		printf("Real compressed total size: %d\nBytes lost to hashing: %.2f\n", size, byteslost);
+	}
 
 	setCompressionType(compmode);
 	CompressionReportRecord* csr = phase1->getCompressionSummary(sizefill, splittingPoint);
@@ -867,8 +870,10 @@ void Crinkler::link(const char* filename) {
 	cs.Compress((unsigned char*)phase1->getPtr(), splittingPoint, m_modellist1, CRINKLER_BASEPROB, best_hashsize, true, false);
 	cs.Compress((unsigned char*)phase1->getPtr() + splittingPoint, phase1->getRawSize() - splittingPoint, m_modellist2, CRINKLER_BASEPROB, best_hashsize, false, true);
 	size = cs.Close();
-	if(m_compressionType != COMPRESSION_INSTANT)
-		printf("Real compressed total size: %d\nBytes lost to hashing: %d\n", size, size - idealsize / BITPREC / 8);
+	if(m_compressionType != COMPRESSION_INSTANT) {
+		float byteslost = size - idealsize / (float) (BITPREC * 8);
+		printf("Real compressed total size: %d\nBytes lost to hashing: %.2f\n", size, byteslost);
+	}
 
 	CompressionReportRecord* csr = phase1->getCompressionSummary(sizefill, splittingPoint);
 	if(m_printFlags & PRINT_LABELS)

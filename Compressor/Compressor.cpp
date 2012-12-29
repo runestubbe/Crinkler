@@ -224,8 +224,8 @@ ModelList ApproximateModels(const unsigned char* data, int datasize, int basepro
 	if(compsize)
 		*compsize = size;
 
-
-	printf("Ideal compressed size: %d\n", size/BITPREC/8);
+	float bytesize = size / (float) (BITPREC * 8);
+	printf("Ideal compressed size: %.2f\n", bytesize);
 	if (verbose) {
 		models.print();
 	}

@@ -20,7 +20,7 @@ Report:
 	Local labels from yasm?
 
 Output/UI:
-*	decimals on sizes
+*	+decimals on sizes
 ?	include header in sizes
 	button in progressgui to skip phase
 	Target size option
@@ -53,8 +53,8 @@ Warnings/hints:
 	hint for security_cookie: do not use dxerr.lib
 	hint for __chkstk: /Gs option
 	hint for error: LNK: Cannot open DLL 'msvcr90' etc.
-	hint for __imp_??1exception@std@@UAE@XZ: don't use STL
-?	/QIfist hint: note that it changes semantics
+	+hint for __imp_??1exception@std@@UAE@XZ: don't use STL
+?	+/QIfist hint: note that it changes semantics
 ?	Detect and hint about whole-program optimization
 	Read /STACK option and complain if larger than fixed stack size
 
