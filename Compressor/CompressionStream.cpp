@@ -246,7 +246,6 @@ inline unsigned int QuickHash(const byte *data, int pos, __m64 mask, int bytemas
 }
 
 int CompressionStream::EvaluateSizeQuick(const unsigned char* d, int size, const ModelList& models, int baseprob, char* context, int bitpos) {
-	int bitlength = size*8;
 	unsigned char* data = new unsigned char[size+MAX_CONTEXT_LENGTH];
 	memcpy(data, context, MAX_CONTEXT_LENGTH);
 	data += MAX_CONTEXT_LENGTH;

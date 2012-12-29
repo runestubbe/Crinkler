@@ -35,6 +35,13 @@ static string getSymbolName(const IMAGE_SYMBOL* symbol, const char* stringTable)
 	}
 }
 
+static string stripNumeral(const string& s) {
+	int idx = s.size()-1;
+	while(idx >= 0 && s[idx] != '|') idx--;
+	if (idx == 0) return s;
+	return s.substr(0, idx);
+}
+
 CoffObjectLoader::~CoffObjectLoader() {
 }
 
@@ -112,6 +119,7 @@ HunkList* CoffObjectLoader::load(const char* data, int size, const char* module)
 				case IMAGE_REL_I386_REL32:
 					r.type = RELOCTYPE_REL32;
 			}
+			r.objectname = stripNumeral(stripPath(module));
 			
 			hunk->addRelocation(r);
 		}
