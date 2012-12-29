@@ -722,6 +722,7 @@ Hunk* Crinkler::createDynamicInitializerHunk()
 			hunk->addRelocation(r);
 		}
 		hunk->addSymbol(new Symbol("__DynamicInitializers", 0, SYMBOL_IS_RELOCATEABLE, hunk));
+		printf("\nIncluded %d dynamic initializer%s.\n", num_symbols, num_symbols == 1 ? "" : "s");
 		return hunk;
 	}
 	return NULL;
@@ -745,11 +746,13 @@ void Crinkler::link(const char* filename) {
 	if(entry == NULL)
 		return;
 
-
-	Hunk* dynamicInitializersHunk = createDynamicInitializerHunk();
-	if(dynamicInitializersHunk)
-	{
-		m_hunkPool.addHunkBack(dynamicInitializersHunk);
+	Hunk* dynamicInitializersHunk = NULL;
+	if (m_runInitializers) {
+		dynamicInitializersHunk = createDynamicInitializerHunk();
+		if(dynamicInitializersHunk)
+		{
+			m_hunkPool.addHunkBack(dynamicInitializersHunk);
+		}
 	}
 
 	//color hunks from entry hunk
