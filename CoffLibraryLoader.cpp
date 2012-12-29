@@ -74,7 +74,7 @@ HunkList* CoffLibraryLoader::load(const char* data, int size, const char* module
 	//add coff
 	for(int i = 0; i < numberOfMembers; i++) {
 		char memberModuleName[256];
-		sprintf_s(memberModuleName, 256, "%s#%d", module, i);
+		sprintf_s(memberModuleName, 256, "%s|%d", module, i);
 		ptr = data + offsets[i];
 		ptr += 60;	//skip member header
 

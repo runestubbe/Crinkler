@@ -76,6 +76,7 @@ struct relocation {
 	std::string		symbolname;
 	int				offset;
 	RelocationType	type;
+	std::string		objectname;
 };
 
 class Hunk {

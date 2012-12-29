@@ -178,9 +178,9 @@ void Hunk::relocate(int imageBase) {
 		if(s == NULL) {
 			string help = HelpMessage(r.symbolname.c_str());
 			if(help.empty()) {
-				Log::error("", "Cannot find symbol '%s'", r.symbolname.c_str());
+				Log::error(r.objectname.c_str(), "Cannot find symbol '%s'", r.symbolname.c_str());
 			} else {
-				Log::error("", "Cannot find symbol '%s'.\n * HINT: %s", r.symbolname.c_str(), help.c_str());
+				Log::error(r.objectname.c_str(), "Cannot find symbol '%s'.\n * HINT: %s", r.symbolname.c_str(), help.c_str());
 			}
 			
 		}
@@ -258,7 +258,6 @@ void Hunk::trim() {
 		farestReloc = max(it->offset+relocSize, farestReloc);
 	}
 
-	int oldsize = m_data.size();
 	while(m_data.size() > farestReloc && m_data.back() == 0)
 		m_data.pop_back();
 }
