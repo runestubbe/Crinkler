@@ -158,12 +158,15 @@ static string HelpMessage(const char* name) {
 	} else if(startsWith(name, "_crt_debugger_hook") || startsWith(name, "___ImageBase")) {
 		return "Define your own entry point.";
 	} else if(startsWith(name, "__ftol")) {
-		return "Suppress _ftol calls with the /QIfist compiler option.";
+		return "Suppress _ftol calls with the /QIfist compiler option (warning: changes rounding mode of float-to-int conversions).";
 	} else if(startsWith(name, "__Cxx")) {
 		return "Don't use exceptions.";
+	} else if(startsWith(name, "__imp_??1exception@std@")) {
+		return "Don't use STL.";
 	} else if(startsWith(name, "__alloca") || startsWith(name, "__chkstk")) {
 		return "Avoid declaring large arrays or structs inside functions. Use global variables instead.";
 	}
+
 	return "";
 }
 
