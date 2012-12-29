@@ -43,8 +43,14 @@ void HeuristicHunkSorter::sortHunkList(HunkList* hunklist) {
 
 	Hunk *import_hunk = hunklist->findSymbol("_Import")->hunk;
 	Hunk *entry_hunk = import_hunk->getContinuation()->hunk;
+	Hunk *initializer_hunk = NULL;
+	if (entry_hunk->getContinuation() != NULL) {
+		initializer_hunk = entry_hunk;
+		entry_hunk = initializer_hunk->getContinuation()->hunk;
+	}
 
 	hunklist->removeHunk(import_hunk);
+	if (initializer_hunk) hunklist->removeHunk(initializer_hunk);
 	hunklist->removeHunk(entry_hunk);
 
 	//move hunks to vector
@@ -59,6 +65,7 @@ void HeuristicHunkSorter::sortHunkList(HunkList* hunklist) {
 
 	// Place import and entry point hunks first
 	fixedHunks.push_back(import_hunk);
+	if (initializer_hunk) fixedHunks.push_back(initializer_hunk);
 	fixedHunks.push_back(entry_hunk);
 
 	//sort hunks

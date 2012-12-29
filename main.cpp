@@ -174,9 +174,9 @@ int main(int argc, char* argv[]) {
 							0, 10000, 20);
 	CmdParamInt hunktriesArg("ORDERTRIES", "", "number of section reordering tries", 0,
 							0, 100000, 0);
-	CmdParamInt truncateFloats("TRUNCATEFLOATS", "truncates floats", "bits", PARAM_ALLOW_NO_ARGUMENT_DEFAULT,
+	CmdParamInt truncateFloatsArg("TRUNCATEFLOATS", "truncates floats", "bits", PARAM_ALLOW_NO_ARGUMENT_DEFAULT,
 							0, 64, 64);
-	CmdParamInt overrideAlignments("OVERRIDEALIGNMENTS", "override section alignments using align labels", "bits",  PARAM_ALLOW_NO_ARGUMENT_DEFAULT,
+	CmdParamInt overrideAlignmentsArg("OVERRIDEALIGNMENTS", "override section alignments using align labels", "bits",  PARAM_ALLOW_NO_ARGUMENT_DEFAULT,
 							0, 30, -1);
 	CmdParamString entryArg("ENTRY", "name of the entrypoint", "symbol", 
 						PARAM_IS_SWITCH|PARAM_FORBID_MULTIPLE_DEFINITIONS, "");
@@ -209,12 +209,13 @@ int main(int argc, char* argv[]) {
 	CmdParamString libpathArg("LIBPATH", "adds a path to the library search path", "dirs", PARAM_IS_SWITCH, 0);
 	CmdParamString rangeImportArg("RANGE", "use range importing for this dll", "dllname", PARAM_IS_SWITCH, 0);
 	CmdParamMultiAssign replaceDllArg("REPLACEDLL", "replace a dll with another", "oldDLL=newDLL", PARAM_IS_SWITCH);
+	CmdParamSwitch noInitializersArg("NOINITIALIZERS", "do not run dynamic initializers", 0);
 	CmdParamString filesArg("FILES", "list of filenames", "", PARAM_HIDE_IN_PARAM_LIST, 0);
 	CmdLineInterface cmdline(CRINKLER_TITLE, CMDI_PARSE_FILES);
 
 	cmdline.addParams(&crinklerFlag, &hashsizeArg, &hashtriesArg, &hunktriesArg, &entryArg, &outArg, &summaryArg, &unsafeImportArg,
-						&subsystemArg, &truncateFloats, &overrideAlignments, &compmodeArg, &printArg, &transformArg, &libpathArg, 
-						&rangeImportArg, &replaceDllArg, &filesArg, &priorityArg, &showProgressArg, &recompressFlag,
+						&subsystemArg, &truncateFloatsArg, &overrideAlignmentsArg, &compmodeArg, &printArg, &transformArg, &libpathArg, 
+						&rangeImportArg, &replaceDllArg, &noInitializersArg, &filesArg, &priorityArg, &showProgressArg, &recompressFlag,
 #ifdef INCLUDE_1K_PACKER
 						&tinyCompressor,
 #endif
@@ -315,10 +316,11 @@ int main(int argc, char* argv[]) {
 	crinkler.setHunktries(hunktriesArg.getValue());
 	crinkler.setPrintFlags(printArg.getValue());
 	crinkler.showProgressBar(showProgressArg.getValue());
-	crinkler.setTruncateFloats(truncateFloats.getNumMatches() > 0);
-	crinkler.setTruncateBits(truncateFloats.getValue());
-	crinkler.setOverrideAlignments(overrideAlignments.getNumMatches() > 0);
-	crinkler.setAlignmentBits(overrideAlignments.getValue());
+	crinkler.setTruncateFloats(truncateFloatsArg.getNumMatches() > 0);
+	crinkler.setTruncateBits(truncateFloatsArg.getValue());
+	crinkler.setOverrideAlignments(overrideAlignmentsArg.getNumMatches() > 0);
+	crinkler.setAlignmentBits(overrideAlignmentsArg.getValue());
+	crinkler.setRunInitializers(!noInitializersArg.getValue());
 	crinkler.setSummary(summaryArg.getValue());
 
 

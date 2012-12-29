@@ -37,10 +37,10 @@ Linker:
 	Remove 64k limit on compressed size (Adjustable CodeBase)
 	+automatic dynamic initializers
 	+more initializer section names?
-*	option to disable initializers
+*	+option to disable initializers
 	merge crt header initializer labels?
 ?	option to unalign code sections
-	+Report site of unresolved reference
+*	+Report site of unresolved reference
 	Report all unresolved symbols
 	+Forward forwarded RVA at link time
 	+Define ___ImageBase
