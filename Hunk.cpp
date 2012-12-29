@@ -309,13 +309,13 @@ CompressionReportRecord* Hunk::getCompressionSummary(int* sizefill, int splittin
 			0, sym->value, (sym->value < getRawSize()) ? sizefill[sym->value] : -1);
 
 		//copy misc string
-		c->miscString = (*it)->miscString;
+		c->miscString = sym->miscString;
 
 		//set flags
-		if((*it)->flags & SYMBOL_IS_SECTION) {
+		if(sym->flags & SYMBOL_IS_SECTION) {
 			c->type |= RECORD_OLD_SECTION;
 		}
-		if(!((*it)->flags & SYMBOL_IS_LOCAL)) {
+		if(!(sym->flags & SYMBOL_IS_LOCAL)) {
 			c->type |= RECORD_PUBLIC;
 		}
 
@@ -333,7 +333,8 @@ CompressionReportRecord* Hunk::getCompressionSummary(int* sizefill, int splittin
 		while(r->getLevel()+1 < c->getLevel()) {
 			if(r->children.empty()) {	//add a dummy element if we skip a level
 				int level = r->getLevel()+1;
-				CompressionReportRecord* dummy = new CompressionReportRecord(r->name.c_str(), 
+				string name = c->pos == r->pos ? c->name : r->name;
+				CompressionReportRecord* dummy = new CompressionReportRecord(name.c_str(), 
 					getType(level)|RECORD_DUMMY, sym->value, (sym->value < getRawSize()) ? sizefill[sym->value] : -1);
 				if(level == 1)
 					dummy->miscString = ".dummy";
@@ -346,14 +347,14 @@ CompressionReportRecord* Hunk::getCompressionSummary(int* sizefill, int splittin
 		//add public symbol to start of sections, if they don't have one already
 		if(sym->value < getRawSize() && (c->type & RECORD_OLD_SECTION) && sym->value < (*(it+1))->value) {
 			CompressionReportRecord* dummy = new CompressionReportRecord(c->name.c_str(), 
-				RECORD_PUBLIC|RECORD_DUMMY, (*it)->value, ((*it)->value < getRawSize()) ? sizefill[(*it)->value] : -1);
+				RECORD_PUBLIC|RECORD_DUMMY, sym->value, sizefill[sym->value]);
 			c->children.push_back(dummy);
 		}
 
 		//add public symbol to start of sections, if they don't have one already
 		if(sym->value < getRawSize() && (c->type & RECORD_PUBLIC) && sym->value < (*(it+1))->value) {
 			CompressionReportRecord* dummy = new CompressionReportRecord(c->name.c_str(), 
-				RECORD_DUMMY, (*it)->value, ((*it)->value < getRawSize()) ? sizefill[(*it)->value] : -1);
+				RECORD_DUMMY, sym->value, sizefill[sym->value]);
 			c->children.push_back(dummy);
 		}
 
@@ -392,7 +393,7 @@ map<int, Symbol*> Hunk::getOffsetToSymbolMap() {
 			if(offsetmap.find(s->value) != offsetmap.end() && s->flags & SYMBOL_IS_SECTION)	//favor non-sections
 				continue;
 
-			offsetmap.insert(make_pair(s->value, s));
+			offsetmap[s->value] = s;
 		}
 	}
 	return offsetmap;
