@@ -39,7 +39,9 @@ Crinkler::Crinkler():
 	m_truncateFloats(false),
 	m_truncateBits(64),
 	m_overrideAlignments(false),
-	m_alignmentBits(0)
+	m_alignmentBits(0),
+	m_runInitializers(1),
+	m_largeAddressAware(0)
 {
 	m_modellist1 = InstantModels();
 	m_modellist2 = InstantModels();
@@ -361,6 +363,9 @@ void Crinkler::setHeaderConstants(Hunk* header, Hunk* phase1, int hashsize, int 
 		// Code starts with POP EDI => call transform
 		*(header->getPtr() + header->findSymbol("_SpareNopPtr")->value) = 0x57; // PUSH EDI
 	}
+	if (m_largeAddressAware) {
+		*((short*)(header->getPtr() + header->findSymbol("_CharacteristicsPtr")->value)) |= 0x0020;
+	}
 }
 
 void Crinkler::recompress(const char* input_filename, const char* output_filename) {
@@ -490,10 +495,12 @@ void Crinkler::recompress(const char* input_filename, const char* output_filenam
 
 	CompressionType compmode = m_modellist1.detectCompressionType();
 	int subsystem_version = indata[pe_header_offset+0x5C];
+	int large_address_aware = (*(unsigned short *)&indata[pe_header_offset+0x16] & 0x0020) != 0;
 
 	printf("Original Virtual size: %d\n", virtualSize);
 
 	printf("Original Subsystem type: %s\n", subsystem_version == 3 ? "CONSOLE" : "WINDOWS");
+	printf("Original Large address aware: %s\n", large_address_aware ? "YES" : "NO");
 	printf("Original Compression mode: %s\n", compmode == COMPRESSION_INSTANT ? "INSTANT" : "FAST/SLOW");
 	printf("Original Hash size: %d\n", hashtable_size);
 
@@ -721,6 +728,9 @@ void Crinkler::recompress(const char* input_filename, const char* output_filenam
 	Hunk* phase2 = phase2list.toHunk("final", CRINKLER_IMAGEBASE);
 	if(m_subsystem >= 0) {
 		subsystem_version = (m_subsystem == SUBSYSTEM_WINDOWS) ? IMAGE_SUBSYSTEM_WINDOWS_GUI : IMAGE_SUBSYSTEM_WINDOWS_CUI;
+	}
+	if (m_largeAddressAware == -1) {
+		m_largeAddressAware = large_address_aware;
 	}
 	setHeaderConstants(phase2, phase1, best_hashsize, subsystem_version);
 	phase2->relocate(CRINKLER_IMAGEBASE);
@@ -966,6 +976,9 @@ void Crinkler::link(const char* filename) {
 
 void Crinkler::printOptions(FILE *out) {
 	fprintf(out, " /SUBSYSTEM:%s", m_subsystem == SUBSYSTEM_CONSOLE ? "CONSOLE" : "WINDOWS");
+	if (m_largeAddressAware) {
+		fprintf(out, " /LARGEADDRESSAWARE");
+	}
 	if (!m_entry.empty()) {
 		fprintf(out, " /ENTRY:%s", m_entry.c_str());
 	}
@@ -990,6 +1003,15 @@ void Crinkler::printOptions(FILE *out) {
 	}
 	if (m_truncateFloats) {
 		fprintf(out, " /TRUNCATEFLOATS:%d", m_truncateBits);
+	}
+	if (m_overrideAlignments) {
+		fprintf(out, " /OVERRIDEALIGNMENTS");
+		if (m_alignmentBits != -1) {
+			fprintf(out, ":%d", m_alignmentBits);
+		}
+	}
+	if (!m_runInitializers) {
+		fprintf(out, " /NOINITIALIZERS");
 	}
 }
 

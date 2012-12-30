@@ -58,6 +58,7 @@ class Crinkler {
 	bool					m_overrideAlignments;
 	int						m_alignmentBits;
 	bool					m_runInitializers;
+	int						m_largeAddressAware;
 	ModelList				m_modellist1;
 	ModelList				m_modellist2;
 
@@ -118,6 +119,7 @@ public:
 	void setOverrideAlignments(bool enabled)				{ m_overrideAlignments = enabled; }
 	void setAlignmentBits(int bits)							{ m_alignmentBits = bits; }
 	void setRunInitializers(bool enabled)					{ m_runInitializers = enabled; }
+	void setLargeAddressAware(int enabled)					{ m_largeAddressAware = enabled; }
 	void setTransform(Transform* transform)					{ m_transform = transform; }
 	void setPrintFlags(int printFlags)						{ m_printFlags = printFlags; }
 
