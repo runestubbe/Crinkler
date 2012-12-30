@@ -17,6 +17,7 @@ global	_SubsystemTypePtr
 global	_ModelSkipPtr
 global	_BaseProbPtr
 global	_SpareNopPtr
+global	_CharacteristicsPtr
 
 HASH_MULTIPLIER	equ 111
 
@@ -51,6 +52,7 @@ db "HASH"			;Timestamp
 db "HASH"			;Symbol table pointer
 db "HASH"			;Number of symbols
 dw 8h				;Size of optional header
+_CharacteristicsPtr:
 dw 2h				; Characteristics (almost any allowed - bit 1 must be set, bit 13 must be clear)
 
 ;optional header (PE-header)

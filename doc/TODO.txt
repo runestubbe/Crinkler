@@ -26,10 +26,10 @@ Output/UI:
 	Target size option
 
 Headers:
-*	zero-section header
+*	+zero-section header
 	ABS coding
-*	PEB from EBX
-*	Large address aware
+*	+PEB from EBX
+*	+Large address aware
 
 Linker:
 	combine identical read-only symbols
@@ -64,10 +64,13 @@ Misc:
 	PDB!!
 
 Test:
-	Windows 8
-	ufmod
-	v2m
-	libc without init code
+	Windows XP
+	Windows Vista
+	+Windows 7
+	+Windows 8
+	+ufmod
+	+v2m
+	-libc without init code
 
 Distorm bugs:
 	IMUL / immediate sign extend

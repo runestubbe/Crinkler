@@ -193,6 +193,7 @@ int main(int argc, char* argv[]) {
 #endif
 	CmdParamFlags subsystemArg("SUBSYSTEM", "select subsystem", PARAM_FORBID_MULTIPLE_DEFINITIONS, SUBSYSTEM_CONSOLE, 
 						"WINDOWS", SUBSYSTEM_WINDOWS, "CONSOLE", SUBSYSTEM_CONSOLE, NULL);
+	CmdParamFlags largeAddressAwareArg("LARGEADDRESSAWARE", "allow addresses beyond 2gb", PARAM_ALLOW_NO_ARGUMENT_DEFAULT | PARAM_FORBID_MULTIPLE_DEFINITIONS, 1, "NO", 0, NULL);
 	CmdParamFlags priorityArg("PRIORITY", "select priority", PARAM_FORBID_MULTIPLE_DEFINITIONS, BELOW_NORMAL_PRIORITY_CLASS, 
 						"IDLE", IDLE_PRIORITY_CLASS, "BELOWNORMAL", BELOW_NORMAL_PRIORITY_CLASS, "NORMAL", NORMAL_PRIORITY_CLASS, NULL);
 	CmdParamFlags compmodeArg("COMPMODE", "compression mode", PARAM_FORBID_MULTIPLE_DEFINITIONS, COMPRESSION_FAST,
@@ -214,7 +215,7 @@ int main(int argc, char* argv[]) {
 	CmdLineInterface cmdline(CRINKLER_TITLE, CMDI_PARSE_FILES);
 
 	cmdline.addParams(&crinklerFlag, &hashsizeArg, &hashtriesArg, &hunktriesArg, &entryArg, &outArg, &summaryArg, &unsafeImportArg,
-						&subsystemArg, &truncateFloatsArg, &overrideAlignmentsArg, &compmodeArg, &printArg, &transformArg, &libpathArg, 
+						&subsystemArg, &largeAddressAwareArg, &truncateFloatsArg, &overrideAlignmentsArg, &compmodeArg, &printArg, &transformArg, &libpathArg, 
 						&rangeImportArg, &replaceDllArg, &noInitializersArg, &filesArg, &priorityArg, &showProgressArg, &recompressFlag,
 #ifdef INCLUDE_1K_PACKER
 						&tinyCompressor,
@@ -250,11 +251,12 @@ int main(int argc, char* argv[]) {
 		subsystemArg.setDefault(-1);
 		compmodeArg.setDefault(-1);
 
-		cmdline2.addParams(&recompressFlag, &outArg, &hashsizeArg, &hashtriesArg, &subsystemArg, &compmodeArg, &summaryArg, &priorityArg, &showProgressArg, &filesArg, NULL);
+		cmdline2.addParams(&crinklerFlag, &recompressFlag, &outArg, &hashsizeArg, &hashtriesArg, &subsystemArg, &largeAddressAwareArg, &compmodeArg, &summaryArg, &priorityArg, &showProgressArg, &filesArg, NULL);
 		cmdline2.setCmdParameters(argc, argv);
 		if(cmdline2.parse()) {
 			crinkler.setHashsize(hashsizeArg.getValue());
 			crinkler.setSubsystem((SubsystemType)subsystemArg.getValue());
+			crinkler.setLargeAddressAware(largeAddressAwareArg.getNumMatches() > 0 ? largeAddressAwareArg.getValue() : -1);
 			crinkler.setCompressionType((CompressionType)compmodeArg.getValue());
 			crinkler.setHashtries(hashtriesArg.getValue());
 			crinkler.showProgressBar(showProgressArg.getValue());
@@ -277,6 +279,11 @@ int main(int argc, char* argv[]) {
 				printf("Subsystem type: Inherited from original\n");
 			} else {
 				printf("Subsystem type: %s\n", subsystemArg.getValue() == SUBSYSTEM_CONSOLE ? "CONSOLE" : "WINDOWS");
+			}
+			if(largeAddressAwareArg.getNumMatches() == 0) {
+				printf("Large address aware: Inherited from original\n");
+			} else {
+				printf("Large address aware: %s\n", largeAddressAwareArg.getValue() ? "YES" : "NO");
 			}
 			if(compmodeArg.getValue() == -1) {
 				printf("Compression mode: Models inherited from original\n");
@@ -311,6 +318,7 @@ int main(int argc, char* argv[]) {
 	crinkler.setEntry(entryArg.getValue());
 	crinkler.setHashsize(hashsizeArg.getValue());
 	crinkler.setSubsystem((SubsystemType)subsystemArg.getValue());
+	crinkler.setLargeAddressAware(largeAddressAwareArg.getNumMatches() > 0 && largeAddressAwareArg.getValue());
 	crinkler.setCompressionType((CompressionType)compmodeArg.getValue());
 	crinkler.setHashtries(hashtriesArg.getValue());
 	crinkler.setHunktries(hunktriesArg.getValue());
@@ -337,6 +345,7 @@ int main(int argc, char* argv[]) {
 	//print some info
 	printf("Target: %s\n", outArg.getValue());
 	printf("Subsystem type: %s\n", subsystemArg.getValue() == SUBSYSTEM_CONSOLE ? "CONSOLE" : "WINDOWS");
+	printf("Large address aware: %s\n", largeAddressAwareArg.getValue() ? "YES" : "NO");
 	printf("Compression mode: %s\n", compTypeName((CompressionType)compmodeArg.getValue()));
 	printf("Hash size: %d MB\n", hashsizeArg.getValue());
 	printf("Hash tries: %d\n", hashtriesArg.getValue());
