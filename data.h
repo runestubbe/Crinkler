@@ -9,6 +9,9 @@ extern "C" {
 	char header11Obj[];
 	char header11Obj_end[];
 
+	char header14CompatibilityObj[];
+	char header14CompatibilityObj_end[];
+
 	char header1KObj[];
 	char header1KObj_end[];
 

@@ -430,6 +430,7 @@ void Crinkler::recompress(const char* input_filename, const char* output_filenam
 	int models_address = -1;
 	int depacker_start = -1;
 	int depacker_start2 = -1;
+	bool is_compatibility_header = true;
 	for(int i = 0; i < 0x200; i++) {
 		if(indata[i] == 0xbf && indata[i+5] == 0xb9 && hashtable_size == -1) {
 			hashtable_size = (*(int*)&indata[i+6]) * 2;
@@ -644,7 +645,15 @@ void Crinkler::recompress(const char* input_filename, const char* output_filenam
 	Hunk* models = createModelHunk(splittingPoint, phase1->getRawSize());
 
 	HunkList phase2list;
-	HunkList* headerHunks = m_hunkLoader.load(headerObj, headerObj_end - headerObj, "crinkler header");
+	HunkList* headerHunks = NULL;
+	if(is_compatibility_header)
+	{
+		headerHunks = m_hunkLoader.load(header14CompatibilityObj, header14CompatibilityObj_end - header14CompatibilityObj, "crinkler header");
+	}
+	else
+	{
+		headerHunks = m_hunkLoader.load(headerObj, headerObj_end - headerObj, "crinkler header");
+	}
 
 	Hunk* header = headerHunks->findSymbol("_header")->hunk;
 	headerHunks->removeHunk(header);
@@ -778,14 +787,12 @@ void Crinkler::link(const char* filename) {
 
 	Hunk* header = headerHunks->findSymbol("_header")->hunk;
 	headerHunks->removeHunk(header);
-
-	Hunk* depacker = headerHunks->findSymbol("_DepackEntry")->hunk;
-	headerHunks->removeHunk(depacker);
+	Hunk* hashHunk = NULL;
 
 	bool usesRangeImport=false;
 	{	//add imports
 		HunkList* importHunkList = m_1KMode ?	ImportHandler::createImportHunks1K(&m_hunkPool, m_printFlags & PRINT_IMPORTS) :
-												ImportHandler::createImportHunks(&m_hunkPool, header, m_rangeDlls, m_printFlags & PRINT_IMPORTS, usesRangeImport);
+												ImportHandler::createImportHunks(&m_hunkPool, hashHunk, m_rangeDlls, m_printFlags & PRINT_IMPORTS, usesRangeImport);
 		m_hunkPool.removeImportHunks();
 		m_hunkPool.append(importHunkList);
 		delete importHunkList;
@@ -822,6 +829,8 @@ void Crinkler::link(const char* filename) {
 	//create phase 1 data hunk
 	int splittingPoint;
 	Hunk* phase1, *phase1Untransformed;
+	m_hunkPool[0]->addSymbol(new Symbol("_HeaderHashes", CRINKLER_IMAGEBASE+header->getRawSize(), SYMBOL_IS_SECTION, m_hunkPool[0]));
+
 	if (!m_transform->linkAndTransform(&m_hunkPool, import, CRINKLER_CODEBASE, phase1, &phase1Untransformed, &splittingPoint, true)) {
 		// Transform failed, run again
 		delete phase1;
@@ -890,7 +899,7 @@ void Crinkler::link(const char* filename) {
 
 	HunkList phase2list;
 	phase2list.addHunkBack(header);
-	phase2list.addHunkBack(depacker);
+	phase2list.addHunkBack(hashHunk);
 	phase2list.addHunkBack(models);
 	phase2list.addHunkBack(phase1Compressed);
 	header->addSymbol(new Symbol("_HashTable", CRINKLER_SECTIONSIZE*2+phase1->getRawSize(), SYMBOL_IS_RELOCATEABLE, header));
