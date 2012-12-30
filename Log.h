@@ -7,6 +7,7 @@ class Log
 public:
 	static void warning(const char* from, const char* msg, ...);
 	static void error(const char* from, const char* msg, ...);
+	static void nonfatalError(const char* from, const char* msg, ...);
 };
 
 #endif

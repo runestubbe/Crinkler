@@ -41,7 +41,7 @@ Linker:
 	merge crt header initializer labels?
 ?	option to unalign code sections
 *	+Report site of unresolved reference
-	Report all unresolved symbols
+	+Report all unresolved symbols
 	+Forward forwarded RVA at link time
 	+Define ___ImageBase
 	Don't crash on big input files
@@ -65,6 +65,8 @@ Misc:
 
 Test:
 	Windows 8
+	ufmod
+	v2m
 	libc without init code
 
 Distorm bugs:

@@ -171,6 +171,7 @@ static string HelpMessage(const char* name) {
 }
 
 void Hunk::relocate(int imageBase) {
+	bool error = false;
 	for(vector<relocation>::const_iterator it = m_relocations.begin(); it != m_relocations.end(); it++) {
 		relocation r = *it;
 
@@ -178,28 +179,34 @@ void Hunk::relocate(int imageBase) {
 		Symbol* s = findSymbol(r.symbolname.c_str());
 		if(s && s->secondaryName.size() > 0)
 			s = findSymbol(s->secondaryName.c_str());
-		if(s == NULL) {
+		if(s != NULL) {
+			//perform relocation
+			int* word = (int*)&m_data[r.offset];
+			switch(r.type) {
+				case RELOCTYPE_ABS32:
+					(*word) += s->value;
+					if(s->flags & SYMBOL_IS_RELOCATEABLE)
+						(*word) += imageBase;
+					break;
+				case RELOCTYPE_REL32:
+					(*word) += s->value - r.offset - 4;
+					break;
+			}
+		} else {
 			string help = HelpMessage(r.symbolname.c_str());
 			if(help.empty()) {
-				Log::error(r.objectname.c_str(), "Cannot find symbol '%s'", r.symbolname.c_str());
+				Log::nonfatalError(r.objectname.c_str(), "Cannot find symbol '%s'", r.symbolname.c_str());
 			} else {
-				Log::error(r.objectname.c_str(), "Cannot find symbol '%s'.\n * HINT: %s", r.symbolname.c_str(), help.c_str());
+				Log::nonfatalError(r.objectname.c_str(), "Cannot find symbol '%s'.\n * HINT: %s", r.symbolname.c_str(), help.c_str());
 			}
-			
+			error = true;
 		}
 
-		//perform relocation
-		int* word = (int*)&m_data[r.offset];
-		switch(r.type) {
-			case RELOCTYPE_ABS32:
-				(*word) += s->value;
-				if(s->flags & SYMBOL_IS_RELOCATEABLE)
-					(*word) += imageBase;
-				break;
-			case RELOCTYPE_REL32:
-				(*word) += s->value - r.offset - 4;
-				break;
-		}
+	}
+
+	if (error) {
+		printf("\n\n");
+		exit(-1);
 	}
 }
 
