@@ -380,19 +380,39 @@ void Crinkler::recompress(const char* input_filename, const char* output_filenam
 
 	int length = file.getSize();
 
-	char majorlv = 0, minorlv = 0;
-	if (length >= 200 && *(int *)&indata[60] == 12) {
-		majorlv = indata[38];
-		minorlv = indata[39];
-	} else {
+	if(length < 200)
+	{
 		notCrinklerFileError();
 	}
 
+	unsigned int pe_header_offset = *(unsigned int*)&indata[0x3C];
+
+	bool is_compatibility_header = false;
+	char majorlv = 0, minorlv = 0;
+
+	if(pe_header_offset == 4)
+	{
+		is_compatibility_header = false;
+		majorlv = indata[2];
+		minorlv = indata[3];
+	}
+	else if(pe_header_offset == 12)
+	{
+		is_compatibility_header = true;
+		majorlv = indata[38];
+		minorlv = indata[39];
+	}
+	else
+	{
+		notCrinklerFileError();
+	}
+	
 	if (majorlv < '0' || majorlv > '9' ||
 		minorlv < '0' || minorlv > '9') {
 			notCrinklerFileError();
 	}
 
+	//oops: 0.6 -> 1.0
 	if (majorlv == '0' && minorlv == '6') {
 		majorlv = '1';
 		minorlv = '0';
@@ -424,13 +444,12 @@ void Crinkler::recompress(const char* input_filename, const char* output_filenam
 			break;
 	}
 
-	int virtualSize = (*(int*)&indata[0x5C]) - 0x20000;
+	int virtualSize = (*(int*)&indata[pe_header_offset+0x50]) - 0x20000;
 	int hashtable_size = -1;
 	int return_offset = -1;
 	int models_address = -1;
 	int depacker_start = -1;
 	int depacker_start2 = -1;
-	bool is_compatibility_header = true;
 	for(int i = 0; i < 0x200; i++) {
 		if(indata[i] == 0xbf && indata[i+5] == 0xb9 && hashtable_size == -1) {
 			hashtable_size = (*(int*)&indata[i+6]) * 2;
@@ -451,14 +470,16 @@ void Crinkler::recompress(const char* input_filename, const char* output_filenam
 			models_address = *(int*)&indata[i+1];
 		}
 	}
+
 	if(hashtable_size == -1 || return_offset == -1 || (depacker_start == -1 && depacker_start2 == -1) || models_address == -1)
 		notCrinklerFileError();
+	
 	if (depacker_start == -1) {
 		// post-1.3
 		depacker_start = depacker_start2;
 	}
 
-	int models_offset = models_address-0x400000;
+	int models_offset = models_address-CRINKLER_IMAGEBASE;
 	unsigned int weightmask1 = *(unsigned int*)&indata[models_offset+4];
 	unsigned char* models1 = &indata[models_offset+8];
 	m_modellist1.setFromModelsAndMask(models1, weightmask1);
@@ -468,7 +489,7 @@ void Crinkler::recompress(const char* input_filename, const char* output_filenam
 	m_modellist2.setFromModelsAndMask(models2, weightmask2);
 
 	CompressionType compmode = m_modellist1.detectCompressionType();
-	int subsystem_version = indata[0x68];
+	int subsystem_version = indata[pe_header_offset+0x5C];
 
 	printf("Original Virtual size: %d\n", virtualSize);
 
@@ -554,6 +575,8 @@ void Crinkler::recompress(const char* input_filename, const char* output_filenam
 	static const unsigned char new_import_code[] = {0x64, 0x67, 0x8B, 0x47, 0x30, 0x8B, 0x40, 0x0C,
 													0x8B, 0x40, 0x0C, 0x8B, 0x00, 0x8B, 0x00, 0x8B,
 													0x68, 0x18};
+	static const unsigned char new_import_code2[] ={0x58, 0x8B, 0x40, 0x0C, 0x8B, 0x40, 0x0C, 0x8B,
+													0x00, 0x8B, 0x00, 0x8B, 0x68, 0x18};
 	bool found_import = false;
 	for (int i = 0 ; i < splittingPoint-sizeof(old_import_code) ; i++) {
 		if (memcmp(rawdata+i, old_import_code, sizeof(old_import_code)) == 0) {			//no calltrans
@@ -562,7 +585,7 @@ void Crinkler::recompress(const char* input_filename, const char* output_filenam
 			found_import = true;
 			break;
 		}
-		if (memcmp(rawdata+i, new_import_code, sizeof(new_import_code)) == 0)
+		if (memcmp(rawdata+i, new_import_code, sizeof(new_import_code)) == 0 || memcmp(rawdata+i, new_import_code2, sizeof(new_import_code2)) == 0)
 		{
 			printf("Import code does not need patching.\n");
 			found_import = true;
@@ -657,9 +680,15 @@ void Crinkler::recompress(const char* input_filename, const char* output_filenam
 
 	Hunk* header = headerHunks->findSymbol("_header")->hunk;
 	headerHunks->removeHunk(header);
-	Hunk* depacker = headerHunks->findSymbol("_DepackEntry")->hunk;
-	headerHunks->removeHunk(depacker);
-
+	
+	Hunk* depacker = NULL;
+	if(is_compatibility_header)
+	{
+		depacker = headerHunks->findSymbol("_DepackEntry")->hunk;
+		headerHunks->removeHunk(depacker);
+	}
+	
+	if(is_compatibility_header)
 	{	//copy hashes from old header
 		DWORD* new_header_ptr = (DWORD*)header->getPtr();
 		DWORD* old_header_ptr = (DWORD*)indata;
@@ -673,7 +702,18 @@ void Crinkler::recompress(const char* input_filename, const char* output_filenam
 	}
 
 	phase2list.addHunkBack(header);
-	phase2list.addHunkBack(depacker);
+	if(is_compatibility_header)
+	{
+		phase2list.addHunkBack(depacker);
+	}
+	else
+	{
+		//create hashes hunk
+		int hashes_offset = header->getRawSize();
+		int hashes_bytes = models_offset - hashes_offset;
+		Hunk* hashHunk = new Hunk("HashHunk", (char*)&indata[hashes_offset], 0, 0, hashes_bytes, hashes_bytes);
+		phase2list.addHunkBack(hashHunk);
+	}
 	phase2list.addHunkBack(models);
 	phase2list.addHunkBack(phase1Compressed);
 	header->addSymbol(new Symbol("_HashTable", CRINKLER_SECTIONSIZE*2+phase1->getRawSize(), SYMBOL_IS_RELOCATEABLE, header));
