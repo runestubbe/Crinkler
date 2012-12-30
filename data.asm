@@ -2,6 +2,8 @@ global _headerObj
 global _headerObj_end
 global _header11Obj
 global _header11Obj_end
+global _header14CompatibilityObj
+global _header14CompatibilityObj_end
 global _header1KObj
 global _header1KObj_end
 global _import1KObj
@@ -20,8 +22,12 @@ global _calltransObj_end
 section	.data
 
 _headerObj:
-	incbin "modules/header13.obj"
+	incbin "modules/header14.obj"
 _headerObj_end:
+
+_header14CompatibilityObj:
+	incbin "modules/header14_compatibility.obj"
+_header14CompatibilityObj_end:
 
 _header11Obj:
 	incbin "modules/header11.obj"
@@ -36,19 +42,19 @@ _import1KObj:
 _import1KObj_end:
 
 _importObj:
-	incbin "modules/import12.obj"
+	incbin "modules/import14.obj"
 _importObj_end:
 
 _importRangeObj:
-	incbin "modules/import12-range.obj"
+	incbin "modules/import14-range.obj"
 _importRangeObj_end:
 
 _importSafeObj:
-	incbin "modules/import12-safe.obj"
+	incbin "modules/import14-safe.obj"
 _importSafeObj_end:
 
 _importSafeRangeObj:
-	incbin "modules/import12-safe-range.obj"
+	incbin "modules/import14-safe-range.obj"
 _importSafeRangeObj_end:
 
 _calltransObj:

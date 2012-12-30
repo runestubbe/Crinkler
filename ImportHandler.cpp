@@ -110,7 +110,7 @@ const int hashCode(const char* str) {
 }
 
 
-HunkList* ImportHandler::createImportHunks(HunkList* hunklist, Hunk* hashHunk, const vector<string>& rangeDlls, bool verbose, bool& enableRangeImport) {
+HunkList* ImportHandler::createImportHunks(HunkList* hunklist, Hunk*& hashHunk, const vector<string>& rangeDlls, bool verbose, bool& enableRangeImport) {
 	if(verbose)
 		printf("\n-Imports----------------------------------\n");
 
@@ -160,12 +160,11 @@ HunkList* ImportHandler::createImportHunks(HunkList* hunklist, Hunk* hashHunk, c
 	//sort import hunks
 	sort(importHunks.begin(), importHunks.end(), importHunkRelation);
 
+	vector<unsigned int> hashes;
 	Hunk* importList = new Hunk("ImportListHunk", 0, HUNK_IS_WRITEABLE, 16, 0, 0);
-	char dllNames[1024];
-	memset(dllNames, 0, 1024);
+	char dllNames[1024] = {0};
 	char* dllNamesPtr = dllNames+1;
 	char* hashCounter = dllNames;
-	DWORD* hashptr = (DWORD*)hashHunk->getPtr();
 	string currentDllName;
 	int pos = 0;
 	for(vector<Hunk*>::const_iterator it = importHunks.begin(); it != importHunks.end();) {
@@ -182,13 +181,6 @@ HunkList* ImportHandler::createImportHunks(HunkList* hunklist, Hunk* hashHunk, c
 		}
 
 		//skip non hashes
-		while(*hashptr != 0x48534148) {
-			if(enableRangeImport)
-				*dllNamesPtr++ = 1;
-			hashptr++;
-			(*hashCounter)++;
-			pos++;
-		}
 
 		if(currentDllName.compare(importHunk->getImportDll())) {
 			if(strcmp(importHunk->getImportDll(), "kernel32") != 0) {
@@ -206,7 +198,7 @@ HunkList* ImportHandler::createImportHunks(HunkList* hunklist, Hunk* hashHunk, c
 
 		(*hashCounter)++;
 		int hashcode = hashCode(importHunk->getImportName());
-		(*hashptr++) = hashcode;
+		hashes.push_back(hashcode);
 		int startOrdinal = getOrdinal(importHunk->getImportName(), importHunk->getImportDll());
 		int ordinal = startOrdinal;
 
@@ -248,12 +240,8 @@ HunkList* ImportHandler::createImportHunks(HunkList* hunklist, Hunk* hashHunk, c
 	importList->addSymbol(new Symbol("_ImportList", 0, SYMBOL_IS_RELOCATEABLE, importList));
 	importList->addSymbol(new Symbol(".bss", 0, SYMBOL_IS_RELOCATEABLE|SYMBOL_IS_SECTION, importList, "crinkler import"));
 
-	//trim header (remove trailing hashes)
-	while(hashHunk->getRawSize() >= 4 && *(int*)(hashHunk->getPtr()+hashHunk->getRawSize()-4) == 0x48534148) {
-		hashHunk->chop(4);
-	}
-	hashHunk->setVirtualSize(hashHunk->getRawSize());
-
+	hashHunk = new Hunk("HashHunk", (char*)&hashes[0], 0, 0, hashes.size()*sizeof(unsigned int), hashes.size()*sizeof(unsigned int));
+	
 	//create new hunklist
 	HunkList* newHunks = new HunkList;
 
