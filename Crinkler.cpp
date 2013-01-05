@@ -286,7 +286,7 @@ Hunk* Crinkler::createModelHunk(int splittingPoint, int rawsize) {
 	unsigned char masks2[256];
 	unsigned int w1 = m_modellist1.getMaskList(masks1, false);
 	unsigned int w2 = m_modellist2.getMaskList(masks2, true);
-	models = new Hunk("models", 0, 0, 1, modelsSize, modelsSize);
+	models = new Hunk("models", 0, 0, 0, modelsSize, modelsSize);
 	models->addSymbol(new Symbol("_Models", 0, SYMBOL_IS_RELOCATEABLE, models));
 	char* ptr = models->getPtr();
 	*(unsigned int*)ptr = -(CRINKLER_CODEBASE+splittingPoint);		ptr += sizeof(unsigned int);

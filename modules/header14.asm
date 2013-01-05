@@ -41,15 +41,15 @@ dw 0h				;Number of sections
 ;db "HAS2"			;Symbol table pointer
 ;db "HAS2"			;Number of symbols
 ModelEnd:
-	shr  ebx,1        ;ebx=0 or 1 (decoded bit): carry flag = 0,1			;2
+	add ebx, ebx															;2
     popa              ;ebx>1      (one count):   jnz to AritDecode			;1
-    jnz  short AritDecode   ;no need for UnpackedData: it will already be in edi	;2
+    jg  short AritDecode   ;no need for UnpackedData: it will already be in edi	;2
   WriteBit:
     rcl  byte[edi],1  ;shift the decoded bit in		;2
     jnc  short _DepackEntry ;finished the byte?		;2
     inc  edi										;1
     jmp  short WriteBit ;yes: new byte = 1			;2
-dw 8h				;Size of optional header
+dw 8h				; Size of optional header
 _CharacteristicsPtr:
 dw 2h				; Characteristics (almost any allowed - bit 1 must be set, bit 13 must be clear)
 
@@ -60,37 +60,36 @@ dw 010Bh			;Magic (Image file)
 ;db "HAS2"			;Size of code
 ;db "HAS2"			;Size of initialized data
 ;db "HAS2"			;Size of uninitialized data
-AritDecodeLoop:
-	bt	[_PackedData], ebp		;test bit					;7
-	adc	ecx, ecx				;shift bit in				;2
-	inc	ebp						;next bit					;1
-	add	eax, eax				;shift interval				;2
+AritDecodeLoop2:
+	adc	ecx, ecx				;shift bit in							;2
+	inc	ebp						;next bit								;1
 AritDecode:
-	dec	eax
-	db 0x3D	;cmp eax, DepackInit-_header
+	test eax, eax				;test sign								;2
+	jns	short AritDecodeLoop	;loop while msb of interval == 0		;2
+	add	ebx, edx				;ebx = p0 + p1							;2
+	push eax					;push interval_size						;1
+	mul	edx						;edx:eax = p0 * interval_size			;2
+	nop																	;1
+	db 0x3D						;cmp eax, DepackInit-_header
 	dd DepackInit-_header
-;db "HAS2"			;Base of code
-;db "HAS2"			;Base of data
 
-	inc eax																	;1
-	jns	short AritDecodeLoop	;loop while msb of interval == 0			;2
-	add	ebx, edx				;ebx = p0 + p1								;2
-	push eax					;push interval_size							;1
-	jmp short AritDecode2													;2
+;db "HAS2"			;Base of code
+;db "HAS2"			;Base of data	
+	div	ebx						;eax = (p0 * interval_size) / (p0 + p1)	;2
+	; eax = threshold value between 0 and 1
+	cmp	ecx, eax				;data < threshold?						;2
+	sbb ebx, ebx				;ebx = -cf = -bit						;2
+	jmp short AritDecode3												;2
 dd _ImageBase		;Image base
 dd 4h				;Section alignment (and PE header offset)
 dd 4h				;File alignment (on disk)
 ;db "HAS2"			;Major/minor OS version
 ;db "HAS2"			;Major/minor image version
-AritDecode2:
-	mul	edx						;edx:eax = p0 * interval_size				;2
-	div	ebx						;eax = (p0 * interval_size) / (p0 + p1)		;2
-	;; eax = threshold value between 0 and 1
-	xor	ebx, ebx				;ebx = 0									;2
-	pop	edx						;edx = interval_size						;1
-	nop																		;1
-	dw 4h						;Major subsystem version (add al, 0)
-	jmp short AritDecode3		;Minor subsystem version
+AritDecodeLoop:
+	bt	[_PackedData], ebp		;test bit					;7
+	db 0x8D						;shift interval: lea eax, [eax*2]
+	dw 4h						;Major subsystem version
+	jmp short AritDecodeLoop2								;2
 dd 0h				;Reserved	(Must be 0 to work on pylles laptop)
 
 ModelEndJumpPad:
@@ -108,8 +107,8 @@ DepackInit:
 	;ecx=0
 	;eax=1
 	;ebx=subsystem version
-	push ebx				;ebx=PEB	;1
-    xor  ebp, ebp			;ebp=0		;2
+	push	ebx					;ebx=PEB	;1
+    xor		ebp, ebp			;ebp=0		;2
 	db		0xbb ; mov ebx, const
 _SubsystemTypePtr:
 	dw		0002h	;Subsystem
@@ -136,28 +135,26 @@ dd 0				;Exports RVA
 ;db "HAS2"			;Exports Size
 ;dd 0x0009ebe2		;Import RVA
 AritDecode3:
-	cmp	ecx, eax				;data < threshold?							;2
+	pop	edx						;edx = interval_size						;1
 	jb	short .zero															;2
 	
 	;one
-	sub	ecx, eax				;data -= threshold							;2
+	xchg eax, edx				;eax = interval_size, edx = threshold		;1
+	sub	ecx, edx				;data -= threshold							;2
 	dw 0004h					;add al, 0 (Import RVA)						;2
-	xchg eax, edx				;eax = interval_size, edx = threshold		;2
 	sub	eax, edx				;eax = interval_size - threshold			;2
-	inc	ebx						;ebx = 1									;1
-	;; ebx = bit
+.zero:
+	;; ebx = -bit
 	;; ecx = new data
 	;; eax = new interval size
 
-.zero:
 _DepackEntry:
 
 EndCheck:
-	pusha
-
-    lodsd
-    add  eax,edi
-    je   short InitHash            ;if (block_end == unpacked_byte_offset) InitHash
+	pusha							;1
+    lodsd							;1
+    add  eax,edi					;2 (1)
+    je   short InitHash				;if (block_end == unpacked_byte_offset) InitHash
     ; carry = 1
 
 Model:
@@ -167,65 +164,66 @@ Model:
 
     push byte BaseProbDummy
 BaseProbPtrP1:
-    pop  eax
-    mov  [esp+zero_offset],eax
-    mov  [esp+one_offset],eax   ;carry flag always clear here, could be useful
+    pop  edx
+    mov  [esp+zero_offset],edx
+    mov  [esp+one_offset],edx   ;carry flag always clear here, could be useful (also clears upper part of edx)
 
 	;; Init weight
 	lodsd				; model weight shift mask
 	xor	ebp, ebp		; weight = 0
 
 ModelLoop:
-	dec	ebp
+	dec	ebp				;weight--									;1
 IncreaseWeight:
-	inc	ebp				;weight++
-	add	eax, eax		;check next bit in model weight mask
-	jc	short IncreaseWeight
-	jz	short ModelEndJumpPad
+	inc	ebp				;weight++									;1
+	add	eax, eax		;check next bit in model weight mask		;2 (1)
+	jc	short IncreaseWeight										;2
+	jz	short ModelEndJumpPad										;2
 
-NotModelEnd:
-	pusha
-	lodsb			; model mask
-	movzx	edx, al	; edx = mask
+;NotModelEnd:
+	pusha															;1
+	lodsb			; model mask									;1
+	mov dl, al		; dl = mask										;2
 
 .hashloop:
-	xor	al, [edi]
-	cmp eax, dword 0	;b0-b3 must be 0!!
-	imul eax, byte HASH_MULTIPLIER
-	add	al, [edi]
-	dec	eax
+	xor	al, [edi]													;2
+	imul eax, byte HASH_MULTIPLIER									;3
+	add eax, dword 0	;b0-b3 must be 0!!							;5
+	add	al, [edi]													;2
+	dec	eax															;1
 .next:
-	dec	edi			; next byte
-	add	dl, dl		; hash byte?
-	jc	short .hashloop
-	jnz	short .next
-	
-	;stc
+	dec	edi			; next byte										;1
+	add	dl, dl		; hash byte?									;2	
+	jc	short .hashloop												;2
+	jnz	short .next													;2
+	;cf=0
+	;zf=1
+
 InitHash:
-	mov	edi, _HashTable
+	mov	edi, _HashTable												;5
 	mov	ecx, _HashTableSize
 	jnc	short UpdateHash
 
 _ClearHash:
-	rep stosw
-	or	al, [esi]
-	popa
-	lea	esi, [esi + ModelSkipDummy]
+	rep stosw														;3
+	or	al, [esi]													;2
+	popa															;1
+	lea	esi, [esi + ModelSkipDummy]									;3
 ModelSkipPtrP1:
-	jpo	short EndCheck
-	ret
+	jpo	short EndCheck												;2
+	ret																;1
 
 UpdateHash:
-	div	ecx
+	div	ecx										;2
 	;; edx = hash
-	lea	edi, [edi + edx*2]	;edi = hashTableEntry
+	lea	edi, [edi + edx*2]	;edi = hashTableEntry	;3
 
 	;; Calculate weight
-	mov	ecx, ebp	;ecx = weight
-	xor	eax, eax	;eax = 0
-	scasb
+	mov	ecx, ebp	;ecx = weight		;2
+	xor	eax, eax	;eax = 0			;2
+	scasb								;1
 	je	short .boost
-	or	ch, [edi]
+	add	[edi], al		;00 07
 	jne	short .notboost
 .boost:
 	inc	ecx
@@ -233,26 +231,27 @@ UpdateHash:
 .notboost:
 
 	;; Add probs
-	dec	eax
 .bits:
 	movzx	edx, byte [edi + eax]
 	shl	edx, cl
 	add	[esp + 8*4 + zero_offset + eax*4], edx
-	inc	eax
-	jle	short .bits
+	dec	eax
+	jp	short .bits
+	; eax = -1
 
-	sub	eax, ebx
-	js	short .noupdate
-	
-	;; ebx = correct bit
-	;; eax = reverse bit
-	dec	edi
-	inc	byte [edi + eax]
+	test ebx, ebx
+	jg	short .noupdate
 	
 	;half if > 1
 	shr	byte [edi + ebx], 1
-	jnz	short .noupdate
+	jnz	short .nz
 	rcl	byte [edi + ebx], 1
+.nz:
+
+	;inc correct bit
+	not ebx
+	inc	byte [edi + ebx]
+
 .noupdate:
 	popa
 	inc	esi		; Next model
