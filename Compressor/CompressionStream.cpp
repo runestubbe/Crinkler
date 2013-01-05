@@ -91,7 +91,7 @@ void CompressionStream::Compress(const unsigned char* d, int size, const ModelLi
 		}
 
 		// Encode bit
-		AritCode(&m_aritstate, probs[0], probs[1], bit);
+		AritCode(&m_aritstate, probs[1], probs[0], 1-bit);
 
 		// Update models
 		for(int m = 0; m < models.nmodels; m++) {
@@ -131,7 +131,7 @@ void CompressionStream::Compress(const unsigned char* d, int size, const ModelLi
 		}
 
 		// Encode bit
-		AritCode(&m_aritstate, probs[0], probs[1], bit);
+		AritCode(&m_aritstate, probs[1], probs[0], 1-bit);
 
 		// Update models
 		for(int m = 0; m < models.nmodels; m++) {

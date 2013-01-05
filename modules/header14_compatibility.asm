@@ -126,7 +126,6 @@ dd 0							;Resources RVA
 _AritCalculate2:
 	div	ebx				;eax = (p0 * interval_size) / (p0 + p1)		;2
 	;; eax = threshold value between 0 and 1
-	xor	ebx, ebx		;ebx = 0									;2
 	pop	edx				;edx = interval_size		;1
 	cmp	ecx, eax		;data < threshold?			;2
 	jb	.zero										;2
@@ -136,8 +135,9 @@ _AritCalculate2:
 	
 	xchg eax, edx		;eax = interval_size, edx = threshold	;2
 	sub	eax, edx		;eax = interval_size - threshold		;2
-	inc	ebx				;ebx = 1								;1
 .zero:
+	sbb	ebx, ebx		;ebx = -cf = -bit						;2
+	nop
 	;; ebx = bit
 	;; ecx = new data
 	;; eax = new interval size
@@ -207,9 +207,9 @@ IncreaseWeight:
 	jc	IncreaseWeight
 	jnz	NotModelEnd		;
 
-    shr  ebx,1        ;ebx=0 or 1 (decoded bit): carry flag = 0,1
-    popa              ;ebx>1      (one count):   jnz to AritDecode
-    jnz  AritDecode   ;no need for UnpackedData: it will already be in edi
+    add ebx, ebx		;2
+    popa				;1
+    jg  AritDecode   ;no need for UnpackedData: it will already be in edi
   WriteBit:
     rcl  byte[edi],1  ;shift the decoded bit in
     jnc  _DepackEntry ;finished the byte?
@@ -265,26 +265,24 @@ UpdateHash:
 .notboost:
 
 	;; Add probs
-	dec	eax
 .bits:
 	movzx	edx, byte [edi + eax]
 	shl	edx, cl
 	add	[esp + 8*4 + zero_offset + eax*4], edx
-	inc	eax
-	jle	.bits
+	dec	eax
+	jp .bits
 
-	sub	eax, ebx
-	js	.noupdate
-	
-	;; ebx = correct bit
-	;; eax = reverse bit
-	dec	edi
-	inc	byte [edi + eax]
+	test ebx, ebx
+	jg	.noupdate
 	
 	;half if > 1
 	shr	byte [edi + ebx], 1
-	jnz	.noupdate
+	jnz	short .nz
 	rcl	byte [edi + ebx], 1
+.nz:
+	;inc correct bit
+	not ebx
+	inc	byte [edi + ebx]
 .noupdate:
 	popa
 	inc	esi		; Next model
