@@ -1,6 +1,6 @@
 
 Crinkler - compressing linker for Windows
-Copyright 2005-2011 Aske Simon Christensen and Rune L. H. Stubbe.
+Copyright 2005-2013 Aske Simon Christensen and Rune L. H. Stubbe.
 
 
 DISTRIBUTION
@@ -8,18 +8,20 @@ DISTRIBUTION
 Crinkler is freeware. You may distribute it freely, as long as the
 Crinkler executable and all accompanying documentation files are kept
 together and intact. You may not distribute modified versions or any
-kind of derived work based on Crinkler or its documentation. You may
-not include Crinkler or its documentation in any other archive or
-bundle.
+kind of derived work based on Crinkler or its documentation.
 
 USE AND AUTHOR RIGHTS
 
-You may use Crinkler for any non-commercial purpose. All output
-produced by Crinkler (executable files, HTML compression reports and
-other textual output) is to be considered the original works of you as
-a user of Crinkler. Such works are not covered by any restrictions by
-this license, except that such works must not be used for any safety
-critical purpose.
+You may use Crinkler and its output (executable files, HTML compression
+reports and other textual output) for any legal purpose with the
+following restrictions:
+- You may not use Crinkler or its output for any commercial purpose.
+- You may not use Crinkler or its output in any setting where security
+  is essential.
+- You may not use Crinkler or its output for any safety critical
+  purpose.
+Apart from these restrictions, the output of Crinkler is to be
+considered the original works of you as a user of Crinkler.
 
 NO WARRANTY
 
