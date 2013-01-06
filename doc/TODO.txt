@@ -7,6 +7,8 @@ Manual:
 	+libc
 
 License:
+?	+Distribute Crinkler as part of bundle
+?	+General use limitations: commercial, safety critical, security critical
 
 Report:
 	highlight of truncated floats and absolute jump offsets
@@ -65,6 +67,7 @@ Misc:
 	Use models from last run
 	PDB!!
 	Separate compressor into open source library?
+	-Distorm bug: IMUL / immediate sign extend
 
 Test:
 	Windows XP
@@ -80,7 +83,3 @@ Test:
 *	Wine?
 *	AMD
 *	CrinklerPackage
-
-Distorm bugs:
-	IMUL / immediate sign extend
-	
