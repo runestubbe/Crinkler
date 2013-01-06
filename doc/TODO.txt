@@ -1,10 +1,10 @@
 
 Manual:
-	credit more people?
+	+credit more people?
 	faq
 	Something about the compatibility strategy?
-	VS integration for 2010+?
-	libc
+	+VS integration for 2010+?
+	+libc
 
 License:
 
@@ -30,6 +30,7 @@ Headers:
 	ABS coding
 *	+PEB from EBX
 *	+Large address aware
+*	Compatibility header: Number of RVA, debug 0, size of headers
 
 Linker:
 	combine identical read-only symbols
@@ -42,6 +43,7 @@ Linker:
 ?	option to unalign code sections
 *	+Report site of unresolved reference
 	+Report all unresolved symbols
+?	Include function name in unresolved ref error message
 	+Forward forwarded RVA at link time
 	+Define ___ImageBase
 	Don't crash on big input files
@@ -62,6 +64,7 @@ Misc:
 	replacedll for recompression
 	Use models from last run
 	PDB!!
+	Separate compressor into open source library?
 
 Test:
 	Windows XP
@@ -71,6 +74,12 @@ Test:
 	+ufmod
 	+v2m
 	-libc without init code
+*	Compatibility header on XP
+*   Static allocation of more than 2gb
+*	File size > 64k < 128k
+*	Wine?
+*	AMD
+*	CrinklerPackage
 
 Distorm bugs:
 	IMUL / immediate sign extend
