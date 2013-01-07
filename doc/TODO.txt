@@ -3,6 +3,7 @@ Manual:
 	+credit more people?
 	faq
 	Something about the compatibility strategy?
+	Mention compatibility of recompression implicitly
 	+VS integration for 2010+?
 	+libc
 
@@ -33,6 +34,7 @@ Headers:
 *	+PEB from EBX
 *	+Large address aware
 *	Compatibility header: Number of RVA, debug 0, size of headers
+*	Compatibility header: something funny in unused fields
 
 Linker:
 	combine identical read-only symbols
@@ -77,9 +79,11 @@ Test:
 	+ufmod
 	+v2m
 	-libc without init code
-*	Compatibility header on XP
-*   Static allocation of more than 2gb
+*	+Compatibility header on XP
+*	Static allocation of more than 2gb
 *	File size > 64k < 128k
 *	Wine?
 *	AMD
 *	CrinklerPackage
+*	Recompression on all versions since 0.4
+

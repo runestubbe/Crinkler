@@ -301,6 +301,7 @@ using switches in the Visual Studio configuration window:
 
 /LARGEADDRESSAWARE
 /LARGEADDRESSAWARE:NO
+(Linker/System/Enable Large Addresses)
 
     Specify whether the executable is able to handle addresses above
     2 gigabytes. If this option is enabled, the executable will be able
@@ -351,11 +352,11 @@ Linker/Command Line/Additional Options:
 
     Decompress a Crinkler-compressed executable and recompress it
     using the given options. The resulting executable will work on
-    Windows XP, Windows Vista and Windows 7 and will be compatible
-    with Data Execution Prevention, but it will not work on Windows
-    2000. When this option is specified, Crinkler takes a single file
-    argument, which must be an EXE file produced by Crinkler 0.4 or
-    newer.
+    Windows XP, Windows Vista, Windows 7 and Windows 8 and will be
+    compatible with Data Execution Prevention, but it will not work on
+    Windows 2000. When this option is specified, Crinkler takes a
+    single file argument, which must be an EXE file produced by
+    Crinkler 0.4 or newer.
 
     See the section on recompression below for a description of the
     options that can be given to control the decompression process.

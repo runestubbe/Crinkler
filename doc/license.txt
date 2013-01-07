@@ -12,16 +12,17 @@ kind of derived work based on Crinkler or its documentation.
 
 USE AND AUTHOR RIGHTS
 
-You may use Crinkler and its output (executable files, HTML compression
-reports and other textual output) for any legal purpose with the
-following restrictions:
+The output of Crinkler (executable files, HTML compression reports
+and other textual output) is to be considered the original works of
+you as a user of Crinkler. You may use Crinkler and its output for
+any legal purpose with the following restrictions:
 - You may not use Crinkler or its output for any commercial purpose.
 - You may not use Crinkler or its output in any setting where security
   is essential.
 - You may not use Crinkler or its output for any safety critical
   purpose.
-Apart from these restrictions, the output of Crinkler is to be
-considered the original works of you as a user of Crinkler.
+- You may not use Crinkler or its output in the production of any
+  virus, worm, trojan, spyware or other malicious software.
 
 NO WARRANTY
 
