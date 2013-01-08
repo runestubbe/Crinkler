@@ -62,7 +62,7 @@ dw 0h				;Major/Minor linker version
 db "HASH"			;Size of code
 db "HASH"			;Size of initialized data
 db "HASH"			;Size of uninitialized data
-dd DepackInit-_header
+dd EntryPoint-_header
 db "HASH"			;Base of code
 dd 0000000Ch		;Base of data (and PE header offset)
 dd _ImageBase		;Image base
@@ -70,12 +70,12 @@ dd 4h				;Section alignment (in memory)
 dd 4h				;File alignment (on disk)
 db "HASH"			;Major/minor OS version
 db "HASH"			;Major/minor image version
-
-dw 4,0				;Major/minor subsystem version
+dw 4				;Major subsystem version
+EntryPoint:
+jmp short DepackInit;Minor subsystem version
 dd 0h				;Reserved
 dd _VirtualSize+20000h;Size of image (= Section size + Section alignment)
-dd 0h				;Size of headers (= Section alignment)
-
+dd 64				;Size of headers (= Section alignment)
 	;Checksum
 DepackInit2:
 _SpareNopPtr:
@@ -100,58 +100,46 @@ _SubsystemTypePtr:
 
 LoaderFlags:
 db "HASH"			;Loader flags
-dd 3				;Number of RVAs and Sizes
+dd 0				;Number of RVAs and Sizes
 
 ;Data directories
 	dd 0				;Exports RVA
-_AritCalculate:
 	;Exports size
 	;Imports RVA
+AritDecode2:
+	xchg eax, edx		;eax = interval_size, edx = threshold	;1
+	sub	eax, edx		;eax = interval_size - threshold		;2
+.zero:
+	sbb	ebx, ebx		;ebx = -cf = -bit						;2
+	ret															;1
+	dw 0004h
+
+db "HASH"						;Imports size
+
+;Resources RVA
+AritDecodeLoop:
+	bt	[_PackedData], ebp		;test bit		;7
+	adc	ecx, ecx				;shift bit in
+	inc	ebp						;next bit
+	add	eax, eax				;shift interval
+AritDecode:
+	test eax, eax			;msb of interval != 0
+	jns	AritDecodeLoop		;loop while msb of interval == 0
+
 	add	ebx, edx		;ebx = p0 + p1								;2
 	push eax			;push interval_size							;1
 	mul	edx				;edx:eax = p0 * interval_size				;2
-	jmp	short _AritCalculate2										;2
-	db 0															;1
-
-;db "HASH"						;Exports RVA
-;db "HASH"						;Exports size
-;dd 0x0001F000					;Imports rva
-db "HASH"						;Imports size
-dd 0							;Resources RVA
-
-;Section headers
-;Name
-;db "lz32.dll"
-
-_AritCalculate2:
 	div	ebx				;eax = (p0 * interval_size) / (p0 + p1)		;2
 	;; eax = threshold value between 0 and 1
 	pop	edx				;edx = interval_size		;1
 	cmp	ecx, eax		;data < threshold?			;2
-	jb	.zero										;2
+	jb	AritDecode2.zero										;2
 	
 	;one
 	sub	ecx, eax		;data -= threshold			;2
-	
-	xchg eax, edx		;eax = interval_size, edx = threshold	;2
-	sub	eax, edx		;eax = interval_size - threshold		;2
-.zero:
-	sbb	ebx, ebx		;ebx = -cf = -bit						;2
-	nop
-	;; ebx = bit
-	;; ecx = new data
-	;; eax = new interval size
-	ret
-		
-;db "HSH2"			;dd _VirtualSize+10000h;Virtual size (= Section size)
-db "HSH2"			;dd 00010000h		;Virtual address (= Section alignment)
-db "HSH2"			;dd 200h				;Size of raw data
-db "HSH2"			;dd 1h				;Pointer to raw data
-db "HASH"			;Pointer to relocations
-db "HSH2"			;dd 0h				;Pointer to line numbers
-db "HASH"			;Number of relocations/line numbers
-db "HSH2"			;dd 0E00000E0h		;Characteristics (contains everything, is executable, readable and writable)
-
+	jmp short AritDecode2
+db "HASH"
+dd 0				;debugtable (b8-bc) must be 0
 times	1000	db "HASH"
 
 zero_offset	equ	20
@@ -164,15 +152,8 @@ section depacker align=1
 	;; edx = zero prob
 	;; ebx = one prob
 
-AritDecodeLoop:
-	bt	[_PackedData], ebp		;test bit
-	adc	ecx, ecx				;shift bit in
-	inc	ebp						;next bit
-	add	eax, eax				;shift interval
-AritDecode:
-	test	eax, eax			;msb of interval != 0
-	jns		AritDecodeLoop		;loop while msb of interval == 0
-	call	_AritCalculate
+AritDecodeCallPad:
+	call	AritDecode
 
 _DepackEntry:
 
@@ -191,9 +172,9 @@ Model:
 
     push byte BaseProbDummy
 BaseProbPtrP1:
-    pop  eax
-    mov  [esp+zero_offset],eax
-    mov  [esp+one_offset],eax   ;carry flag always clear here, could be useful
+    pop  edx
+    mov  [esp+zero_offset],edx
+    mov  [esp+one_offset],edx   ;carry flag always clear here, could be useful
 
 	;; Init weight
 	lodsd				; model weight shift mask
@@ -209,7 +190,7 @@ IncreaseWeight:
 
     add ebx, ebx		;2
     popa				;1
-    jg  AritDecode   ;no need for UnpackedData: it will already be in edi
+    jg  AritDecodeCallPad   ;no need for UnpackedData: it will already be in edi
   WriteBit:
     rcl  byte[edi],1  ;shift the decoded bit in
     jnc  _DepackEntry ;finished the byte?
@@ -219,7 +200,7 @@ IncreaseWeight:
 NotModelEnd:
 	pusha
 	lodsb			; model mask
-	movzx	edx, al	; edx = mask
+	mov	dl, al	; edx = mask
 
 .hashloop:
 	xor	al, [edi]
