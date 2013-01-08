@@ -95,6 +95,7 @@ dd 0h				;Reserved	(Must be 0 to work on pylles laptop)
 ModelEndJumpPad:
 dd _VirtualSize + 0xB6EB + 0x20000 ;Size of image (and jmp short ModelEnd)
 dd 64							;Size of headers, must be at most 92 on win8 and at least 44 on xp
+;Size of headers must be <= entrypoint on win8
 
 	;Checksum
 DepackInit:

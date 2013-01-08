@@ -449,12 +449,13 @@ void Crinkler::recompress(const char* input_filename, const char* output_filenam
 			break;
 	}
 
+	int version = (majorlv-'0')*10 + (minorlv-'0');
+
 	int virtualSize = (*(int*)&indata[pe_header_offset+0x50]) - 0x20000;
 	int hashtable_size = -1;
 	int return_offset = -1;
 	int models_address = -1;
 	int depacker_start = -1;
-	int depacker_start2 = -1;
 	for(int i = 0; i < 0x200; i++) {
 		if(indata[i] == 0xbf && indata[i+5] == 0xb9 && hashtable_size == -1) {
 			hashtable_size = (*(int*)&indata[i+6]) * 2;
@@ -463,25 +464,33 @@ void Crinkler::recompress(const char* input_filename, const char* output_filenam
 			indata[i+2] = 0xCC;
 			return_offset = i+2;
 		}
-		if(indata[i] == 0x4B && indata[i+1] == 0x61 && indata[i+2] == 0x7F) {
-			// start of pre-1.3 depacker
-			depacker_start = i;
+		if(version < 13)
+		{
+			if(indata[i] == 0x4B && indata[i+1] == 0x61 && indata[i+2] == 0x7F) {
+				depacker_start = i;
+			}
 		}
-		if(indata[i] == 0x0F && indata[i+1] == 0xA3 && indata[i+2] == 0x2D) {
-			// start of post-1.3 depacker
-			depacker_start2 = i;
+		else if(version == 13)
+		{
+			if(indata[i] == 0x0F && indata[i+1] == 0xA3 && indata[i+2] == 0x2D) {
+				depacker_start = i;
+			}
 		}
+		else if(version == 14)
+		{
+			if(indata[i] == 0xE8 && indata[i+5] == 0x60 && indata[i+6] == 0xAD) {
+				depacker_start = i;
+			}
+		}
+		
 		if(indata[i] == 0xBE && indata[i+3] == 0x40 && indata[i+4] == 0x00) {
 			models_address = *(int*)&indata[i+1];
 		}
 	}
 
-	if(hashtable_size == -1 || return_offset == -1 || (depacker_start == -1 && depacker_start2 == -1) || models_address == -1)
+	if(hashtable_size == -1 || return_offset == -1 || (depacker_start == -1 && is_compatibility_header) || models_address == -1)
+	{
 		notCrinklerFileError();
-	
-	if (depacker_start == -1) {
-		// post-1.3
-		depacker_start = depacker_start2;
 	}
 
 	int models_offset = models_address-CRINKLER_IMAGEBASE;
@@ -507,7 +516,7 @@ void Crinkler::recompress(const char* input_filename, const char* output_filenam
 	int rawsize;
 	int splittingPoint;
 
-	if(majorlv > '1' || (majorlv == '1' && minorlv >= '3')) {
+	if(version >= 13) {
 		rawsize = -(*(int*)&indata[models_offset+modelskip])-CRINKLER_CODEBASE;
 		splittingPoint = -(*(int*)&indata[models_offset])-CRINKLER_CODEBASE;
 	} else {
