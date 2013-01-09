@@ -33,7 +33,7 @@ Headers:
 	ABS coding
 *	+PEB from EBX
 *	+Large address aware
-*	Compatibility header: Number of RVA, debug 0, size of headers
+*	+Compatibility header: Number of RVA, debug 0, size of headers
 *	Compatibility header: something funny in unused fields
 
 Linker:
@@ -72,8 +72,8 @@ Misc:
 	-Distorm bug: IMUL / immediate sign extend
 
 Test:
-	Windows XP
-	Windows Vista
+	+Windows XP
+	+Windows Vista
 	+Windows 7
 	+Windows 8
 	+ufmod
