@@ -375,16 +375,16 @@ void Crinkler::recompress(const char* input_filename, const char* output_filenam
 		Log::error("", "Cannot open file '%s'\n", input_filename);
 	}
 
-
-	//open output file now, just to be sure :)
-	FILE* outfile;
-	if(fopen_s(&outfile, output_filename, "wb")) {
-		Log::error("", "Cannot open '%s' for writing", output_filename);
-		return;
+	FILE* outfile = 0;
+	if (strcmp(input_filename, output_filename) != 0) {
+		//open output file now, just to be sure :)
+		if(fopen_s(&outfile, output_filename, "wb")) {
+			Log::error("", "Cannot open '%s' for writing", output_filename);
+			return;
+		}
 	}
 
 	int length = file.getSize();
-
 	if(length < 200)
 	{
 		notCrinklerFileError();
@@ -422,8 +422,13 @@ void Crinkler::recompress(const char* input_filename, const char* output_filenam
 		majorlv = '1';
 		minorlv = '0';
 	}
+	int version = (majorlv-'0')*10 + (minorlv-'0');
 
-	printf("File compressed with Crinkler version %c.%c\n", majorlv, minorlv);
+	if (is_compatibility_header && version >= 14) {
+		printf("File compressed using a pre-1.4 Crinkler and recompressed using Crinkler version %c.%c\n", majorlv, minorlv);
+	} else {
+		printf("File compressed or recompressed using Crinkler version %c.%c\n", majorlv, minorlv);
+	}
 
 	switch(majorlv) {
 		case '0':
@@ -449,7 +454,6 @@ void Crinkler::recompress(const char* input_filename, const char* output_filenam
 			break;
 	}
 
-	int version = (majorlv-'0')*10 + (minorlv-'0');
 
 	int virtualSize = (*(int*)&indata[pe_header_offset+0x50]) - 0x20000;
 	int hashtable_size = -1;
@@ -744,6 +748,12 @@ void Crinkler::recompress(const char* input_filename, const char* output_filenam
 	setHeaderConstants(phase2, phase1, best_hashsize, subsystem_version);
 	phase2->relocate(CRINKLER_IMAGEBASE);
 
+	if (!outfile) {
+		if(fopen_s(&outfile, output_filename, "wb")) {
+			Log::error("", "Cannot open '%s' for writing", output_filename);
+			return;
+		}
+	}
 	fwrite(phase2->getPtr(), 1, phase2->getRawSize(), outfile);
 	fclose(outfile);
 
@@ -977,6 +987,10 @@ void Crinkler::link(const char* filename) {
 	} else {
 		printf("\nFinal file size: %d\n\n", phase2->getRawSize());
 	}	
+
+	if (phase2->getRawSize() > 128*1024) {
+		Log::error(filename, "Output file too big. Crinkler does not support final file sizes of more than 128k.");
+	}
 
 	delete phase1;
 	delete phase1Untransformed;

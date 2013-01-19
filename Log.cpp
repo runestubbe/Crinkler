@@ -19,7 +19,7 @@ void Log::error(const char* from, const char* msg, ...) {
 	char buff[4096];
 	vsprintf_s(buff, sizeof(buff), msg, args);
 
-	printf("\n%s: error LNK: %s\n", from, buff);
+	printf("\n%s: error LNK: %s\n\n", from, buff);
 	fflush(stdout);
 	exit(-1);
 }
