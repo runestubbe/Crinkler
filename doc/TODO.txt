@@ -2,10 +2,12 @@
 Manual:
 	+credit more people?
 	faq
-	Something about the compatibility strategy?
-	Mention compatibility of recompression implicitly
+	+Something about the compatibility strategy?
+	+Mention compatibility of recompression implicitly
 	+VS integration for 2010+?
 	+libc
+*	+default output filename for recompress
+*	+Max size: 128k
 
 License:
 *	+Distribute Crinkler as part of bundle
@@ -59,7 +61,7 @@ Linker:
 	Don't crash on big input files
 ?	Pad code section to page size
 *	+Crinkler large address aware
-?	Virtual size > 2gb
+*	-Virtual size > 2gb
 
 Warnings/hints:
 	Detect bad lib files or report error if there are no imports

@@ -15,9 +15,11 @@ VERSION HISTORY
                 Forwarded RVA imports supported via link-time forwarding.
                 Dynamic C++ initializers supported.
                 Support for producing Large Address Aware executables.
+                Crinkler is Large Address Aware, handling larger inputs.
                 Report all unresolved symbols and the location of each.
                 Better resolving of ambiguous label references in report.
                 Various adjustments to textual output.
+                /RECOMPRESS overwrites input file by default.
 
 05.03.11: 1.3:  Fixed Crinkler crash on some AMD systems.
                 Header size reduced by 21 bytes.
@@ -165,6 +167,43 @@ executable file compressor for Windows 4k intros.
 
 
 
+COMPATIBILITY
+-------------
+
+The goal of Crinkler is for the produced EXE files to be compatible
+with all widely used Windows versions and configurations. As of
+version 1.4, the EXE files produced by Crinkler are, to the best of
+our knowledge, compatible with Windows XP, Windows Vista, Windows 7
+and Windows 8, both 32 bit and 64 bit versions. They are compatible
+with Data Execution Prevention and with execution hooks that inspect
+the import or export table of launched executables (graphics drivers
+are known to do this).
+
+It is not a primary goal of Crinkler to anticipate incompatibilities
+that may arise in the future as a consequence of new Windows versions,
+graphics drivers or other widespread system changes. Guaranteeing such
+compatibility would require Crinkler to follow the EXE file format
+specification to the letter, precluding most of the header hacks that
+Crinkler utilizes in order to reduce the size overhead of the EXE
+format as much as possible. Rather, we strive to continually monitor
+the compatibility situation and release a new, fixed version of
+Crinkler whenever a situation arises that affects the compatibility
+severely (such as a new, incompatible version of Windows). This has
+occurred several times already throughout the history of Crinkler.
+
+Each new version of Crinkler not only produces executables that are
+compatible with the current majority of targeted systems. It also
+includes a way of fixing old Crinkler executables to have the same
+level of compatibility. See the section on recompression for more
+details on this feature.
+
+This compatibility strategy ensures that intros made using Crinkler
+will continue to be accessible to their audience, even if the Windows
+EXE loader changes in an incompatible way that could not be
+anticipated at the time the intro was produced.
+
+
+
 INTRODUCTION
 ------------
 
@@ -211,8 +250,7 @@ compression:
   hash codes needed.
 
 - Much of the data in the EXE header is actually ignored by the EXE
-  loader. This space is used for some of the decompression
-  code.
+  loader. This space is used for some of the decompression code.
 
 Using Crinkler is somewhat different from using an ordinary executable
 file compressor because of the linking step. In the following
@@ -351,12 +389,15 @@ Linker/Command Line/Additional Options:
 /RECOMPRESS
 
     Decompress a Crinkler-compressed executable and recompress it
-    using the given options. The resulting executable will work on
-    Windows XP, Windows Vista, Windows 7 and Windows 8 and will be
-    compatible with Data Execution Prevention, but it will not work on
-    Windows 2000. When this option is specified, Crinkler takes a
-    single file argument, which must be an EXE file produced by
-    Crinkler 0.4 or newer.
+    using the given options. The resulting executable will have the
+    same level of compatibility as one produced directly by the
+    current version of Crinkler. See the section on compatibility for
+    more information on the compatibility of Crinkler-produced
+    executables.
+
+    When this option is specified, Crinkler takes a single file
+    argument, which must be an EXE file produced by Crinkler 0.4 or
+    newer.
 
     See the section on recompression below for a description of the
     options that can be given to control the decompression process.
@@ -649,8 +690,8 @@ are also ignored. The remaining options work as follows:
 
 /OUT:[file]
 
-    Specify the name of the resulting executable file. The default
-    name is fixed.exe.
+    Specify the name of the resulting executable file. The default is
+    to overwrite the input file.
 
 /COMPMODE:INSTANT
 /COMPMODE:FAST
