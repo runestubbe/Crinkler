@@ -410,8 +410,6 @@ int main(int argc, char* argv[]) {
 	
 	//load files
 	{
-		printf("loading: \n");
-		int c = 0;
 		while(filesArg.hasNext()) {
 			const char* filename = filesArg.getValue();
 			filesArg.next();
@@ -420,9 +418,8 @@ int main(int argc, char* argv[]) {
 				Log::error(filename, "Cannot open file");
 				return -1;
 			} else {
-				printf("  %s", filename);
-				if((c++ % 4) == 3)
-					printf("\n");
+				printf("Loading %s...\n", filename);
+				fflush(stdout);
 				string filepath = *res.begin();
 				crinkler.load(filepath.c_str());
 			}
