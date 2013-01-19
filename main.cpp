@@ -246,7 +246,7 @@ int main(int argc, char* argv[]) {
 	//recompress
 	if(cmdline.removeToken("/RECOMPRESS")) {
 		CmdLineInterface cmdline2(CRINKLER_TITLE, CMDI_PARSE_FILES);
-		outArg.setDefault("fixed.exe");
+		outArg.setDefault("*dummy*");
 		hashsizeArg.setDefault(-1);
 		subsystemArg.setDefault(-1);
 		compmodeArg.setDefault(-1);
@@ -273,8 +273,13 @@ int main(int argc, char* argv[]) {
 				return 1;
 			}
 
+			const char* outfilename = outArg.getValue();
+			if (strcmp(outfilename, "*dummy*") == 0) {
+				outfilename = infilename;
+			}
+
 			printf("Source: %s\n", infilename);
-			printf("Target: %s\n", outArg.getValue());
+			printf("Target: %s\n", outfilename);
 			if(subsystemArg.getValue() == -1) {
 				printf("Subsystem type: Inherited from original\n");
 			} else {
@@ -299,7 +304,7 @@ int main(int argc, char* argv[]) {
 			printf("Report: %s\n", strlen(summaryArg.getValue()) > 0 ? summaryArg.getValue() : "NONE");
 			printf("\n");
 
-			crinkler.recompress(infilename, outArg.getValue());
+			crinkler.recompress(infilename, outfilename);
 			return 0;
 		}
 
@@ -427,6 +432,8 @@ int main(int argc, char* argv[]) {
 		printf("\n");
 	}
 
+	printf("Linking...\n\n");
+	fflush(stdout);
 	crinkler.link(outArg.getValue());
 
 	int time2 = GetTickCount();

@@ -28,8 +28,11 @@ Output/UI:
 	button in progressgui to skip phase
 	Target size option
 *	+flush output for each file to load
-?	Error when output file is too big (> 128k)
-?	More information about what is going on
+*	+Error when output file is too big (> 128k)
+*	+More information about what is going on
+*	+Default recompress to same file
+	Show progress during setup/allocation
+*	+In recompress: Distinguish between 1.4 original and recompressed
 
 Headers:
 *	+zero-section header
@@ -43,15 +46,15 @@ Linker:
 	combine identical read-only symbols
 	+Remove 64k limit on uncompressed size (unfix BSS/HashTable address)
 	Remove 128k limit on compressed size (Adjustable CodeBase)
-	+automatic dynamic initializers
-	+more initializer section names?
+*	+automatic dynamic initializers
+	-more initializer section names?
 *	+option to disable initializers
 	merge crt header initializer labels?
 ?	option to unalign code sections
 *	+Report site of unresolved reference
 	+Report all unresolved symbols
 ?	Include function name in unresolved ref error message
-	+Forward forwarded RVA at link time
+*	+Forward forwarded RVA at link time
 	+Define ___ImageBase
 	Don't crash on big input files
 ?	Pad code section to page size
@@ -94,4 +97,4 @@ Test:
 *	+AMD
 *	+CrinklerPackage
 *	+Recompression on all versions since 0.4
-
+*	+All import code variants
