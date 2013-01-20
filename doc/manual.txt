@@ -4,13 +4,13 @@ CRINKLER - Compressing linker for Windows specialized for 4k intros
 Aske Simon Christensen "Blueberry/Loonies"
 Rune L. H. Stubbe "Mentor/TBC"
 
-Version 1.4 (January ?, 2013)
+Version 1.4 (January 19, 2013)
 
 
 
 VERSION HISTORY
 ---------------
-??.01.13: 1.4:  Output EXE files work with recent NVIDIA drivers.
+19.01.13: 1.4:  Output EXE files work with recent NVIDIA drivers.
                 New zero-section header layout saving around 30-50 bytes.
                 Forwarded RVA imports supported via link-time forwarding.
                 Dynamic C++ initializers supported.
@@ -72,7 +72,7 @@ VERSION HISTORY
                 Improved Visual Studio 2005 integration.
                 /COMPMODE:INSTANT option for very quick compression.
                 /ORDERTRIES option to try out different section orderings.
-                /SAFEIMPORT option to insert a check for nonexisting DLLs.
+                /SAFEIMPORT option to insert a check for nonexistent DLLs.
                 /PROGRESSGUI option for a graphical progress bar.
                 /REPLACEDLL option to replace one DLL with another.
                 /FIX option to fix compatibility problems of older versions.
@@ -766,7 +766,7 @@ obtained thus:
   Linker/Input/Additional Dependencies.
 
 There are a couple of caveats to using an older runtime library than
-the comnpiler expects, though. With out-of-the-box compilation
+the compiler expects, though. With out-of-the-box compilation
 options, the Visual Studio compiler generates code that requires some
 support functions which are only present in newer runtime DLLs. To
 avoid these dependencies, set the following options under C/C++/Code
@@ -931,6 +931,9 @@ compressor by Matt Mahoney.
 
 The import code is loosely based on the hashed imports code by Peci.
 
+The disassembly feature of the compression report uses the diStorm
+disassembler library by Gil Dabah.
+
 Many thanks to all the people who have given us comments, bug reports
 and test material, in particular to Rambo, Kusma, Polaris, Gargaj,
 Frenetic, Buzzie, Shash, Auld, Minas, Skarab, Dwing, Freak5, Hunta,
@@ -945,7 +948,7 @@ Big thanks to Rrrola for his valuable suggestions for optimizing the
 decompression code, and to qkumba for his guidance on the zero-section
 header and for tracking down the NVIDIA driver issue.
 
-Our special thanks to the many people who have demostrated the
+Our special thanks to the many people who have demonstrated the
 usefulness of Crinkler by using it for their own productions.
 
 Keep it going! We greatly appreciate your feedback.

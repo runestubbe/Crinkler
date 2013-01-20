@@ -1,23 +1,13 @@
 
 Manual:
-	+credit more people?
 	faq
-	+Something about the compatibility strategy?
-	+Mention compatibility of recompression implicitly
-	+VS integration for 2010+?
-	+libc
-*	+default output filename for recompress
-*	+Max size: 128k
 
 License:
-*	+Distribute Crinkler as part of bundle
-*	+General use limitations: commercial, safety critical, security critical
 
 Report:
 	highlight of truncated floats and absolute jump offsets
 	size of selected range
-*	+choose name of first global label in section from local label
-?	automatic labels at referred positions unless inside instruction
+	automatic labels at referred positions unless inside instruction
 	print resulting size
 	print time spent
 	imported function label names for recompression
@@ -25,53 +15,28 @@ Report:
 	Local labels from yasm?
 
 Output/UI:
-*	+decimals on sizes
-?	include header in sizes
+	include header in sizes
 	button in progressgui to skip phase
 	Target size option
-*	+flush output for each file to load
-*	+Error when output file is too big (> 128k)
-*	+More information about what is going on
-*	+Default recompress to same file
 	Show progress during setup/allocation
-*	+In recompress: Distinguish between 1.4 original and recompressed
 
 Headers:
-*	+zero-section header
 	ABS coding
-*	+PEB from EBX
-*	+Large address aware
-*	+Compatibility header: Number of RVA, debug 0, size of headers
-*	-Compatibility header: something funny in unused fields
 
 Linker:
 	combine identical read-only symbols
-	+Remove 64k limit on uncompressed size (unfix BSS/HashTable address)
 	Remove 128k limit on compressed size (Adjustable CodeBase)
-*	+automatic dynamic initializers
-	-more initializer section names?
-*	+option to disable initializers
 	merge crt header initializer labels?
-?	option to unalign code sections
-*	+Report site of unresolved reference
-	+Report all unresolved symbols
-?	Include function name in unresolved ref error message
-*	+Forward forwarded RVA at link time
-	+Define ___ImageBase
+	option to unalign code sections
+	Include function name in unresolved ref error message
 	Don't crash on big input files
-?	Pad code section to page size
-*	+Crinkler large address aware
-*	-Virtual size > 2gb
+	Pad code section to page size
 
 Warnings/hints:
 	Detect bad lib files or report error if there are no imports
 	warning when lib entry point detected but initializers are enabled?
-	-hint for security_cookie: do not use dxerr.lib
 	hint for __chkstk: /Gs option
 	hint for error: LNK: Cannot open DLL 'msvcr90' etc.
-	+hint for __imp_??1exception@std@@UAE@XZ: don't use STL
-*	+/QIfist hint: note that it changes semantics
-*	+Detect and hint about whole-program optimization
 	Read /STACK option and complain if larger than fixed stack size
 
 Misc:
@@ -79,24 +44,9 @@ Misc:
 	Use models from last run
 	PDB!!
 	Separate compressor into open source library?
-	-Distorm bug: IMUL / immediate sign extend
-	/TRANSFORM:F2L
-?	-Hashsize optimization in two threads  1: 4190 47.72  2: 4191 56.95
+	Distorm bugs?
+	/TRANSFORM:FLOAT2INT
 	Multithreaded hashsize optimization??
 
 Test:
-	+Windows XP
-	+Windows Vista
-	+Windows 7
-	+Windows 8
-	+ufmod
-	+v2m
-	-libc without init code
-*	+Compatibility header on XP
-*	-Static allocation of more than 2gb
-*	+File size > 64k < 128k
-*	-Wine?
-*	+AMD
-*	+CrinklerPackage
-*	+Recompression on all versions since 0.4
-*	+All import code variants
+	Wine?
