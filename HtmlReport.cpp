@@ -299,9 +299,9 @@ static int printRow(FILE *out, Hunk& hunk, const int *sizefill, int index, int n
 
 //return the relocation symbol offset bytes into the instruction. Handles off bounds reads gracefully
 static Symbol* getRelocationSymbol(_DecodedInst& inst, int offset, map<int, Symbol*>& relocs) {
-	if(offset < 0 || offset > inst.size-4)
+	if(offset < 0 || offset > (int)inst.size-4)
 		return NULL;
-	offset += inst.offset-CRINKLER_CODEBASE;
+	offset += (int)inst.offset-CRINKLER_CODEBASE;
 
 	map<int, Symbol*>::iterator it = relocs.find(offset);
 	return it != relocs.end() ? it->second : NULL;
@@ -558,7 +558,7 @@ static void htmlReportRecursive(CompressionReportRecord* csr, FILE* out, Hunk& h
 					_DecodedInst *insts = (_DecodedInst *)malloc(instspace * sizeof(_DecodedInst));
 					unsigned int numinsts;
 					distorm_decode64(CRINKLER_CODEBASE + csr->pos, (unsigned char*)&untransformedHunk.getPtr()[csr->pos], size, Decode32Bits, insts, instspace, &numinsts);
-					for(int i = 0; i < numinsts; i++) {
+					for(int i = 0; i < (int)numinsts; i++) {
 						fprintf(out, "<tr>");
 						//address
 						fprintf(out, "<td nowrap class='address'>&nbsp;%.8X&nbsp;</td>", insts[i].offset);
@@ -581,7 +581,7 @@ static void htmlReportRecursive(CompressionReportRecord* csr, FILE* out, Hunk& h
 
 						fprintf(out, "<td nowrap title='%.2f bytes' style='color: #%.6X;'>%s",
 							size / (float)(BITPREC*8), sizeToColor(size/insts[i].size), insts[i].mnemonic.p);
-						for (int j = 0 ; j < OPCODE_WIDTH-insts[i].mnemonic.length ; j++) {
+						for (int j = 0 ; j < OPCODE_WIDTH-(int)insts[i].mnemonic.length ; j++) {
 							fprintf(out, "&nbsp;");
 						}
 
@@ -607,7 +607,7 @@ static void htmlReportRecursive(CompressionReportRecord* csr, FILE* out, Hunk& h
 				} else {
 					// Data section
 					vector<int> rowLengths;
-					{	//fill row lenghts
+					{	//fill row lengths
 						int count = 0;
 						int idx = csr->pos;
 						while(idx < csr->pos+size) {

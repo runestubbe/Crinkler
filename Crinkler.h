@@ -31,10 +31,9 @@ const int PRINT_LABELS =			1;
 const int PRINT_IMPORTS =			2;
 const int PRINT_MODELS =			4;
 
-#define CRINKLER_TITLE "Crinkler 1.4 (" __DATE__ ") (c) 2005-2013 Aske Simon Christensen & Rune Stubbe"
-#define CRINKLER_WITH_VERSION "Crinkler 1.4"
-const int CRINKLER_LINKER_VERSION = 0x3431;
-//#define INCLUDE_1K_PACKER
+#define CRINKLER_TITLE "Crinkler 1.5 (" __DATE__ ") (c) 2005-2015 Aske Simon Christensen & Rune Stubbe"
+#define CRINKLER_WITH_VERSION "Crinkler 1.5"
+const int CRINKLER_LINKER_VERSION = 0x3531;
 
 class Crinkler {
 	MultiLoader				m_hunkLoader;
@@ -72,7 +71,7 @@ class Crinkler {
 	void replaceDlls(HunkList& hunkslist);
 	void overrideAlignments(HunkList& hunklist);
 
-	void compress1K(Hunk* phase1, const char* filename, FILE* outfile);
+	void compress1K(Hunk* phase1, Hunk* header, int splittingPoint, int hash_bits, int max_dll_name_length, const char* filename, FILE* outfile);
 
 	void loadImportCode(bool useSafeImporting, bool useRangeImport);
 	Hunk* createModelHunk(int splittingPoint, int rawsize);
