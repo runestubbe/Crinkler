@@ -189,18 +189,20 @@ void verboseLabels(CompressionReportRecord* csr) {
 		verboseLabels(*it);
 }
 
-#ifdef INCLUDE_1K_PACKER
-void Crinkler::compress1K(Hunk* phase1, const char* filename, FILE* outfile) {
+void Crinkler::compress1K(Hunk* phase1, Hunk* header, int splittingPoint, int hash_bits, int max_dll_name_length, const char* filename, FILE* outfile) {
 	int maxsize = phase1->getRawSize()*2+1000;	//allocate plenty of memory
-	Hunk* header = phase1->findSymbol("_header")->hunk;
 
 	int compressed_size = 1024*1024;
 	unsigned char* compressed_data = new unsigned char[compressed_size];
 	char* ptr = phase1->getPtr();
+	/*
 	if(ptr[phase1->getRawSize()-1] != 0) {
 		phase1->appendZeroes(1);
 	}
-
+	*/
+	*(phase1->getPtr() + phase1->findSymbol("_HashShiftPtr")->value) = 32-hash_bits;
+	*(phase1->getPtr() + phase1->findSymbol("_MaxNameLengthPtr")->value) = max_dll_name_length;
+	
 	int* sizefill = new int[maxsize];
 
 	int baseprob0;
@@ -221,14 +223,9 @@ void Crinkler::compress1K(Hunk* phase1, const char* filename, FILE* outfile) {
 	Hunk* phase2 = phase2list.toHunk("final", CRINKLER_IMAGEBASE);
 	//add constants
 	{
-		int virtualSize = align(phase1->getVirtualSize(), 16);
-		int packedDataPos = phase2->findSymbol("_PackedData")->value;
-		int packedDataOffset = (packedDataPos - CRINKLER_SECTIONSIZE*2)*8;
-		printf("packed data offset: %x\n", packedDataOffset);
+		int virtualSize = align(phase1->getVirtualSize()+65536*2, 24);
 		printf("image size: %x\n", phase1->getRawSize());
 		phase2->addSymbol(new Symbol("_UnpackedData", CRINKLER_CODEBASE, 0, phase2));
-		phase2->addSymbol(new Symbol("_DepackEndPosition", CRINKLER_CODEBASE+phase1->getRawSize(), 0, phase2));
-		phase2->addSymbol(new Symbol("_VirtualSize", virtualSize, 0, phase2));
 		phase2->addSymbol(new Symbol("_ImageBase", CRINKLER_IMAGEBASE, 0, phase2));
 		phase2->addSymbol(new Symbol("_ModelMask", modelmask, 0, phase2));
 
@@ -236,6 +233,8 @@ void Crinkler::compress1K(Hunk* phase1, const char* filename, FILE* outfile) {
 		*(phase2->getPtr() + phase2->findSymbol("_BaseProbPtr0")->value) = baseprob0;
 		*(phase2->getPtr() + phase2->findSymbol("_BaseProbPtr1")->value) = baseprob1;
 		*(phase2->getPtr() + phase2->findSymbol("_BoostFactorPtr")->value) = boostfactor;
+		*(unsigned short*)(phase2->getPtr() + phase2->findSymbol("_DepackEndPositionPtr")->value) = phase1->getRawSize() + CRINKLER_CODEBASE;
+		*(phase2->getPtr() + phase2->findSymbol("_VirtualSizeHighBytePtr")->value) = virtualSize>>24;
 	}
 	phase2->relocate(CRINKLER_IMAGEBASE);
 
@@ -244,7 +243,7 @@ void Crinkler::compress1K(Hunk* phase1, const char* filename, FILE* outfile) {
 
 	printf("\nFinal file size: %d\n\n", phase2->getRawSize());
 
-	CompressionReportRecord* csr = phase1->getCompressionSummary(sizefill, phase1->getRawSize());
+	CompressionReportRecord* csr = phase1->getCompressionSummary(sizefill, splittingPoint);
 	if(m_printFlags & PRINT_LABELS)
 		verboseLabels(csr);
 	if(!m_summaryFilename.empty())
@@ -255,7 +254,6 @@ void Crinkler::compress1K(Hunk* phase1, const char* filename, FILE* outfile) {
 	delete phase1;
 	delete phase2;
 }
-#endif
 
 void Crinkler::loadImportCode(bool useSafeImporting, bool useRangeImport) {
 	//do imports
@@ -333,11 +331,11 @@ int Crinkler::optimizeHashsize(unsigned char* data, int datasize, int hashsize, 
 int Crinkler::estimateModels(unsigned char* data, int datasize, int splittingPoint, bool reestimate) {
 	int size1, size2;
 	m_progressBar.beginTask(reestimate ? "Reestimating models for code" : "Estimating models for code");
-	m_modellist1 = ApproximateModels(data, splittingPoint, CRINKLER_BASEPROB, &size1, &m_progressBar, m_printFlags & PRINT_MODELS, m_compressionType);
+	m_modellist1 = ApproximateModels(data, splittingPoint, CRINKLER_BASEPROB, &size1, &m_progressBar, (m_printFlags & PRINT_MODELS) != 0, m_compressionType);
 	m_progressBar.endTask();
 
 	m_progressBar.beginTask(reestimate ? "Reestimating models for data" : "Estimating models for data");
-	m_modellist2 = ApproximateModels(data+splittingPoint, datasize - splittingPoint, CRINKLER_BASEPROB, &size2, &m_progressBar, m_printFlags & PRINT_MODELS, m_compressionType);
+	m_modellist2 = ApproximateModels(data+splittingPoint, datasize - splittingPoint, CRINKLER_BASEPROB, &size2, &m_progressBar, (m_printFlags & PRINT_MODELS) != 0, m_compressionType);
 	m_progressBar.endTask();
 
 	int idealsize = size1+size2;
@@ -598,7 +596,7 @@ void Crinkler::recompress(const char* input_filename, const char* output_filenam
 	static const unsigned char new_import_code2[] ={0x58, 0x8B, 0x40, 0x0C, 0x8B, 0x40, 0x0C, 0x8B,
 													0x00, 0x8B, 0x00, 0x8B, 0x68, 0x18};
 	bool found_import = false;
-	for (int i = 0 ; i < splittingPoint-sizeof(old_import_code) ; i++) {
+	for (int i = 0 ; i < splittingPoint-(int)sizeof(old_import_code) ; i++) {
 		if (memcmp(rawdata+i, old_import_code, sizeof(old_import_code)) == 0) {			//no calltrans
 			memcpy(rawdata+i, new_import_code, sizeof(new_import_code));
 			printf("Import code successfully patched.\n");
@@ -790,7 +788,7 @@ Hunk* Crinkler::createDynamicInitializerHunk()
 		char* ptr = hunk->getPtr();
 		for(int i = 0; i < num_symbols; i++)
 		{
-			*ptr++ = 0xE8;
+			*ptr++ = (char)0xE8;
 			*ptr++ = 0x00;
 			*ptr++ = 0x00;
 			*ptr++ = 0x00;
@@ -855,13 +853,16 @@ void Crinkler::link(const char* filename) {
 										m_hunkLoader.load(headerObj, headerObj_end - headerObj, "crinkler header");
 
 	Hunk* header = headerHunks->findSymbol("_header")->hunk;
-	headerHunks->removeHunk(header);
+	if(!m_1KMode)
+		headerHunks->removeHunk(header);
 	Hunk* hashHunk = NULL;
 
+	int hash_bits;
+	int max_dll_name_length;
 	bool usesRangeImport=false;
 	{	//add imports
-		HunkList* importHunkList = m_1KMode ?	ImportHandler::createImportHunks1K(&m_hunkPool, m_printFlags & PRINT_IMPORTS) :
-												ImportHandler::createImportHunks(&m_hunkPool, hashHunk, m_rangeDlls, m_printFlags & PRINT_IMPORTS, usesRangeImport);
+		HunkList* importHunkList = m_1KMode ?	ImportHandler::createImportHunks1K(&m_hunkPool, (m_printFlags & PRINT_IMPORTS) != 0, hash_bits, max_dll_name_length) :
+												ImportHandler::createImportHunks(&m_hunkPool, hashHunk, m_rangeDlls, (m_printFlags & PRINT_IMPORTS) != 0, usesRangeImport);
 		m_hunkPool.removeImportHunks();
 		m_hunkPool.append(importHunkList);
 		delete importHunkList;
@@ -912,13 +913,11 @@ void Crinkler::link(const char* filename) {
 	printf("Uncompressed size of data: %5d\n", phase1->getRawSize() - splittingPoint);
 
 	//Do 1k specific stuff
-#ifdef INCLUDE_1K_PACKER
 	if(m_1KMode) {
-		compress1K(phase1, filename, outfile);
+		compress1K(phase1, header, splittingPoint, hash_bits, max_dll_name_length, filename, outfile);
 		delete phase1Untransformed;
 		return;
 	}
-#endif
 
 	int* sizefill = new int[maxsize];
 
@@ -926,11 +925,13 @@ void Crinkler::link(const char* filename) {
 	int best_hashsize = previousPrime(m_hashsize/2)*2;
 	Hunk* phase1Compressed;
 	int size, idealsize = 0;
-	if (m_compressionType != COMPRESSION_INSTANT) {
+	if (m_compressionType != COMPRESSION_INSTANT)
+	{
 		initProgressBar();
 		idealsize = estimateModels((unsigned char*)phase1->getPtr(), phase1->getRawSize(), splittingPoint, false);
 
-		if(m_hunktries > 0) {
+		if(m_hunktries > 0)
+		{
 			EmpiricalHunkSorter::sortHunkList(&m_hunkPool, *m_transform, m_modellist1, m_modellist2, CRINKLER_BASEPROB, m_hunktries, m_showProgressBar ? &m_windowBar : NULL);
 			delete phase1;
 			delete phase1Untransformed;
@@ -1011,7 +1012,7 @@ void Crinkler::printOptions(FILE *out) {
 		fprintf(out, " /HASHTRIES:%d", m_hashtries);
 		fprintf(out, " /ORDERTRIES:%d", m_hunktries);
 	}
-	for(int i = 0; i < m_rangeDlls.size(); i++) {
+	for(int i = 0; i < (int)m_rangeDlls.size(); i++) {
 		fprintf(out, " /RANGE:%s", m_rangeDlls[i].c_str());
 	}
 	for(map<string, string>::iterator it = m_replaceDlls.begin(); it != m_replaceDlls.end(); it++) {

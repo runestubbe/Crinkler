@@ -1,0 +1,85 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hpp;hxx;hm;inl;inc;xsd</Extensions>
+    </Filter>
+    <Filter Include="Assembly Files">
+      <UniqueIdentifier>{b25cc30f-af97-40d7-a340-cc3815104270}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="CompressionStateEvaluators">
+      <UniqueIdentifier>{7033615a-06f7-4802-87eb-b98b7a6ff447}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="CompressionStateEvaluators\Shaders">
+      <UniqueIdentifier>{bd142c73-b8b1-4a60-aa43-9caf8b8eb668}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="CompressionState.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="CompressionStream.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Compressor.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ModelList.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="SoftwareCompressionStateEvaluator.cpp">
+      <Filter>CompressionStateEvaluators</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="aritcode.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="common.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="CompressionState.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="CompressionStream.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Compressor.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="data.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="model.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ModelList.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ProgressBar.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="CompressionStateEvaluator.h">
+      <Filter>CompressionStateEvaluators</Filter>
+    </ClInclude>
+    <ClInclude Include="SoftwareCompressionStateEvaluator.h">
+      <Filter>CompressionStateEvaluators</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="aritcode.asm">
+      <Filter>Assembly Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="data.asm">
+      <Filter>Assembly Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="model.asm">
+      <Filter>Assembly Files</Filter>
+    </CustomBuild>
+  </ItemGroup>
+</Project>

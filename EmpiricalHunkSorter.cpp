@@ -1,6 +1,7 @@
 #include "EmpiricalHunkSorter.h"
 #include <ctime>
 #include <cmath>
+#include <ppl.h>
 #include "HunkList.h"
 #include "Hunk.h"
 #include "Compressor/CompressionStream.h"
@@ -31,13 +32,24 @@ int EmpiricalHunkSorter::tryHunkCombination(HunkList* hunklist, Transform& trans
 
 	CompressionStream cs(NULL, NULL, 0);
 	int sizes[16];
+#if USE_OPENMP
 	#pragma omp parallel for
-	for(int i = 0; i < 16; i++) {
+	for(int i = 0; i < 16; i++)
+	{
 		if(i < 8)
 			sizes[i] = cs.EvaluateSizeQuick((unsigned char*)phase1->getPtr(), splittingPoint, codeModels, baseprob, contexts[0], i);
 		else
 			sizes[i] = cs.EvaluateSizeQuick((unsigned char*)phase1->getPtr()+splittingPoint, phase1->getRawSize()-splittingPoint, dataModels, baseprob, contexts[1], i - 8);
 	}
+#else
+	concurrency::parallel_for(0, 16, [&](int i)
+	{
+		if(i < 8)
+			sizes[i] = cs.EvaluateSizeQuick((unsigned char*)phase1->getPtr(), splittingPoint, codeModels, baseprob, contexts[0], i);
+		else
+			sizes[i] = cs.EvaluateSizeQuick((unsigned char*)phase1->getPtr()+splittingPoint, phase1->getRawSize()-splittingPoint, dataModels, baseprob, contexts[1], i - 8);
+	});
+#endif
 	delete phase1;
 
 	int size = 0;
@@ -112,8 +124,7 @@ void permuteHunklist(HunkList* hunklist, int strength) {
 
 void randomPermute(HunkList* hunklist) {
 	bool done = false;
-	int h1i, h2i;
-	
+
 	int sections[3];
 	int nHunks = hunklist->getNumHunks();
 	int fixedHunks = 0;
@@ -151,7 +162,6 @@ void randomPermute(HunkList* hunklist) {
 }
 
 void EmpiricalHunkSorter::sortHunkList(HunkList* hunklist, Transform& transform, ModelList& codeModels, ModelList& dataModels, int baseprob, int numIterations, ProgressBar* progress) {
-	int sections[3];
 	int fixedHunks = 0;
 	int nHunks = hunklist->getNumHunks();
 

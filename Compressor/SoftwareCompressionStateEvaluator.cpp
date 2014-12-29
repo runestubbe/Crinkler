@@ -1,6 +1,7 @@
 #include "SoftwareCompressionStateEvaluator.h"
 #include <cstdlib>
 #include <memory>
+#include <ppl.h>
 
 #include "aritcode.h"
 
@@ -31,10 +32,12 @@ bool SoftwareCompressionStateEvaluator::init(ModelPredictions* models, int lengt
 }
 
 long long SoftwareCompressionStateEvaluator::changeWeight(int modelIndex, int diffw) {
-	long long diffsize = 0;
+	
 	Weights* model = m_models[modelIndex].weights;
 	int length = m_models[modelIndex].nWeights;
 
+#if USE_OPENMP
+	long long diffsize = 0;
 	#pragma omp parallel for reduction(+:diffsize)
 	for(int n = 0; n < length; n++) {
 		int i = model[n].pos & 0x7FFFFFFF;
@@ -49,6 +52,35 @@ long long SoftwareCompressionStateEvaluator::changeWeight(int modelIndex, int di
 	}
 
 	return diffsize;
+#else
+	concurrency::combinable<long long> diffsize;
+
+	const int BLOCK_SIZE = 64;
+	int num_blocks = (length + BLOCK_SIZE - 1) / BLOCK_SIZE;
+
+	//for(int n = 0; n < length; n++)
+	concurrency::parallel_for(0, num_blocks, [&](int block)
+	{
+		int start_idx = block * BLOCK_SIZE;
+		int end_idx = std::min(start_idx + BLOCK_SIZE, length);
+		int diffsize2 = 0;
+		for(int n = start_idx; n < end_idx; n++)
+		{
+			int i = model[n].pos & 0x7FFFFFFF;
+			int boost = (model[n].pos >> 30) & 0x2;
+
+			int oldsize = m_sums[i].old_size;
+			m_sums[i].p0 += (model[n].prob[0] * diffw)<<boost;
+			m_sums[i].p1 += (model[n].prob[1] * diffw)<<boost;
+			int newsize = AritSize2(m_sums[i].p0, m_sums[i].p1);
+			m_sums[i].old_size = newsize;
+			diffsize2 += (newsize - oldsize);
+		}
+		diffsize.local() += diffsize2;
+	});
+
+	return diffsize.combine(std::plus<long long>());
+#endif
 }
 
 long long SoftwareCompressionStateEvaluator::evaluate(const ModelList& ml) {

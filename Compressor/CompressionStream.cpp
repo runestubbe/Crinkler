@@ -4,6 +4,7 @@
 #include <cstdio>
 #include <mmintrin.h>
 #include <intrin.h>
+#include <ppl.h>
 
 #include "model.h"
 #include "aritcode.h"
@@ -217,13 +218,32 @@ int CompressionStream::EvaluateSize(const unsigned char* d, int size, const Mode
 		}
 	}
 
-	//sum 
+	//sum
 	long long totalsize = 0;
+	//TODO: lift to separate function
+#if USE_OPENMP
 	#pragma omp parallel for reduction(+:totalsize)
 	for(int bitpos = 0; bitpos < bitlength; bitpos++) {
 		int bit = GetBit(data, bitpos);
 		totalsize += AritSize2(sums[bitpos*2+bit], sums[bitpos*2+!bit]);
 	}
+#else
+	concurrency::combinable<long long> combinable_totalsize;
+	const int BLOCK_SIZE = 64;
+	int num_blocks = (bitlength + BLOCK_SIZE - 1) / BLOCK_SIZE;
+	concurrency::parallel_for(0, num_blocks, [&](int block)
+	{
+		int start_idx = block * BLOCK_SIZE;
+		int end_idx = std::min(start_idx + block, bitlength);
+		long long block_size = 0;
+		for(int bitpos = start_idx; bitpos < end_idx; bitpos++) {
+			int bit = GetBit(data, bitpos);
+			block_size += AritSize2(sums[bitpos*2+bit], sums[bitpos*2+!bit]);
+		}
+		combinable_totalsize.local() += block_size;
+	});
+	totalsize = combinable_totalsize.combine(std::plus<long long>());
+#endif
 
 	delete[] hashtable;
 
@@ -254,7 +274,7 @@ int CompressionStream::EvaluateSizeQuick(const unsigned char* d, int size, const
 	unsigned int tinyhashsize = previousPowerOf2(size*2);
 	unsigned int recths = ((1<<31)/tinyhashsize-1)*2+1;
 	unsigned int recthslog = 0;
-	while((1<<recthslog) <= recths) recthslog++;
+	while((1u<<recthslog) <= recths) recthslog++;
 	TinyHashEntry* hashtable = new TinyHashEntry[tinyhashsize];
 
 	unsigned int* sums = new unsigned int[size*2];	//summed predictions
@@ -308,11 +328,29 @@ int CompressionStream::EvaluateSizeQuick(const unsigned char* d, int size, const
 
 	//sum 
 	long long totalsize = 0;
+#if USE_OPENMP
 	#pragma omp parallel for reduction(+:totalsize)
 	for(int pos = 0; pos < size; pos++) {
 		int bit = (data[pos] >> (7-bitpos)) & 1;
 		totalsize += AritSize2(sums[pos*2+bit], sums[pos*2+!bit]);
 	}
+#else
+	concurrency::combinable<long long> combinable_totalsize;
+	const int BLOCK_SIZE = 64;
+	int num_blocks = (size + BLOCK_SIZE - 1) / BLOCK_SIZE;
+	concurrency::parallel_for(0, num_blocks, [&](int block)
+	{
+		int start_idx = block * BLOCK_SIZE;
+		int end_idx = std::min(start_idx + BLOCK_SIZE, size);
+		long long block_size = 0;
+		for(int pos = start_idx; pos < end_idx; pos++) {
+			int bit = (data[pos] >> (7-bitpos)) & 1;
+			block_size += AritSize2(sums[pos*2+bit], sums[pos*2+!bit]);
+		}
+		combinable_totalsize.local() += block_size;
+	});
+	totalsize = combinable_totalsize.combine(std::plus<long long>());
+#endif
 	
 	_mm_empty();
 

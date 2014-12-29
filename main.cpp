@@ -188,9 +188,8 @@ int main(int argc, char* argv[]) {
 	CmdParamSwitch recompressFlag("RECOMPRESS", "recompress a Crinkler file", 0);
 	CmdParamSwitch unsafeImportArg("UNSAFEIMPORT", "crash if a DLL is missing", 0);
 	CmdParamSwitch showProgressArg("PROGRESSGUI", "show a graphical progress bar", 0);
-#ifdef INCLUDE_1K_PACKER
+
 	CmdParamSwitch tinyCompressor("1K", "1k mode", PARAM_HIDE_IN_PARAM_LIST);
-#endif
 	CmdParamFlags subsystemArg("SUBSYSTEM", "select subsystem", PARAM_FORBID_MULTIPLE_DEFINITIONS, SUBSYSTEM_CONSOLE, 
 						"WINDOWS", SUBSYSTEM_WINDOWS, "CONSOLE", SUBSYSTEM_CONSOLE, NULL);
 	CmdParamFlags largeAddressAwareArg("LARGEADDRESSAWARE", "allow addresses beyond 2gb", PARAM_ALLOW_NO_ARGUMENT_DEFAULT | PARAM_FORBID_MULTIPLE_DEFINITIONS, 1, "NO", 0, NULL);
@@ -217,9 +216,7 @@ int main(int argc, char* argv[]) {
 	cmdline.addParams(&crinklerFlag, &hashsizeArg, &hashtriesArg, &hunktriesArg, &entryArg, &outArg, &summaryArg, &unsafeImportArg,
 						&subsystemArg, &largeAddressAwareArg, &truncateFloatsArg, &overrideAlignmentsArg, &compmodeArg, &printArg, &transformArg, &libpathArg, 
 						&rangeImportArg, &replaceDllArg, &noInitializersArg, &filesArg, &priorityArg, &showProgressArg, &recompressFlag,
-#ifdef INCLUDE_1K_PACKER
 						&tinyCompressor,
-#endif
 						NULL);
 	
 
@@ -316,9 +313,7 @@ int main(int argc, char* argv[]) {
 	}
 
 	//set Crinkler options
-#ifdef INCLUDE_1K_PACKER
 	crinkler.set1KMode(tinyCompressor.getValue());
-#endif
 	crinkler.setImportingType(!unsafeImportArg.getValue());
 	crinkler.setEntry(entryArg.getValue());
 	crinkler.setHashsize(hashsizeArg.getValue());

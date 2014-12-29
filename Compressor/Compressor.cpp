@@ -1,5 +1,6 @@
 #include <windows.h>
 #include <cstdio>
+#include <ppl.h>
 #include "Compressor.h"
 #include "CompressionState.h"
 #include "SoftwareCompressionStateEvaluator.h"
@@ -143,7 +144,7 @@ ModelList InstantModels() {
 
 ModelList ApproximateModels(const unsigned char* data, int datasize, int baseprob, int* compsize, ProgressBar* progressBar, bool verbose, CompressionType compressionType) {
 	unsigned char masks[256];
-	int i,m;
+	int m;
 	int mask;
 	unsigned int size, bestsize;
 	int maski;
@@ -232,7 +233,7 @@ ModelList ApproximateModels(const unsigned char* data, int datasize, int basepro
 	return models;
 }
 
-int compress1K(unsigned char* data, int size, unsigned char* compressed, int compressed_size, int* modeldata, int b0, int b1, int boost_factor, unsigned int modelmask, int* sizefill) {
+int compress1K(unsigned char* data, int size, unsigned char* compressed, int compressed_size, int* modeldata, int b0, int b1, int boost_factor, unsigned int modelmask, int* sizefill, int* internal_size) {
 	AritState as;
 	memset(compressed, 0, compressed_size);	
 	AritCodeInit(&as, compressed);
@@ -250,6 +251,22 @@ int compress1K(unsigned char* data, int size, unsigned char* compressed, int com
 			n[0] = b1; n[1] = b0;
 		}
 		unsigned int mmask = modelmask;
+#if 1
+		while(mmask != 0)
+		{
+			DWORD idx;
+			BitScanForward(&idx, mmask);
+			int m = idx;
+			int c[2] = {modeldata[(bitlength*m+i)*2], modeldata[(bitlength*m+i)*2+1]};
+			if(c[0]*c[1] == 0) {
+				c[0]*=boost_factor;
+				c[1]*=boost_factor;
+			}
+			n[0] += c[0];
+			n[1] += c[1];
+			mmask &= (mmask-1);
+		}
+#else
 		for(int m = 31; m >= 0; m--) {
 			if(mmask & 0x80000000) {
 				int c[2] = {modeldata[(bitlength*m+i)*2], modeldata[(bitlength*m+i)*2+1]};
@@ -262,14 +279,17 @@ int compress1K(unsigned char* data, int size, unsigned char* compressed, int com
 			}
 			mmask *= 2;
 		}
+#endif
 
 		if((i & 7) == 0 && sizefill)
 			*sizefill++ = AritCodePos(&as)/(BITPREC_TABLE/BITPREC);
-		AritCode(&as, n[bit], n[!bit], bit);
+		AritCode(&as, n[1-bit], n[bit], 1-bit);
 	}
 
 	if(sizefill)
 		*sizefill++ = AritCodePos(&as)/(BITPREC_TABLE/BITPREC);
+	if(internal_size)
+		*internal_size = AritCodePos(&as)/(BITPREC_TABLE/BITPREC);
 
 	return (AritCodeEnd(&as) + 7) / 8;
 }
@@ -337,24 +357,31 @@ void TinyCompress(unsigned char* org_data, int size, unsigned char* compressed, 
 	int best_size = INT_MAX;
 
 	best_modelmask = 0xFFFFFFFF;
-	
+#if 1
 	int best_exclude;
 	do {
 		best_exclude = -1;
 		unsigned int prev_best_modelmask = best_modelmask;
+#if USE_OPENMP
 		#pragma omp parallel for
-		for(int i = 0; i < 32; i++) {
+		for(int i = 0; i < 32; i++)
+#else
+		concurrency::critical_section cs;
+		concurrency::parallel_for(0, 31, [&](int i)
+#endif
+		{
 			unsigned int modelmask = prev_best_modelmask ^ (1<<i);
-			#pragma omp parallel for
-			for(int boost_factor = 4; boost_factor < 8; boost_factor++) {
-				#pragma omp parallel for
-				for(int b0 = 3; b0 < 8; b0++) {
-					#pragma omp parallel for
-					for(int b1 = 3; b1 < 8; b1++) {
-						int testsize = compress1K(data, size, compressed, compressed_size,
-							modeldata, b0, b1, boost_factor, modelmask, NULL);
-
+			for(int boost_factor = 3; boost_factor < 6; boost_factor++) {
+				for(int b0 = 3; b0 < 7; b0++) {
+					int testsize;
+					for(int b1 = 3; b1 < 7; b1++) {
+						compress1K(data, size, compressed, compressed_size,
+							modeldata, b0, b1, boost_factor, modelmask, NULL, &testsize);
+#if USE_OPENMP
 						#pragma omp critical (update)
+#else
+						Concurrency::critical_section::scoped_lock l(cs);
+#endif
 						{
 							if(testsize < best_size) {
 								best_size = testsize;
@@ -363,21 +390,34 @@ void TinyCompress(unsigned char* org_data, int size, unsigned char* compressed, 
 								best_b1 = b1;
 								best_modelmask = modelmask;
 								best_exclude = i;
-								printf("baseprob: (%d, %d) boost: %d modelmask: %8X compressed size: %d bytes\n", best_b0, best_b1, best_boost, best_modelmask, best_size);
+								printf("baseprob: (%d, %d) boost: %d modelmask: %8X compressed size: %f bytes\n", best_b0, best_b1, best_boost, best_modelmask, best_size / float(BITPREC*8));
 							}
 						}
 					}
 				}
 			}
+#if USE_OPENMP
 		}
+#else
+		});
+#endif
 	} while(best_exclude != -1);
-	
-	compressed_size = compress1K(data, size, compressed, compressed_size,
-		modeldata, best_b0, best_b1, best_boost, best_modelmask, sizefill);
+#else
+	best_b0 = 4;
+	best_b1 = 5;
+	best_boost = 5;
+	//best_modelmask = 0xAEBABAEF;//0x4EAA3AEF;
+	best_modelmask = 0x4EAA3AEF|0x80000000;
+#endif
+
+
+	printf("best:\n");
+	printf("baseprob: (%d, %d) boost: %d modelmask: %8X compressed size: %f bytes\n", best_b0, best_b1, best_boost, best_modelmask, best_size / float(BITPREC*8));
+	int testsize;
+
+	compressed_size = compress1K(data, size, compressed, compressed_size, modeldata, best_b0, best_b1, best_boost, best_modelmask, sizefill, &testsize);
 
 	best_modelmask <<= 1;
-
-	printf("baseprob: (%d, %d) boost: %d modelmask: %8X compressed size: %d bytes\n", best_b0, best_b1, best_boost, best_modelmask, best_size);
 
 	delete[] modeldata;
 

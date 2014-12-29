@@ -80,7 +80,7 @@ unsigned int ModelList::getMaskList(unsigned char* masks, bool terminate) const 
 		biti--;
 	}
 
-	return weightmask & (-2 + (terminate ^ parity(weightmask)));
+	return weightmask & (-2 + (int(terminate) ^ parity(weightmask)));
 }
 
 void ModelList::setFromModelsAndMask(const unsigned char* models, int weightmask) {

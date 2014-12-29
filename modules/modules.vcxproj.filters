@@ -30,22 +30,20 @@
     <CustomBuild Include="header14_compatibility.asm">
       <Filter>Source Files</Filter>
     </CustomBuild>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="header14.asm">
+    <CustomBuild Include="header14.asm">
       <Filter>Source Files</Filter>
-    </None>
-    <None Include="import14.asm">
+    </CustomBuild>
+    <CustomBuild Include="import14-range.asm">
       <Filter>Source Files</Filter>
-    </None>
-    <None Include="import14-range.asm">
+    </CustomBuild>
+    <CustomBuild Include="import14-safe-range.asm">
       <Filter>Source Files</Filter>
-    </None>
-    <None Include="import14-safe.asm">
+    </CustomBuild>
+    <CustomBuild Include="import14-safe.asm">
       <Filter>Source Files</Filter>
-    </None>
-    <None Include="import14-safe-range.asm">
+    </CustomBuild>
+    <CustomBuild Include="import14.asm">
       <Filter>Source Files</Filter>
-    </None>
+    </CustomBuild>
   </ItemGroup>
 </Project>

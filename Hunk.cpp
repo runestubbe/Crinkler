@@ -98,9 +98,9 @@ static bool symbolComparator(Symbol* first, Symbol* second) {
 		return first->hunk_offset < second->hunk_offset;
 	} else {
 		if((first->flags & SYMBOL_IS_SECTION) != (second->flags & SYMBOL_IS_SECTION))
-			return first->flags & SYMBOL_IS_SECTION;
+			return (first->flags & SYMBOL_IS_SECTION) != 0;
 		if((first->flags & SYMBOL_IS_LOCAL) != (second->flags & SYMBOL_IS_LOCAL))
-			return !(first->flags & SYMBOL_IS_LOCAL);
+			return (first->flags & SYMBOL_IS_LOCAL) == 0;
 		return first->name < second->name;
 	}
 }
@@ -268,7 +268,7 @@ void Hunk::trim() {
 		farestReloc = max(it->offset+relocSize, farestReloc);
 	}
 
-	while(m_data.size() > farestReloc && m_data.back() == 0)
+	while((int)m_data.size() > farestReloc && m_data.back() == 0)
 		m_data.pop_back();
 }
 
@@ -466,7 +466,7 @@ void Hunk::roundFloats(int defaultBits) {
 			} else {
 				float orgf = *(float*)ptr;
 				int orgi = ptr[0];
-				ptr[0] = roundInt64(ptr[0], 32+bits);
+				ptr[0] = (int)roundInt64(ptr[0], 32+bits);
 				printf("%s[%d]: %f (0x%.8X 32 bits) -> %f (0x%.8X %d bits)\n",
 					name.c_str(), address - s->value, orgf, orgi, *(float*)ptr, ptr[0], bits);
 			}

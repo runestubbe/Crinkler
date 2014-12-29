@@ -137,7 +137,7 @@ HunkList* ImportHandler::createImportHunks(HunkList* hunklist, Hunk*& hashHunk, 
 			} while (true);
 
 			//is the dll a range dll?
-			for(int i = 0; i < rangeDlls.size(); i++) {
+			for(int i = 0; i < (int)rangeDlls.size(); i++) {
 				if(toUpper(rangeDlls[i]) == toUpper(hunk->getImportDll())) {
 					usedRangeDlls[i] = true;
 					enableRangeImport = true;
@@ -150,7 +150,7 @@ HunkList* ImportHandler::createImportHunks(HunkList* hunklist, Hunk*& hashHunk, 
 
 	//warn about unused range dlls
 	{
-		for(int i = 0; i < rangeDlls.size(); i++) {
+		for(int i = 0; i < (int)rangeDlls.size(); i++) {
 			if(!usedRangeDlls[i]) {
 				Log::warning("", "No functions were imported from range dll '%s'", rangeDlls[i].c_str());
 			}
@@ -172,7 +172,7 @@ HunkList* ImportHandler::createImportHunks(HunkList* hunklist, Hunk*& hashHunk, 
 		bool useRange = false;
 
 		//is the dll a range dll?
-		for(int i = 0; i < rangeDlls.size(); i++) {
+		for(int i = 0; i < (int)rangeDlls.size(); i++) {
 			if(toUpper(rangeDlls[i]) == toUpper(importHunk->getImportDll())) {
 				usedRangeDlls[i] = true;
 				useRange = true;
@@ -255,60 +255,92 @@ HunkList* ImportHandler::createImportHunks(HunkList* hunklist, Hunk*& hashHunk, 
 	return newHunks;
 }
 
-const unsigned int hashCode_1k(const char* str, int family) {
-	int code = 0;
-	unsigned int eax;
+const unsigned int hashCode_1k(const char* str, int family, int bits) {
+	int eax = 0;
+	char al = 0;
 	do {
-		code *= family;
-		eax = *str++;
-		code += eax;
-	} while(eax);
+		eax = (eax & 0xFFFFFF00) + *str++;
+		eax = eax * family;
+		al = eax & 0xFF;
+		al = al+al;
+		eax = (eax & 0xFFFFFF00) | (unsigned char)al;
+	} while(al!=0);
 	//code ^= _rotl(code, 16);
-	return (code & 0x03FFF)*4;
+	unsigned int ueax = (unsigned int)eax;
+	return (ueax >> (32-bits))*4;
 }
 
+static void findCollisionFreeHashFamily(const set<string>& dlls, const vector<Hunk*>& importHunks, int& hash_family, int& hash_bits) {
+	vector<char*> modules;
+	for(set<string>::const_iterator it = dlls.begin(); it != dlls.end(); it++) {
+		modules.push_back(LoadDLL(it->c_str()));
+	}
 
-static int findCollisionFreeHashFamily(const set<string>& dlls, const vector<Hunk*>& importHunks) {
-	
-	int family;
-	bool collisions;
-	cout << "searching for hash family: ";
-	do {
-		cout << ".";
-		map<int, vector<string> > buckets;
-		family = rand();
-		collisions = false;
-	
-		for(set<string>::const_iterator it = dlls.begin(); it != dlls.end(); it++) {
-			char* module = LoadDLL(it->c_str());
-
-			IMAGE_DOS_HEADER* dh = (IMAGE_DOS_HEADER*)module;
-			IMAGE_FILE_HEADER* coffHeader = (IMAGE_FILE_HEADER*)(module + dh->e_lfanew+4);
-			IMAGE_OPTIONAL_HEADER32* pe = (IMAGE_OPTIONAL_HEADER32*)(coffHeader+1);
-			IMAGE_EXPORT_DIRECTORY* exportdir = (IMAGE_EXPORT_DIRECTORY*) (module + pe->DataDirectory[IMAGE_DIRECTORY_ENTRY_EXPORT].VirtualAddress);
-
-			int* nameTable = (int*)(module + exportdir->AddressOfNames);
-			for(int i = 0; i < (int)exportdir->NumberOfNames; i++) {
-				char* name = module+nameTable[i];
-				int hash = hashCode_1k(name, family);
-				buckets[hash].push_back(name);
-			}
-		}
-
-		for(vector<Hunk*>::const_iterator it = importHunks.begin(); it != importHunks.end(); it++) {
-			string name = (*it)->getImportName();
-			int hashcode = hashCode_1k(name.c_str(), family);
+	int stime = GetTickCount();
+	cout << "searching for hash family: " << endl;
+	int best_family = 0;
+	int best_num_bits = 0;
+	int next_family = 1;
+	for(int num_bits = 20; num_bits >= 1; num_bits--)
+	{
+		bool has_collisions = true;
+		int family;
+		int digit_mul = 1;
+		for(int num_digits = 1; num_digits <= 3 && has_collisions; num_digits++)
+		{
+			for(int digit = 1; digit < 256 && has_collisions; digit++)
+			{
+				map<int, int> buckets;
+				family = digit*digit_mul*256 + 1;
+				has_collisions = false;
 			
-			if(buckets[hashcode].size() > 1) {
-				collisions = true;
+				for(vector<char*>::const_iterator it = modules.begin(); it != modules.end(); it++) {
+					char* module = *it;
+
+					IMAGE_DOS_HEADER* dh = (IMAGE_DOS_HEADER*)module;
+					IMAGE_FILE_HEADER* coffHeader = (IMAGE_FILE_HEADER*)(module + dh->e_lfanew+4);
+					IMAGE_OPTIONAL_HEADER32* pe = (IMAGE_OPTIONAL_HEADER32*)(coffHeader+1);
+					IMAGE_EXPORT_DIRECTORY* exportdir = (IMAGE_EXPORT_DIRECTORY*) (module + pe->DataDirectory[IMAGE_DIRECTORY_ENTRY_EXPORT].VirtualAddress);
+
+					int* nameTable = (int*)(module + exportdir->AddressOfNames);
+					for(int i = 0; i < (int)exportdir->NumberOfNames; i++) {
+						char* name = module+nameTable[i];
+						int hash = hashCode_1k(name, family, num_bits);
+						buckets[hash]++;
+					}
+				}
+
+				for(vector<Hunk*>::const_iterator it = importHunks.begin(); it != importHunks.end(); it++) {
+					string name = (*it)->getImportName();
+					int hashcode = hashCode_1k(name.c_str(), family, num_bits);
+					
+					if(buckets[hashcode] > 1 && name != "timeGetTime") {
+						has_collisions = true;
+						break;
+					}
+				}
 			}
+			digit_mul = (digit_mul<<8)+1;
 		}
-	} while(collisions);
-	cout << endl << "found family: " << family << endl;
-	return family;
+
+		if(has_collisions)
+		{
+			break;
+		}
+		else
+		{
+			printf("%dbits: %8x\n", num_bits, family); fflush(stdout);
+			best_family = family;
+			best_num_bits = num_bits;
+		}
+	}
+	hash_family = best_family;
+	hash_bits = best_num_bits;
+	printf("time spent: %dms\n", GetTickCount()-stime);
+	printf("done looking for hash family\n"); fflush(stdout);
 }
 
-HunkList* ImportHandler::createImportHunks1K(HunkList* hunklist, bool verbose) {
+HunkList* ImportHandler::createImportHunks1K(HunkList* hunklist, bool verbose, int& hash_bits, int& max_dll_name_length) {
 	if(verbose)
 		printf("\n-Imports----------------------------------\n");
 
@@ -327,25 +359,35 @@ HunkList* ImportHandler::createImportHunks1K(HunkList* hunklist, bool verbose) {
 			importHunks.push_back(hunk);
 		}
 	}
-	int family = findCollisionFreeHashFamily(dlls, importHunks);
+	int hash_family;
+	findCollisionFreeHashFamily(dlls, importHunks, hash_family, hash_bits);
 
 	string dllnames;
-	const int MAX_NAME_LENGTH = 9;
-	for(set<string>::iterator it = dlls.begin(); it != dlls.end(); it++) {
-		while(dllnames.size() % MAX_NAME_LENGTH)
+	
+	int max_name_length = 0;
+	for(string dllname : dlls)
+	{
+		max_name_length = max(max_name_length, (int)dllname.size() + 1);
+	}
+
+	for(set<string>::iterator it = dlls.begin(); it != dlls.end(); it++)
+	{
+		while(dllnames.size() % max_name_length)
 			dllnames.push_back(0);
-		if(it->compare("kernel32")) {
+		if(it->compare("kernel32"))
+		{
 			string name = *it;
 			dllnames += name;
 		}
 	}
 
 	Hunk* importList = new Hunk("ImportListHunk", 0, HUNK_IS_WRITEABLE, 8, 0, 65536*256);
-	importList->addSymbol(new Symbol("_HashFamily", family, 0, importList));
+	importList->addSymbol(new Symbol("_HashFamily", hash_family, 0, importList));
 	importList->addSymbol(new Symbol("_ImportList", 0, SYMBOL_IS_RELOCATEABLE, importList));
-	for(vector<Hunk*>::iterator it = importHunks.begin(); it != importHunks.end(); it++) {
+	for(vector<Hunk*>::iterator it = importHunks.begin(); it != importHunks.end(); it++)
+	{
 		Hunk* importHunk = *it;
-		unsigned int hashcode = hashCode_1k(importHunk->getImportName(), family);
+		unsigned int hashcode = hashCode_1k(importHunk->getImportName(), hash_family, hash_bits);
 		importList->addSymbol(new Symbol(importHunk->getName(), hashcode, SYMBOL_IS_RELOCATEABLE, importList));
 	}
 
@@ -354,6 +396,7 @@ HunkList* ImportHandler::createImportHunks1K(HunkList* hunklist, bool verbose) {
 	dllNamesHunk->addSymbol(new Symbol("_DLLNames", 0, SYMBOL_IS_RELOCATEABLE, dllNamesHunk));
 	newHunks->addHunkBack(dllNamesHunk);
 	newHunks->addHunkBack(importList);
+	max_dll_name_length = max_name_length;
 
 	return newHunks;
 }

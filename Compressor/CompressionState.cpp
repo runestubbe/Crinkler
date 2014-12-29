@@ -1,5 +1,6 @@
 #include "CompressionState.h"
 #include <memory>
+#include <ppl.h>
 
 #include "ModelList.h"
 #include "aritcode.h"
@@ -90,10 +91,17 @@ CompressionState::CompressionState(const unsigned char* data, int size, int base
 	memcpy(data2+8, data, size);
 
 	//apply models
+#if USE_OPENMP
 	#pragma omp parallel for
 	for(int mask = 0; mask <= 0xff; mask++) {
 		m_models[mask] = applyModel(data2+8, m_size, (unsigned char)mask);
 	}
+#else
+	concurrency::parallel_for(0, 0x100, [&](int mask)
+	{
+		m_models[mask] = applyModel(data2+8, m_size, (unsigned char)mask);
+	});
+#endif
 	delete[] data2;
 	m_stateEvaluator->init(m_models, size*8, baseprob);
 	m_compressedsize = BITPREC_TABLE*(long long)m_size;
