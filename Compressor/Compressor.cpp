@@ -251,7 +251,7 @@ int compress1K(unsigned char* data, int size, unsigned char* compressed, int com
 			n[0] = b1; n[1] = b0;
 		}
 		unsigned int mmask = modelmask;
-#if 1
+
 		while(mmask != 0)
 		{
 			DWORD idx;
@@ -266,20 +266,7 @@ int compress1K(unsigned char* data, int size, unsigned char* compressed, int com
 			n[1] += c[1];
 			mmask &= (mmask-1);
 		}
-#else
-		for(int m = 31; m >= 0; m--) {
-			if(mmask & 0x80000000) {
-				int c[2] = {modeldata[(bitlength*m+i)*2], modeldata[(bitlength*m+i)*2+1]};
-				if(c[0]*c[1] == 0) {
-					c[0]*=boost_factor;
-					c[1]*=boost_factor;
-				}
-				n[0] += c[0];
-				n[1] += c[1];
-			}
-			mmask *= 2;
-		}
-#endif
+
 
 		if((i & 7) == 0 && sizefill)
 			*sizefill++ = AritCodePos(&as)/(BITPREC_TABLE/BITPREC);
@@ -294,6 +281,87 @@ int compress1K(unsigned char* data, int size, unsigned char* compressed, int com
 	return (AritCodeEnd(&as) + 7) / 8;
 }
 
+static const int NUM_1K_MODELS = 32;
+static const int MIN_1K_BASEPROB = 3;
+static const int MAX_1K_BASEPROB = 6;
+static const int NUM_1K_BASEPROBS = MAX_1K_BASEPROB - MIN_1K_BASEPROB + 1;
+
+static const int MIN_1K_BOOST_FACTOR = 3;
+static const int MAX_1K_BOOST_FACTOR = 6;
+static const int NUM_1K_BOOST_FACTORS = MAX_1K_BOOST_FACTOR - MIN_1K_BOOST_FACTOR + 1;
+
+int evaluate1K(unsigned char* data, int size, int* modeldata, int* out_b0, int* out_b1, int* out_boost_factor, unsigned int modelmask)
+{
+	int bitlength = size * 8;
+	int totalsizes[NUM_1K_BOOST_FACTORS][NUM_1K_BASEPROBS][NUM_1K_BASEPROBS] ={};
+
+	for(int i = 0; i < bitlength; i++)
+	{
+		int bitpos = (i & 7);
+		int bytepos = i >> 3;
+		int mask = 0xFF00 >> bitpos;
+		int bit = ((data[bytepos] << bitpos) & 0x80) == 0x80;
+
+		int n[2][2] ={};	//boost_n0, boost_n1, no_boost_n0, no_boost_n1
+
+		unsigned int mmask = modelmask;
+		while(mmask != 0)
+		{
+			DWORD idx;
+			BitScanForward(&idx, mmask);
+			int m = idx;
+			int c[2] ={modeldata[(bitlength*m + i) * 2], modeldata[(bitlength*m + i) * 2 + 1]};
+			int boost = (c[0] * c[1] == 0);
+			n[boost][0] += c[0];
+			n[boost][1] += c[1];
+			mmask &= (mmask - 1);
+		}
+
+		for(int boost_idx = 0; boost_idx < NUM_1K_BOOST_FACTORS; boost_idx++)
+		{
+			int boost_factor = boost_idx + MIN_1K_BOOST_FACTOR;
+			int total_n0 = n[0][0] + n[1][0] * boost_factor;
+			int total_n1 = n[0][1] + n[1][1] * boost_factor;
+			for(int b1 = 0; b1 < NUM_1K_BASEPROBS; b1++)
+			{
+				for(int b0 = 0; b0 < NUM_1K_BASEPROBS; b0++)
+				{
+					int n0, n1;
+					if(bit)
+					{
+						n0 = total_n0 + b0 + MIN_1K_BASEPROB; n1 = total_n1 + b1 + MIN_1K_BASEPROB;
+					}
+					else
+					{
+						n0 = total_n0 + b1 + MIN_1K_BASEPROB; n1 = total_n1 + b0 + MIN_1K_BASEPROB;
+					}
+					totalsizes[boost_idx][b1][b0] += AritSize2(n0, n1);
+				}
+			}
+		}
+	}
+
+	int min_totalsize = INT_MAX;
+	for(int boost_idx = 0; boost_idx < NUM_1K_BOOST_FACTORS; boost_idx++)
+	{
+		for(int b1 = 0; b1 < NUM_1K_BASEPROBS; b1++)
+		{
+			for(int b0 = 0; b0 < NUM_1K_BASEPROBS; b0++)
+			{
+				if(totalsizes[boost_idx][b1][b0] < min_totalsize)
+				{
+					*out_b0 = b0 + MIN_1K_BASEPROB;
+					*out_b1 = b1 + MIN_1K_BASEPROB;
+					*out_boost_factor = boost_idx + MIN_1K_BOOST_FACTOR;
+					min_totalsize = totalsizes[boost_idx][b1][b0];
+				}
+			}
+		}
+	}
+
+	return (min_totalsize / (BITPREC_TABLE / BITPREC));
+}
+
 void TinyCompress(unsigned char* org_data, int size, unsigned char* compressed, int& compressed_size,
 				  int& best_boost, int& best_b0, int& best_b1, unsigned int& best_modelmask, int* sizefill) {
 	unsigned char* data = new unsigned char[size+8];
@@ -301,11 +369,127 @@ void TinyCompress(unsigned char* org_data, int size, unsigned char* compressed, 
 	data += 8;
 	memcpy(data, org_data, size);
 
-	const int NUM_MODELS = 32;
 	int bitlength = size*8;
-	int* modeldata = new int[bitlength*NUM_MODELS*2];
+	int* modeldata = new int[bitlength*NUM_1K_MODELS*2];
+
+	int stime = GetTickCount();
 
 	//collect model data
+#if 1
+	struct SHashEntry
+	{
+		unsigned char model;
+		unsigned char bitpos;
+		unsigned short offset;
+		int c[2];
+	};
+	const int hash_table_size = bitlength*NUM_1K_MODELS*2;
+	SHashEntry* hash_table = new SHashEntry[hash_table_size];
+	for(int i = 0; i < hash_table_size; i++)
+	{
+		SHashEntry& entry = hash_table[i];
+		entry.model = 0;
+		entry.bitpos = 0;
+		entry.offset = 0xFFFF;
+		entry.c[0] = 0;
+		entry.c[1] = 0;
+	}
+
+	for(int i = 0; i < bitlength; i++)
+	{
+		int bitpos = (i & 7);
+		int bytepos = i >> 3;
+		int mask = 0xFF00 >> bitpos;
+		int bit = ((data[bytepos] << bitpos) & 0x80) == 0x80;
+
+		for(int model = NUM_1K_MODELS - 1; model >= 0; model--)
+		{
+			// calculate hash
+			unsigned int hash = bitpos + (data[bytepos] & mask) * 8;
+			int m = model;
+			int k = 1;
+			while(m)
+			{
+				hash = hash * 237;
+				if(m & 1)
+				{
+					hash += data[bytepos - k];
+				}
+				
+				k++;
+				m >>= 1;
+			}
+
+			unsigned int entry_idx = hash % hash_table_size;
+			SHashEntry* entry_ptr = NULL;
+			while(true)
+			{
+				entry_ptr = &hash_table[entry_idx];
+				if(entry_ptr->offset == 0xFFFF)
+				{
+					entry_ptr->model = model;
+					entry_ptr->bitpos = bitpos;
+					entry_ptr->offset = bytepos;
+					entry_ptr->c[0] = 0;
+					entry_ptr->c[1] = 0;
+					break;
+				}
+				else
+				{
+					// does it match?
+					bool match = false;
+
+					if(entry_ptr->bitpos == bitpos && entry_ptr->model == model &&
+						(data[entry_ptr->offset] & mask) == (data[bytepos] & mask))
+					{
+						match = true;
+
+						int m = model;
+						int k = 1;
+						while(m)
+						{
+							if(m & 1)
+							{
+								if(data[entry_ptr->offset - k] != data[bytepos - k])
+								{
+									match = false;
+									break;
+								}
+							}
+							k++;
+							m >>= 1;
+						}
+					}
+
+					if(match)
+					{
+						break;
+					}
+					else
+					{
+						entry_idx++;
+						if(entry_idx >= hash_table_size) entry_idx = 0;
+					}
+				}
+			}
+			
+			if(bytepos == 0)
+			{
+				modeldata[(bitlength*model + i) * 2] = 1 - bit;
+				modeldata[(bitlength*model + i) * 2 + 1] = bit;
+			}
+			else
+			{
+				modeldata[(bitlength*model + i) * 2] = entry_ptr->c[bit];
+				modeldata[(bitlength*model + i) * 2 + 1] = entry_ptr->c[1 - bit];
+			}
+			entry_ptr->c[bit]++;
+			entry_ptr->c[!bit] = (entry_ptr->c[!bit] + 1) / 2;
+		}
+	}
+
+	delete[] hash_table;
+#else
 	for(int i = 0; i < bitlength; i++) {
 		int bitpos = (i & 7);
 		int bytepos = i >> 3;
@@ -353,47 +537,49 @@ void TinyCompress(unsigned char* org_data, int size, unsigned char* compressed, 
 			modeldata[(bitlength*model+i)*2+1] = c[!bit];
 		}
 	}
+#endif
 
+	printf("time spent collecting: %dms\n", GetTickCount() - stime);
+
+	stime = GetTickCount();
 	int best_size = INT_MAX;
 
 	best_modelmask = 0xFFFFFFFF;
-#if 1
-	int best_exclude;
-	do {
-		best_exclude = -1;
+
+	int best_flip;
+	do
+	{
+		best_flip = -1;
 		unsigned int prev_best_modelmask = best_modelmask;
 #if USE_OPENMP
 		#pragma omp parallel for
-		for(int i = 0; i < 32; i++)
+		for(int i = 0; i < NUM_MODELS; i++)
 #else
 		concurrency::critical_section cs;
-		concurrency::parallel_for(0, 31, [&](int i)
+		concurrency::parallel_for(0, NUM_1K_MODELS, [&](int i)
 #endif
 		{
 			unsigned int modelmask = prev_best_modelmask ^ (1<<i);
-			for(int boost_factor = 3; boost_factor < 6; boost_factor++) {
-				for(int b0 = 3; b0 < 7; b0++) {
-					int testsize;
-					for(int b1 = 3; b1 < 7; b1++) {
-						compress1K(data, size, compressed, compressed_size,
-							modeldata, b0, b1, boost_factor, modelmask, NULL, &testsize);
+			//for(int boost_factor = 3; boost_factor <= 8; boost_factor++)
+			int boost_factor;
+			int testsize;
+			int b0, b1;
+			testsize = evaluate1K(data, size, modeldata, &b0, &b1, &boost_factor, modelmask);
 #if USE_OPENMP
-						#pragma omp critical (update)
+			#pragma omp critical (update)
 #else
-						Concurrency::critical_section::scoped_lock l(cs);
+			Concurrency::critical_section::scoped_lock l(cs);
 #endif
-						{
-							if(testsize < best_size) {
-								best_size = testsize;
-								best_boost = boost_factor;
-								best_b0 = b0;
-								best_b1 = b1;
-								best_modelmask = modelmask;
-								best_exclude = i;
-								printf("baseprob: (%d, %d) boost: %d modelmask: %8X compressed size: %f bytes\n", best_b0, best_b1, best_boost, best_modelmask, best_size / float(BITPREC*8));
-							}
-						}
-					}
+			{
+				if(testsize < best_size)
+				{
+					best_size = testsize;
+					best_boost = boost_factor;
+					best_b0 = b0;
+					best_b1 = b1;
+					best_modelmask = modelmask;
+					best_flip = i;
+					printf("baseprob: (%d, %d) boost: %d modelmask: %8X compressed size: %f bytes\n", best_b0, best_b1, best_boost, best_modelmask, best_size / float(BITPREC*8));
 				}
 			}
 #if USE_OPENMP
@@ -401,22 +587,10 @@ void TinyCompress(unsigned char* org_data, int size, unsigned char* compressed, 
 #else
 		});
 #endif
-	} while(best_exclude != -1);
-#else
-	best_b0 = 4;
-	best_b1 = 5;
-	best_boost = 5;
-	//best_modelmask = 0xAEBABAEF;//0x4EAA3AEF;
-	best_modelmask = 0x4EAA3AEF|0x80000000;
-#endif
+	} while(best_flip != -1);
+	printf("time spent optimizing: %dms\n", GetTickCount() - stime);
 
-
-	printf("best:\n");
-	printf("baseprob: (%d, %d) boost: %d modelmask: %8X compressed size: %f bytes\n", best_b0, best_b1, best_boost, best_modelmask, best_size / float(BITPREC*8));
-	int testsize;
-
-	compressed_size = compress1K(data, size, compressed, compressed_size, modeldata, best_b0, best_b1, best_boost, best_modelmask, sizefill, &testsize);
-
+	compressed_size = compress1K(data, size, compressed, compressed_size, modeldata, best_b0, best_b1, best_boost, best_modelmask, sizefill, NULL);
 	best_modelmask <<= 1;
 
 	delete[] modeldata;

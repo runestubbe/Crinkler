@@ -199,42 +199,6 @@
     <Text Include="CmdLineInterface\CmdLineInterface manual.txt" />
   </ItemGroup>
   <ItemGroup>
-    <CustomBuild Include="modules\calltrans.asm">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
-    </CustomBuild>
-    <CustomBuild Include="modules\header10_1k.asm">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
-    </CustomBuild>
-    <CustomBuild Include="modules\header12.asm">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
-    </CustomBuild>
-    <CustomBuild Include="modules\header13.asm">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
-    </CustomBuild>
-    <CustomBuild Include="modules\import12-range.asm">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
-    </CustomBuild>
-    <CustomBuild Include="modules\import12-safe-range.asm">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
-    </CustomBuild>
-    <CustomBuild Include="modules\import12-safe.asm">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
-    </CustomBuild>
-    <CustomBuild Include="modules\import12.asm">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
-    </CustomBuild>
-    <CustomBuild Include="modules\import12_1k.asm">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
-    </CustomBuild>
     <CustomBuild Include="data.asm">
       <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Assembling data..</Message>
       <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">nasmw -f win32 %(FullPath) -o $(TargetDir)\%(Filename).obj
