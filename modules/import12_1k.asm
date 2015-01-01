@@ -22,7 +22,7 @@ bits	32
 section .text	align=1
 
 _Import:
-	add	cl, al						; here to help compression. first byte is predicted as all 0
+	add		cl, al						; here to help compression. first byte is predicted as all 0
 	mov		edi, _DLLNames
 	;pop		eax					; moved to header
 	mov		eax, [eax+0ch]			; goto PEB_LDR_DATA
@@ -42,8 +42,7 @@ DLLLoop:
 	add		eax, ebp
 	mov		ebx, [eax + 78h]		; ebx = exports directory table offset
 	add		ebx, ebp				; ebx = exports directory table address
-	mov		ecx, [ebx + 18h]		; ecx = number of names
-	dec		ecx
+	xor		ecx, ecx				; ecx = 0
 	; Check all names of procedures for the right hash
 
 ScanProcedureNamesLoop:
@@ -55,7 +54,7 @@ ScanProcedureNamesLoop:
 ; Found, get the address from the table
 	mov		eax, [ebx + 24h]		; eax = ordinals table RNA offset
 	add		eax, ebp				; eax = ordinals table RNA address
-	movzx	edx, word [eax + ecx*2]		; ecx = function ordinal
+	movzx	edx, word [eax + ecx*2]	; edx = function ordinal
 	mov		eax, [ebx + 1ch]		; eax = address table RVA offset
 	add		eax, ebp				; eax = address table RVA address
 	mov		edx, [eax + edx*4]		; ebp = address of function RVA address
@@ -71,8 +70,9 @@ CalculateHashLoop:
 _HashShiftPtrP:
 	mov		dword [_ImportList+eax*4], edx
 	
-	dec		ecx
-	jns		ScanProcedureNamesLoop
+	inc		ecx
+	cmp		ecx, [ebx + 18h]
+	jne		ScanProcedureNamesLoop
 	
 	push	edi
 	call	[__imp__LoadLibraryA@4]
