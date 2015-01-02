@@ -18,9 +18,6 @@
     <Filter Include="HunkLoaders">
       <UniqueIdentifier>{1e7e4903-f20f-48fb-bdea-2ee11298fba0}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Modules">
-      <UniqueIdentifier>{190a2153-0c25-4b3a-956f-2480b7a7faeb}</UniqueIdentifier>
-    </Filter>
     <Filter Include="HunkSorters">
       <UniqueIdentifier>{6d35946e-c341-4cd2-92de-4d50c66d2e74}</UniqueIdentifier>
     </Filter>
@@ -257,33 +254,6 @@
     <ResourceCompile Include="Crinkler.rc" />
   </ItemGroup>
   <ItemGroup>
-    <CustomBuild Include="modules\calltrans.asm">
-      <Filter>Modules</Filter>
-    </CustomBuild>
-    <CustomBuild Include="modules\header10_1k.asm">
-      <Filter>Modules</Filter>
-    </CustomBuild>
-    <CustomBuild Include="modules\header12.asm">
-      <Filter>Modules</Filter>
-    </CustomBuild>
-    <CustomBuild Include="modules\header13.asm">
-      <Filter>Modules</Filter>
-    </CustomBuild>
-    <CustomBuild Include="modules\import12-range.asm">
-      <Filter>Modules</Filter>
-    </CustomBuild>
-    <CustomBuild Include="modules\import12-safe-range.asm">
-      <Filter>Modules</Filter>
-    </CustomBuild>
-    <CustomBuild Include="modules\import12-safe.asm">
-      <Filter>Modules</Filter>
-    </CustomBuild>
-    <CustomBuild Include="modules\import12.asm">
-      <Filter>Modules</Filter>
-    </CustomBuild>
-    <CustomBuild Include="modules\import12_1k.asm">
-      <Filter>Modules</Filter>
-    </CustomBuild>
     <CustomBuild Include="data.asm">
       <Filter>data</Filter>
     </CustomBuild>
