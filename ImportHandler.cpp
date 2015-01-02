@@ -110,12 +110,13 @@ const int hashCode(const char* str) {
 }
 
 
-HunkList* ImportHandler::createImportHunks(HunkList* hunklist, Hunk*& hashHunk, const vector<string>& rangeDlls, bool verbose, bool& enableRangeImport) {
+HunkList* ImportHandler::createImportHunks(HunkList* hunklist, Hunk*& hashHunk, map<string, string>& fallbackDlls, const vector<string>& rangeDlls, bool verbose, bool& enableRangeImport) {
 	if(verbose)
 		printf("\n-Imports----------------------------------\n");
 
 	vector<Hunk*> importHunks;
 	vector<bool> usedRangeDlls(rangeDlls.size());
+	set<string> usedFallbackDlls;
 
 	//fill list for import hunks
 	enableRangeImport = false;
@@ -148,15 +149,6 @@ HunkList* ImportHandler::createImportHunks(HunkList* hunklist, Hunk*& hashHunk, 
 		}
 	}
 
-	//warn about unused range dlls
-	{
-		for(int i = 0; i < (int)rangeDlls.size(); i++) {
-			if(!usedRangeDlls[i]) {
-				Log::warning("", "No functions were imported from range dll '%s'", rangeDlls[i].c_str());
-			}
-		}
-	}
-
 	//sort import hunks
 	sort(importHunks.begin(), importHunks.end(), importHunkRelation);
 
@@ -184,10 +176,23 @@ HunkList* ImportHandler::createImportHunks(HunkList* hunklist, Hunk*& hashHunk, 
 
 		if(currentDllName.compare(importHunk->getImportDll())) {
 			if(strcmp(importHunk->getImportDll(), "kernel32") != 0) {
-				strcpy_s(dllNamesPtr, sizeof(dllNames)-(dllNamesPtr-dllNames), importHunk->getImportDll());
-				dllNamesPtr += strlen(importHunk->getImportDll()) + 2;
-				hashCounter = dllNamesPtr-1;
+				set<string> seen;
+				string dll = importHunk->getImportDll();
+				strcpy_s(dllNamesPtr, sizeof(dllNames)-(dllNamesPtr-dllNames), dll.c_str());
+				dllNamesPtr += dll.size() + 1;
+				while (fallbackDlls.count(dll) != 0) {
+					usedFallbackDlls.insert(dll);
+					seen.insert(dll);
+					*dllNamesPtr = 0;
+					dllNamesPtr += 1;
+					dll = fallbackDlls[dll];
+					strcpy_s(dllNamesPtr, sizeof(dllNames) - (dllNamesPtr - dllNames), dll.c_str());
+					dllNamesPtr += dll.size() + 1;
+					if (seen.count(dll) != 0) Log::error("", "Cyclic DLL fallback");
+				}
+				hashCounter = dllNamesPtr;
 				*hashCounter = 0;
+				dllNamesPtr += 1;
 			}
 
 
@@ -236,6 +241,21 @@ HunkList* ImportHandler::createImportHunks(HunkList* hunklist, Hunk*& hashHunk, 
 		pos += ordinal - startOrdinal + 1;
 	}
 	*dllNamesPtr++ = -1;
+
+	//warn about unused range dlls
+	for (int i = 0; i < (int)rangeDlls.size(); i++) {
+		if (!usedRangeDlls[i]) {
+			Log::warning("", "No functions were imported from range DLL '%s'", rangeDlls[i].c_str());
+		}
+	}
+
+	//warn about unused fallback dlls
+	for (auto fallback : fallbackDlls) {
+		if (usedFallbackDlls.count(fallback.first) == 0) {
+			Log::warning("", "No functions were imported from fallback DLL '%s'", fallback.first.c_str());
+		}
+	}
+
 	importList->setVirtualSize(pos*4);
 	importList->addSymbol(new Symbol("_ImportList", 0, SYMBOL_IS_RELOCATEABLE, importList));
 	importList->addSymbol(new Symbol(".bss", 0, SYMBOL_IS_RELOCATEABLE|SYMBOL_IS_SECTION, importList, "crinkler import"));

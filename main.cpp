@@ -209,13 +209,14 @@ int main(int argc, char* argv[]) {
 	CmdParamString libpathArg("LIBPATH", "adds a path to the library search path", "dirs", PARAM_IS_SWITCH, 0);
 	CmdParamString rangeImportArg("RANGE", "use range importing for this dll", "dllname", PARAM_IS_SWITCH, 0);
 	CmdParamMultiAssign replaceDllArg("REPLACEDLL", "replace a dll with another", "oldDLL=newDLL", PARAM_IS_SWITCH);
+	CmdParamMultiAssign fallbackDllArg("FALLBACKDLL", "try opening another dll if the first one fails", "firstDLL=otherDLL", PARAM_IS_SWITCH);
 	CmdParamSwitch noInitializersArg("NOINITIALIZERS", "do not run dynamic initializers", 0);
 	CmdParamString filesArg("FILES", "list of filenames", "", PARAM_HIDE_IN_PARAM_LIST, 0);
 	CmdLineInterface cmdline(CRINKLER_TITLE, CMDI_PARSE_FILES);
 
 	cmdline.addParams(&crinklerFlag, &hashsizeArg, &hashtriesArg, &hunktriesArg, &entryArg, &outArg, &summaryArg, &unsafeImportArg,
 						&subsystemArg, &largeAddressAwareArg, &truncateFloatsArg, &overrideAlignmentsArg, &compmodeArg, &printArg, &transformArg, &libpathArg, 
-						&rangeImportArg, &replaceDllArg, &noInitializersArg, &filesArg, &priorityArg, &showProgressArg, &recompressFlag,
+						&rangeImportArg, &replaceDllArg, &fallbackDllArg, &noInitializersArg, &filesArg, &priorityArg, &showProgressArg, &recompressFlag,
 						&tinyCompressor,
 						NULL);
 	
@@ -361,14 +362,30 @@ int main(int argc, char* argv[]) {
 		
 		bool first = true;
 		while(replaceDllArg.hasNext()) {
-			if(first)
-				printf("%s -> %s", replaceDllArg.getValue1(), replaceDllArg.getValue2());
-			else
-				printf(", %s -> %s", replaceDllArg.getValue1(), replaceDllArg.getValue2());
+			if (!first) printf(", ");
+			printf("%s -> %s", replaceDllArg.getValue1(), replaceDllArg.getValue2());
 			
 			crinkler.addReplaceDll(replaceDllArg.getValue1(), replaceDllArg.getValue2());
-			first = false;	
 			replaceDllArg.next();
+			first = false;
+		}
+		printf("\n");
+	}
+
+	//fallback dll
+	{
+		printf("Fallback DLLs: ");
+		if (!fallbackDllArg.hasNext())
+			printf("NONE");
+
+		bool first = true;
+		while (fallbackDllArg.hasNext()) {
+			if (!first) printf(", ");
+			printf("%s -> %s", fallbackDllArg.getValue1(), fallbackDllArg.getValue2());
+
+			crinkler.addFallbackDll(fallbackDllArg.getValue1(), fallbackDllArg.getValue2());
+			fallbackDllArg.next();
+			first = false;
 		}
 		printf("\n");
 	}
@@ -381,10 +398,8 @@ int main(int argc, char* argv[]) {
 
 		bool first = true;
 		while(rangeImportArg.hasNext()) {
-			if(first)
-				printf("%s", rangeImportArg.getValue());
-			else
-				printf(", %s", rangeImportArg.getValue());
+			if (!first) printf(", ");
+			printf("%s", rangeImportArg.getValue());
 
 			crinkler.addRangeDll(rangeImportArg.getValue());
 			rangeImportArg.next();

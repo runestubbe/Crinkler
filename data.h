@@ -30,6 +30,12 @@ extern "C" {
 	char importSafeRangeObj[];
 	char importSafeRangeObj_end[];
 
+	char importSafeFallbackObj[];
+	char importSafeFallbackObj_end[];
+
+	char importSafeFallbackRangeObj[];
+	char importSafeFallbackRangeObj_end[];
+
 	char calltransObj[];
 	char calltransObj_end[];
 };

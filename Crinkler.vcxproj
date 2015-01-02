@@ -76,6 +76,7 @@
       <ProgramDatabaseFile>$(OutDir)Crinkler.pdb</ProgramDatabaseFile>
       <SubSystem>Console</SubSystem>
       <TargetMachine>MachineX86</TargetMachine>
+      <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -117,6 +118,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <EntryPointSymbol />
       <TargetMachine>MachineX86</TargetMachine>
+      <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -237,21 +239,24 @@
     </CustomBuild>
     <CustomBuild Include="data.asm">
       <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Assembling data..</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">nasmw -f win32 %(FullPath) -o $(TargetDir)\%(Filename).obj
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">nasmw -f win32 -Xvc modules\import15.asm -o modules\import15.obj
+nasmw -f win32 -Xvc -dIMPORT_RANGE modules\import15.asm -o modules\import15-range.obj
+nasmw -f win32 -Xvc -dIMPORT_SAFE modules\import15.asm -o modules\import15-safe.obj
+nasmw -f win32 -Xvc -dIMPORT_SAFE -dIMPORT_RANGE modules\import15.asm -o modules\import15-safe-range.obj
+nasmw -f win32 -Xvc -dIMPORT_SAFE -dIMPORT_FALLBACK modules\import15.asm -o modules\import15-safe-fallback.obj
+nasmw -f win32 -Xvc -dIMPORT_SAFE -dIMPORT_FALLBACK -dIMPORT_RANGE modules\import15.asm -o modules\import15-safe-fallback-range.obj
+nasmw -f win32 %(FullPath) -o $(TargetDir)\%(Filename).obj
 </Command>
       <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">modules\header13.obj;%(AdditionalInputs)</AdditionalInputs>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(TargetDir)\%(Filename).obj;%(Outputs)</Outputs>
       <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Assembling data..</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">nasmw -f win32 -Xvc modules/calltrans.asm -o modules/calltrans.obj
-nasmw -f win32 -Xvc modules/header12.asm -o modules/header12.obj
-nasmw -f win32 -Xvc modules/header10_1k.asm -o modules/header10_1k.obj
-nasmw -f win32 -Xvc modules/import12_1k.asm -o modules/import12_1k.obj
-nasmw -f win32 -Xvc modules/import12.asm -o modules/import12.obj
-nasmw -f win32 -Xvc modules/import12-range.asm -o modules/import12-range.obj
-nasmw -f win32 -Xvc modules/import12-safe-range.asm -o modules/import12-safe-range.obj
-nasmw -f win32 -Xvc modules/import12-safe.asm -o modules/import12-safe.obj
-
-nasmw -f win32 -Xvc %(FullPath) -o $(TargetDir)\%(Filename).obj
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">nasmw -f win32 -Xvc modules\import15.asm -o modules\import15.obj
+nasmw -f win32 -Xvc -dIMPORT_RANGE modules\import15.asm -o modules\import15-range.obj
+nasmw -f win32 -Xvc -dIMPORT_SAFE modules\import15.asm -o modules\import15-safe.obj
+nasmw -f win32 -Xvc -dIMPORT_SAFE -dIMPORT_RANGE modules\import15.asm -o modules\import15-safe-range.obj
+nasmw -f win32 -Xvc -dIMPORT_SAFE -dIMPORT_FALLBACK modules\import15.asm -o modules\import15-safe-fallback.obj
+nasmw -f win32 -Xvc -dIMPORT_SAFE -dIMPORT_FALLBACK -dIMPORT_RANGE modules\import15.asm -o modules\import15-safe-fallback-range.obj
+nasmw -f win32 %(FullPath) -o $(TargetDir)\%(Filename).obj
 </Command>
       <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">modules/calltrans.asm; modules/header12.asm; modules/header10_1k.asm; modules/import12-range.asm; modules/import12-safe-range.asm; modules/import12-safe.asm; modules/import12.asm; modules/import12_1k.asm;%(AdditionalInputs)</AdditionalInputs>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(TargetDir)\%(Filename).obj;%(Outputs)</Outputs>

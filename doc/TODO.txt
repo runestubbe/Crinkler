@@ -19,6 +19,7 @@ Output/UI:
 	button in progressgui to skip phase
 	Target size option
 	Show progress during setup/allocation
+	Accept version number appended to /SYSTEM option value
 
 Headers:
 	ABS coding

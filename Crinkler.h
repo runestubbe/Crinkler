@@ -49,6 +49,7 @@ class Crinkler {
 	CompressionType			m_compressionType;
 	std::vector<std::string>	m_rangeDlls;
 	std::map<std::string, std::string>	m_replaceDlls;
+	std::map<std::string, std::string>	m_fallbackDlls;
 	bool					m_showProgressBar;
 	Transform*				m_transform;
 	bool					m_1KMode;
@@ -73,7 +74,7 @@ class Crinkler {
 
 	void compress1K(Hunk* phase1, Hunk* header, int splittingPoint, int hash_bits, int max_dll_name_length, const char* filename, FILE* outfile);
 
-	void loadImportCode(bool useSafeImporting, bool useRangeImport);
+	void loadImportCode(bool useSafeImporting, bool useDllFallback, bool useRangeImport);
 	Hunk* createModelHunk(int splittingPoint, int rawsize);
 	Hunk* createDynamicInitializerHunk();
 	void initProgressBar();
@@ -98,6 +99,7 @@ public:
 	
 	void addRangeDll(const char* dllname)					{ m_rangeDlls.push_back(dllname); }
 	void addReplaceDll(const char* dll1, const char* dll2)	{ m_replaceDlls.insert(make_pair(toLower(dll1), toLower(dll2))); }
+	void addFallbackDll(const char* dll1, const char* dll2)	{ m_fallbackDlls.insert(make_pair(toLower(dll1), toLower(dll2))); }
 	void clearRangeDlls()									{ m_rangeDlls.clear(); }
 	void showProgressBar(bool show)							{ m_showProgressBar = show; }
 

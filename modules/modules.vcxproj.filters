@@ -33,17 +33,10 @@
     <CustomBuild Include="header14.asm">
       <Filter>Source Files</Filter>
     </CustomBuild>
-    <CustomBuild Include="import14-range.asm">
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="import15.asm">
       <Filter>Source Files</Filter>
-    </CustomBuild>
-    <CustomBuild Include="import14-safe-range.asm">
-      <Filter>Source Files</Filter>
-    </CustomBuild>
-    <CustomBuild Include="import14-safe.asm">
-      <Filter>Source Files</Filter>
-    </CustomBuild>
-    <CustomBuild Include="import14.asm">
-      <Filter>Source Files</Filter>
-    </CustomBuild>
+    </None>
   </ItemGroup>
 </Project>

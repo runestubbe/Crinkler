@@ -255,21 +255,30 @@ void Crinkler::compress1K(Hunk* phase1, Hunk* header, int splittingPoint, int ha
 	delete phase2;
 }
 
-void Crinkler::loadImportCode(bool useSafeImporting, bool useRangeImport) {
+void Crinkler::loadImportCode(bool useSafeImporting, bool useDllFallback, bool useRangeImport) {
 	//do imports
 	if(m_1KMode) {
 		load(import1KObj, import1KObj_end - import1KObj, "Crinkler import");
 	} else {
-		if(useSafeImporting)
-			if(useRangeImport)
-				load(importSafeRangeObj, importSafeRangeObj_end - importSafeRangeObj, "Crinkler import");
+		if (useSafeImporting)
+			if (useDllFallback)
+				if (useRangeImport)
+					load(importSafeFallbackRangeObj, importSafeFallbackRangeObj_end - importSafeFallbackRangeObj, "Crinkler import");
+				else
+					load(importSafeFallbackObj, importSafeFallbackObj_end - importSafeFallbackObj, "Crinkler import");
 			else
-				load(importSafeObj, importSafeObj_end - importSafeObj, "Crinkler import");
+				if (useRangeImport)
+					load(importSafeRangeObj, importSafeRangeObj_end - importSafeRangeObj, "Crinkler import");
+				else
+					load(importSafeObj, importSafeObj_end - importSafeObj, "Crinkler import");
 		else
-			if(useRangeImport)
-				load(importRangeObj, importRangeObj_end - importRangeObj, "Crinkler import");
+			if (useDllFallback)
+				Log::error("", "DLL fallback cannot be used with unsafe importing");
 			else
-				load(importObj, importObj_end - importObj, "Crinkler import");
+				if (useRangeImport)
+					load(importRangeObj, importRangeObj_end - importRangeObj, "Crinkler import");
+				else
+					load(importObj, importObj_end - importObj, "Crinkler import");
 	}
 }
 
@@ -862,13 +871,13 @@ void Crinkler::link(const char* filename) {
 	bool usesRangeImport=false;
 	{	//add imports
 		HunkList* importHunkList = m_1KMode ?	ImportHandler::createImportHunks1K(&m_hunkPool, (m_printFlags & PRINT_IMPORTS) != 0, hash_bits, max_dll_name_length) :
-												ImportHandler::createImportHunks(&m_hunkPool, hashHunk, m_rangeDlls, (m_printFlags & PRINT_IMPORTS) != 0, usesRangeImport);
+												ImportHandler::createImportHunks(&m_hunkPool, hashHunk, m_fallbackDlls, m_rangeDlls, (m_printFlags & PRINT_IMPORTS) != 0, usesRangeImport);
 		m_hunkPool.removeImportHunks();
 		m_hunkPool.append(importHunkList);
 		delete importHunkList;
 	}
 
-	loadImportCode(m_useSafeImporting, usesRangeImport);
+	loadImportCode(m_useSafeImporting, !m_fallbackDlls.empty(), usesRangeImport);
 
 	Symbol* import = m_hunkPool.findSymbol("_Import");
 
