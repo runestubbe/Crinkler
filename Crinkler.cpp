@@ -1,6 +1,5 @@
 #include "Crinkler.h"
 #include "Compressor/Compressor.h"
-#include "TinyCompress.h"
 #include "Fix.h"
 
 #include <list>
@@ -195,11 +194,7 @@ void Crinkler::compress1K(Hunk* phase1, Hunk* header, int splittingPoint, int ha
 	int compressed_size = 1024*1024;
 	unsigned char* compressed_data = new unsigned char[compressed_size];
 	char* ptr = phase1->getPtr();
-	/*
-	if(ptr[phase1->getRawSize()-1] != 0) {
-		phase1->appendZeroes(1);
-	}
-	*/
+
 	*(phase1->getPtr() + phase1->findSymbol("_HashShiftPtr")->value) = 32-hash_bits;
 	*(phase1->getPtr() + phase1->findSymbol("_MaxNameLengthPtr")->value) = max_dll_name_length;
 	
