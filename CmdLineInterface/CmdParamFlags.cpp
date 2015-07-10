@@ -29,7 +29,8 @@ CmdParam(paramName, description, NULL, flags | PARAM_IS_SWITCH | PARAM_TAKES_ARG
 }
 
 int CmdParamFlags::parse(const char* str, char* errorMsg, int buffsize) {
-	map<string, int>::iterator it = m_flagMap.find(toUpper(str));
+	std::string s = str;
+	map<string, int>::iterator it = m_flagMap.find(toUpper(s.substr(0, s.find(','))));
 	if(it == m_flagMap.end()) {
 		sprintf_s(errorMsg, buffsize, "unknown argument %s", str);
 		return PARSE_INVALID;
