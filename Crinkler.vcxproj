@@ -1,0 +1,245 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="12.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{B0591735-B8E8-4E45-8394-5A01A5F53984}</ProjectGuid>
+    <RootNamespace>Crinkler</RootNamespace>
+    <Keyword>Win32Proj</Keyword>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <PlatformToolset>v120</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+    <WholeProgramOptimization>false</WholeProgramOptimization>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <PlatformToolset>v120</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="$(VCTargetsPath)Microsoft.CPP.UpgradeFromVC71.props" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="$(VCTargetsPath)Microsoft.CPP.UpgradeFromVC71.props" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <_ProjectFileVersion>11.0.50727.1</_ProjectFileVersion>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <OutDir>Debug\</OutDir>
+    <IntDir>Debug\</IntDir>
+    <LinkIncremental>true</LinkIncremental>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <OutDir>Release\</OutDir>
+    <IntDir>Release\</IntDir>
+    <IgnoreImportLibrary>false</IgnoreImportLibrary>
+    <LinkIncremental>false</LinkIncremental>
+    <GenerateManifest>false</GenerateManifest>
+    <EmbedManifest>true</EmbedManifest>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <Optimization>Disabled</Optimization>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;D3D_DEBUG_INFO;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <MinimalRebuild>true</MinimalRebuild>
+      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <OpenMPSupport>false</OpenMPSupport>
+      <PrecompiledHeader />
+      <WarningLevel>Level3</WarningLevel>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <DisableSpecificWarnings>4530</DisableSpecificWarnings>
+    </ClCompile>
+    <Link>
+      <AdditionalDependencies>comctl32.lib;Dbghelp.lib;distorm.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <OutputFile>$(OutDir)Crinkler.exe</OutputFile>
+      <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <ProgramDatabaseFile>$(OutDir)Crinkler.pdb</ProgramDatabaseFile>
+      <SubSystem>Console</SubSystem>
+      <TargetMachine>MachineX86</TargetMachine>
+      <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <AdditionalOptions>/MP %(AdditionalOptions)</AdditionalOptions>
+      <Optimization>MaxSpeed</Optimization>
+      <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
+      <OmitFramePointers>true</OmitFramePointers>
+      <WholeProgramOptimization>false</WholeProgramOptimization>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <StringPooling>true</StringPooling>
+      <ExceptionHandling />
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <BufferSecurityCheck>false</BufferSecurityCheck>
+      <FloatingPointModel>Fast</FloatingPointModel>
+      <FloatingPointExceptions>false</FloatingPointExceptions>
+      <ForceConformanceInForLoopScope>true</ForceConformanceInForLoopScope>
+      <RuntimeTypeInfo>false</RuntimeTypeInfo>
+      <OpenMPSupport>false</OpenMPSupport>
+      <PrecompiledHeader />
+      <AssemblerOutput />
+      <WarningLevel>Level3</WarningLevel>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <CallingConvention>Cdecl</CallingConvention>
+      <DisableSpecificWarnings>4530</DisableSpecificWarnings>
+    </ClCompile>
+    <Link>
+      <AdditionalDependencies>comctl32.lib;Dbghelp.lib;distorm.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <OutputFile>$(OutDir)Crinkler.exe</OutputFile>
+      <ManifestFile />
+      <IgnoreAllDefaultLibraries>false</IgnoreAllDefaultLibraries>
+      <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <GenerateMapFile>true</GenerateMapFile>
+      <SubSystem>Console</SubSystem>
+      <OptimizeReferences>true</OptimizeReferences>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <EntryPointSymbol />
+      <TargetMachine>MachineX86</TargetMachine>
+      <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="Crinkler.cpp">
+      <Optimization Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">MaxSpeed</Optimization>
+    </ClCompile>
+    <ClCompile Include="Fix.cpp" />
+    <ClCompile Include="HtmlReport.cpp" />
+    <ClCompile Include="Hunk.cpp" />
+    <ClCompile Include="HunkList.cpp" />
+    <ClCompile Include="ImportHandler.cpp" />
+    <ClCompile Include="LTCGLoader.cpp" />
+    <ClCompile Include="main.cpp" />
+    <ClCompile Include="Symbol.cpp" />
+    <ClCompile Include="Log.cpp" />
+    <ClCompile Include="MemoryFile.cpp" />
+    <ClCompile Include="MiniDump.cpp" />
+    <ClCompile Include="misc.cpp" />
+    <ClCompile Include="NameMangling.cpp" />
+    <ClCompile Include="StringMisc.cpp" />
+    <ClCompile Include="CmdLineInterface\CmdLineInterface.cpp" />
+    <ClCompile Include="CmdLineInterface\CmdParam.cpp" />
+    <ClCompile Include="CmdLineInterface\CmdParamFlags.cpp" />
+    <ClCompile Include="CmdLineInterface\CmdParamInt.cpp" />
+    <ClCompile Include="CmdLineInterface\CmdParamMultiAssign.cpp" />
+    <ClCompile Include="CmdLineInterface\CmdParamString.cpp" />
+    <ClCompile Include="CmdLineInterface\CmdParamSwitch.cpp" />
+    <ClCompile Include="CoffLibraryLoader.cpp" />
+    <ClCompile Include="CoffObjectLoader.cpp" />
+    <ClCompile Include="HunkLoader.cpp" />
+    <ClCompile Include="MultiLoader.cpp" />
+    <ClCompile Include="EmpiricalHunkSorter.cpp" />
+    <ClCompile Include="HeuristicHunkSorter.cpp" />
+    <ClCompile Include="CallTransform.cpp" />
+    <ClCompile Include="IdentityTransform.cpp" />
+    <ClCompile Include="Transform.cpp" />
+    <ClCompile Include="CompositeProgressBar.cpp" />
+    <ClCompile Include="ConsoleProgressBar.cpp" />
+    <ClCompile Include="WindowProgressBar.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Crinkler.h" />
+    <ClInclude Include="distorm.h" />
+    <ClInclude Include="Fix.h" />
+    <ClInclude Include="HtmlReport.h" />
+    <ClInclude Include="Hunk.h" />
+    <ClInclude Include="HunkList.h" />
+    <ClInclude Include="ImportHandler.h" />
+    <ClInclude Include="LTCGLoader.h" />
+    <ClInclude Include="resource.h" />
+    <ClInclude Include="Symbol.h" />
+    <ClInclude Include="Log.h" />
+    <ClInclude Include="MemoryFile.h" />
+    <ClInclude Include="MiniDump.h" />
+    <ClInclude Include="misc.h" />
+    <ClInclude Include="NameMangling.h" />
+    <ClInclude Include="StringMisc.h" />
+    <ClInclude Include="CmdLineInterface\CmdLineInterface.h" />
+    <ClInclude Include="CmdLineInterface\CmdParam.h" />
+    <ClInclude Include="CmdLineInterface\CmdParamFlags.h" />
+    <ClInclude Include="CmdLineInterface\CmdParamInt.h" />
+    <ClInclude Include="CmdLineInterface\CmdParamMultiAssign.h" />
+    <ClInclude Include="CmdLineInterface\CmdParamString.h" />
+    <ClInclude Include="CmdLineInterface\CmdParamSwitch.h" />
+    <ClInclude Include="CoffLibraryLoader.h" />
+    <ClInclude Include="CoffObjectLoader.h" />
+    <ClInclude Include="HunkLoader.h" />
+    <ClInclude Include="MultiLoader.h" />
+    <ClInclude Include="EmpiricalHunkSorter.h" />
+    <ClInclude Include="HeuristicHunkSorter.h" />
+    <ClInclude Include="CallTransform.h" />
+    <ClInclude Include="IdentityTransform.h" />
+    <ClInclude Include="Transform.h" />
+    <ClInclude Include="data.h" />
+    <ClInclude Include="CompositeProgressBar.h" />
+    <ClInclude Include="ConsoleProgressBar.h" />
+    <ClInclude Include="WindowProgressBar.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="CmdLineInterface\CmdLineInterface manual.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="data.asm">
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Assembling data..</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">nasmw -f win32 -Xvc modules\import15.asm -o modules\import15.obj
+nasmw -f win32 -Xvc -dIMPORT_RANGE modules\import15.asm -o modules\import15-range.obj
+nasmw -f win32 -Xvc -dIMPORT_SAFE modules\import15.asm -o modules\import15-safe.obj
+nasmw -f win32 -Xvc -dIMPORT_SAFE -dIMPORT_RANGE modules\import15.asm -o modules\import15-safe-range.obj
+nasmw -f win32 -Xvc -dIMPORT_SAFE -dIMPORT_FALLBACK modules\import15.asm -o modules\import15-safe-fallback.obj
+nasmw -f win32 -Xvc -dIMPORT_SAFE -dIMPORT_FALLBACK -dIMPORT_RANGE modules\import15.asm -o modules\import15-safe-fallback-range.obj
+nasmw -f win32 %(FullPath) -o $(TargetDir)\%(Filename).obj
+</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">modules\header13.obj;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(TargetDir)\%(Filename).obj;%(Outputs)</Outputs>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Assembling data..</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">nasmw -f win32 -Xvc modules\import15.asm -o modules\import15.obj
+nasmw -f win32 -Xvc -dIMPORT_RANGE modules\import15.asm -o modules\import15-range.obj
+nasmw -f win32 -Xvc -dIMPORT_SAFE modules\import15.asm -o modules\import15-safe.obj
+nasmw -f win32 -Xvc -dIMPORT_SAFE -dIMPORT_RANGE modules\import15.asm -o modules\import15-safe-range.obj
+nasmw -f win32 -Xvc -dIMPORT_SAFE -dIMPORT_FALLBACK modules\import15.asm -o modules\import15-safe-fallback.obj
+nasmw -f win32 -Xvc -dIMPORT_SAFE -dIMPORT_FALLBACK -dIMPORT_RANGE modules\import15.asm -o modules\import15-safe-fallback-range.obj
+nasmw -f win32 %(FullPath) -o $(TargetDir)\%(Filename).obj
+</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">modules/calltrans.asm; modules/header12.asm; modules/header10_1k.asm; modules/import12-range.asm; modules/import12-safe-range.asm; modules/import12-safe.asm; modules/import12.asm; modules/import12_1k.asm;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(TargetDir)\%(Filename).obj;%(Outputs)</Outputs>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="Crinkler.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="Compressor\Compressor.vcxproj">
+      <Project>{869f3a10-26e8-49e6-980f-fe72f642714f}</Project>
+    </ProjectReference>
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+  <ProjectExtensions>
+    <VisualStudio>
+      <UserProperties RESOURCE_FILE="Crinkler.rc" />
+    </VisualStudio>
+  </ProjectExtensions>
+</Project>
