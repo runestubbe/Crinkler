@@ -9,8 +9,7 @@
 
 const int HUNK_IS_CODE =		0x01;
 const int HUNK_IS_WRITEABLE =	0x02;
-const int HUNK_IS_FIXED	=		0x04;
-const int HUNK_IS_IMPORT =		0x08;
+const int HUNK_IS_IMPORT =		0x04;
 
 class Symbol;
 class Hunk;
@@ -110,7 +109,6 @@ public:
 	Symbol* findUndecoratedSymbol(const char* name) const;
 	Symbol* findSymbol(const char* name) const;
 	Symbol* findSymbolWithWeak(const char* name) const;
-	void fixate();
 	void printSymbols() const;
 	void relocate(int imageBase);
 	void setVirtualSize(int size);

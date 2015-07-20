@@ -4,15 +4,16 @@
 
 class HunkList;
 class ModelList;
+class ModelList1k;
 class ProgressBar;
 class Transform;
 class EmpiricalHunkSorter {
-	static int tryHunkCombination(HunkList* hunklist, Transform& transform, ModelList& codeModels, ModelList& dataModels, int baseprob, bool saturate);
+	static int tryHunkCombination(HunkList* hunklist, Transform& transform, ModelList& codeModels, ModelList& dataModels, ModelList1k& models1k, int baseprob, bool saturate, bool use1KMode);
 public:
 	EmpiricalHunkSorter();
 	~EmpiricalHunkSorter();
 
-	static void sortHunkList(HunkList* hunklist, Transform& transform, ModelList& codeModels, ModelList& dataModels, int baseprob, bool saturate, int numIterations, ProgressBar* progress);
+	static void sortHunkList(HunkList* hunklist, Transform& transform, ModelList& codeModels, ModelList& dataModels, ModelList1k& models1k, int baseprob, bool saturate, int numIterations, ProgressBar* progress, bool use1KMode);
 };
 
 #endif

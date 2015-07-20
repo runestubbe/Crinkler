@@ -62,6 +62,8 @@ class Crinkler {
 	int						m_saturate;
 	ModelList				m_modellist1;
 	ModelList				m_modellist2;
+	
+	ModelList1k				m_modellist1k;
 
 	ConsoleProgressBar		m_consoleBar;
 	WindowProgressBar		m_windowBar;
@@ -73,18 +75,16 @@ class Crinkler {
 	void replaceDlls(HunkList& hunkslist);
 	void overrideAlignments(HunkList& hunklist);
 
-	void compress1K(Hunk* phase1, Hunk* header, int splittingPoint, int hash_bits, int max_dll_name_length, const char* filename, FILE* outfile);
-
-	void loadImportCode(bool useSafeImporting, bool useDllFallback, bool useRangeImport);
+	void loadImportCode(bool use1kMode, bool useSafeImporting, bool useDllFallback, bool useRangeImport);
 	Hunk* createModelHunk(int splittingPoint, int rawsize);
 	Hunk* createDynamicInitializerHunk();
 	void initProgressBar();
 	void deinitProgressBar();
 
 	int optimizeHashsize(unsigned char* data, int datasize, int hashsize, int splittingPoint, int tries);
-	int estimateModels(unsigned char* data, int datasize, int splittingPoint, bool reestimate);
+	int estimateModels(unsigned char* data, int datasize, int splittingPoint, bool reestimate, bool use1kMode);
 	void setHeaderSaturation(Hunk* header);
-	void setHeaderConstants(Hunk* header, Hunk* phase1, int hashsize, int subsystem_version);
+	void setHeaderConstants(Hunk* header, Hunk* phase1, int hashsize, int boostfactor, int baseprob0, int baseprob1, unsigned int modelmask, int subsystem_version, bool use1kHeader);
 
 public:
 	Crinkler();
