@@ -11,21 +11,18 @@ global	_BaseProbPtr0
 global	_BaseProbPtr1
 global  _BoostFactorPtr
 global	_DepackEndPositionPtr
-global	_VirtualSizeHighBytePtr
+global	_VirtualSizeHighBytePtr	
+global	_SpareNopPtr
+global	_CharacteristicsPtr
+global	_LinkerVersionPtr
 
 section header	align=1
 
 _header:
 	db	'MZ'	;exe magic
 
-	;Two bytes of funnies
-	;db '1K'
-	;db 'DO'
-	;db 'DU'
-	;db 'HO'
-	;db 'NO'
-	;db 'PO'
-	db 'RA'
+_LinkerVersionPtr:
+	dw 0
 
 	;coff header
 	db 'PE', 0, 0		;PE signature
@@ -44,7 +41,8 @@ AritDecodeLoop:
 	inc	ebp					;next bit								;1
 	jmp short AritDecodeLoop2
 	dw 0008h			;Size of optional header
-	dw 0002h			;Characteristics (32bit)
+_CharacteristicsPtr:
+	dw 0002h			;Characteristics (almost any allowed - bit 1 must be set, bit 13 must be clear)
 
 ;optional header (PE-header)
 	dw 010Bh			;Magic (Image file)
@@ -108,8 +106,9 @@ _VirtualSizeHighBytePtr:
 	;4 bytes
 	;db "HASH"			;Checksum / Name1
 _AritDecodeJumpPad:
-	jle short AritDecode		;2
-	pop eax						;1
+	jl short AritDecode			;2
+	;pop eax						;1
+	nop
 	ret							;1
 _SubsystemTypePtr:
 	dw		0003h	;Subsystem				/ Name2
@@ -122,16 +121,25 @@ _SubsystemTypePtr:
 	;db "HASH"			;Loader flags	/ Pointer to relocs
 DepackInit:
 	;20
-	nop										;90
+	
+	push	ebx		; ebx=[fs:30h]			;53
 	mov		edi, _UnpackedData				;BF 00 00 41 00
 	push	byte 1							;6A 01
 	pop		eax								;58
-	push	edi								;57
+_SpareNopPtr:
+	nop										;90
 	push	byte 0							;6A 00
 	pop		esi								;5E
-	push	ebx		; ebx=[fs:30h]			;53
+	push	edi								;57
 	push	byte 0							;6A 00
 	pop		ebp								;5D
+
+	; 90 BF 00 00
+	; 41 00 6A 01
+	; 58 53 6A 00
+	; 5E 57 6A 00
+	; 5D
+
 	;; edi = dst ptr
 	;; esi = data
 	;; ebp = source bit index
@@ -162,7 +170,7 @@ model_loop:
 	xor eax, eax		;2
 	cdq 		;edx := 0	;1
 	
-	mov esi, dword [esp+11*4]		;esi := UnpackedData		;4
+	mov esi, dword [esp+10*4]		;esi := UnpackedData		;4
 	;esi: start
 	;edi: current ptr
 

@@ -39,7 +39,6 @@ bool hunkRelation(Hunk* h1, Hunk* h2) {
 
 void HeuristicHunkSorter::sortHunkList(HunkList* hunklist) {
 	vector<Hunk*> hunks;
-	vector<Hunk*> fixedHunks;
 
 	Hunk *import_hunk = hunklist->findSymbol("_Import")->hunk;
 	Hunk *entry_hunk = import_hunk->getContinuation()->hunk;
@@ -56,24 +55,18 @@ void HeuristicHunkSorter::sortHunkList(HunkList* hunklist) {
 	//move hunks to vector
 	for(int i = 0; i < hunklist->getNumHunks(); i++) {
 		Hunk* h = (*hunklist)[i];
-		if(h->getFlags() & HUNK_IS_FIXED)
-			fixedHunks.push_back(h);
-		else
-			hunks.push_back(h);
+		hunks.push_back(h);
 	}
 	hunklist->clear();
-
-	// Place import and entry point hunks first
-	fixedHunks.push_back(import_hunk);
-	if (initializer_hunk) fixedHunks.push_back(initializer_hunk);
-	fixedHunks.push_back(entry_hunk);
 
 	//sort hunks
 	sort(hunks.begin(), hunks.end(), hunkRelation);
 
+	hunklist->addHunkBack(import_hunk);
+	if (initializer_hunk) hunklist->addHunkBack(initializer_hunk);
+	hunklist->addHunkBack(entry_hunk);
+
 	//copy back hunks to hunklist
-	for(vector<Hunk*>::const_iterator it = fixedHunks.begin(); it != fixedHunks.end(); it++)
-		hunklist->addHunkBack(*it);
 	for(vector<Hunk*>::const_iterator it = hunks.begin(); it != hunks.end(); it++)
 		hunklist->addHunkBack(*it);	
 }

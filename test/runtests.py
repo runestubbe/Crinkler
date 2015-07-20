@@ -20,13 +20,17 @@ LIBS = [
     'winmm.lib'
 ]
 
-FIXED_OPTIONS = ['/1K', '/COMPMODE:SLOW', '/ORDERTRIES:10000', '/HASHSIZE:300', '/HASHTRIES:1000', '/PROGRESSGUI', '/PRINT:IMPORTS', '/PRINT:MODELS', '/PRIORITY:IDLE', '/LIBPATH:C:\\Program Files (x86)\\Windows Kits\\8.1\\Lib\\winv6.3\\um\\x86;C:\\Program Files (x86)\\Microsoft DirectX SDK (June 2010)\\Lib\\x86']
+#'/ORDERTRIES:10000', 
+FIXED_OPTIONS = ['/1K', '/COMPMODE:SLOW', '/HASHSIZE:300', '/HASHTRIES:1000', '/PROGRESSGUI', '/PRINT:IMPORTS', '/PRINT:MODELS', '/PRIORITY:IDLE', '/LIBPATH:C:\\Program Files (x86)\\Windows Kits\\8.1\\Lib\\winv6.3\\um\\x86;C:\\Program Files (x86)\\Microsoft DirectX SDK (June 2010)\\Lib\\x86']
 
 #VARYING_OPTIONS = [[], ['/TRANSFORM:CALLS'], ['/RANGE:opengl32', '/RANGE:d3dx9_38'], ['/TRANSFORM:CALLS', '/RANGE:opengl32', '/RANGE:d3dx9_38']]
 #VARYING_OPTION_NAMES = ['_', 'T', 'R', 'TR']
 
-VARYING_OPTIONS = [[]]
-VARYING_OPTION_NAMES = ['_']
+VARYING_OPTIONS = [[], ['/TRANSFORM:CALLS']]
+VARYING_OPTION_NAMES = ['_', 'T']
+
+#VARYING_OPTIONS = [[]]
+#VARYING_OPTION_NAMES = ['_']
 
 
 crinkler_exe = sys.argv[1]
