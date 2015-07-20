@@ -59,6 +59,7 @@ class Crinkler {
 	int						m_alignmentBits;
 	bool					m_runInitializers;
 	int						m_largeAddressAware;
+	int						m_saturate;
 	ModelList				m_modellist1;
 	ModelList				m_modellist2;
 
@@ -82,6 +83,7 @@ class Crinkler {
 
 	int optimizeHashsize(unsigned char* data, int datasize, int hashsize, int splittingPoint, int tries);
 	int estimateModels(unsigned char* data, int datasize, int splittingPoint, bool reestimate);
+	void setHeaderSaturation(Hunk* header);
 	void setHeaderConstants(Hunk* header, Hunk* phase1, int hashsize, int subsystem_version);
 
 public:
@@ -112,6 +114,7 @@ public:
 	void setHashsize(int hashsize)							{ m_hashsize = hashsize*1024*1024; }
 	void setHashtries(int hashtries)						{ m_hashtries = hashtries; }
 	void setHunktries(int hunktries)						{ m_hunktries = hunktries; }
+	void setSaturate(int saturate)							{ m_saturate = saturate; }
 	
 	void setImportingType(bool safe)						{ m_useSafeImporting = safe; }
 	void setSummary(const char* summaryFilename)			{ m_summaryFilename = summaryFilename; }

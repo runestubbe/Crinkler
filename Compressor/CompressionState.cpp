@@ -48,8 +48,8 @@ static HashEntry *findEntry(HashEntry *table, unsigned int hashsize, unsigned ch
 	}
 }
 
-void updateWeights(Weights *w, int bit) {
-	w->prob[bit] += 1;
+void updateWeights(Weights *w, int bit, bool saturate) {
+	if (!saturate || w->prob[bit] < 255) w->prob[bit] += 1;
 	if (w->prob[!bit] > 1) w->prob[!bit] >>= 1;
 }
 
@@ -71,7 +71,7 @@ ModelPredictions CompressionState::applyModel(const unsigned char* data, int bit
 			w++;
 		}
 
-		updateWeights(&e->w, bit);
+		updateWeights(&e->w, bit, m_saturate);
 	}
 
 	delete[] hashtable;
@@ -82,8 +82,8 @@ ModelPredictions CompressionState::applyModel(const unsigned char* data, int bit
 	return mp;
 }
 
-CompressionState::CompressionState(const unsigned char* data, int size, int baseprob, CompressionStateEvaluator* evaluator) :
-	m_size(size*8), m_stateEvaluator(evaluator)
+CompressionState::CompressionState(const unsigned char* data, int size, int baseprob, bool saturate, CompressionStateEvaluator* evaluator) :
+	m_size(size*8), m_saturate(saturate), m_stateEvaluator(evaluator)
 {	
 	//create temporary data buffer with heading zeros
 	unsigned char* data2 = new unsigned char[size+8];

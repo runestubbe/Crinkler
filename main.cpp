@@ -206,6 +206,7 @@ int main(int argc, char* argv[]) {
 	CmdParamFlags transformArg("TRANSFORM", "select transformations", 0, 0, 
 							"CALLS", TRANSFORM_CALLS,
 							NULL);
+	CmdParamFlags saturateArg("SATURATE", "saturate counters (for highly repetitive data)", PARAM_ALLOW_NO_ARGUMENT_DEFAULT | PARAM_FORBID_MULTIPLE_DEFINITIONS, 1, "NO", 0, NULL);
 	CmdParamString libpathArg("LIBPATH", "adds a path to the library search path", "dirs", PARAM_IS_SWITCH, 0);
 	CmdParamString rangeImportArg("RANGE", "use range importing for this dll", "dllname", PARAM_IS_SWITCH, 0);
 	CmdParamMultiAssign replaceDllArg("REPLACEDLL", "replace a dll with another", "oldDLL=newDLL", PARAM_IS_SWITCH);
@@ -215,7 +216,7 @@ int main(int argc, char* argv[]) {
 	CmdLineInterface cmdline(CRINKLER_TITLE, CMDI_PARSE_FILES);
 
 	cmdline.addParams(&crinklerFlag, &hashsizeArg, &hashtriesArg, &hunktriesArg, &entryArg, &outArg, &summaryArg, &unsafeImportArg,
-						&subsystemArg, &largeAddressAwareArg, &truncateFloatsArg, &overrideAlignmentsArg, &compmodeArg, &printArg, &transformArg, &libpathArg, 
+						&subsystemArg, &largeAddressAwareArg, &truncateFloatsArg, &overrideAlignmentsArg, &compmodeArg, &saturateArg, &printArg, &transformArg, &libpathArg, 
 						&rangeImportArg, &replaceDllArg, &fallbackDllArg, &noInitializersArg, &filesArg, &priorityArg, &showProgressArg, &recompressFlag,
 						&tinyCompressor,
 						NULL);
@@ -249,13 +250,14 @@ int main(int argc, char* argv[]) {
 		subsystemArg.setDefault(-1);
 		compmodeArg.setDefault(-1);
 
-		cmdline2.addParams(&crinklerFlag, &recompressFlag, &outArg, &hashsizeArg, &hashtriesArg, &subsystemArg, &largeAddressAwareArg, &compmodeArg, &summaryArg, &priorityArg, &showProgressArg, &filesArg, NULL);
+		cmdline2.addParams(&crinklerFlag, &recompressFlag, &outArg, &hashsizeArg, &hashtriesArg, &subsystemArg, &largeAddressAwareArg, &compmodeArg, &saturateArg, &summaryArg, &priorityArg, &showProgressArg, &filesArg, NULL);
 		cmdline2.setCmdParameters(argc, argv);
 		if(cmdline2.parse()) {
 			crinkler.setHashsize(hashsizeArg.getValue());
 			crinkler.setSubsystem((SubsystemType)subsystemArg.getValue());
-			crinkler.setLargeAddressAware(largeAddressAwareArg.getNumMatches() > 0 ? largeAddressAwareArg.getValue() : -1);
+			crinkler.setLargeAddressAware(largeAddressAwareArg.getValueIfPresent(-1));
 			crinkler.setCompressionType((CompressionType)compmodeArg.getValue());
+			crinkler.setSaturate(saturateArg.getValueIfPresent(-1));
 			crinkler.setHashtries(hashtriesArg.getValue());
 			crinkler.showProgressBar(showProgressArg.getValue());
 			crinkler.setSummary(summaryArg.getValue());
@@ -293,7 +295,12 @@ int main(int argc, char* argv[]) {
 			} else {
 				printf("Compression mode: %s\n", compTypeName((CompressionType)compmodeArg.getValue()));
 			}
-			if(hashsizeArg.getValue() == -1) {
+			if (saturateArg.getNumMatches() == 0) {
+				printf("Saturate counters: Inherited from original\n");
+			} else {
+				printf("Saturate counters: %s\n", saturateArg.getValue() ? "YES" : "NO");
+			}
+			if (hashsizeArg.getValue() == -1) {
 				printf("Hash size: Inherited from original\n");
 			} else {
 				printf("Hash size: %d MB\n", hashsizeArg.getValue());
@@ -319,10 +326,11 @@ int main(int argc, char* argv[]) {
 	crinkler.setEntry(entryArg.getValue());
 	crinkler.setHashsize(hashsizeArg.getValue());
 	crinkler.setSubsystem((SubsystemType)subsystemArg.getValue());
-	crinkler.setLargeAddressAware(largeAddressAwareArg.getNumMatches() > 0 && largeAddressAwareArg.getValue());
+	crinkler.setLargeAddressAware(largeAddressAwareArg.getValueIfPresent(0));
 	crinkler.setCompressionType((CompressionType)compmodeArg.getValue());
 	crinkler.setHashtries(hashtriesArg.getValue());
 	crinkler.setHunktries(hunktriesArg.getValue());
+	crinkler.setSaturate(saturateArg.getValueIfPresent(0));
 	crinkler.setPrintFlags(printArg.getValue());
 	crinkler.showProgressBar(showProgressArg.getValue());
 	crinkler.setTruncateFloats(truncateFloatsArg.getNumMatches() > 0);
@@ -346,8 +354,9 @@ int main(int argc, char* argv[]) {
 	//print some info
 	printf("Target: %s\n", outArg.getValue());
 	printf("Subsystem type: %s\n", subsystemArg.getValue() == SUBSYSTEM_CONSOLE ? "CONSOLE" : "WINDOWS");
-	printf("Large address aware: %s\n", largeAddressAwareArg.getValue() ? "YES" : "NO");
+	printf("Large address aware: %s\n", largeAddressAwareArg.getValueIfPresent(0) ? "YES" : "NO");
 	printf("Compression mode: %s\n", compTypeName((CompressionType)compmodeArg.getValue()));
+	printf("Saturate counters: %s\n", saturateArg.getValueIfPresent(0) ? "YES" : "NO");
 	printf("Hash size: %d MB\n", hashsizeArg.getValue());
 	printf("Hash tries: %d\n", hashtriesArg.getValue());
 	printf("Order tries: %d\n", hunktriesArg.getValue());

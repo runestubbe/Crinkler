@@ -122,6 +122,7 @@ public:
 	void roundFloats(int defaultBits);
 	void overrideAlignment(int defaultBits);
 	void appendZeroes(int num);
+	void insert(int offset, const unsigned char* data, int length);
 
 	void markHunkAsLibrary();
 

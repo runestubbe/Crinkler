@@ -282,6 +282,21 @@ void Hunk::chop(int size) {
 	m_data.erase((m_data.end()-size), m_data.end());
 }
 
+void Hunk::insert(int offset, const unsigned char* data, int size) {
+	m_data.resize(m_data.size() + size);
+	memmove(&m_data[offset + size], &m_data[offset], m_data.size() - (offset + size));
+	memcpy(&m_data[offset], data, size);
+	m_virtualsize += size;
+
+	// Adjust symbols and relocations
+	for (map<string, Symbol*>::iterator it = m_symbols.begin(); it != m_symbols.end(); it++) {
+		if (it->second->flags & SYMBOL_IS_RELOCATEABLE && it->second->value >= offset) it->second->value += size;
+	}
+	for (vector<relocation>::iterator it = m_relocations.begin(); it != m_relocations.end(); it++) {
+		if (it->offset >= offset) it->offset += size;
+	}
+}
+
 static int getType(int level) {
 	switch(level) {
 		case 0:

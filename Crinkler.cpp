@@ -313,7 +313,7 @@ int Crinkler::optimizeHashsize(unsigned char* data, int datasize, int hashsize, 
 	m_progressBar.beginTask("Optimizing hash table size");
 
 	for(int i = 0; i < tries; i++) {
-		CompressionStream cs(buff, NULL, maxsize);
+		CompressionStream cs(buff, NULL, maxsize, m_saturate);
 		hashsize = previousPrime(hashsize/2)*2;
 		cs.Compress(data, splittingPoint, m_modellist1, CRINKLER_BASEPROB, hashsize, true, false);
 		cs.Compress(data + splittingPoint, datasize - splittingPoint, m_modellist2, CRINKLER_BASEPROB, hashsize, false, true);
@@ -335,11 +335,11 @@ int Crinkler::optimizeHashsize(unsigned char* data, int datasize, int hashsize, 
 int Crinkler::estimateModels(unsigned char* data, int datasize, int splittingPoint, bool reestimate) {
 	int size1, size2;
 	m_progressBar.beginTask(reestimate ? "Reestimating models for code" : "Estimating models for code");
-	m_modellist1 = ApproximateModels(data, splittingPoint, CRINKLER_BASEPROB, &size1, &m_progressBar, (m_printFlags & PRINT_MODELS) != 0, m_compressionType);
+	m_modellist1 = ApproximateModels(data, splittingPoint, CRINKLER_BASEPROB, m_saturate, &size1, &m_progressBar, (m_printFlags & PRINT_MODELS) != 0, m_compressionType);
 	m_progressBar.endTask();
 
 	m_progressBar.beginTask(reestimate ? "Reestimating models for data" : "Estimating models for data");
-	m_modellist2 = ApproximateModels(data+splittingPoint, datasize - splittingPoint, CRINKLER_BASEPROB, &size2, &m_progressBar, (m_printFlags & PRINT_MODELS) != 0, m_compressionType);
+	m_modellist2 = ApproximateModels(data+splittingPoint, datasize - splittingPoint, CRINKLER_BASEPROB, m_saturate, &size2, &m_progressBar, (m_printFlags & PRINT_MODELS) != 0, m_compressionType);
 	m_progressBar.endTask();
 
 	int idealsize = size1+size2;
@@ -348,6 +348,15 @@ int Crinkler::estimateModels(unsigned char* data, int datasize, int splittingPoi
 						"\nEstimated ideal compressed total size: %.2f\n", 
 						bytesize);
 	return idealsize;
+}
+
+void Crinkler::setHeaderSaturation(Hunk* header) {
+	if (m_saturate) {
+		static const unsigned char saturateCode[] = { 0x75, 0x03, 0xFE, 0x0C, 0x1F };
+		header->insert(header->findSymbol("_SaturatePtr")->value, saturateCode, sizeof(saturateCode));
+		*(header->getPtr() + header->findSymbol("_SaturateAdjust1Ptr")->value) += sizeof(saturateCode);
+		*(header->getPtr() + header->findSymbol("_SaturateAdjust2Ptr")->value) -= sizeof(saturateCode);
+	}
 }
 
 void Crinkler::setHeaderConstants(Hunk* header, Hunk* phase1, int hashsize, int subsystem_version) {
@@ -482,7 +491,7 @@ void Crinkler::recompress(const char* input_filename, const char* output_filenam
 				depacker_start = i;
 			}
 		}
-		else if(version == 14)
+		else
 		{
 			if(indata[i] == 0xE8 && indata[i+5] == 0x60 && indata[i+6] == 0xAD) {
 				depacker_start = i;
@@ -512,11 +521,16 @@ void Crinkler::recompress(const char* input_filename, const char* output_filenam
 	int subsystem_version = indata[pe_header_offset+0x5C];
 	int large_address_aware = (*(unsigned short *)&indata[pe_header_offset+0x16] & 0x0020) != 0;
 
+	static const unsigned char saturateCode[] = { 0x75, 0x03, 0xFE, 0x0C, 0x1F };
+	bool saturate = std::search(indata, indata + length, std::begin(saturateCode), std::end(saturateCode)) != indata + length;
+	if (m_saturate == -1) m_saturate = saturate;
+
 	printf("Original Virtual size: %d\n", virtualSize);
 
 	printf("Original Subsystem type: %s\n", subsystem_version == 3 ? "CONSOLE" : "WINDOWS");
 	printf("Original Large address aware: %s\n", large_address_aware ? "YES" : "NO");
 	printf("Original Compression mode: %s\n", compmode == COMPRESSION_INSTANT ? "INSTANT" : "FAST/SLOW");
+	printf("Original Saturate counters: %s\n", saturate ? "YES" : "NO");
 	printf("Original Hash size: %d\n", hashtable_size);
 
 	int rawsize;
@@ -578,6 +592,7 @@ void Crinkler::recompress(const char* input_filename, const char* output_filenam
 	CloseHandle(pi.hThread);
 
 	//patch calltrans code
+	int import_offset = 0;
 	if (rawdata[0] == 0x89 && rawdata[1] == 0xD7) { // MOV EDI, EDX
 		// Old calltrans code - convert to new
 		unsigned int ncalls = rawdata[5];
@@ -585,9 +600,11 @@ void Crinkler::recompress(const char* input_filename, const char* output_filenam
 		rawdata[1] = 0xB9; // MOV ECX, DWORD
 		*((unsigned int *)&rawdata[2]) = ncalls;
 		printf("Call transformation code successfully patched.\n");
+		import_offset = 24;
 	} else if (rawdata[0] == 0x5F) { // POP EDI
 		// New calltrans code
 		printf("Call transformation code does not need patching.\n");
+		import_offset = 24;
 	}
 
 	//patch import code
@@ -600,7 +617,13 @@ void Crinkler::recompress(const char* input_filename, const char* output_filenam
 	static const unsigned char new_import_code2[] ={0x58, 0x8B, 0x40, 0x0C, 0x8B, 0x40, 0x0C, 0x8B,
 													0x00, 0x8B, 0x00, 0x8B, 0x68, 0x18};
 	bool found_import = false;
-	for (int i = 0 ; i < splittingPoint-(int)sizeof(old_import_code) ; i++) {
+	int hashes_address = -1;
+	int hashes_address_offset = -1;
+	for (int i = import_offset ; i < splittingPoint-(int)sizeof(old_import_code) ; i++) {
+		if (rawdata[i] == 0xBB) {
+			hashes_address_offset = i + 1;
+			hashes_address = *(int*)&rawdata[hashes_address_offset];
+		}
 		if (memcmp(rawdata+i, old_import_code, sizeof(old_import_code)) == 0) {			//no calltrans
 			memcpy(rawdata+i, new_import_code, sizeof(new_import_code));
 			printf("Import code successfully patched.\n");
@@ -619,6 +642,23 @@ void Crinkler::recompress(const char* input_filename, const char* output_filenam
 	}
 	
 	printf("Recompressing...\n");
+
+	HunkList* headerHunks = NULL;
+	if (is_compatibility_header)
+	{
+		headerHunks = m_hunkLoader.load(header14CompatibilityObj, header14CompatibilityObj_end - header14CompatibilityObj, "crinkler header");
+	}
+	else
+	{
+		headerHunks = m_hunkLoader.load(headerObj, headerObj_end - headerObj, "crinkler header");
+	}
+
+	Hunk* header = headerHunks->findSymbol("_header")->hunk;
+	Hunk* depacker = headerHunks->findSymbol("_DepackEntry")->hunk;
+	setHeaderSaturation(depacker);
+
+	int new_hashes_address = is_compatibility_header ? CRINKLER_IMAGEBASE : CRINKLER_IMAGEBASE + header->getRawSize();
+	*(int*)&rawdata[hashes_address_offset] = new_hashes_address;
 
 	Hunk* phase1 = new Hunk("linked", (char*)rawdata, HUNK_IS_CODE|HUNK_IS_WRITEABLE, 0, rawsize, virtualSize);
 	delete[] rawdata;
@@ -665,7 +705,7 @@ void Crinkler::recompress(const char* input_filename, const char* output_filenam
 		}
 	}
 
-	CompressionStream cs(data, sizefill, maxsize);
+	CompressionStream cs(data, sizefill, maxsize, m_saturate);
 	cs.Compress((unsigned char*)phase1->getPtr(), splittingPoint, m_modellist1, baseprob, best_hashsize, true, false);
 	cs.Compress((unsigned char*)phase1->getPtr() + splittingPoint, phase1->getRawSize() - splittingPoint, m_modellist2, baseprob, best_hashsize, false, true);
 	size = cs.Close();
@@ -690,26 +730,7 @@ void Crinkler::recompress(const char* input_filename, const char* output_filenam
 	Hunk* models = createModelHunk(splittingPoint, phase1->getRawSize());
 
 	HunkList phase2list;
-	HunkList* headerHunks = NULL;
-	if(is_compatibility_header)
-	{
-		headerHunks = m_hunkLoader.load(header14CompatibilityObj, header14CompatibilityObj_end - header14CompatibilityObj, "crinkler header");
-	}
-	else
-	{
-		headerHunks = m_hunkLoader.load(headerObj, headerObj_end - headerObj, "crinkler header");
-	}
 
-	Hunk* header = headerHunks->findSymbol("_header")->hunk;
-	headerHunks->removeHunk(header);
-	
-	Hunk* depacker = NULL;
-	if(is_compatibility_header)
-	{
-		depacker = headerHunks->findSymbol("_DepackEntry")->hunk;
-		headerHunks->removeHunk(depacker);
-	}
-	
 	if(is_compatibility_header)
 	{	//copy hashes from old header
 		DWORD* new_header_ptr = (DWORD*)header->getPtr();
@@ -731,7 +752,7 @@ void Crinkler::recompress(const char* input_filename, const char* output_filenam
 	else
 	{
 		//create hashes hunk
-		int hashes_offset = header->getRawSize();
+		int hashes_offset = hashes_address - CRINKLER_IMAGEBASE;
 		int hashes_bytes = models_offset - hashes_offset;
 		Hunk* hashHunk = new Hunk("HashHunk", (char*)&indata[hashes_offset], 0, 0, hashes_bytes, hashes_bytes);
 		phase2list.addHunkBack(hashHunk);
@@ -858,7 +879,7 @@ void Crinkler::link(const char* filename) {
 
 	Hunk* header = headerHunks->findSymbol("_header")->hunk;
 	if(!m_1KMode)
-		headerHunks->removeHunk(header);
+		setHeaderSaturation(header);
 	Hunk* hashHunk = NULL;
 
 	int hash_bits;
@@ -936,7 +957,7 @@ void Crinkler::link(const char* filename) {
 
 		if(m_hunktries > 0)
 		{
-			EmpiricalHunkSorter::sortHunkList(&m_hunkPool, *m_transform, m_modellist1, m_modellist2, CRINKLER_BASEPROB, m_hunktries, m_showProgressBar ? &m_windowBar : NULL);
+			EmpiricalHunkSorter::sortHunkList(&m_hunkPool, *m_transform, m_modellist1, m_modellist2, CRINKLER_BASEPROB, m_saturate, m_hunktries, m_showProgressBar ? &m_windowBar : NULL);
 			delete phase1;
 			delete phase1Untransformed;
 			m_transform->linkAndTransform(&m_hunkPool, import, CRINKLER_CODEBASE, phase1, &phase1Untransformed, &splittingPoint, true);
@@ -949,7 +970,7 @@ void Crinkler::link(const char* filename) {
 		deinitProgressBar();
 	}
 
-	CompressionStream cs(data, sizefill, maxsize);
+	CompressionStream cs(data, sizefill, maxsize, m_saturate);
 	cs.Compress((unsigned char*)phase1->getPtr(), splittingPoint, m_modellist1, CRINKLER_BASEPROB, best_hashsize, true, false);
 	cs.Compress((unsigned char*)phase1->getPtr() + splittingPoint, phase1->getRawSize() - splittingPoint, m_modellist2, CRINKLER_BASEPROB, best_hashsize, false, true);
 	size = cs.Close();
