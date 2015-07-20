@@ -10,7 +10,7 @@ bits	32
 
 	extern	_DLLNames
 	extern	_ImportList
-	extern  _HashFamily
+	extern  _HashMultiplier
 
 ; Format of DLL names:
 ; For each DLL
@@ -22,13 +22,13 @@ bits	32
 section .text	align=1
 
 _Import:
-	add		cl, al						; here to help compression. first byte is predicted as all 0
 	mov		edi, _DLLNames
-	;pop		eax					; moved to header
+	
+	pop		eax
 	mov		eax, [eax+0ch]			; goto PEB_LDR_DATA
 	mov		eax, [eax+0ch]			; InLoadOrderModuleList
-	mov		eax, [byte eax+0h]				; forward to next LIST_ENTRY
-	mov		eax, [byte eax+0h]				; forward to next LIST_ENTRY
+	mov		eax, [byte eax+0h]		; forward to next LIST_ENTRY
+	mov		eax, [byte eax+0h]		; forward to next LIST_ENTRY
 	mov		eax, [eax+18h]			; Kernel32 base memory
 
 	;eax: misc
@@ -63,7 +63,7 @@ ScanProcedureNamesLoop:
 	xor		eax, eax
 CalculateHashLoop:
 	lodsb
-	imul	eax, _HashFamily
+	imul	eax, _HashMultiplier
 	add		al, al
 	jne		CalculateHashLoop
 	shr		eax, byte 0				; filled out by crinkler
@@ -82,6 +82,6 @@ _MaxNameLengthPtrP:
 
 	test	eax, eax
 	jnz		short DLLLoop
-	
+
 _HashShiftPtr		equ _HashShiftPtrP-1
 _MaxNameLengthPtr	equ _MaxNameLengthPtrP-1

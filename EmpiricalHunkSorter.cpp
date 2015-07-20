@@ -16,12 +16,12 @@ EmpiricalHunkSorter::EmpiricalHunkSorter() {
 EmpiricalHunkSorter::~EmpiricalHunkSorter() {
 }
 
-int EmpiricalHunkSorter::tryHunkCombination(HunkList* hunklist, Transform& transform, ModelList& codeModels, ModelList& dataModels, int baseprob) {
+int EmpiricalHunkSorter::tryHunkCombination(HunkList* hunklist, Transform& transform, ModelList& codeModels, ModelList& dataModels, int baseprob, bool use1KMode) {
 	int splittingPoint;
 
 	Hunk* phase1;
 	Symbol* import = hunklist->findSymbol("_Import");
-	transform.linkAndTransform(hunklist, import, CRINKLER_CODEBASE, phase1, NULL, &splittingPoint, false);
+	transform.linkAndTransform(hunklist, import, CRINKLER_CODEBASE, phase1, NULL, &splittingPoint, false, use1KMode);
 	
 	char contexts[2][8];
 	memset(contexts[0], 0, 8);
@@ -63,20 +63,16 @@ void permuteHunklist(HunkList* hunklist, int strength) {
 	int n_permutes = (rand() % strength) + 1;
 	for (int p = 0 ; p < n_permutes ; p++)
 	{
-		int fixedHunks;
 		int h1i, h2i;
 		int sections[3];
 		int nHunks = hunklist->getNumHunks();
-		fixedHunks = 0;
 		int codeHunks = 0;
 		int dataHunks = 0;
 		int uninitHunks = 0;
 
 		{
 			//count different types of hunks
-			while(fixedHunks < nHunks && (*hunklist)[fixedHunks]->getFlags() & HUNK_IS_FIXED)
-				fixedHunks++;
-			codeHunks = fixedHunks;
+			codeHunks = 0;
 			while(codeHunks < nHunks && (*hunklist)[codeHunks]->getFlags() & HUNK_IS_CODE)
 				codeHunks++;
 			dataHunks = codeHunks;
@@ -84,12 +80,10 @@ void permuteHunklist(HunkList* hunklist, int strength) {
 				dataHunks++;
 			uninitHunks = nHunks - dataHunks;
 			dataHunks -= codeHunks;
-			codeHunks -= fixedHunks;
 			if (codeHunks < 2 && dataHunks < 2 && uninitHunks < 2) return;
 			sections[0] = codeHunks;
 			sections[1] = dataHunks;
 			sections[2] = uninitHunks;
-			nHunks -= fixedHunks;
 		}
 
 		int s;
@@ -103,7 +97,7 @@ void permuteHunklist(HunkList* hunklist, int strength) {
 		do {
 			h2i = rand() % (sections[s] - n + 1);
 		} while (h2i == h1i);
-		int base = fixedHunks + (s > 0 ? sections[0] : 0) + (s > 1 ? sections[1] : 0);
+		int base = (s > 0 ? sections[0] : 0) + (s > 1 ? sections[1] : 0);
 
 		if (h2i < h1i)
 		{
@@ -127,16 +121,13 @@ void randomPermute(HunkList* hunklist) {
 
 	int sections[3];
 	int nHunks = hunklist->getNumHunks();
-	int fixedHunks = 0;
 	int codeHunks = 0;
 	int dataHunks = 0;
 	int uninitHunks = 0;
 
 	//count different types of hunks
 	{
-		while(fixedHunks < nHunks && (*hunklist)[fixedHunks]->getFlags() & HUNK_IS_FIXED)
-			fixedHunks++;
-		codeHunks = fixedHunks;
+		codeHunks = 0;
 		while(codeHunks < nHunks && (*hunklist)[codeHunks]->getFlags() & HUNK_IS_CODE)
 			codeHunks++;
 		dataHunks = codeHunks;
@@ -144,14 +135,12 @@ void randomPermute(HunkList* hunklist) {
 			dataHunks++;
 		uninitHunks = nHunks - dataHunks;
 		dataHunks -= codeHunks;
-		codeHunks -= fixedHunks;
 		sections[0] = codeHunks;
 		sections[1] = dataHunks;
 		sections[2] = uninitHunks;
-		nHunks -= fixedHunks;
 	}
 
-	int idx = fixedHunks;
+	int idx = 0;
 	for(int j = 0; j < 3; j++) {
 		for(int i = 0; i < sections[j]; i++) {
 			int swapidx = rand() % (sections[j]-i);
@@ -161,18 +150,13 @@ void randomPermute(HunkList* hunklist) {
 	}
 }
 
-void EmpiricalHunkSorter::sortHunkList(HunkList* hunklist, Transform& transform, ModelList& codeModels, ModelList& dataModels, int baseprob, int numIterations, ProgressBar* progress) {
-	int fixedHunks = 0;
+void EmpiricalHunkSorter::sortHunkList(HunkList* hunklist, Transform& transform, ModelList& codeModels, ModelList& dataModels, int baseprob, int numIterations, ProgressBar* progress, bool use1KMode) {
 	int nHunks = hunklist->getNumHunks();
 
 	printf("\n\nReordering sections...\n");
 	fflush(stdout);
 
-	while(fixedHunks < nHunks && (*hunklist)[fixedHunks]->getFlags() & HUNK_IS_FIXED)
-		fixedHunks++;
-	nHunks -= fixedHunks;
-
-	int bestsize = tryHunkCombination(hunklist, transform, codeModels, dataModels, baseprob);
+	int bestsize = tryHunkCombination(hunklist, transform, codeModels, dataModels, baseprob, use1KMode);
 	
 	if(progress)
 		progress->beginTask("Reordering sections");
@@ -182,12 +166,12 @@ void EmpiricalHunkSorter::sortHunkList(HunkList* hunklist, Transform& transform,
 	int stime = clock();
 	for(int i = 0; i < numIterations; i++) {
 		for(int j = 0; j < nHunks; j++)
-			backup[j] = (*hunklist)[j+fixedHunks];
+			backup[j] = (*hunklist)[j];
 
 		permuteHunklist(hunklist, 2/*(int)sqrt((double)fails)/10+1*/);
 		//randomPermute(hunklist);
 
-		int size = tryHunkCombination(hunklist, transform, codeModels, dataModels, baseprob);
+		int size = tryHunkCombination(hunklist, transform, codeModels, dataModels, baseprob, use1KMode);
 		//printf("size: %5.2f\n", size / (BITPREC * 8.0f));
 		if(size < bestsize) {
 			printf("  Iteration: %5d  Size: %5.2f\n", i, size / (BITPREC * 8.0f));
@@ -198,7 +182,7 @@ void EmpiricalHunkSorter::sortHunkList(HunkList* hunklist, Transform& transform,
 			fails++;
 			//restore from backup
 			for(int j = 0; j < nHunks; j++)
-				(*hunklist)[j+fixedHunks] = backup[j];
+				(*hunklist)[j] = backup[j];
 		}
 		if(progress)
 			progress->update(i+1, numIterations);

@@ -145,10 +145,6 @@ Symbol* Hunk::findSymbol(const char* name) const {
 		return NULL;
 }
 
-void Hunk::fixate() {
-	m_flags |= HUNK_IS_FIXED;
-}
-
 //generates a help message based on the symbol name
 static string HelpMessage(const char* name) {
 	if(startsWith(name, "__RTC_")) {
