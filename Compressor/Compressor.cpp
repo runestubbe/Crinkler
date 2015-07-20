@@ -258,7 +258,8 @@ int compress1K(unsigned char* data, int size, unsigned char* compressed, int com
 			BitScanForward(&idx, mmask);
 			int m = idx;
 			int c[2] = {modeldata[(bitlength*m+i)*2], modeldata[(bitlength*m+i)*2+1]};
-			if(c[0]*c[1] == 0) {
+			if(c[0] == 0 || c[1] == 0)
+			{
 				c[0]*=boost_factor;
 				c[1]*=boost_factor;
 			}
@@ -375,7 +376,6 @@ void TinyCompress(unsigned char* org_data, int size, unsigned char* compressed, 
 	int stime = GetTickCount();
 
 	//collect model data
-#if 1
 	struct SHashEntry
 	{
 		unsigned char model;
@@ -489,62 +489,13 @@ void TinyCompress(unsigned char* org_data, int size, unsigned char* compressed, 
 	}
 
 	delete[] hash_table;
-#else
-	for(int i = 0; i < bitlength; i++) {
-		int bitpos = (i & 7);
-		int bytepos = i >> 3;
-		int mask = 0xFF00 >> bitpos;
-		int bit = ((data[bytepos] << bitpos) & 0x80) == 0x80;
-	
-		for(int model = NUM_MODELS-1; model >= 0; model--) {
-			int c[2] = {0,0};
-			int startpos = 0;
-			int offset = bytepos;
-
-			do {
-				if((data[startpos] & mask) == (data[startpos+offset] & mask)) {
-					bool match = true;
-					int prediction_bit;
-					if(offset == 0)
-						prediction_bit = 0;
-					else
-						prediction_bit = ((data[startpos] << bitpos) & 0x80) == 0x80;
-
-					int m = model;
-					int k = 1;
-					while(m) {
-						if(m & 1) {
-							if(data[startpos-k] != data[startpos+offset-k]) {
-								match = false;
-								break;
-							}
-						}
-						k++;
-						m >>= 1;
-					}
-
-					if(match) {
-						c[prediction_bit]++;
-						c[!prediction_bit] = (c[!prediction_bit]+1) / 2;
-					}
-				}
-
-				startpos++;
-				offset--;
-			} while(offset > 0);
-
-			modeldata[(bitlength*model+i)*2] = c[bit];
-			modeldata[(bitlength*model+i)*2+1] = c[!bit];
-		}
-	}
-#endif
 
 	printf("time spent collecting: %dms\n", GetTickCount() - stime);
 
 	stime = GetTickCount();
 	int best_size = INT_MAX;
 
-	best_modelmask = 0xFFFFFFFF;
+	best_modelmask = 0xFFFFFFFF;	//note bit 31 must always be set
 
 	int best_flip;
 	do
@@ -553,10 +504,10 @@ void TinyCompress(unsigned char* org_data, int size, unsigned char* compressed, 
 		unsigned int prev_best_modelmask = best_modelmask;
 #if USE_OPENMP
 		#pragma omp parallel for
-		for(int i = 0; i < NUM_MODELS; i++)
+		for(int i = 0; i < NUM_MODELS - 1; i++)
 #else
 		concurrency::critical_section cs;
-		concurrency::parallel_for(0, NUM_1K_MODELS, [&](int i)
+		concurrency::parallel_for(0, NUM_1K_MODELS - 1, [&](int i)
 #endif
 		{
 			unsigned int modelmask = prev_best_modelmask ^ (1<<i);

@@ -1,3 +1,5 @@
+traceless		/SUBSYSTEM:WINDOWS /ENTRY:entry traceless\intro.obj /REPLACEDLL:d3dx9_43=d3dx9_24 
+sinuous		/SUBSYSTEM:WINDOWS /ENTRY:entry sinuous\startup.obj sinuous\source_asm.obj
 als		/SUBSYSTEM:WINDOWS als\main.obj als\midi.obj als\miniglsl.obj
 amalgam		/SUBSYSTEM:WINDOWS /ENTRY:entry amalgam\main.obj
 benitoite	/SUBSYSTEM:CONSOLE /ENTRY:tinyentry benitoite\comcall.obj benitoite\data.obj benitoite\DXInit.obj benitoite\main.obj benitoite\meshasm.obj benitoite\misc.obj benitoite\resources.obj benitoite\SimpleEdgeBreaker.obj benitoite\texturegen2.obj

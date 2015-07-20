@@ -72,9 +72,9 @@ class Crinkler {
 	void replaceDlls(HunkList& hunkslist);
 	void overrideAlignments(HunkList& hunklist);
 
-	void compress1K(Hunk* phase1, Hunk* header, int splittingPoint, int hash_bits, int max_dll_name_length, const char* filename, FILE* outfile);
+	void compress1K(Hunk* phase1, Hunk* header, int splittingPoint, Hunk* hashHunk, const char* filename, FILE* outfile);
 
-	void loadImportCode(bool useSafeImporting, bool useDllFallback, bool useRangeImport);
+	void loadImportCode(bool use1kMode, bool useSafeImporting, bool useDllFallback, bool useRangeImport);
 	Hunk* createModelHunk(int splittingPoint, int rawsize);
 	Hunk* createDynamicInitializerHunk();
 	void initProgressBar();
