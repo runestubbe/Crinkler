@@ -11,22 +11,18 @@ global	_BaseProbPtr0
 global	_BaseProbPtr1
 global  _BoostFactorPtr
 global	_DepackEndPositionPtr
-global	_VirtualSizeHighBytePtr
+global	_VirtualSizeHighBytePtr	
 global	_SpareNopPtr
+global	_CharacteristicsPtr
+global	_LinkerVersionPtr
 
 section header	align=1
 
 _header:
 	db	'MZ'	;exe magic
 
-	;Two bytes of funnies
-	;db '1K'
-	;db 'DO'
-	;db 'DU'
-	;db 'HO'
-	;db 'NO'
-	;db 'PO'
-	db 'RA'
+_LinkerVersionPtr:
+	dw 0
 
 	;coff header
 	db 'PE', 0, 0		;PE signature
@@ -45,7 +41,8 @@ AritDecodeLoop:
 	inc	ebp					;next bit								;1
 	jmp short AritDecodeLoop2
 	dw 0008h			;Size of optional header
-	dw 0002h			;Characteristics (32bit)
+_CharacteristicsPtr:
+	dw 0002h			;Characteristics (almost any allowed - bit 1 must be set, bit 13 must be clear)
 
 ;optional header (PE-header)
 	dw 010Bh			;Magic (Image file)

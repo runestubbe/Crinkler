@@ -29,4 +29,13 @@ public:
 	CompressionType detectCompressionType() const;
 };
 
+class ModelList1k
+{
+public:
+	unsigned int modelmask;
+	unsigned int boost;
+	unsigned int baseprob0;
+	unsigned int baseprob1;
+};
+
 #endif
