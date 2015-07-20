@@ -36,8 +36,10 @@ _Import:
 	mov		ebp, [eax+18h]			; Kernel32 base memory
 
 DLLLoop:
+%ifdef IMPORT_FALLBACK
 	xor		eax, eax
 	lodsb
+%endif
 
 %ifdef IMPORT_SAFE
 	test	ebp, ebp
@@ -60,6 +62,9 @@ DLLLoop:
 %ifdef IMPORT_FALLBACK
 	test	eax, eax
 	jz		NextDLL
+%else
+	xor		eax, eax
+	lodsb
 %endif
 	xchg	ecx, eax
 
