@@ -15,6 +15,7 @@ public:
 	int parse(const char* str, char* errorMsg, int buffsize);
 
 	int getValue();
+	int getValueIfPresent(int fallback);
 	void setDefault(int flag) { m_value = flag; }
 };
 

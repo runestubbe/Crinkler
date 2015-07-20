@@ -17,7 +17,7 @@ struct Weights;
 const int MAX_CONTEXT_LENGTH = 8;
 const int MAX_N_MODELS = 32;
 
-void updateWeights(Weights *w, int bit);
+void updateWeights(Weights *w, int bit, bool saturate);
 
 static int previousPowerOf2(int v) {
 	v--;
@@ -96,7 +96,7 @@ void CompressionStream::Compress(const unsigned char* d, int size, const ModelLi
 
 		// Update models
 		for(int m = 0; m < models.nmodels; m++) {
-			updateWeights((Weights*)hashEntries[m]->prob, bit);
+			updateWeights((Weights*)hashEntries[m]->prob, bit, m_saturate);
 		}
 	}
 	
@@ -136,7 +136,7 @@ void CompressionStream::Compress(const unsigned char* d, int size, const ModelLi
 
 		// Update models
 		for(int m = 0; m < models.nmodels; m++) {
-			updateWeights((Weights*)hashEntries[m]->prob, bit);
+			updateWeights((Weights*)hashEntries[m]->prob, bit, m_saturate);
 		}
 	}
 
@@ -214,7 +214,7 @@ int CompressionStream::EvaluateSize(const unsigned char* d, int size, const Mode
 			unsigned int shift = (1 - (((he->prob[0]+255)&(he->prob[1]+255)) >> 8))*2 + fac;
 			sums[bitpos*2+0] += ((int)he->prob[0] << shift);
 			sums[bitpos*2+1] += ((int)he->prob[1] << shift);
-			updateWeights((Weights*)he->prob, bit);
+			updateWeights((Weights*)he->prob, bit, m_saturate);
 		}
 	}
 
@@ -321,7 +321,7 @@ int CompressionStream::EvaluateSizeQuick(const unsigned char* d, int size, const
 			sums[pos*2+1] += ((int)he->prob[1] << shift);
 
 			//update weights
-			he->prob[bit] += 1;
+			if (!m_saturate || he->prob[bit] < 255) he->prob[bit] += 1;
 			if (he->prob[!bit] > 1) he->prob[!bit] >>= 1;
 		}
 	}
@@ -363,8 +363,8 @@ int CompressionStream::EvaluateSizeQuick(const unsigned char* d, int size, const
 	return (int) (totalsize / (BITPREC_TABLE / BITPREC));
 }
 
-CompressionStream::CompressionStream(unsigned char* data, int* sizefill, int maxsize) :
-	m_data(data), m_sizefill(sizefill), m_sizefillptr(sizefill), m_maxsize(maxsize)
+CompressionStream::CompressionStream(unsigned char* data, int* sizefill, int maxsize, bool saturate) :
+m_data(data), m_sizefill(sizefill), m_sizefillptr(sizefill), m_maxsize(maxsize), m_saturate(saturate)
 {
 	if(data != NULL) {
 		memset(m_data, 0, m_maxsize);

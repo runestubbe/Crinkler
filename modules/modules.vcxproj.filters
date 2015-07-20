@@ -33,9 +33,15 @@
     <CustomBuild Include="header14.asm">
       <Filter>Source Files</Filter>
     </CustomBuild>
+    <CustomBuild Include="header15.asm">
+      <Filter>Source Files</Filter>
+    </CustomBuild>
   </ItemGroup>
   <ItemGroup>
     <None Include="import15.asm">
+      <Filter>Source Files</Filter>
+    </None>
+    <None Include="header15_compatibility.asm">
       <Filter>Source Files</Filter>
     </None>
   </ItemGroup>

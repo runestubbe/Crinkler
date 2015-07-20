@@ -29,7 +29,7 @@ public:
 };
 
 //Approximates the models for a given data chunk
-ModelList ApproximateModels(const unsigned char* data, int datasize, int baseprob, int* compsize, ProgressBar* progressBar, bool verbose, CompressionType compressionType);
+ModelList ApproximateModels(const unsigned char* data, int datasize, int baseprob, bool saturate, int* compsize, ProgressBar* progressBar, bool verbose, CompressionType compressionType);
 ModelList InstantModels();
 
 void TinyCompress(unsigned char* org_data, int size, unsigned char* compressed, int& compressed_size,

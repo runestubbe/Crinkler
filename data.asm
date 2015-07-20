@@ -26,11 +26,11 @@ global _calltransObj_end
 section	.data
 
 _headerObj:
-	incbin "modules/header14.obj"
+	incbin "modules/header15.obj"
 _headerObj_end:
 
 _header14CompatibilityObj:
-	incbin "modules/header14_compatibility.obj"
+	incbin "modules/header15_compatibility.obj"
 _header14CompatibilityObj_end:
 
 _header11Obj:
