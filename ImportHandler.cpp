@@ -276,14 +276,14 @@ HunkList* ImportHandler::createImportHunks(HunkList* hunklist, Hunk*& hashHunk, 
 	return newHunks;
 }
 
-__forceinline unsigned int hashCode_1k(const char* str, int family, int hash_bits)
+__forceinline unsigned int hashCode_1k(const char* str, int hash_multiplier, int hash_bits)
 {
 	int eax = 0;
 	unsigned char c;
 	do
 	{
 		c = *str++;
-		eax = ((eax & 0xFFFFFF00) + c) * family;
+		eax = ((eax & 0xFFFFFF00) + c) * hash_multiplier;
 	} while(c & 0x7F);
 
 	eax = (eax & 0xFFFFFF00) | (unsigned char)(c + c);
@@ -331,7 +331,7 @@ static bool solve_constraints(std::vector<unsigned int>& constraints, unsigned i
 	return true;
 }
 
-static bool findCollisionFreeHash(vector<string>& dlls, const vector<Hunk*>& importHunks, int& hash_family, int& hash_bits)
+static bool findCollisionFreeHash(vector<string>& dlls, const vector<Hunk*>& importHunks, int& hash_multiplier, int& hash_bits)
 {
 	int stime = GetTickCount();
 	printf("searching for hash function:\n"); fflush(stdout);
@@ -432,7 +432,7 @@ static bool findCollisionFreeHash(vector<string>& dlls, const vector<Hunk*>& imp
 					dll_constraints[dll_index] = 0;
 				}
 
-				int family = (high_byte<<16) | (low_byte<<8) | 1;
+				int hash_multiplier = (high_byte << 16) | (low_byte << 8) | 1;
 
 				memset(buckets, 0, sizeof(SBucket) << num_bits);
 				bool has_collisions = false;
@@ -451,7 +451,7 @@ static bool findCollisionFreeHash(vector<string>& dlls, const vector<Hunk*>& imp
 					int* nameTable = (int*)(module + exportdir->AddressOfNames);
 					for(int i = 0; i < num_names; i++)
 					{
-						unsigned int hashcode = hashCode_1k(module + nameTable[i], family, num_bits);
+						unsigned int hashcode = hashCode_1k(module + nameTable[i], hash_multiplier, num_bits);
 						bool new_referenced = dllinfo.used[i];
 						bool old_referenced = buckets[hashcode].referenced_function_dll_index > 0;
 
@@ -522,14 +522,14 @@ static bool findCollisionFreeHash(vector<string>& dlls, const vector<Hunk*>& imp
 			delete[] buckets;
 		});
 
-		int best_family = (best_high_byte << 16) | (best_low_byte << 8) | 1;
-		printf("num_bits: %d: family: %8x\n", num_bits, best_family);
+		int best_hash_multiplier = (best_high_byte << 16) | (best_low_byte << 8) | 1;
+		printf("num_bits: %d: hash: %8x\n", num_bits, best_hash_multiplier);
 		if(best_num_bits > num_bits)
 		{
 			break;
 		}
 	}
-	int best_family = (best_high_byte << 16) | (best_low_byte << 8) | 1;
+	int best_hash_multiplier = (best_high_byte << 16) | (best_low_byte << 8) | 1;
 
 	printf("time spent: %dms\n", GetTickCount()-stime);
 	printf("done looking for hash function\n"); fflush(stdout);
@@ -547,7 +547,7 @@ static bool findCollisionFreeHash(vector<string>& dlls, const vector<Hunk*>& imp
 	}
 	dlls = new_dlls;
 	
-	hash_family = best_family;
+	hash_multiplier = best_hash_multiplier;
 	hash_bits = best_num_bits;
 	return true;
 }
@@ -585,9 +585,9 @@ HunkList* ImportHandler::createImportHunks1K(HunkList* hunklist, bool verbose, i
 		Log::error("", "Kernel32 needs to be linked for import code to function.");
 	}
 
-	int hash_family;
+	int hash_multiplier;
 	vector<string> dlls(dll_set.begin(), dll_set.end());
-	if(!findCollisionFreeHash(dlls, importHunks, hash_family, hash_bits))
+	if (!findCollisionFreeHash(dlls, importHunks, hash_multiplier, hash_bits))
 	{
 		Log::error("", "Could not find collision-free hash function");
 	}
@@ -614,12 +614,12 @@ HunkList* ImportHandler::createImportHunks1K(HunkList* hunklist, bool verbose, i
 	}
 	 
 	Hunk* importList = new Hunk("ImportListHunk", 0, HUNK_IS_WRITEABLE, 8, 0, 65536*256);
-	importList->addSymbol(new Symbol("_HashMultiplier", hash_family, 0, importList));
+	importList->addSymbol(new Symbol("_HashMultiplier", hash_multiplier, 0, importList));
 	importList->addSymbol(new Symbol("_ImportList", 0, SYMBOL_IS_RELOCATEABLE, importList));
 	for(vector<Hunk*>::iterator it = importHunks.begin(); it != importHunks.end(); it++)
 	{
 		Hunk* importHunk = *it;
-		unsigned int hashcode = hashCode_1k(importHunk->getImportName(), hash_family, hash_bits);
+		unsigned int hashcode = hashCode_1k(importHunk->getImportName(), hash_multiplier, hash_bits);
 		importList->addSymbol(new Symbol(importHunk->getName(), hashcode*4, SYMBOL_IS_RELOCATEABLE, importList));
 	}
 

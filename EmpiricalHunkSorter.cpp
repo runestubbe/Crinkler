@@ -16,7 +16,7 @@ EmpiricalHunkSorter::EmpiricalHunkSorter() {
 EmpiricalHunkSorter::~EmpiricalHunkSorter() {
 }
 
-int EmpiricalHunkSorter::tryHunkCombination(HunkList* hunklist, Transform& transform, ModelList& codeModels, ModelList& dataModels, int baseprob, bool use1KMode) {
+int EmpiricalHunkSorter::tryHunkCombination(HunkList* hunklist, Transform& transform, ModelList& codeModels, ModelList& dataModels, ModelList1k& models1k, int baseprob, bool use1KMode) {
 	int splittingPoint;
 
 	Hunk* phase1;
@@ -30,31 +30,41 @@ int EmpiricalHunkSorter::tryHunkCombination(HunkList* hunklist, Transform& trans
 	if (splittingPoint < 8) context_size = splittingPoint;
 	memcpy(contexts[1]+(8-context_size), phase1->getPtr()+splittingPoint-context_size, context_size);
 
-	CompressionStream cs(NULL, NULL, 0);
-	int sizes[16];
-#if USE_OPENMP
-	#pragma omp parallel for
-	for(int i = 0; i < 16; i++)
-	{
-		if(i < 8)
-			sizes[i] = cs.EvaluateSizeQuick((unsigned char*)phase1->getPtr(), splittingPoint, codeModels, baseprob, contexts[0], i);
-		else
-			sizes[i] = cs.EvaluateSizeQuick((unsigned char*)phase1->getPtr()+splittingPoint, phase1->getRawSize()-splittingPoint, dataModels, baseprob, contexts[1], i - 8);
-	}
-#else
-	concurrency::parallel_for(0, 16, [&](int i)
-	{
-		if(i < 8)
-			sizes[i] = cs.EvaluateSizeQuick((unsigned char*)phase1->getPtr(), splittingPoint, codeModels, baseprob, contexts[0], i);
-		else
-			sizes[i] = cs.EvaluateSizeQuick((unsigned char*)phase1->getPtr()+splittingPoint, phase1->getRawSize()-splittingPoint, dataModels, baseprob, contexts[1], i - 8);
-	});
-#endif
-	delete phase1;
-
 	int size = 0;
-	for(int i = 0; i < 16; i++)
-		size += sizes[i];
+	if (use1KMode)
+	{
+		int max_size = phase1->getRawSize() * 2 + 1000;
+		unsigned char* compressed_data_ptr = new unsigned char[max_size];
+		Compress1K((unsigned char*)phase1->getPtr(), phase1->getRawSize(), compressed_data_ptr, max_size, models1k.boost, models1k.baseprob0, models1k.baseprob1, models1k.modelmask, nullptr, &size);	//TODO: estimate instead of compress
+		delete[] compressed_data_ptr;
+	}
+	else
+	{
+		CompressionStream cs(NULL, NULL, 0);
+		int sizes[16];
+#if USE_OPENMP
+#pragma omp parallel for
+		for(int i = 0; i < 16; i++)
+		{
+			if(i < 8)
+				sizes[i] = cs.EvaluateSizeQuick((unsigned char*)phase1->getPtr(), splittingPoint, codeModels, baseprob, contexts[0], i);
+			else
+				sizes[i] = cs.EvaluateSizeQuick((unsigned char*)phase1->getPtr()+splittingPoint, phase1->getRawSize()-splittingPoint, dataModels, baseprob, contexts[1], i - 8);
+		}
+#else
+		concurrency::parallel_for(0, 16, [&](int i)
+		{
+			if (i < 8)
+				sizes[i] = cs.EvaluateSizeQuick((unsigned char*)phase1->getPtr(), splittingPoint, codeModels, baseprob, contexts[0], i);
+			else
+				sizes[i] = cs.EvaluateSizeQuick((unsigned char*)phase1->getPtr() + splittingPoint, phase1->getRawSize() - splittingPoint, dataModels, baseprob, contexts[1], i - 8);
+		});
+#endif
+		delete phase1;
+
+		for (int i = 0; i < 16; i++)
+			size += sizes[i];
+	}
 
 	return size;
 }
@@ -150,13 +160,13 @@ void randomPermute(HunkList* hunklist) {
 	}
 }
 
-void EmpiricalHunkSorter::sortHunkList(HunkList* hunklist, Transform& transform, ModelList& codeModels, ModelList& dataModels, int baseprob, int numIterations, ProgressBar* progress, bool use1KMode) {
+void EmpiricalHunkSorter::sortHunkList(HunkList* hunklist, Transform& transform, ModelList& codeModels, ModelList& dataModels, ModelList1k& models1k, int baseprob, int numIterations, ProgressBar* progress, bool use1KMode) {
 	int nHunks = hunklist->getNumHunks();
 
 	printf("\n\nReordering sections...\n");
 	fflush(stdout);
 
-	int bestsize = tryHunkCombination(hunklist, transform, codeModels, dataModels, baseprob, use1KMode);
+	int bestsize = tryHunkCombination(hunklist, transform, codeModels, dataModels, models1k, baseprob, use1KMode);
 	
 	if(progress)
 		progress->beginTask("Reordering sections");
@@ -171,7 +181,7 @@ void EmpiricalHunkSorter::sortHunkList(HunkList* hunklist, Transform& transform,
 		permuteHunklist(hunklist, 2/*(int)sqrt((double)fails)/10+1*/);
 		//randomPermute(hunklist);
 
-		int size = tryHunkCombination(hunklist, transform, codeModels, dataModels, baseprob, use1KMode);
+		int size = tryHunkCombination(hunklist, transform, codeModels, dataModels, models1k, baseprob, use1KMode);
 		//printf("size: %5.2f\n", size / (BITPREC * 8.0f));
 		if(size < bestsize) {
 			printf("  Iteration: %5d  Size: %5.2f\n", i, size / (BITPREC * 8.0f));
