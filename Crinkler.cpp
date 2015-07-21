@@ -607,7 +607,7 @@ void Crinkler::recompress(const char* input_filename, const char* output_filenam
 	HunkList* headerHunks = NULL;
 	if (is_compatibility_header)
 	{
-		headerHunks = m_hunkLoader.load(header14CompatibilityObj, header14CompatibilityObj_end - header14CompatibilityObj, "crinkler header");
+		headerHunks = m_hunkLoader.load(headerCompatibilityObj, headerCompatibilityObj_end - headerCompatibilityObj, "crinkler header");
 	}
 	else
 	{

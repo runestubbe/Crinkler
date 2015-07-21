@@ -100,7 +100,6 @@
     <ClInclude Include="CompressionState.h" />
     <ClInclude Include="CompressionStream.h" />
     <ClInclude Include="Compressor.h" />
-    <ClInclude Include="data.h" />
     <ClInclude Include="model.h" />
     <ClInclude Include="ModelList.h" />
     <ClInclude Include="ProgressBar.h" />
@@ -109,16 +108,6 @@
   </ItemGroup>
   <ItemGroup>
     <CustomBuild Include="aritcode.asm">
-      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Assembling %(Filename).obj</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">nasmw -f win32 -Xvc "%(RootDir)%(Directory)\%(Filename)%(Extension)" -o "$(OutDir)%(Filename).obj"
-</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(OutDir)%(Filename).obj;%(Outputs)</Outputs>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Assembling %(Filename).obj</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">nasmw -f win32 -Xvc "%(RootDir)%(Directory)\%(Filename)%(Extension)" -o "$(OutDir)%(Filename).obj"
-</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(OutDir)%(Filename).obj;%(Outputs)</Outputs>
-    </CustomBuild>
-    <CustomBuild Include="data.asm">
       <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Assembling %(Filename).obj</Message>
       <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">nasmw -f win32 -Xvc "%(RootDir)%(Directory)\%(Filename)%(Extension)" -o "$(OutDir)%(Filename).obj"
 </Command>
