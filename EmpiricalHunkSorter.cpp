@@ -179,8 +179,24 @@ void EmpiricalHunkSorter::sortHunkList(HunkList* hunklist, Transform& transform,
 		for(int j = 0; j < nHunks; j++)
 			backup[j] = (*hunklist)[j];
 
+		// save export hunk, if present
+		Hunk* eh = nullptr;
+		int ehi;
+		for (ehi = 0; ehi < hunklist->getNumHunks(); ehi++) {
+			if ((*hunklist)[ehi]->getFlags() & HUNK_IS_TRAILING) {
+				eh = (*hunklist)[ehi];
+				hunklist->removeHunk(eh);
+				break;
+			}
+		}
+
 		permuteHunklist(hunklist, 2/*(int)sqrt((double)fails)/10+1*/);
 		//randomPermute(hunklist);
+
+		// restore export hunk, if present
+		if (eh) {
+			hunklist->insertHunk(ehi, eh);
+		}
 
 		int size = tryHunkCombination(hunklist, transform, codeModels, dataModels, models1k, baseprob, saturate, use1KMode);
 		//printf("size: %5.2f\n", size / (BITPREC * 8.0f));
