@@ -122,6 +122,14 @@ static bool runExecutable(const char* filename) {
 	return true;
 }
 
+static void parseExports(CmdParamMultiAssign& arg, Crinkler& crinkler) {
+	while (arg.hasNext()) {
+		Export e = parseExport(arg.getValue1(), arg.getValue2());
+		crinkler.addExport(std::move(e));
+		arg.next();
+	}
+}
+
 static void runOriginalLinker(const char* linkerName) {
 	list<string> res = findFileInPath(linkerName, getEnv("PATH").c_str());
 	const char* needle = "Crinkler";
@@ -213,13 +221,14 @@ int main(int argc, char* argv[]) {
 	CmdParamString rangeImportArg("RANGE", "use range importing for this dll", "dllname", PARAM_IS_SWITCH, 0);
 	CmdParamMultiAssign replaceDllArg("REPLACEDLL", "replace a dll with another", "oldDLL=newDLL", PARAM_IS_SWITCH);
 	CmdParamMultiAssign fallbackDllArg("FALLBACKDLL", "try opening another dll if the first one fails", "firstDLL=otherDLL", PARAM_IS_SWITCH);
+	CmdParamMultiAssign exportArg("EXPORT", "export value by name", "name=value/label", PARAM_IS_SWITCH | PARAM_ALLOW_MISSING_VALUE);
 	CmdParamSwitch noInitializersArg("NOINITIALIZERS", "do not run dynamic initializers", 0);
 	CmdParamString filesArg("FILES", "list of filenames", "", PARAM_HIDE_IN_PARAM_LIST, 0);
 	CmdLineInterface cmdline(CRINKLER_TITLE, CMDI_PARSE_FILES);
 
 	cmdline.addParams(&crinklerFlag, &hashsizeArg, &hashtriesArg, &hunktriesArg, &entryArg, &outArg, &summaryArg, &unsafeImportArg,
 						&subsystemArg, &largeAddressAwareArg, &truncateFloatsArg, &overrideAlignmentsArg, &compmodeArg, &saturateArg, &printArg, &transformArg, &libpathArg, 
-						&rangeImportArg, &replaceDllArg, &fallbackDllArg, &noInitializersArg, &filesArg, &priorityArg, &showProgressArg, &recompressFlag,
+						&rangeImportArg, &replaceDllArg, &fallbackDllArg, &exportArg, &noInitializersArg, &filesArg, &priorityArg, &showProgressArg, &recompressFlag,
 						&tinyCompressor,
 						NULL);
 	
@@ -252,7 +261,7 @@ int main(int argc, char* argv[]) {
 		subsystemArg.setDefault(-1);
 		compmodeArg.setDefault(-1);
 
-		cmdline2.addParams(&crinklerFlag, &recompressFlag, &outArg, &hashsizeArg, &hashtriesArg, &subsystemArg, &largeAddressAwareArg, &compmodeArg, &saturateArg, &summaryArg, &priorityArg, &showProgressArg, &filesArg, NULL);
+		cmdline2.addParams(&crinklerFlag, &recompressFlag, &outArg, &hashsizeArg, &hashtriesArg, &subsystemArg, &largeAddressAwareArg, &compmodeArg, &saturateArg, &summaryArg, &exportArg, &priorityArg, &showProgressArg, &filesArg, NULL);
 		cmdline2.setCmdParameters(argc, argv);
 		if(cmdline2.parse()) {
 			crinkler.setHashsize(hashsizeArg.getValue());
@@ -263,6 +272,7 @@ int main(int argc, char* argv[]) {
 			crinkler.setHashtries(hashtriesArg.getValue());
 			crinkler.showProgressBar(showProgressArg.getValue());
 			crinkler.setSummary(summaryArg.getValue());
+			parseExports(exportArg, crinkler);
 
 			IdentityTransform identTransform;
 			crinkler.setTransform(&identTransform);
@@ -341,7 +351,7 @@ int main(int argc, char* argv[]) {
 	crinkler.setAlignmentBits(overrideAlignmentsArg.getValue());
 	crinkler.setRunInitializers(!noInitializersArg.getValue());
 	crinkler.setSummary(summaryArg.getValue());
-
+	parseExports(exportArg, crinkler);
 
 
 	//transforms
@@ -364,7 +374,7 @@ int main(int argc, char* argv[]) {
 	printf("Order tries: %d\n", hunktriesArg.getValue());
 	printf("Report: %s\n", strlen(summaryArg.getValue()) > 0 ? summaryArg.getValue() : "NONE");
 	printf("Transforms: %s\n", (transformArg.getValue() & TRANSFORM_CALLS) ? "CALLS" : "NONE");
-	
+
 	//replace dll
 	{
 		printf("Replace DLLs: ");
@@ -417,6 +427,26 @@ int main(int argc, char* argv[]) {
 			first = false;
 		}
 		printf("\n");
+	}
+
+	// exports
+	{
+		printf("Exports:");
+		auto exports = crinkler.getExports();
+		if (exports.empty()) {
+			printf(" NONE\n");
+		} else {
+			printf("\n");
+			for (const Export& e : exports) {
+				if (e.hasValue()) {
+					printf("  %s = 0x%08X\n", e.getName().c_str(), e.getValue());
+				} else if (e.getSymbol() == e.getName()) {
+					printf("  %s\n", e.getName().c_str());
+				} else {
+					printf("  %s -> %s\n", e.getName().c_str(), e.getSymbol().c_str());
+				}
+			}
+		}
 	}
 	printf("\n");
 

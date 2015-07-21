@@ -3,6 +3,7 @@
 #define _CRINKLER_H_
 
 #include <map>
+#include <set>
 #include <string>
 #include <cstdio>
 
@@ -14,7 +15,7 @@
 #include "ConsoleProgressBar.h"
 #include "WindowProgressBar.h"
 #include "CompositeProgressBar.h"
-
+#include "Export.h"
 
 
 class HunkLoader;
@@ -50,6 +51,7 @@ class Crinkler {
 	std::vector<std::string>	m_rangeDlls;
 	std::map<std::string, std::string>	m_replaceDlls;
 	std::map<std::string, std::string>	m_fallbackDlls;
+	std::set<Export>		m_exports;
 	bool					m_showProgressBar;
 	Transform*				m_transform;
 	bool					m_1KMode;
@@ -84,8 +86,9 @@ class Crinkler {
 	int optimizeHashsize(unsigned char* data, int datasize, int hashsize, int splittingPoint, int tries);
 	int estimateModels(unsigned char* data, int datasize, int splittingPoint, bool reestimate, bool use1kMode);
 	void setHeaderSaturation(Hunk* header);
-	void setHeaderConstants(Hunk* header, Hunk* phase1, int hashsize, int boostfactor, int baseprob0, int baseprob1, unsigned int modelmask, int subsystem_version, bool use1kHeader);
+	void setHeaderConstants(Hunk* header, Hunk* phase1, int hashsize, int boostfactor, int baseprob0, int baseprob1, unsigned int modelmask, int subsystem_version, int exports_rva, bool use1kHeader);
 
+	int appendExportTable(Hunk* phase1);
 public:
 	Crinkler();
 	~Crinkler();
@@ -103,6 +106,8 @@ public:
 	void addReplaceDll(const char* dll1, const char* dll2)	{ m_replaceDlls.insert(make_pair(toLower(dll1), toLower(dll2))); }
 	void addFallbackDll(const char* dll1, const char* dll2)	{ m_fallbackDlls.insert(make_pair(toLower(dll1), toLower(dll2))); }
 	void clearRangeDlls()									{ m_rangeDlls.clear(); }
+	void addExport(Export e)								{ if (m_exports.count(e) == 0) m_exports.insert(std::move(e)); }
+	const std::set<Export>& getExports()					{ return m_exports; }
 	void showProgressBar(bool show)							{ m_showProgressBar = show; }
 
 	void set1KMode(bool use1KMode)							{ m_1KMode = use1KMode; }
