@@ -107,7 +107,7 @@ _VirtualSizeHighBytePtr:
 	;db "HASH"			;Checksum / Name1
 _AritDecodeJumpPad:
 	jl short AritDecode			;2
-	;pop eax						;1
+	;pop eax					;1
 	nop
 	ret							;1
 _SubsystemTypePtr:
@@ -133,12 +133,6 @@ _SpareNopPtr:
 	push	edi								;57
 	push	byte 0							;6A 00
 	pop		ebp								;5D
-
-	; 90 BF 00 00
-	; 41 00 6A 01
-	; 58 53 6A 00
-	; 5E 57 6A 00
-	; 5D
 
 	;; edi = dst ptr
 	;; esi = data
@@ -196,14 +190,14 @@ _no_update:
 	jg short _context_loop
 
 	mov cl, byte 0	;boost factor
-	BoostFactorPtrP:
+BoostFactorPtrP:
+
+	lea ebp, [dword esp + 0]	;b0-b3 must be 0 (DebugTable)
 	.add_loop:
-		add dword [esp+9*4], edx;4
+		add dword [ebp+9*4], edx	;4
 		test eax, eax
-		nop
-		mov ebp, 0						;b0-b3 must be 0 (DebugTable)
 		jz .loop
-		add dword [esp+8*4], eax;4
+		add dword [ebp+8*4], eax	;4
 		test edx, edx
 	.loop:
 		loope .add_loop			;2		;loop BOOST_FACTOR times, if c0*c1 = 0
