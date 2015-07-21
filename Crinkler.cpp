@@ -486,8 +486,8 @@ void Crinkler::recompress(const char* input_filename, const char* output_filenam
 	bool saturate = std::search(indata, indata + length, std::begin(saturateCode), std::end(saturateCode)) != indata + length;
 	if (m_saturate == -1) m_saturate = saturate;
 
+	printf("Original file size: %d\n", length);
 	printf("Original Virtual size: %d\n", virtualSize);
-
 	printf("Original Subsystem type: %s\n", subsystem_version == 3 ? "CONSOLE" : "WINDOWS");
 	printf("Original Large address aware: %s\n", large_address_aware ? "YES" : "NO");
 	printf("Original Compression mode: %s\n", compmode == COMPRESSION_INSTANT ? "INSTANT" : "FAST/SLOW");
@@ -741,7 +741,8 @@ void Crinkler::recompress(const char* input_filename, const char* output_filenam
 	fwrite(phase2->getPtr(), 1, phase2->getRawSize(), outfile);
 	fclose(outfile);
 
-	printf("\nFinal file size: %d\n\n", phase2->getRawSize());
+	printf("\nOutput file: %s\n", output_filename);
+	printf("Final file size: %d\n\n", phase2->getRawSize());
 
 	delete phase1;
 	delete phase2;
@@ -796,15 +797,18 @@ Hunk* Crinkler::createDynamicInitializerHunk()
 void Crinkler::link(const char* filename) {
 	//open output file now, just to be sure :)
 	FILE* outfile;
+	int old_filesize = 0;
+	if (!fopen_s(&outfile, filename, "rb")) {
+		//find old size
+		fseek(outfile, 0, SEEK_END);
+		old_filesize = ftell(outfile);
+		fclose(outfile);
+	}
 	if(fopen_s(&outfile, filename, "wb")) {
 		Log::error("", "Cannot open '%s' for writing", filename);
 		return;
 	}
 
-	//find old size
-	fseek(outfile, 0, SEEK_END);
-	int old_filesize = ftell(outfile);
-	fseek(outfile, 0, SEEK_SET);
 
 	//find entry hunk and move it to front
 	Symbol* entry = findEntryPoint();
@@ -1000,15 +1004,17 @@ void Crinkler::link(const char* filename) {
 	fwrite(phase2->getPtr(), 1, phase2->getRawSize(), outfile);
 	fclose(outfile);
 
-	if(old_filesize)
+	printf("\nOutput file: %s\n", filename);
+	printf("Final file size: %d", phase2->getRawSize());
+	if (old_filesize)
 	{
-		printf("\nOverwritten file size: %d\n", old_filesize);
-		printf("\nFinal file size: %d  Delta size: %d \n\n", phase2->getRawSize(), old_filesize - phase2->getRawSize());
+		if (old_filesize != phase2->getRawSize()) {
+			printf(" (previous size %d)", old_filesize);
+		} else {
+			printf(" (no change)");
+		}
 	}
-	else
-	{
-		printf("\nFinal file size: %d\n\n", phase2->getRawSize());
-	}	
+	printf("\n\n");
 
 	if (phase2->getRawSize() > 128*1024)
 	{
