@@ -125,6 +125,7 @@
     <ClCompile Include="Crinkler.cpp">
       <Optimization Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">MaxSpeed</Optimization>
     </ClCompile>
+    <ClCompile Include="Export.cpp" />
     <ClCompile Include="Fix.cpp" />
     <ClCompile Include="HtmlReport.cpp" />
     <ClCompile Include="Hunk.cpp" />
@@ -162,6 +163,7 @@
   <ItemGroup>
     <ClInclude Include="Crinkler.h" />
     <ClInclude Include="distorm.h" />
+    <ClInclude Include="Export.h" />
     <ClInclude Include="Fix.h" />
     <ClInclude Include="HtmlReport.h" />
     <ClInclude Include="Hunk.h" />

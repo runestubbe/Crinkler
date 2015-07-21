@@ -134,6 +134,9 @@
     <ClCompile Include="WindowProgressBar.cpp">
       <Filter>ProgressBars</Filter>
     </ClCompile>
+    <ClCompile Include="Export.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Crinkler.h">
@@ -243,6 +246,9 @@
     </ClInclude>
     <ClInclude Include="WindowProgressBar.h">
       <Filter>ProgressBars</Filter>
+    </ClInclude>
+    <ClInclude Include="Export.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
