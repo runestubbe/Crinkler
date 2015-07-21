@@ -255,10 +255,12 @@ static int* GenerateModelData1k(const unsigned char* org_data, int datasize)
 	//collect model data
 	struct SHashEntry
 	{
+		unsigned int hash;
+		int c[2];
 		unsigned char model;
 		unsigned char bitpos;
-		unsigned short offset;
-		int c[2];
+		unsigned short bytepos;
+		
 	};
 	const int hash_table_size = bitlength*NUM_1K_MODELS * 2;
 	SHashEntry* hash_table = new SHashEntry[hash_table_size];
@@ -267,11 +269,12 @@ static int* GenerateModelData1k(const unsigned char* org_data, int datasize)
 		SHashEntry& entry = hash_table[i];
 		entry.model = 0;
 		entry.bitpos = 0;
-		entry.offset = 0xFFFF;
+		entry.bytepos = 0xFFFF;
 		entry.c[0] = 0;
 		entry.c[1] = 0;
 	}
 
+	
 	for (int i = 0; i < bitlength; i++)
 	{
 		int bitpos = (i & 7);
@@ -287,7 +290,7 @@ static int* GenerateModelData1k(const unsigned char* org_data, int datasize)
 			int k = 1;
 			while (m)
 			{
-				hash = hash * 237;
+				hash = hash * 237 + 4123;
 				if (m & 1)
 				{
 					hash += data[bytepos - k];
@@ -302,11 +305,12 @@ static int* GenerateModelData1k(const unsigned char* org_data, int datasize)
 			while (true)
 			{
 				entry_ptr = &hash_table[entry_idx];
-				if (entry_ptr->offset == 0xFFFF)
+				if (entry_ptr->bytepos == 0xFFFF)
 				{
+					entry_ptr->hash = hash;
 					entry_ptr->model = model;
 					entry_ptr->bitpos = bitpos;
-					entry_ptr->offset = bytepos;
+					entry_ptr->bytepos = bytepos;
 					entry_ptr->c[0] = 0;
 					entry_ptr->c[1] = 0;
 					break;
@@ -316,8 +320,7 @@ static int* GenerateModelData1k(const unsigned char* org_data, int datasize)
 					// does it match?
 					bool match = false;
 
-					if (entry_ptr->bitpos == bitpos && entry_ptr->model == model &&
-						(data[entry_ptr->offset] & mask) == (data[bytepos] & mask))
+					if (entry_ptr->hash == hash && entry_ptr->bitpos == bitpos && entry_ptr->model == model && (data[entry_ptr->bytepos] & mask) == (data[bytepos] & mask))
 					{
 						match = true;
 
@@ -327,7 +330,7 @@ static int* GenerateModelData1k(const unsigned char* org_data, int datasize)
 						{
 							if (m & 1)
 							{
-								if (data[entry_ptr->offset - k] != data[bytepos - k])
+								if (data[entry_ptr->bytepos - k] != data[bytepos - k])
 								{
 									match = false;
 									break;
@@ -370,51 +373,211 @@ static int* GenerateModelData1k(const unsigned char* org_data, int datasize)
 	return modeldata;
 }
 
-int Compress1K(unsigned char* data, int size, unsigned char* compressed, int compressed_size, int boost_factor, int b0, int b1, unsigned int modelmask, int* sizefill, int* internal_size) {
+static int previousPowerOf2(int v) {
+	v--;
+	v |= v >> 1;
+	v |= v >> 2;
+	v |= v >> 4;
+	v |= v >> 8;
+	v |= v >> 16;
+	return v + 1;
+}
 
-	int* modeldata = GenerateModelData1k(data, size);
+int Compress1K(unsigned char* org_data, int datasize, unsigned char* compressed, int compressed_size, int boost_factor, int b0, int b1, unsigned int modelmask, int* sizefill, int* internal_size)
+{
+	unsigned char* data = new unsigned char[datasize + 8];
+	memset(data, 0, 8);
+	data += 8;
+	memcpy(data, org_data, datasize);
+
+	int bitlength = datasize * 8;
+
+	//collect model data
+	struct SHashEntry
+	{
+		unsigned int hash;
+		int c[2];
+		unsigned char model;
+		unsigned char bitpos;
+		unsigned short bytepos;
+	};
+
+	struct SEncodeEntry
+	{
+		int n[2];
+	};
+	SEncodeEntry* encode_entries = new SEncodeEntry[8 * datasize];	//zero
+	memset(encode_entries, 0, 8 * datasize * sizeof(SEncodeEntry));
+
+	const int hash_table_size = previousPowerOf2(datasize * 2);
+
+	SHashEntry* hash_table_data = new SHashEntry[hash_table_size * 8];	//TODO: reuse memory to save ~25% perf
+	
+	//for (int bitpos = 0; bitpos < 8; bitpos++)
+	concurrency::parallel_for(0, 8, [&](int bitpos)
+	{
+		
+		int mask = 0xFF00 >> bitpos;
+		
+		for (int model = 0; model < NUM_1K_MODELS; model++)
+		{
+			if ((modelmask & (1 << model)) == 0)
+				continue;
+
+			SHashEntry* hash_table = &hash_table_data[bitpos * hash_table_size];
+			for (int i = 0; i < hash_table_size; i++)
+			{
+				SHashEntry& entry = hash_table[i];
+				entry.model = 0;
+				entry.bitpos = 0;
+				entry.bytepos = 0xFFFF;
+				entry.c[0] = 0;
+				entry.c[1] = 0;
+			}
+
+			for (int bytepos = 0; bytepos < datasize; bytepos++)
+			{
+				int bit = ((data[bytepos] << bitpos) & 0x80) == 0x80;
+
+				unsigned int mmask = modelmask;
+
+				int c[2] = { 0, 0 };
+
+				// calculate hash
+				unsigned int hash = (bitpos + (data[bytepos] & mask) * 8) * 4112361;
+				{
+					int m = model;
+					int k = 1;
+					while (m)
+					{
+						hash = hash * 237 + 4123;
+						if (m & 1)
+						{
+							hash += data[bytepos - k];
+						}
+
+						k++;
+						m >>= 1;
+					}		
+				}
+
+				unsigned int entry_idx = hash & (hash_table_size - 1);
+
+				SHashEntry* entry_ptr = NULL;
+				while (true)
+				{
+					entry_ptr = &hash_table[entry_idx];
+					if (entry_ptr->bytepos == 0xFFFF)
+					{
+						entry_ptr->hash = hash;
+						entry_ptr->model = model;
+						entry_ptr->bitpos = bitpos;
+						entry_ptr->bytepos = bytepos;
+						entry_ptr->c[0] = 0;
+						entry_ptr->c[1] = 0;
+						break;
+					}
+					else
+					{
+						// does it match?
+						bool match = false;
+
+						if (entry_ptr->hash == hash && entry_ptr->bitpos == bitpos && entry_ptr->model == model && (data[entry_ptr->bytepos] & mask) == (data[bytepos] & mask))
+						{
+							match = true;
+
+							int m = model;
+							int k = 1;
+							while (m)
+							{
+								if (m & 1)
+								{
+									if (data[entry_ptr->bytepos - k] != data[bytepos - k])
+									{
+										match = false;
+										break;
+									}
+								}
+								k++;
+								m >>= 1;
+							}
+						}
+
+						if (match)
+						{
+							break;
+						}
+						else
+						{
+							entry_idx++;
+							if (entry_idx >= (unsigned int)hash_table_size) entry_idx = 0;
+						}
+					}
+				}
+
+				if (bytepos == 0)
+				{
+					c[0] = 1 - bit;
+					c[1] = bit;
+				}
+				else
+				{
+					c[0] = entry_ptr->c[bit];
+					c[1] = entry_ptr->c[1 - bit];
+				}
+				entry_ptr->c[bit]++;
+				entry_ptr->c[1 - bit] = (entry_ptr->c[1 - bit] + 1) / 2;
+			
+				if (c[0] == 0 || c[1] == 0)
+				{
+					c[0] *= boost_factor;
+					c[1] *= boost_factor;
+				}
+				
+				SEncodeEntry& entry = encode_entries[bitpos*datasize + bytepos];
+				entry.n[0] += c[0];
+				entry.n[1] += c[1];
+			}
+		}
+	}
+	);
+
+
+	delete[] hash_table_data;
 
 	AritState as;
 	memset(compressed, 0, compressed_size);
 	AritCodeInit(&as, compressed);
-	int bitlength = size * 8;
-	for (int i = 0; i < bitlength; i++) {
-		int bitpos = (i & 7);
-		int bytepos = i >> 3;
-		int mask = 0xFF00 >> bitpos;
-		int bit = ((data[bytepos] << bitpos) & 0x80) == 0x80;
 
-		int n[2];
-		if (bit) {
-			n[0] = b0; n[1] = b1;
-		}
-		else {
-			n[0] = b1; n[1] = b0;
-		}
-		unsigned int mmask = modelmask;
-
-		while (mmask != 0)
+	for (int bytepos = 0; bytepos < datasize; bytepos++)
+	{
+		if (sizefill)
 		{
-			DWORD idx;
-			BitScanForward(&idx, mmask);
-			int m = idx;
-			int c[2] = { modeldata[(bitlength*m + i) * 2], modeldata[(bitlength*m + i) * 2 + 1] };
-			if (c[0] == 0 || c[1] == 0)
-			{
-				c[0] *= boost_factor;
-				c[1] *= boost_factor;
-			}
-			n[0] += c[0];
-			n[1] += c[1];
-			mmask &= (mmask - 1);
+			*sizefill++ = AritCodePos(&as) / (BITPREC_TABLE / BITPREC);
 		}
 
+		for (int bitpos = 0; bitpos < 8; bitpos++)
+		{
+			int bit = ((data[bytepos] << bitpos) & 0x80) == 0x80;
+			const SEncodeEntry& entry = encode_entries[bitpos*datasize + bytepos];
+			int n[2] = { entry.n[0], entry.n[1] };
+			if (bit)
+			{
+				n[0] += b0; n[1] += b1;
+			}
+			else
+			{
+				n[0] += b1; n[1] += b0;
+			}
 
-		if ((i & 7) == 0 && sizefill)
-			*sizefill++ = AritCodePos(&as) / (BITPREC_TABLE / BITPREC);
-		AritCode(&as, n[1 - bit], n[bit], 1 - bit);
+			AritCode(&as, n[1 - bit], n[bit], 1 - bit);
+		}
 	}
 
+	delete[] encode_entries;
+
+	data -= 8;
+	delete[] data;
 
 	if (sizefill)
 	{
@@ -426,10 +589,9 @@ int Compress1K(unsigned char* data, int size, unsigned char* compressed, int com
 		*internal_size = AritCodePos(&as) / (BITPREC_TABLE / BITPREC);
 	}
 
-	delete[] modeldata;
-
 	return (AritCodeEnd(&as) + 7) / 8;
 }
+
 
 int evaluate1K(unsigned char* data, int size, int* modeldata, int* out_b0, int* out_b1, int* out_boost_factor, unsigned int modelmask)
 {

@@ -28,7 +28,7 @@ bool Transform::linkAndTransform(HunkList* hunklist, Symbol *entry_label, int ba
 		
 		initialZeroByteHunk->addSymbol(new Symbol(".text", 0, SYMBOL_IS_RELOCATEABLE | SYMBOL_IS_SECTION, initialZeroByteHunk, "crinkler"));
 		
-		char* ptr = initialZeroByteHunk->getPtr();
+		unsigned char* ptr = (unsigned char*)initialZeroByteHunk->getPtr();
 		ptr[0] = 0x00;
 		ptr[1] = 0xC1;
 

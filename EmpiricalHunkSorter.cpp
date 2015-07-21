@@ -16,7 +16,8 @@ EmpiricalHunkSorter::EmpiricalHunkSorter() {
 EmpiricalHunkSorter::~EmpiricalHunkSorter() {
 }
 
-int EmpiricalHunkSorter::tryHunkCombination(HunkList* hunklist, Transform& transform, ModelList& codeModels, ModelList& dataModels, ModelList1k& models1k, int baseprob, bool saturate, bool use1KMode) {
+int EmpiricalHunkSorter::tryHunkCombination(HunkList* hunklist, Transform& transform, ModelList& codeModels, ModelList& dataModels, ModelList1k& models1k, int baseprob, bool saturate, bool use1KMode)
+{
 	int splittingPoint;
 
 	Hunk* phase1;
