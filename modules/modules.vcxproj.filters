@@ -18,30 +18,24 @@
     <CustomBuild Include="calltrans.asm">
       <Filter>Source Files</Filter>
     </CustomBuild>
-    <CustomBuild Include="header10_1k.asm">
-      <Filter>Source Files</Filter>
-    </CustomBuild>
     <CustomBuild Include="header11.asm">
-      <Filter>Source Files</Filter>
-    </CustomBuild>
-    <CustomBuild Include="import12_1k.asm">
-      <Filter>Source Files</Filter>
-    </CustomBuild>
-    <CustomBuild Include="header14_compatibility.asm">
-      <Filter>Source Files</Filter>
-    </CustomBuild>
-    <CustomBuild Include="header14.asm">
-      <Filter>Source Files</Filter>
-    </CustomBuild>
-    <CustomBuild Include="header15.asm">
       <Filter>Source Files</Filter>
     </CustomBuild>
   </ItemGroup>
   <ItemGroup>
-    <None Include="import15.asm">
+    <None Include="header20.asm">
       <Filter>Source Files</Filter>
     </None>
-    <None Include="header15_compatibility.asm">
+    <None Include="header20_1k.asm">
+      <Filter>Source Files</Filter>
+    </None>
+    <None Include="header20_compatibility.asm">
+      <Filter>Source Files</Filter>
+    </None>
+    <None Include="import20.asm">
+      <Filter>Source Files</Filter>
+    </None>
+    <None Include="import20_1k.asm">
       <Filter>Source Files</Filter>
     </None>
   </ItemGroup>

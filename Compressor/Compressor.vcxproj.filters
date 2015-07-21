@@ -15,9 +15,6 @@
     <Filter Include="CompressionStateEvaluators">
       <UniqueIdentifier>{7033615a-06f7-4802-87eb-b98b7a6ff447}</UniqueIdentifier>
     </Filter>
-    <Filter Include="CompressionStateEvaluators\Shaders">
-      <UniqueIdentifier>{bd142c73-b8b1-4a60-aa43-9caf8b8eb668}</UniqueIdentifier>
-    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="CompressionState.cpp">
@@ -52,9 +49,6 @@
     <ClInclude Include="Compressor.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="data.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="model.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -73,9 +67,6 @@
   </ItemGroup>
   <ItemGroup>
     <CustomBuild Include="aritcode.asm">
-      <Filter>Assembly Files</Filter>
-    </CustomBuild>
-    <CustomBuild Include="data.asm">
       <Filter>Assembly Files</Filter>
     </CustomBuild>
     <CustomBuild Include="model.asm">
