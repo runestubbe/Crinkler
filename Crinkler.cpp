@@ -130,11 +130,23 @@ void Crinkler::removeUnreferencedHunks(Hunk* base)
 	//check dependencies and remove unused hunks
 	list<Hunk*> startHunks;
 	startHunks.push_back(base);
+
+	//keep hold of exported symbols
 	for (const Export& e : m_exports)  {
-		if (!e.hasValue()) {
+		if (e.hasValue()) {
+			Symbol* sym = m_hunkPool.findSymbol(e.getName().c_str());
+			if (sym && !sym->fromLibrary) {
+				Log::error("", "Cannot create integer symbol '%s' for export: symbol already exists.", e.getName().c_str());
+			}
+		} else {
 			Symbol* sym = m_hunkPool.findSymbol(e.getSymbol().c_str());
 			if (sym) {
+				if (sym->hunk->getRawSize() == 0) {
+					Log::error("", "Export of uninitialized symbol '%s' not supported.", e.getSymbol().c_str());
+				}
 				startHunks.push_back(sym->hunk);
+			} else {
+				Log::error("", "Cannot find symbol '%s' to be exported under name '%s'.", e.getSymbol().c_str(), e.getName().c_str());
 			}
 		}
 	}
