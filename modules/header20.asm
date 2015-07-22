@@ -19,6 +19,8 @@ global	_CharacteristicsPtr
 global	_SaturatePtr
 global	_SaturateAdjust1Ptr
 global	_SaturateAdjust2Ptr
+global _NumberOfDataDirectoriesPtr
+global _ExportTableRVAPtr
 
 HASH_MULTIPLIER	equ 111
 
@@ -133,8 +135,10 @@ _SpareNopPtr:
 	nop							;1
 	push	edi					;1
 	jmp		short _DepackEntry	;2
+_NumberOfDataDirectoriesPtr:
 dd 0				;Number of RVAs and Sizes
 ;Data directories
+_ExportTableRVAPtr:
 dd 0				;Exports RVA
 ;db "HAS2"			;Exports Size
 ;dd 0x0009ebe2		;Import RVA
