@@ -4,12 +4,19 @@ CRINKLER - Compressing linker for Windows specialized for 4k intros
 Aske Simon Christensen "Blueberry/Loonies"
 Rune L. H. Stubbe "Mentor/TBC"
 
-Version 1.4 (January 19, 2013)
+Version 2.0 (July ??, 2015)
 
 
 
 VERSION HISTORY
 ---------------
+??.07.15: 2.0:  New header and import code specialized for 1k intros.
+                /EXPORT option to export code and data symbols.
+                /SATURATE option to saturate context counters.
+                /FALLBACKDLL option for when a DLL is not available.
+                Print previous size of output file.
+                Switched from Intel OpenMP to MSVC concurrency API.
+
 19.01.13: 1.4:  Output EXE files work with recent NVIDIA drivers.
                 New zero-section header layout saving around 30-50 bytes.
                 Forwarded RVA imports supported via link-time forwarding.
@@ -172,12 +179,12 @@ COMPATIBILITY
 
 The goal of Crinkler is for the produced EXE files to be compatible
 with all widely used Windows versions and configurations. As of
-version 1.4, the EXE files produced by Crinkler are, to the best of
-our knowledge, compatible with Windows XP, Windows Vista, Windows 7
-and Windows 8, both 32 bit and 64 bit versions. They are compatible
-with Data Execution Prevention and with execution hooks that inspect
-the import or export table of launched executables (graphics drivers
-are known to do this).
+version 2.0, the EXE files produced by Crinkler are, to the best of
+our knowledge, compatible with Windows XP, Windows Vista, Windows 7,
+Windows 8 and Windows 10, both 32 bit and 64 bit versions. They are
+compatible with Data Execution Prevention and with execution hooks
+that inspect the import or export table of launched executables
+(graphics drivers are known to do this).
 
 It is not a primary goal of Crinkler to anticipate incompatibilities
 that may arise in the future as a consequence of new Windows versions,
@@ -423,6 +430,21 @@ Linker/Command Line/Additional Options:
     compressed form and don't care about the size. The default
     compression mode is FAST.
 
+/SATURATE
+
+    The compressor and decompressor use pairs of 8-bit counters to
+    track the distributions of 0 and 1 bits for each context. If your
+    data is very repetitive (contains large blocks of the same pattern
+    of values repeated over and over again), these counters may wrap
+    around, which can sometimes hurt compression of these repetitive
+    areas.
+
+    This option inserts extra code in the decompression header to keep
+    these counters from wrapping. It is worth trying out if you have
+    large, repetitive regions and see in the compression report that
+    the data in these regions suddenly jumps up from lightest green to
+    slightly darker green for no apparent reason.
+
 /HASHSIZE:[memory size]
 
     Specify the amount of memory the decompressor is allowed to use
@@ -464,7 +486,7 @@ Linker/Command Line/Additional Options:
     d3dx9_??. This option can be specified multiple times, for
     different DLLs.
 
-/REPLACEDLL:[oldDLL=newDLL]
+/REPLACEDLL:[oldDLL]=[newDLL]
 
     Whenever a function is imported from oldDLL, import it from newDLL
     instead. DLL replacement is useful when the end user might not
@@ -473,6 +495,68 @@ Linker/Command Line/Additional Options:
     option if you know that the two DLLs are compatible. When
     REPLACEDLL and RANGE are used together, RANGE must refer to the
     new DLL.
+
+/FALLBACKDLL:[firstDLL]=[otherDLL]
+
+    If firstDLL fails to load, try loading otherDLL and import the
+    functions from there instead. For instance, to use d3dcompiler_47
+    when available but fall back to d3dcompiler_43 otherwise (since
+    the shader compiler in d3dcompiler_47 is much faster), link
+    to d3dcompiler_47 and use:
+
+    /FALLBACKDLL:d3dcompiler_47=d3dcompiler_43
+
+    The FALLBACKDLL option can be used together with REPLACEDLL to
+    specify a primary DLL other than the one your SDK links to. For
+    instance, if you are using the legacy DirectX SDK (which links to
+    d3dcompiler_43) and want to have the above prioritization, use:
+
+    /REPLACEDLL:d3dcompiler_43=d3dcompiler_47
+    /FALLBACKDLL:d3dcompiler_47=d3dcompiler_43
+
+    Arbitrarily long chains of DLL fallback can be used by specifying
+    the FALLBACKDLL option multiple times, though the chains can of
+    course not be cyclic.
+
+/EXPORT:[name]
+/EXPORT:[name]=[symbol]
+/EXPORT:[name]=[value]
+
+    Include an export table into the executable, containing an export
+    with the given name.
+
+    The first version exports an existing symbol under its existing
+    name. The second version exports an existing symbol under a
+    different name. The third version creates a 32-bit integer with
+    the given value and exports it under the given name. The value
+    can be specified in octal (prefixed with 0), decimal or hexadecimal
+    (prefixed with 0x) format.
+
+    The first version is compatible with the VS linker, but there is
+    currently no specific field for it in the configuration window.
+
+    The export table will be compressed along with the other data
+    in the executable and decompressed to the memory address specified
+    in the export table pointer in the PE header. Thus, the exports
+    defined this way are only visible to code inspecting the export
+    table after decompression has taken place.
+
+    This option can be used to signal to the graphics driver that your
+    program desires to run on the high-performance GPU in a multi-GPU
+    system. This saves the user from having to right-click on the
+    executable and select "Run with graphics processor...".
+
+    To request high performance on NVIDIA Optimus systems, use:
+
+    /EXPORT:NvOptimusEnablement=1
+
+    To request high performance on AMD PowerXpress/Enduro systems, use:
+
+    /EXPORT:AmdPowerXpressRequestHighPerformance=1
+
+    An arbitrary number of exports can be specified, so the two high
+    performance declarations can be used together if you have space
+    enough to spare.
 
 /UNSAFEIMPORT
 
