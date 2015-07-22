@@ -38,6 +38,9 @@ extern "C" {
 
 	char calltransObj[];
 	char calltransObj_end[];
+
+	char knownDllExports[];
+	char knownDllExports_end[];
 };
 
 #endif
