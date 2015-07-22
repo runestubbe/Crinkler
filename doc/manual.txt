@@ -963,12 +963,6 @@ to replace it by one that is available. If you get this message for
 msvcr?? DLLs, you have a dependency on the runtime DLL you need to get
 rid of. See the section on standard libraries.
 
-If you launch your Crinkler-compressed program from within Visual
-Studio, use Start Without Debugging (Ctrl+F5) rather than Start
-Debugging (F5). The debugger cannot handle Crinkler-compressed
-executables. If the program crashes, you can still attach the debugger
-in the normal way.
-
 When running inside Visual Studio, the textual progress bars are not
 updated correctly, since the Visual Studio console does not flush the
 output until a newline is reached, even when explicitly flushed by the
