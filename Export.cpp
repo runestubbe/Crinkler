@@ -101,7 +101,7 @@ Hunk* createExportTable(const std::set<Export>& exports) {
 		strcpy(names, name);
 		names += strlen(name) + 1;
 	}
-	assert(names == &data[hunk_size]);
+	assert(names == &data[0] + hunk_size);
 
 	// Create hunk
 	Hunk* hunk = new Hunk("Exports", &data[0], HUNK_IS_TRAILING, 2, hunk_size, hunk_size);
@@ -141,10 +141,55 @@ Hunk* createExportTable(const std::set<Export>& exports) {
 	return hunk;
 }
 
-std::vector<Export> stripExports(Hunk* phase1) {
-	std::vector<Export> exports;
+std::set<Export> stripExports(Hunk* phase1, int exports_rva) {
+	const int rva_to_offset = CRINKLER_IMAGEBASE - CRINKLER_CODEBASE;
+	phase1->appendZeroes(1); // To make sure names are terminated
+	char* data = phase1->getPtr();
 
-	// TODO
+	// Locate tables
+	int table_offset = exports_rva + rva_to_offset;
+	int* table = (int*)&data[table_offset];
+	int n_exports = table[6];
+	int addresses_offset = table[7] + rva_to_offset;
+	int* addresses = (int*)&data[addresses_offset];
+	int name_pointers_offset = table[8] + rva_to_offset;
+	int* name_pointers = (int*)&data[name_pointers_offset];
+	int ordinals_offset = table[9] + rva_to_offset;
+	short* ordinals = (short*)&data[ordinals_offset];
+
+	// Collect exports
+	vector<pair<char*, int>> export_offsets;
+	for (int i = 0; i < n_exports; i++) {
+		int address_offset = addresses[ordinals[i]] + rva_to_offset;
+		int name_offset = name_pointers[i] + rva_to_offset;
+		char* name = (char*)&data[name_offset];
+		export_offsets.emplace_back(name, address_offset);
+	}
+	std::stable_sort(export_offsets.begin(), export_offsets.end(), [](const pair<char*, int>& a, const pair<char*, int>& b) {
+		return a.second < b.second;
+	});
+
+	std::set<Export> exports;
+
+	// Extract value exports
+	int export_hunk_offset = table_offset;
+	while (export_offsets.size() > 0 && export_offsets.back().second >= export_hunk_offset - 4) {
+		int value = *(int*)&data[export_offsets.back().second];
+		exports.insert(Export(export_offsets.back().first, value));
+		export_hunk_offset = export_offsets.back().second;
+		export_offsets.pop_back();
+	}
+
+	// Get remaining exports
+	for (auto& export_offset : export_offsets) {
+		char* name = export_offset.first;
+		int offset = export_offset.second;
+		phase1->addSymbol(new Symbol(name, offset, SYMBOL_IS_RELOCATEABLE, phase1, "EXPORT"));
+		exports.insert(Export(name, name));
+	}
+
+	// Truncate hunk
+	phase1->setRawSize(export_hunk_offset);
 
 	return exports;
 }

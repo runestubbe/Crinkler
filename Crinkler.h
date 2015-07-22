@@ -52,6 +52,7 @@ class Crinkler {
 	std::map<std::string, std::string>	m_replaceDlls;
 	std::map<std::string, std::string>	m_fallbackDlls;
 	std::set<Export>		m_exports;
+	bool					m_stripExports;
 	bool					m_showProgressBar;
 	Transform*				m_transform;
 	bool					m_1KMode;
@@ -108,6 +109,7 @@ public:
 	void clearRangeDlls()									{ m_rangeDlls.clear(); }
 	void addExport(Export e)								{ if (m_exports.count(e) == 0) m_exports.insert(std::move(e)); }
 	const std::set<Export>& getExports()					{ return m_exports; }
+	void setStripExports(bool strip)						{ m_stripExports = strip; }
 	void showProgressBar(bool show)							{ m_showProgressBar = show; }
 
 	void set1KMode(bool use1KMode)							{ m_1KMode = use1KMode; }

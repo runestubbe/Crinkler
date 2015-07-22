@@ -40,7 +40,8 @@ Crinkler::Crinkler():
 	m_overrideAlignments(false),
 	m_alignmentBits(0),
 	m_runInitializers(1),
-	m_largeAddressAware(0)
+	m_largeAddressAware(0),
+	m_stripExports(false)
 {
 	m_modellist1 = InstantModels();
 	m_modellist2 = InstantModels();
@@ -510,6 +511,8 @@ void Crinkler::recompress(const char* input_filename, const char* output_filenam
 	bool saturate = std::search(indata, indata + length, std::begin(saturateCode), std::end(saturateCode)) != indata + length;
 	if (m_saturate == -1) m_saturate = saturate;
 
+	int exports_rva = *(int*)&indata[pe_header_offset + 0x78];
+
 	printf("Original file size: %d\n", length);
 	printf("Original Virtual size: %d\n", virtualSize);
 	printf("Original Subsystem type: %s\n", subsystem_version == 3 ? "CONSOLE" : "WINDOWS");
@@ -517,6 +520,7 @@ void Crinkler::recompress(const char* input_filename, const char* output_filenam
 	printf("Original Compression mode: %s\n", compmode == COMPRESSION_INSTANT ? "INSTANT" : "FAST/SLOW");
 	printf("Original Saturate counters: %s\n", saturate ? "YES" : "NO");
 	printf("Original Hash size: %d\n", hashtable_size);
+	printf("Original Export table: %s\n", exports_rva ? "YES" : "NO");
 
 	int rawsize;
 	int splittingPoint;
@@ -625,8 +629,6 @@ void Crinkler::recompress(const char* input_filename, const char* output_filenam
 	if (!found_import) {
 		Log::error("", "Cannot find old import code to patch\n");
 	}
-	
-	printf("Recompressing...\n");
 
 	HunkList* headerHunks = NULL;
 	if (is_compatibility_header)
@@ -647,6 +649,33 @@ void Crinkler::recompress(const char* input_filename, const char* output_filenam
 
 	Hunk* phase1 = new Hunk("linked", (char*)rawdata, HUNK_IS_CODE|HUNK_IS_WRITEABLE, 0, rawsize, virtualSize);
 	delete[] rawdata;
+
+	// Handle exports
+	std::set<Export> exports;
+	if (exports_rva) {
+		exports = stripExports(phase1, exports_rva);
+		if (!m_stripExports) {
+			for (const Export& e : exports) {
+				addExport(e);
+			}
+		}
+	}
+	if (!m_exports.empty()) {
+		phase1->setVirtualSize(phase1->getRawSize());
+		Hunk* export_hunk = createExportTable(m_exports);
+		HunkList hl;
+		hl.addHunkBack(phase1);
+		hl.addHunkBack(export_hunk);
+		Hunk* with_exports = hl.toHunk("linked", CRINKLER_CODEBASE);
+		hl.clear();
+		with_exports->setVirtualSize(virtualSize);
+		with_exports->relocate(CRINKLER_CODEBASE);
+		delete phase1;
+		phase1 = with_exports;
+	}
+	phase1->trim();
+
+	printf("Recompressing...\n");
 
 	int maxsize = phase1->getRawSize()*2+1000;
 
@@ -753,7 +782,8 @@ void Crinkler::recompress(const char* input_filename, const char* output_filenam
 	if (m_largeAddressAware == -1) {
 		m_largeAddressAware = large_address_aware;
 	}
-	setHeaderConstants(phase2, phase1, best_hashsize, 0, 0, 0, 0, subsystem_version, 0, false);
+	int new_exports_rva = m_exports.empty() ? 0 : phase1->findSymbol("_ExportTable")->value + CRINKLER_CODEBASE - CRINKLER_IMAGEBASE;
+	setHeaderConstants(phase2, phase1, best_hashsize, 0, 0, 0, 0, subsystem_version, new_exports_rva, false);
 	phase2->relocate(CRINKLER_IMAGEBASE);
 
 	if (!outfile) {

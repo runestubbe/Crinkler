@@ -222,13 +222,14 @@ int main(int argc, char* argv[]) {
 	CmdParamMultiAssign replaceDllArg("REPLACEDLL", "replace a dll with another", "oldDLL=newDLL", PARAM_IS_SWITCH);
 	CmdParamMultiAssign fallbackDllArg("FALLBACKDLL", "try opening another dll if the first one fails", "firstDLL=otherDLL", PARAM_IS_SWITCH);
 	CmdParamMultiAssign exportArg("EXPORT", "export value by name", "name=value/label", PARAM_IS_SWITCH | PARAM_ALLOW_MISSING_VALUE);
+	CmdParamSwitch stripExportsArg("STRIPEXPORTS", "remove exports from executable", 0);
 	CmdParamSwitch noInitializersArg("NOINITIALIZERS", "do not run dynamic initializers", 0);
 	CmdParamString filesArg("FILES", "list of filenames", "", PARAM_HIDE_IN_PARAM_LIST, 0);
 	CmdLineInterface cmdline(CRINKLER_TITLE, CMDI_PARSE_FILES);
 
 	cmdline.addParams(&crinklerFlag, &hashsizeArg, &hashtriesArg, &hunktriesArg, &entryArg, &outArg, &summaryArg, &unsafeImportArg,
 						&subsystemArg, &largeAddressAwareArg, &truncateFloatsArg, &overrideAlignmentsArg, &compmodeArg, &saturateArg, &printArg, &transformArg, &libpathArg, 
-						&rangeImportArg, &replaceDllArg, &fallbackDllArg, &exportArg, &noInitializersArg, &filesArg, &priorityArg, &showProgressArg, &recompressFlag,
+						&rangeImportArg, &replaceDllArg, &fallbackDllArg, &exportArg, &stripExportsArg, &noInitializersArg, &filesArg, &priorityArg, &showProgressArg, &recompressFlag,
 						&tinyCompressor,
 						NULL);
 	
@@ -261,7 +262,7 @@ int main(int argc, char* argv[]) {
 		subsystemArg.setDefault(-1);
 		compmodeArg.setDefault(-1);
 
-		cmdline2.addParams(&crinklerFlag, &recompressFlag, &outArg, &hashsizeArg, &hashtriesArg, &subsystemArg, &largeAddressAwareArg, &compmodeArg, &saturateArg, &summaryArg, &exportArg, &priorityArg, &showProgressArg, &filesArg, NULL);
+		cmdline2.addParams(&crinklerFlag, &recompressFlag, &outArg, &hashsizeArg, &hashtriesArg, &subsystemArg, &largeAddressAwareArg, &compmodeArg, &saturateArg, &summaryArg, &exportArg, &stripExportsArg, &priorityArg, &showProgressArg, &filesArg, NULL);
 		cmdline2.setCmdParameters(argc, argv);
 		if(cmdline2.parse()) {
 			crinkler.setHashsize(hashsizeArg.getValue());
@@ -273,6 +274,7 @@ int main(int argc, char* argv[]) {
 			crinkler.showProgressBar(showProgressArg.getValue());
 			crinkler.setSummary(summaryArg.getValue());
 			parseExports(exportArg, crinkler);
+			crinkler.setStripExports(stripExportsArg.getValue());
 
 			IdentityTransform identTransform;
 			crinkler.setTransform(&identTransform);
