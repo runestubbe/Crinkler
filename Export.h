@@ -28,3 +28,5 @@ Export parseExport(const std::string& name, const std::string& value);
 Hunk* createExportTable(const std::set<Export>& exports);
 
 std::set<Export> stripExports(Hunk* phase1, int exports_rva);
+
+void printExports(const std::set<Export>& exports);

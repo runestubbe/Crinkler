@@ -24,6 +24,7 @@
 
 using namespace std;
 
+
 Crinkler::Crinkler():
 	m_subsystem(SUBSYSTEM_WINDOWS),
 	m_hashsize(100*1024*1024),
@@ -520,7 +521,6 @@ void Crinkler::recompress(const char* input_filename, const char* output_filenam
 	printf("Original Compression mode: %s\n", compmode == COMPRESSION_INSTANT ? "INSTANT" : "FAST/SLOW");
 	printf("Original Saturate counters: %s\n", saturate ? "YES" : "NO");
 	printf("Original Hash size: %d\n", hashtable_size);
-	printf("Original Export table: %s\n", exports_rva ? "YES" : "NO");
 
 	int rawsize;
 	int splittingPoint;
@@ -535,6 +535,7 @@ void Crinkler::recompress(const char* input_filename, const char* output_filenam
 
 	printf("Code size: %d\n", splittingPoint);
 	printf("Data size: %d\n", rawsize-splittingPoint);
+	printf("\n");
 
 	STARTUPINFO startupInfo = {0};
 	startupInfo.cb = sizeof(startupInfo);
@@ -630,6 +631,8 @@ void Crinkler::recompress(const char* input_filename, const char* output_filenam
 		Log::error("", "Cannot find old import code to patch\n");
 	}
 
+	printf("\n");
+
 	HunkList* headerHunks = NULL;
 	if (is_compatibility_header)
 	{
@@ -652,15 +655,23 @@ void Crinkler::recompress(const char* input_filename, const char* output_filenam
 
 	// Handle exports
 	std::set<Export> exports;
+	printf("Original Exports:");
 	if (exports_rva) {
 		exports = stripExports(phase1, exports_rva);
+		printf("\n");
+		printExports(exports);
 		if (!m_stripExports) {
 			for (const Export& e : exports) {
 				addExport(e);
 			}
 		}
+	} else {
+		printf(" NONE\n");
 	}
+	printf("Resulting Exports:");
 	if (!m_exports.empty()) {
+		printf("\n");
+		printExports(m_exports);
 		for (const Export& e : m_exports) {
 			if (!e.hasValue()) {
 				Symbol *sym = phase1->findSymbol(e.getSymbol().c_str());
@@ -681,10 +692,12 @@ void Crinkler::recompress(const char* input_filename, const char* output_filenam
 		with_exports->relocate(CRINKLER_CODEBASE);
 		delete phase1;
 		phase1 = with_exports;
+	} else {
+		printf(" NONE\n");
 	}
 	phase1->trim();
 
-	printf("Recompressing...\n");
+	printf("\nRecompressing...\n");
 
 	int maxsize = phase1->getRawSize()*2+1000;
 

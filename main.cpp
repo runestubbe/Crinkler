@@ -321,6 +321,21 @@ int main(int argc, char* argv[]) {
 				printf("Hash tries: %d\n", hashtriesArg.getValue());
 			}
 			printf("Report: %s\n", strlen(summaryArg.getValue()) > 0 ? summaryArg.getValue() : "NONE");
+			printf("Exports: ");
+			if (exportArg.getNumMatches() == 0) {
+				if (stripExportsArg.getValue()) {
+					printf("Strip away\n");
+				} else {
+					printf("Keep from original\n");
+				}
+			} else {
+				if (stripExportsArg.getValue()) {
+					printf("Strip and replace by:\n");
+				} else {
+					printf("Keep and supplement by:\n");
+				}
+				printExports(crinkler.getExports());
+			}
 			printf("\n");
 
 			crinkler.recompress(infilename, outfilename);
@@ -441,17 +456,10 @@ int main(int argc, char* argv[]) {
 		auto exports = crinkler.getExports();
 		if (exports.empty()) {
 			printf(" NONE\n");
-		} else {
+		}
+		else {
 			printf("\n");
-			for (const Export& e : exports) {
-				if (e.hasValue()) {
-					printf("  %s = 0x%08X\n", e.getName().c_str(), e.getValue());
-				} else if (e.getSymbol() == e.getName()) {
-					printf("  %s\n", e.getName().c_str());
-				} else {
-					printf("  %s -> %s\n", e.getName().c_str(), e.getSymbol().c_str());
-				}
-			}
+			printExports(exports);
 		}
 	}
 	printf("\n");
