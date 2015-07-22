@@ -39,9 +39,11 @@ Crinkler::Crinkler():
 	m_truncateFloats(false),
 	m_truncateBits(64),
 	m_overrideAlignments(false),
+	m_unalignCode(false),
 	m_alignmentBits(0),
 	m_runInitializers(1),
 	m_largeAddressAware(0),
+	m_saturate(0),
 	m_stripExports(false)
 {
 	m_modellist1 = InstantModels();
@@ -923,10 +925,29 @@ void Crinkler::link(const char* filename) {
 
 	if (m_overrideAlignments) overrideAlignments(m_hunkPool);
 
-	//1byte aligned entry point
+	//1byte align entry point and other sections
+	int n_unaligned = 0;
+	bool entry_point_unaligned = false;
 	if(entry->hunk->getAlignmentBits() > 0) {
-		Log::warning("", "Entry point hunk has alignment greater than 1, forcing alignment of 1");
 		entry->hunk->setAlignmentBits(0);
+		n_unaligned++;
+		entry_point_unaligned = true;
+	}
+	if (m_unalignCode) {
+		for (int i = 0; i < m_hunkPool.getNumHunks(); i++) {
+			Hunk* hunk = m_hunkPool[i];
+			if (hunk->getFlags() & HUNK_IS_CODE && !(hunk->getFlags() & HUNK_IS_ALIGNED) && hunk->getAlignmentBits() > 0) {
+				hunk->setAlignmentBits(0);
+				n_unaligned++;
+			}
+		}
+	}
+	if (n_unaligned > 0) {
+		printf("Forced alignment of %d code hunk%s to 1", n_unaligned, n_unaligned > 1 ? "s" : "");
+		if (entry_point_unaligned) {
+			printf(" (including entry point)");
+		}
+		printf(".\n");
 	}
 
 	//load appropriate header

@@ -59,6 +59,7 @@ class Crinkler {
 	bool					m_truncateFloats;
 	int						m_truncateBits;
 	bool					m_overrideAlignments;
+	bool					m_unalignCode;
 	int						m_alignmentBits;
 	bool					m_runInitializers;
 	int						m_largeAddressAware;
@@ -103,6 +104,7 @@ public:
 
 
 	
+	void setUnalignCode(bool unalign)						{ m_unalignCode = unalign; }
 	void addRangeDll(const char* dllname)					{ m_rangeDlls.push_back(dllname); }
 	void addReplaceDll(const char* dll1, const char* dll2)	{ m_replaceDlls.insert(make_pair(toLower(dll1), toLower(dll2))); }
 	void addFallbackDll(const char* dll1, const char* dll2)	{ m_fallbackDlls.insert(make_pair(toLower(dll1), toLower(dll2))); }
