@@ -609,10 +609,14 @@ void Crinkler::recompress(const char* input_filename, const char* output_filenam
 	bool found_import = false;
 	int hashes_address = -1;
 	int hashes_address_offset = -1;
+	int dll_names_address = -1;
 	for (int i = import_offset ; i < splittingPoint-(int)sizeof(old_import_code) ; i++) {
 		if (rawdata[i] == 0xBB) {
 			hashes_address_offset = i + 1;
 			hashes_address = *(int*)&rawdata[hashes_address_offset];
+		}
+		if (rawdata[i] == 0xBE) {
+			dll_names_address = *(int*)&rawdata[i + 1];
 		}
 		if (memcmp(rawdata+i, old_import_code, sizeof(old_import_code)) == 0) {			//no calltrans
 			memcpy(rawdata+i, new_import_code, sizeof(new_import_code));
@@ -632,6 +636,17 @@ void Crinkler::recompress(const char* input_filename, const char* output_filenam
 	}
 
 	printf("\n");
+
+	if (!m_replaceDlls.empty()) {
+		char* name = (char*)&rawdata[dll_names_address + 1 - CRINKLER_CODEBASE];
+		while (name[0] != (char)0xFF) {
+			if (m_replaceDlls.count(name)) {
+				assert(m_replaceDlls[name].length() == strlen(name));
+				strcpy(name, m_replaceDlls[name].c_str());
+			}
+			name += strlen(name) + 2;
+		}
+	}
 
 	HunkList* headerHunks = NULL;
 	if (is_compatibility_header)

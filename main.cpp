@@ -262,7 +262,7 @@ int main(int argc, char* argv[]) {
 		subsystemArg.setDefault(-1);
 		compmodeArg.setDefault(-1);
 
-		cmdline2.addParams(&crinklerFlag, &recompressFlag, &outArg, &hashsizeArg, &hashtriesArg, &subsystemArg, &largeAddressAwareArg, &compmodeArg, &saturateArg, &summaryArg, &exportArg, &stripExportsArg, &priorityArg, &showProgressArg, &filesArg, NULL);
+		cmdline2.addParams(&crinklerFlag, &recompressFlag, &outArg, &hashsizeArg, &hashtriesArg, &subsystemArg, &largeAddressAwareArg, &compmodeArg, &saturateArg, &replaceDllArg, &summaryArg, &exportArg, &stripExportsArg, &priorityArg, &showProgressArg, &filesArg, NULL);
 		cmdline2.setCmdParameters(argc, argv);
 		if(cmdline2.parse()) {
 			crinkler.setHashsize(hashsizeArg.getValue());
@@ -321,6 +321,31 @@ int main(int argc, char* argv[]) {
 				printf("Hash tries: %d\n", hashtriesArg.getValue());
 			}
 			printf("Report: %s\n", strlen(summaryArg.getValue()) > 0 ? summaryArg.getValue() : "NONE");
+
+			//replace dll
+			{
+				printf("Replace DLLs: ");
+				if (!replaceDllArg.hasNext())
+					printf("NONE");
+
+				bool legal = true;
+				bool first = true;
+				while (replaceDllArg.hasNext()) {
+					if (!first) printf(", ");
+					printf("%s -> %s", replaceDllArg.getValue1(), replaceDllArg.getValue2());
+
+					if (strlen(replaceDllArg.getValue1()) != strlen(replaceDllArg.getValue2()))
+						legal = false;
+					crinkler.addReplaceDll(replaceDllArg.getValue1(), replaceDllArg.getValue2());
+					replaceDllArg.next();
+					first = false;
+				}
+				printf("\n");
+				if (!legal) {
+					Log::error("", "In recompression, a DLL can only be replaced by one with the same length.");
+				}
+			}
+
 			printf("Exports: ");
 			if (exportArg.getNumMatches() == 0) {
 				if (stripExportsArg.getValue()) {
