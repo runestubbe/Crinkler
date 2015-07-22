@@ -40,7 +40,8 @@ Crinkler::Crinkler():
 	m_overrideAlignments(false),
 	m_alignmentBits(0),
 	m_runInitializers(1),
-	m_largeAddressAware(0)
+	m_largeAddressAware(0),
+	m_stripExports(false)
 {
 	m_modellist1 = InstantModels();
 	m_modellist2 = InstantModels();
@@ -130,6 +131,26 @@ void Crinkler::removeUnreferencedHunks(Hunk* base)
 	//check dependencies and remove unused hunks
 	list<Hunk*> startHunks;
 	startHunks.push_back(base);
+
+	//keep hold of exported symbols
+	for (const Export& e : m_exports)  {
+		if (e.hasValue()) {
+			Symbol* sym = m_hunkPool.findSymbol(e.getName().c_str());
+			if (sym && !sym->fromLibrary) {
+				Log::error("", "Cannot create integer symbol '%s' for export: symbol already exists.", e.getName().c_str());
+			}
+		} else {
+			Symbol* sym = m_hunkPool.findSymbol(e.getSymbol().c_str());
+			if (sym) {
+				if (sym->hunk->getRawSize() == 0) {
+					Log::error("", "Export of uninitialized symbol '%s' not supported.", e.getSymbol().c_str());
+				}
+				startHunks.push_back(sym->hunk);
+			} else {
+				Log::error("", "Cannot find symbol '%s' to be exported under name '%s'.", e.getSymbol().c_str(), e.getName().c_str());
+			}
+		}
+	}
 
 	//hack to ensure that LoadLibrary & MessageBox is there to be used in the import code
 	Symbol* loadLibrary = m_hunkPool.findSymbol("__imp__LoadLibraryA@4"); 
@@ -301,7 +322,7 @@ void Crinkler::setHeaderSaturation(Hunk* header) {
 	}
 }
 
-void Crinkler::setHeaderConstants(Hunk* header, Hunk* phase1, int hashsize, int boostfactor, int baseprob0, int baseprob1, unsigned int modelmask, int subsystem_version, bool use1kHeader)
+void Crinkler::setHeaderConstants(Hunk* header, Hunk* phase1, int hashsize, int boostfactor, int baseprob0, int baseprob1, unsigned int modelmask, int subsystem_version, int exports_rva, bool use1kHeader)
 {
 	header->addSymbol(new Symbol("_HashTableSize", hashsize/2, 0, header));
 	header->addSymbol(new Symbol("_UnpackedData", CRINKLER_CODEBASE, 0, header));
@@ -324,6 +345,10 @@ void Crinkler::setHeaderConstants(Hunk* header, Hunk* phase1, int hashsize, int 
 		header->addSymbol(new Symbol("_VirtualSize", virtualSize, 0, header));
 		*(header->getPtr() + header->findSymbol("_BaseProbPtr")->value) = CRINKLER_BASEPROB;
 		*(header->getPtr() + header->findSymbol("_ModelSkipPtr")->value) = m_modellist1.nmodels + 8;
+		if (exports_rva) {
+			*(int*)(header->getPtr() + header->findSymbol("_ExportTableRVAPtr")->value) = exports_rva;
+			*(int*)(header->getPtr() + header->findSymbol("_NumberOfDataDirectoriesPtr")->value) = 1;
+		}
 	}
 	
 	*(header->getPtr() + header->findSymbol("_SubsystemTypePtr")->value) = subsystem_version;
@@ -486,6 +511,8 @@ void Crinkler::recompress(const char* input_filename, const char* output_filenam
 	bool saturate = std::search(indata, indata + length, std::begin(saturateCode), std::end(saturateCode)) != indata + length;
 	if (m_saturate == -1) m_saturate = saturate;
 
+	int exports_rva = *(int*)&indata[pe_header_offset + 0x78];
+
 	printf("Original file size: %d\n", length);
 	printf("Original Virtual size: %d\n", virtualSize);
 	printf("Original Subsystem type: %s\n", subsystem_version == 3 ? "CONSOLE" : "WINDOWS");
@@ -493,6 +520,7 @@ void Crinkler::recompress(const char* input_filename, const char* output_filenam
 	printf("Original Compression mode: %s\n", compmode == COMPRESSION_INSTANT ? "INSTANT" : "FAST/SLOW");
 	printf("Original Saturate counters: %s\n", saturate ? "YES" : "NO");
 	printf("Original Hash size: %d\n", hashtable_size);
+	printf("Original Export table: %s\n", exports_rva ? "YES" : "NO");
 
 	int rawsize;
 	int splittingPoint;
@@ -601,8 +629,6 @@ void Crinkler::recompress(const char* input_filename, const char* output_filenam
 	if (!found_import) {
 		Log::error("", "Cannot find old import code to patch\n");
 	}
-	
-	printf("Recompressing...\n");
 
 	HunkList* headerHunks = NULL;
 	if (is_compatibility_header)
@@ -623,6 +649,33 @@ void Crinkler::recompress(const char* input_filename, const char* output_filenam
 
 	Hunk* phase1 = new Hunk("linked", (char*)rawdata, HUNK_IS_CODE|HUNK_IS_WRITEABLE, 0, rawsize, virtualSize);
 	delete[] rawdata;
+
+	// Handle exports
+	std::set<Export> exports;
+	if (exports_rva) {
+		exports = stripExports(phase1, exports_rva);
+		if (!m_stripExports) {
+			for (const Export& e : exports) {
+				addExport(e);
+			}
+		}
+	}
+	if (!m_exports.empty()) {
+		phase1->setVirtualSize(phase1->getRawSize());
+		Hunk* export_hunk = createExportTable(m_exports);
+		HunkList hl;
+		hl.addHunkBack(phase1);
+		hl.addHunkBack(export_hunk);
+		Hunk* with_exports = hl.toHunk("linked", CRINKLER_CODEBASE);
+		hl.clear();
+		with_exports->setVirtualSize(virtualSize);
+		with_exports->relocate(CRINKLER_CODEBASE);
+		delete phase1;
+		phase1 = with_exports;
+	}
+	phase1->trim();
+
+	printf("Recompressing...\n");
 
 	int maxsize = phase1->getRawSize()*2+1000;
 
@@ -729,7 +782,8 @@ void Crinkler::recompress(const char* input_filename, const char* output_filenam
 	if (m_largeAddressAware == -1) {
 		m_largeAddressAware = large_address_aware;
 	}
-	setHeaderConstants(phase2, phase1, best_hashsize, 0, 0, 0, 0, subsystem_version, false);
+	int new_exports_rva = m_exports.empty() ? 0 : phase1->findSymbol("_ExportTable")->value + CRINKLER_CODEBASE - CRINKLER_IMAGEBASE;
+	setHeaderConstants(phase2, phase1, best_hashsize, 0, 0, 0, 0, subsystem_version, new_exports_rva, false);
 	phase2->relocate(CRINKLER_IMAGEBASE);
 
 	if (!outfile) {
@@ -896,6 +950,10 @@ void Crinkler::link(const char* filename) {
 		m_hunkPool.roundFloats(m_truncateBits);
 	}
 
+	if (!m_exports.empty()) {
+		m_hunkPool.addHunkBack(createExportTable(m_exports));
+	}
+
 	//sort hunks heuristically
 	HeuristicHunkSorter::sortHunkList(&m_hunkPool);
 
@@ -998,7 +1056,8 @@ void Crinkler::link(const char* filename) {
 	
 	Hunk* phase2 = phase2list.toHunk("final", CRINKLER_IMAGEBASE);
 	//add constants
-	setHeaderConstants(phase2, phase1, best_hashsize, m_modellist1k.boost, m_modellist1k.baseprob0, m_modellist1k.baseprob1, m_modellist1k.modelmask, m_subsystem == SUBSYSTEM_WINDOWS ? IMAGE_SUBSYSTEM_WINDOWS_GUI : IMAGE_SUBSYSTEM_WINDOWS_CUI, m_1KMode);
+	int exports_rva = m_exports.empty() ? 0 : phase1->findSymbol("_ExportTable")->value + CRINKLER_CODEBASE - CRINKLER_IMAGEBASE;
+	setHeaderConstants(phase2, phase1, best_hashsize, m_modellist1k.boost, m_modellist1k.baseprob0, m_modellist1k.baseprob1, m_modellist1k.modelmask, m_subsystem == SUBSYSTEM_WINDOWS ? IMAGE_SUBSYSTEM_WINDOWS_GUI : IMAGE_SUBSYSTEM_WINDOWS_CUI, exports_rva, m_1KMode);
 	phase2->relocate(CRINKLER_IMAGEBASE);
 
 	fwrite(phase2->getPtr(), 1, phase2->getRawSize(), outfile);

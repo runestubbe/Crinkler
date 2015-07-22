@@ -10,6 +10,7 @@ const int PARAM_TAKES_ARGUMENT =				0x04;	//parameter name should be followed by
 const int PARAM_FORBID_MULTIPLE_DEFINITIONS =	0x08;	//forbids multiple definitions of this parameter
 const int PARAM_HIDE_IN_PARAM_LIST =			0x10;	//hide parameter in parameter list
 const int PARAM_ALLOW_NO_ARGUMENT_DEFAULT =		0x20;	//allows a form where /FOO eq. /FOO:default
+const int PARAM_ALLOW_MISSING_VALUE =			0x40;   //allows missing = and value in multi assign
 
 const int PARSE_OK =							0x00;	//the parameter parsed successfully
 const int PARSE_NO_MATCH =						0x01;	//the input doesn't match this parameter

@@ -13,6 +13,15 @@ int CmdParamMultiAssign::parse(const char* str, char* errorMsg, int buffsize) {
 	string s = str;
 	string::size_type pos = s.find('=');
 	if(pos == string::npos) {
+		if (getFlags() & PARAM_ALLOW_MISSING_VALUE) {
+			if (s.size() == 0) {
+				sprintf_s(errorMsg, buffsize, "identifier must be non empty");
+				return PARSE_INVALID;
+			}
+			m_strings.push_back(make_pair(s, ""));
+			m_it = m_strings.begin();
+			return PARSE_OK;
+		}
 		sprintf_s(errorMsg, buffsize, "argument must be an assignment");
 		return PARSE_INVALID;
 	}
