@@ -752,7 +752,7 @@ be an EXE file produced by Crinkler 0.4 or newer. Most options then
 take on slightly different meanings, as described here.
 
 The /CRINKLER, /PRIORITY, @commandfile and /PROGRESSGUI options work
-as normally. The /ENTRY, /LIBPATH, /ORDERTRIES, /RANGE, /REPLACEDLL,
+as normally. The /ENTRY, /LIBPATH, /ORDERTRIES, /RANGE, /FALLBACKDLL,
 /UNSAFEIMPORT, /TRANSFORM:CALLS, /NOINITIALIZERS, /TRUNCATEFLOATS and
 /OVERRIDEALIGNMENTS options are ignored, as the parameters specified
 by these options cannot be changed via recompression. The /PRINT options
@@ -789,6 +789,12 @@ are also ignored. The remaining options work as follows:
     newer, this will typically yield a compression ratio similar to
     the original compression.
 
+/SATURATE
+/SATURATE:NO
+
+    If this option is given, it specifies saturation as normally. If
+    it is omitted, the original saturation mode will be used.
+
 /HASHSIZE:[memory size]
 
     If neither this option nor a compression mode is specified, the
@@ -806,6 +812,26 @@ are also ignored. The remaining options work as follows:
 
     If hash size optimization takes place, this option specifies the
     number of tries as normally. Otherwise it is ignored.
+
+/STRIPEXPORTS
+
+    This is a recompression specific option which instructs Crinkler
+    to strip away any existing exports from the executable. New exports
+    can be added using the /EXPORT option whether or not the existing
+    exports are stripped away.
+
+/EXPORT:[name]
+/EXPORT:[name]=[symbol]
+/EXPORT:[name]=[value]
+
+    Adds an export to the executable, as normally. The first two
+    versions can only refer to an existing export in the executable
+    that was exported using one of the first two versions in the first
+    place. They can refer to such an export even if existing exports
+    are stripped away using the /STRIPEXPORTS option.
+
+    If an export already exists with the same name, the new export
+    replaces the existing one.
 
 /REPORT:[HTML file name]
 
