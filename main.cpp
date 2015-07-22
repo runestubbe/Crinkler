@@ -334,6 +334,10 @@ int main(int argc, char* argv[]) {
 		return 1;
 	}
 
+	if (stripExportsArg.getValue()) {
+		Log::error("", "Export stripping can only be performed during recompression.");
+	}
+
 	//set Crinkler options
 	crinkler.set1KMode(tinyCompressor.getValue());
 	crinkler.setImportingType(!unsafeImportArg.getValue());
