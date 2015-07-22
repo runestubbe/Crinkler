@@ -364,16 +364,17 @@ CompressionReportRecord* Hunk::getCompressionSummary(int* sizefill, int splittin
 			r = r->children.back();
 		}
 
+		bool less_than_next = (it + 1) == symbols.end() || sym->value < (*(it + 1))->value;
 
 		//add public symbol to start of sections, if they don't have one already
-		if(sym->value < getRawSize() && (c->type & RECORD_OLD_SECTION) && sym->value < (*(it+1))->value) {
+		if(sym->value < getRawSize() && (c->type & RECORD_OLD_SECTION) && less_than_next) {
 			CompressionReportRecord* dummy = new CompressionReportRecord(c->name.c_str(), 
 				RECORD_PUBLIC|RECORD_DUMMY, sym->value, sizefill[sym->value]);
 			c->children.push_back(dummy);
 		}
 
 		//add public symbol to start of sections, if they don't have one already
-		if(sym->value < getRawSize() && (c->type & RECORD_PUBLIC) && sym->value < (*(it+1))->value) {
+		if(sym->value < getRawSize() && (c->type & RECORD_PUBLIC) && less_than_next) {
 			CompressionReportRecord* dummy = new CompressionReportRecord(c->name.c_str(), 
 				RECORD_DUMMY, sym->value, sizefill[sym->value]);
 			c->children.push_back(dummy);
