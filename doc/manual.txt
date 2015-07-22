@@ -813,6 +813,11 @@ are also ignored. The remaining options work as follows:
     If hash size optimization takes place, this option specifies the
     number of tries as normally. Otherwise it is ignored.
 
+/REPLACEDLL:[oldDLL]=[newDLL]
+
+    Replaces an original DLL by a new one. Only works if the names
+    of the DLLs are exactly the same length.
+
 /STRIPEXPORTS
 
     This is a recompression specific option which instructs Crinkler
