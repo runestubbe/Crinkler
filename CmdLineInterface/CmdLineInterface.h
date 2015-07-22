@@ -1,0 +1,36 @@
+#pragma once
+#ifndef _CMD_LINE_INTERFACE_H_
+#define _CMD_LINE_INTERFACE_H_
+
+#include "CmdParamInt.h"
+#include "CmdParamSwitch.h"
+#include "CmdParamString.h"
+#include "CmdParamFlags.h"
+#include "CmdParamMultiAssign.h"
+
+#include <list>
+#include <string>
+
+const int CMDI_PARSE_FILES = 0x01;
+
+class CmdLineInterface {
+	std::list<CmdParam*>	m_params;
+	std::list<std::string>	m_tokens;
+	std::string				m_title;
+	int						m_flags;
+
+	void addTokens(const char* str);
+public:
+	CmdLineInterface(const char* title, int flags);
+	~CmdLineInterface();
+
+	void addParams(CmdParam* param, ...);
+	void printSyntax();
+	void printHeader();
+
+	bool setCmdParameters(int argc, char* argv[]);
+	bool removeToken(const char* str);
+	bool parse();
+};
+
+#endif

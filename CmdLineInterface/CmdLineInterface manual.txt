@@ -1,0 +1,30 @@
+switches:
+/CRINKLER
+/SAFEIMPORT
+/PROGRESSGUI
+
+integers:
+/HASHSIZE:size in mb
+/HASHTRIES:number of hashing tries
+/ORDERTRIES:number of section reordering tries
+
+enums:	CmdParamFlags | PARAM_FORBID_MULTIPLE_DEFINITIONS
+/COMPMODE:{INSTANT|FAST|SLOW}
+/TRANSFORM:{CALLS|CALLS2}
+/SUBSYSTEM:{WINDOWS|CONSOLE}
+/PRIORITY:{IDLE|BELOWNORMAL|NORMAL}
+
+flags:	CmdParamFlags
+/VERBOSE:{LABELS|IMPORTS|MODELS|FUNCTIONS}
+
+string:	CmdParamString | PARAM_FORBID_MULTIPLE_DEFINITIONS
+/ENTRY:symbol
+/OUT:filename
+
+multistring: CmdParamString | PARAM_FORBID_MULTIPLE_DEFINITIONS
+/LIBPATH:dirs
+/RANGE:dllname
+
+multiassign:
+/REPLACEDLL:oldDLL=newDLL
+
