@@ -1,0 +1,261 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hpp;hxx;hm;inl;inc;xsd</Extensions>
+    </Filter>
+    <Filter Include="Utility">
+      <UniqueIdentifier>{788795aa-e8d5-4f21-b1ff-16cb2ec65a35}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Utility\CmdLineInterface">
+      <UniqueIdentifier>{7250eddd-7098-4b8a-a261-77ad531d16c6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="HunkLoaders">
+      <UniqueIdentifier>{1e7e4903-f20f-48fb-bdea-2ee11298fba0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="HunkSorters">
+      <UniqueIdentifier>{6d35946e-c341-4cd2-92de-4d50c66d2e74}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Transforms">
+      <UniqueIdentifier>{9db9d139-d89e-4ec8-840f-1b3d60841624}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="data">
+      <UniqueIdentifier>{f3a70c65-03d0-4b00-83a2-e0360b36c849}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ProgressBars">
+      <UniqueIdentifier>{7def0845-64fa-49b6-a4ec-aa0427de4a3e}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="Crinkler.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Fix.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="HtmlReport.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Hunk.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="HunkList.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ImportHandler.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="LTCGLoader.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="main.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Symbol.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Log.cpp">
+      <Filter>Utility</Filter>
+    </ClCompile>
+    <ClCompile Include="MemoryFile.cpp">
+      <Filter>Utility</Filter>
+    </ClCompile>
+    <ClCompile Include="MiniDump.cpp">
+      <Filter>Utility</Filter>
+    </ClCompile>
+    <ClCompile Include="misc.cpp">
+      <Filter>Utility</Filter>
+    </ClCompile>
+    <ClCompile Include="NameMangling.cpp">
+      <Filter>Utility</Filter>
+    </ClCompile>
+    <ClCompile Include="StringMisc.cpp">
+      <Filter>Utility</Filter>
+    </ClCompile>
+    <ClCompile Include="CmdLineInterface\CmdLineInterface.cpp">
+      <Filter>Utility\CmdLineInterface</Filter>
+    </ClCompile>
+    <ClCompile Include="CmdLineInterface\CmdParam.cpp">
+      <Filter>Utility\CmdLineInterface</Filter>
+    </ClCompile>
+    <ClCompile Include="CmdLineInterface\CmdParamFlags.cpp">
+      <Filter>Utility\CmdLineInterface</Filter>
+    </ClCompile>
+    <ClCompile Include="CmdLineInterface\CmdParamInt.cpp">
+      <Filter>Utility\CmdLineInterface</Filter>
+    </ClCompile>
+    <ClCompile Include="CmdLineInterface\CmdParamMultiAssign.cpp">
+      <Filter>Utility\CmdLineInterface</Filter>
+    </ClCompile>
+    <ClCompile Include="CmdLineInterface\CmdParamString.cpp">
+      <Filter>Utility\CmdLineInterface</Filter>
+    </ClCompile>
+    <ClCompile Include="CmdLineInterface\CmdParamSwitch.cpp">
+      <Filter>Utility\CmdLineInterface</Filter>
+    </ClCompile>
+    <ClCompile Include="CoffLibraryLoader.cpp">
+      <Filter>HunkLoaders</Filter>
+    </ClCompile>
+    <ClCompile Include="CoffObjectLoader.cpp">
+      <Filter>HunkLoaders</Filter>
+    </ClCompile>
+    <ClCompile Include="HunkLoader.cpp">
+      <Filter>HunkLoaders</Filter>
+    </ClCompile>
+    <ClCompile Include="MultiLoader.cpp">
+      <Filter>HunkLoaders</Filter>
+    </ClCompile>
+    <ClCompile Include="EmpiricalHunkSorter.cpp">
+      <Filter>HunkSorters</Filter>
+    </ClCompile>
+    <ClCompile Include="HeuristicHunkSorter.cpp">
+      <Filter>HunkSorters</Filter>
+    </ClCompile>
+    <ClCompile Include="CallTransform.cpp">
+      <Filter>Transforms</Filter>
+    </ClCompile>
+    <ClCompile Include="IdentityTransform.cpp">
+      <Filter>Transforms</Filter>
+    </ClCompile>
+    <ClCompile Include="Transform.cpp">
+      <Filter>Transforms</Filter>
+    </ClCompile>
+    <ClCompile Include="CompositeProgressBar.cpp">
+      <Filter>ProgressBars</Filter>
+    </ClCompile>
+    <ClCompile Include="ConsoleProgressBar.cpp">
+      <Filter>ProgressBars</Filter>
+    </ClCompile>
+    <ClCompile Include="WindowProgressBar.cpp">
+      <Filter>ProgressBars</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Crinkler.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="distorm.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Fix.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="HtmlReport.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Hunk.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="HunkList.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ImportHandler.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="LTCGLoader.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="resource.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Symbol.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Log.h">
+      <Filter>Utility</Filter>
+    </ClInclude>
+    <ClInclude Include="MemoryFile.h">
+      <Filter>Utility</Filter>
+    </ClInclude>
+    <ClInclude Include="MiniDump.h">
+      <Filter>Utility</Filter>
+    </ClInclude>
+    <ClInclude Include="misc.h">
+      <Filter>Utility</Filter>
+    </ClInclude>
+    <ClInclude Include="NameMangling.h">
+      <Filter>Utility</Filter>
+    </ClInclude>
+    <ClInclude Include="StringMisc.h">
+      <Filter>Utility</Filter>
+    </ClInclude>
+    <ClInclude Include="CmdLineInterface\CmdLineInterface.h">
+      <Filter>Utility\CmdLineInterface</Filter>
+    </ClInclude>
+    <ClInclude Include="CmdLineInterface\CmdParam.h">
+      <Filter>Utility\CmdLineInterface</Filter>
+    </ClInclude>
+    <ClInclude Include="CmdLineInterface\CmdParamFlags.h">
+      <Filter>Utility\CmdLineInterface</Filter>
+    </ClInclude>
+    <ClInclude Include="CmdLineInterface\CmdParamInt.h">
+      <Filter>Utility\CmdLineInterface</Filter>
+    </ClInclude>
+    <ClInclude Include="CmdLineInterface\CmdParamMultiAssign.h">
+      <Filter>Utility\CmdLineInterface</Filter>
+    </ClInclude>
+    <ClInclude Include="CmdLineInterface\CmdParamString.h">
+      <Filter>Utility\CmdLineInterface</Filter>
+    </ClInclude>
+    <ClInclude Include="CmdLineInterface\CmdParamSwitch.h">
+      <Filter>Utility\CmdLineInterface</Filter>
+    </ClInclude>
+    <ClInclude Include="CoffLibraryLoader.h">
+      <Filter>HunkLoaders</Filter>
+    </ClInclude>
+    <ClInclude Include="CoffObjectLoader.h">
+      <Filter>HunkLoaders</Filter>
+    </ClInclude>
+    <ClInclude Include="HunkLoader.h">
+      <Filter>HunkLoaders</Filter>
+    </ClInclude>
+    <ClInclude Include="MultiLoader.h">
+      <Filter>HunkLoaders</Filter>
+    </ClInclude>
+    <ClInclude Include="EmpiricalHunkSorter.h">
+      <Filter>HunkSorters</Filter>
+    </ClInclude>
+    <ClInclude Include="HeuristicHunkSorter.h">
+      <Filter>HunkSorters</Filter>
+    </ClInclude>
+    <ClInclude Include="CallTransform.h">
+      <Filter>Transforms</Filter>
+    </ClInclude>
+    <ClInclude Include="IdentityTransform.h">
+      <Filter>Transforms</Filter>
+    </ClInclude>
+    <ClInclude Include="Transform.h">
+      <Filter>Transforms</Filter>
+    </ClInclude>
+    <ClInclude Include="data.h">
+      <Filter>data</Filter>
+    </ClInclude>
+    <ClInclude Include="CompositeProgressBar.h">
+      <Filter>ProgressBars</Filter>
+    </ClInclude>
+    <ClInclude Include="ConsoleProgressBar.h">
+      <Filter>ProgressBars</Filter>
+    </ClInclude>
+    <ClInclude Include="WindowProgressBar.h">
+      <Filter>ProgressBars</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="CmdLineInterface\CmdLineInterface manual.txt">
+      <Filter>Utility\CmdLineInterface</Filter>
+    </Text>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="Crinkler.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="data.asm">
+      <Filter>data</Filter>
+    </CustomBuild>
+  </ItemGroup>
+</Project>
