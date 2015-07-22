@@ -661,6 +661,15 @@ void Crinkler::recompress(const char* input_filename, const char* output_filenam
 		}
 	}
 	if (!m_exports.empty()) {
+		for (const Export& e : m_exports) {
+			if (!e.hasValue()) {
+				Symbol *sym = phase1->findSymbol(e.getSymbol().c_str());
+				if (!sym) {
+					Log::error("", "Cannot find symbol '%s' to be exported under name '%s'.", e.getSymbol().c_str(), e.getName().c_str());
+				}
+			}
+		}
+
 		phase1->setVirtualSize(phase1->getRawSize());
 		Hunk* export_hunk = createExportTable(m_exports);
 		HunkList hl;
