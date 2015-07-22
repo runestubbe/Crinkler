@@ -680,6 +680,18 @@ Linker/Command Line/Additional Options:
     always be 1-byte aligned. The space between the sections will be
     padded with zero bytes.
 
+/UNALIGNCODE
+
+    Force all code sections to use alignment of 1, eliminating all
+    padding between them. This usually improves compression, but
+    can result in slightly lower performance if some functions are
+    called in performance critical loops.
+
+    The /OVERRIDEALIGNMENTS mechanism has priority over /UNALIGNCODE,
+    so if you want to excempt a few functions from being unaligned,
+    you can specify an explicit alignment for these as described for
+    /OVERRIDEALIGNMENTS.
+
 
 Finally, Crinkler has a number of options for controlling the output
 during compression. Just like the other options, these can be
@@ -753,10 +765,11 @@ take on slightly different meanings, as described here.
 
 The /CRINKLER, /PRIORITY, @commandfile and /PROGRESSGUI options work
 as normally. The /ENTRY, /LIBPATH, /ORDERTRIES, /RANGE, /FALLBACKDLL,
-/UNSAFEIMPORT, /TRANSFORM:CALLS, /NOINITIALIZERS, /TRUNCATEFLOATS and
-/OVERRIDEALIGNMENTS options are ignored, as the parameters specified
-by these options cannot be changed via recompression. The /PRINT options
-are also ignored. The remaining options work as follows:
+/UNSAFEIMPORT, /TRANSFORM:CALLS, /NOINITIALIZERS, /TRUNCATEFLOATS,
+/OVERRIDEALIGNMENTS and /UNALIGNCODE options are ignored, as the
+parameters specified by these options cannot be changed via
+recompression. The /PRINT options are also ignored. The remaining
+options work as follows:
 
 /SUBSYSTEM:CONSOLE
 /SUBSYSTEM:WINDOWS

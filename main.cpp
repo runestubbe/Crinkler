@@ -188,7 +188,8 @@ int main(int argc, char* argv[]) {
 							0, 64, 64);
 	CmdParamInt overrideAlignmentsArg("OVERRIDEALIGNMENTS", "override section alignments using align labels", "bits",  PARAM_ALLOW_NO_ARGUMENT_DEFAULT,
 							0, 30, -1);
-	CmdParamString entryArg("ENTRY", "name of the entrypoint", "symbol", 
+	CmdParamSwitch unalignCodeArg("UNALIGNCODE", "force alignment of code sections to 1", 0);
+	CmdParamString entryArg("ENTRY", "name of the entrypoint", "symbol",
 						PARAM_IS_SWITCH|PARAM_FORBID_MULTIPLE_DEFINITIONS, "");
 	CmdParamString outArg("OUT", "output filename", "filename", 
 						PARAM_IS_SWITCH|PARAM_FORBID_MULTIPLE_DEFINITIONS, "out.exe");
@@ -228,7 +229,7 @@ int main(int argc, char* argv[]) {
 	CmdLineInterface cmdline(CRINKLER_TITLE, CMDI_PARSE_FILES);
 
 	cmdline.addParams(&crinklerFlag, &hashsizeArg, &hashtriesArg, &hunktriesArg, &entryArg, &outArg, &summaryArg, &unsafeImportArg,
-						&subsystemArg, &largeAddressAwareArg, &truncateFloatsArg, &overrideAlignmentsArg, &compmodeArg, &saturateArg, &printArg, &transformArg, &libpathArg, 
+						&subsystemArg, &largeAddressAwareArg, &truncateFloatsArg, &overrideAlignmentsArg, &unalignCodeArg, &compmodeArg, &saturateArg, &printArg, &transformArg, &libpathArg, 
 						&rangeImportArg, &replaceDllArg, &fallbackDllArg, &exportArg, &stripExportsArg, &noInitializersArg, &filesArg, &priorityArg, &showProgressArg, &recompressFlag,
 						&tinyCompressor,
 						NULL);
@@ -394,6 +395,7 @@ int main(int argc, char* argv[]) {
 	crinkler.setTruncateFloats(truncateFloatsArg.getNumMatches() > 0);
 	crinkler.setTruncateBits(truncateFloatsArg.getValue());
 	crinkler.setOverrideAlignments(overrideAlignmentsArg.getNumMatches() > 0);
+	crinkler.setUnalignCode(unalignCodeArg.getValue());
 	crinkler.setAlignmentBits(overrideAlignmentsArg.getValue());
 	crinkler.setRunInitializers(!noInitializersArg.getValue());
 	crinkler.setSummary(summaryArg.getValue());
