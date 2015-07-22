@@ -193,3 +193,17 @@ std::set<Export> stripExports(Hunk* phase1, int exports_rva) {
 
 	return exports;
 }
+
+void printExports(const std::set<Export>& exports) {
+	for (const Export& e : exports) {
+		if (e.hasValue()) {
+			printf("  %s = 0x%08X\n", e.getName().c_str(), e.getValue());
+		}
+		else if (e.getSymbol() == e.getName()) {
+			printf("  %s\n", e.getName().c_str());
+		}
+		else {
+			printf("  %s -> %s\n", e.getName().c_str(), e.getSymbol().c_str());
+		}
+	}
+}
