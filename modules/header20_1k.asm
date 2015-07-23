@@ -55,24 +55,30 @@ _CharacteristicsPtr:
 	
 	;db "HASH"			;Base of code
 	;db "HASH"			;Base of data (and PE header offset)
-_decoder0:
-	xor ecx, ecx
-	shr bl, 1		;shr bl, byte 1					;2
-	jc short _matchloop								;2
-	jnz short _skip									;2
 	
-	_no_match:
-	popa											;1
+	;try to match
+_match_lala:
+	pusha														;1
+_matchloop:
+	mov al, byte [esi]											;2
+	shr al, cl													;2
+	xor al, byte [edi]											;2
+	jnz short _no_match											;2
+_skip:
+	dec esi														;1
+	dec edi														;1
+	xor ecx, ecx												;2
+	mov	ebp, DepackInit-_header									;5 ;Address of entry point
 	
-	;update
-	jnz short _no_update							;2
-	inc eax											;1
-	inc edx											;1
-	mov	ebp, DepackInit-_header						;5 ;Address of entry point
-	ror byte [esi], cl								;2
-	jc short _one									;2
-	shr edx, 1				;shr edx, byte 1		;2
-	jmp short _end			;end					;2
+	shr bl, 1		;shr bl, byte 1								;2
+	jc short _matchloop											;2
+	jnz short _skip												;2
+	jmp short _no_match
+
+	;db 0, 0
+	;db 0, 0
+	;db 0, 0
+	;db 0, 0
 
 	dd _ImageBase		;Image base
 	dd 4h				;Section alignment (in memory)
@@ -98,7 +104,7 @@ _AritDecode2:
 	jmp short _AritDecode3
 	db 0x00, 
 _VirtualSizeHighBytePtr:
-	db 0x01	;TODO: crinkler should set this to something reasonable
+	db 0x01
 	;dd _VirtualSize+SECTION_SIZE*2;Size of image (= Section size + Section alignment)
 	dd 30h				;Size of headers (can be almost anything, must be >= 0x30 in Win7 due to bug)
 
@@ -106,9 +112,8 @@ _VirtualSizeHighBytePtr:
 	;4 bytes
 	;db "HASH"			;Checksum / Name1
 _AritDecodeJumpPad:
-	jl short AritDecode			;2
-	;pop eax					;1
-	nop
+	pop edx		;one prob		;1
+	jl 	short AritDecode		;2
 	ret							;1
 _SubsystemTypePtr:
 	dw		0003h	;Subsystem				/ Name2
@@ -165,21 +170,24 @@ model_loop:
 	cdq 		;edx := 0	;1
 	
 	mov esi, dword [esp+10*4]		;esi := UnpackedData		;4
+	dec esi
 	;esi: start
 	;edi: current ptr
 
 _context_loop:
-	;try to match
-	pusha														;1
-_matchloop:
-	mov al, byte [esi]											;2
-	shr al, cl													;2
-	xor al, byte [edi]											;2
-	jnz short _no_match											;2
-_skip:
-	dec esi														;1
-	dec edi														;1
-	jmp _decoder0	;TODO: fix me
+	jmp short _match_lala
+	
+	_no_match:
+	popa											;1
+
+	;update
+	jnz short _no_update							;2
+	inc eax											;1
+	inc edx											;1
+	ror byte [esi], cl								;2
+	jc short _one									;2
+	shr edx, 1				;shr edx, byte 1		;2
+	jmp short _end			;end					;2
 	_one:
 		shr eax, 1		;shr edx, byte 1
 	_end:
@@ -191,13 +199,13 @@ _no_update:
 
 	mov cl, byte 0	;boost factor
 BoostFactorPtrP:
-
-	lea ebp, [dword esp + 0]	;b0-b3 must be 0 (DebugTable)
+	mov esi, esp
+	mov ebp, dword 0		;b0-b3 must be 0
 	.add_loop:
-		add dword [ebp+9*4], edx	;4
+		add dword [esi+9*4], edx	;4
 		test eax, eax
 		jz .loop
-		add dword [ebp+8*4], eax	;4
+		add dword [esi+8*4], eax	;4
 		test edx, edx
 	.loop:
 		loope .add_loop			;2		;loop BOOST_FACTOR times, if c0*c1 = 0
@@ -209,8 +217,7 @@ BoostFactorPtrP:
 	jnz short .skip_model		;2
 	
 	pop ebx		;zero prob		;1
-	pop edx		;one prob		;1
-
+	
 	;cmp di, 0x0000				;5
 	db 0x66, 0x81, 0xFF
 	db 0x00, 0x00, ; length
@@ -221,7 +228,6 @@ _AritDecode3:
 	push eax			;push interval_size							;1
 	mul	edx				;edx:eax = p0 * interval_size				;2
 	div	ebx				;eax = (p0 * interval_size) / (p0 + p1)		;2
-	
 	pop	edx				;edx = interval_size						;1
 	cmp	esi, eax		;data < threshold?							;2
 	jb	short one													;2
@@ -241,3 +247,6 @@ _BaseProbPtr0	equ	BaseProbPtrP0-1
 _BaseProbPtr1	equ	BaseProbPtrP1-1
 _BoostFactorPtr	equ BoostFactorPtrP-1
 _DepackEndPositionPtr equ DepackEndPositionP-2
+
+;baseline: ea
+;start 1 byte before: eb
