@@ -5,7 +5,7 @@
 #include "Symbol.h"
 #include "Crinkler.h"
 
-bool Transform::linkAndTransform(HunkList* hunklist, Symbol *entry_label, int baseAddress, Hunk* &transformedHunk, Hunk** untransformedHunk, int* splittingPoint, bool verbose, bool b1kMode)
+bool Transform::linkAndTransform(HunkList* hunklist, Symbol *entry_label, int baseAddress, Hunk* &transformedHunk, Hunk** untransformedHunk, int* splittingPoint, bool verbose)
 {
 	Hunk* detrans;
 	if (m_enabled)
@@ -21,24 +21,6 @@ bool Transform::linkAndTransform(HunkList* hunklist, Symbol *entry_label, int ba
 		detrans->setContinuation(entry_label);
 	}
 
-	Hunk* initialZeroByteHunk = nullptr;
-	if (b1kMode)
-	{
-		initialZeroByteHunk = new Hunk("1KZero", NULL, HUNK_IS_CODE, 0, 2, 2);
-		
-		initialZeroByteHunk->addSymbol(new Symbol(".text", 0, SYMBOL_IS_RELOCATEABLE | SYMBOL_IS_SECTION, initialZeroByteHunk, "crinkler"));
-		
-		unsigned char* ptr = (unsigned char*)initialZeroByteHunk->getPtr();
-		ptr[0] = 0x00;
-		ptr[1] = 0xC1;
-
-		hunklist->addHunkFront(initialZeroByteHunk);
-		if (!detrans)
-		{
-			initialZeroByteHunk->setContinuation(entry_label);
-		}
-	}
-
 	int sp;
 	transformedHunk = hunklist->toHunk("linked", baseAddress, &sp);
 	transformedHunk->relocate(baseAddress);
@@ -51,12 +33,6 @@ bool Transform::linkAndTransform(HunkList* hunklist, Symbol *entry_label, int ba
 	if (untransformedHunk)
 	{
 		*untransformedHunk = new Hunk(*transformedHunk);
-	}
-
-	if (initialZeroByteHunk)
-	{
-		hunklist->removeHunk(initialZeroByteHunk);
-		delete initialZeroByteHunk;
 	}
 
 	if (m_enabled)

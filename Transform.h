@@ -15,7 +15,7 @@ public:
 
 	//links and transforms a hunklist. provides both a transformed and non-transformed linked version.
 	//returns true if the transform succeeds
-	bool linkAndTransform(HunkList* hunklist, Symbol *entry_label, int baseAddress, Hunk* &transformedHunk, Hunk** untransformedHunk, int* splittingPoint, bool verbose, bool b1kMode);
+	bool linkAndTransform(HunkList* hunklist, Symbol *entry_label, int baseAddress, Hunk* &transformedHunk, Hunk** untransformedHunk, int* splittingPoint, bool verbose);
 
 	void disable() { m_enabled = false; }
 };
