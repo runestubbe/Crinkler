@@ -7,6 +7,7 @@
 #include "StringMisc.h"
 #include "Log.h"
 #include "Symbol.h"
+#include "data.h"
 
 #include <algorithm>
 #include <vector>
@@ -291,7 +292,7 @@ __forceinline unsigned int hashCode_1k(const char* str, int hash_multiplier, int
 	return ((unsigned int)eax) >> (32 - hash_bits);
 }
 
-static bool solve_constraints(std::vector<unsigned int>& constraints, unsigned int* new_order)
+static bool solve_dll_order_constraints(std::vector<unsigned int>& constraints, unsigned int* new_order)
 {
 	if(constraints[0] > 1)	// kernel32 must be first. it can't have dependencies on anything else
 	{
@@ -331,64 +332,109 @@ static bool solve_constraints(std::vector<unsigned int>& constraints, unsigned i
 	return true;
 }
 
-static bool findCollisionFreeHash(vector<string>& dlls, const vector<Hunk*>& importHunks, int& hash_multiplier, int& hash_bits)
+static void AddKnownExportsForDll(std::vector<string>& exports, const char* dll_name)
 {
-	int stime = GetTickCount();
-	printf("searching for hash function:\n"); fflush(stdout);
-
-	assert(dlls.size() <= 32);
-
-	dlls.erase(std::find(dlls.begin(), dlls.end(), string("kernel32")));
-	dlls.insert(dlls.begin(), "kernel32");
-	
-
-	struct SDllInfo
+	struct s_known_exports_header
 	{
-		char*				module;
-		bool				allow_self_collision;
-		std::vector<char>	used;
+		int num_dlls;
+		struct
+		{
+			int name_offset;
+			int num_exports;
+			int export_name_offset_table;
+		} dll_infos[1];
 	};
 
-	int num_dlls = dlls.size();
+	const s_known_exports_header* known_exports_header = (const s_known_exports_header*)knownDllExports;
+	
+	int num_known_dlls = known_exports_header->num_dlls;
+	for(int known_dll_index = 0; known_dll_index < num_known_dlls; known_dll_index++)
+	{
+		const char* known_dll_name = knownDllExports + known_exports_header->dll_infos[known_dll_index].name_offset;
+		if(strcmp(dll_name, known_dll_name) == 0)
+		{
+			int num_exports = known_exports_header->dll_infos[known_dll_index].num_exports;
+			const int* offset_table = (const int*) ((const char*)knownDllExports + known_exports_header->dll_infos[known_dll_index].export_name_offset_table);
+			for(int i = 0; i < num_exports; i++)
+			{
+				const char* name = knownDllExports + offset_table[i];
+				exports.push_back(name);
+			}
+			break;
+		}
+	}
+}
+
+static bool findCollisionFreeHash(vector<string>& dll_names, const vector<Hunk*>& importHunks, int& hash_multiplier, int& hash_bits)
+{
+	//printf("searching for hash function:\n"); fflush(stdout);
+
+	assert(dll_names.size() <= 32);
+
+	dll_names.erase(std::find(dll_names.begin(), dll_names.end(), string("kernel32")));
+	dll_names.insert(dll_names.begin(), "kernel32");
+	
+	struct SDllInfo
+	{
+		std::vector<std::string>	exports;
+		std::vector<char>			used;
+	};
+
+	int num_dlls = dll_names.size();
 	std::vector<unsigned int> best_dll_order(num_dlls);
 
 	// load dlls and mark functions that are imported
-	vector<SDllInfo> dllinfos(dlls.size());
+	vector<SDllInfo> dllinfos(num_dlls);
 	
 	for(int dll_index = 0; dll_index < num_dlls; dll_index++)
 	{
-		const char* dllname = dlls[dll_index].c_str();
+		const char* dllname = dll_names[dll_index].c_str();
 		SDllInfo& info = dllinfos[dll_index];
-		
-		char* module = LoadDLL(dllname);
-		info.module = module;
 
-		IMAGE_DOS_HEADER* dh = (IMAGE_DOS_HEADER*)module;
-		IMAGE_FILE_HEADER* coffHeader = (IMAGE_FILE_HEADER*)(module + dh->e_lfanew+4);
-		IMAGE_OPTIONAL_HEADER32* pe = (IMAGE_OPTIONAL_HEADER32*)(coffHeader + 1);
-		IMAGE_EXPORT_DIRECTORY* exportdir = (IMAGE_EXPORT_DIRECTORY*)(module + pe->DataDirectory[IMAGE_DIRECTORY_ENTRY_EXPORT].VirtualAddress);
-		int num_names = exportdir->NumberOfNames;
-		int* nameTable = (int*)(module + exportdir->AddressOfNames);
-		info.used.resize(num_names);
-		info.allow_self_collision = strcmp(dllname, "opengl32") == 0 || (strlen(dllname) == 8 && memcmp(dllname, "d3dx9_", 6) == 0);	// collision in opengl and d3dx are ok as they are assumed to be static.
+		{
+			// scrape exports from dll on this machine
+			const char* module = LoadDLL(dllname);
+
+			const IMAGE_DOS_HEADER* dh = (IMAGE_DOS_HEADER*)module;
+			const IMAGE_FILE_HEADER* coffHeader = (IMAGE_FILE_HEADER*)(module + dh->e_lfanew + 4);
+			const IMAGE_OPTIONAL_HEADER32* pe = (IMAGE_OPTIONAL_HEADER32*)(coffHeader + 1);
+			const IMAGE_EXPORT_DIRECTORY* exportdir = (IMAGE_EXPORT_DIRECTORY*)(module + pe->DataDirectory[IMAGE_DIRECTORY_ENTRY_EXPORT].VirtualAddress);
+			int num_names = exportdir->NumberOfNames;
+			const int* name_table = (const int*)(module + exportdir->AddressOfNames);
+			for(int i = 0; i < num_names; i++)
+			{
+				const char* name = module + name_table[i];
+				info.exports.push_back(name);
+			}
+
+			FreeLibrary((HMODULE)module);
+		}
+
+		// combine with list of known exports for this dll
+		AddKnownExportsForDll(info.exports, dllname);
+		std::sort(info.exports.begin(), info.exports.end());
+		info.exports.erase(std::unique(info.exports.begin(), info.exports.end()), info.exports.end());
+
+		int num_exports = info.exports.size();
+		info.used.resize(num_exports);
 
 		for(Hunk* importHunk : importHunks)
 		{
 			if(strcmp(dllname, importHunk->getImportDll()) == 0)
 			{
-				int idx = -1;
-				for(int i = 0; i < num_names; i++)
+				// mark those that are used
+				auto it = std::find(info.exports.begin(), info.exports.end(), importHunk->getImportName());
+				
+				if(it != info.exports.end())
 				{
-					const char* name = module + nameTable[i];
-					if(strcmp(name, importHunk->getImportName()) == 0)
-					{
-						info.used[i] = true;
-						idx = i;
-						break;
-					}
+					int idx = std::distance(info.exports.begin(), it);
+					info.used[idx] = 1;
 				}
-
-				assert(idx != -1);
+				else
+				{
+					assert(false);
+					Log::error("", "Could not find '%s' in '%s'", importHunk->getImportName(), importHunk->getImportDll());
+				}
 			}
 		}
 	}
@@ -398,7 +444,6 @@ static bool findCollisionFreeHash(vector<string>& dlls, const vector<Hunk*>& imp
 	int best_num_bits = INT_MAX;
 	
 	// Find hash function that works
-	// For future compatibility we don't allow functions from the same dlls to hash to the same value, even if the one we are interested in ends on top.
 	// We do however allow hash overlaps from separate dlls.
 	// To exploit this we sort the dlls to avoid collisions when possible
 	
@@ -441,17 +486,11 @@ static bool findCollisionFreeHash(vector<string>& dlls, const vector<Hunk*>& imp
 				for(SDllInfo& dllinfo : dllinfos)
 				{
 					unsigned int dll_mask = (1u << dll_index);
-					char* module = dllinfo.module;
-
-					IMAGE_DOS_HEADER* dh = (IMAGE_DOS_HEADER*)module;
-					IMAGE_FILE_HEADER* coffHeader = (IMAGE_FILE_HEADER*)(module + dh->e_lfanew+4);
-					IMAGE_OPTIONAL_HEADER32* pe = (IMAGE_OPTIONAL_HEADER32*)(coffHeader + 1);
-					IMAGE_EXPORT_DIRECTORY* exportdir = (IMAGE_EXPORT_DIRECTORY*)(module + pe->DataDirectory[IMAGE_DIRECTORY_ENTRY_EXPORT].VirtualAddress);
-					int num_names = (int)exportdir->NumberOfNames;
-					int* nameTable = (int*)(module + exportdir->AddressOfNames);
+					
+					int num_names = (int)dllinfo.exports.size();
 					for(int i = 0; i < num_names; i++)
 					{
-						unsigned int hashcode = hashCode_1k(module + nameTable[i], hash_multiplier, num_bits);
+						unsigned int hashcode = hashCode_1k(dllinfo.exports[i].c_str(), hash_multiplier, num_bits);
 						bool new_referenced = dllinfo.used[i];
 						bool old_referenced = buckets[hashcode].referenced_function_dll_index > 0;
 
@@ -465,18 +504,8 @@ static bool findCollisionFreeHash(vector<string>& dlls, const vector<Hunk*>& imp
 							else
 							{
 								buckets[hashcode].referenced_function_dll_index = dll_index + 1;
-								if(dllinfo.allow_self_collision)
-								{
-									buckets[hashcode].unreferenced_functions_dll_mask &= ~dll_mask;	// clear unreferenced before this
-								}
-								else
-								{
-									if(buckets[hashcode].unreferenced_functions_dll_mask & dll_mask)
-									{
-										has_collisions = true;
-										break;
-									}
-								}
+								buckets[hashcode].unreferenced_functions_dll_mask &= ~dll_mask;	// clear unreferenced before this
+
 								dll_constraints[dll_index] |= buckets[hashcode].unreferenced_functions_dll_mask;
 							}
 						}
@@ -494,7 +523,6 @@ static bool findCollisionFreeHash(vector<string>& dlls, const vector<Hunk*>& imp
 								dll_constraints[old_dll_index] |= dll_mask;
 							}
 						}
-							
 					}
 					dll_index++;
 
@@ -504,7 +532,7 @@ static bool findCollisionFreeHash(vector<string>& dlls, const vector<Hunk*>& imp
 					}
 				}
 
-				if(!has_collisions && solve_constraints(dll_constraints, &new_dll_order[0]))
+				if(!has_collisions && solve_dll_order_constraints(dll_constraints, &new_dll_order[0]))
 				{
 					Concurrency::critical_section::scoped_lock l(cs);
 					if(num_bits < best_num_bits || high_byte < best_high_byte)
@@ -518,21 +546,16 @@ static bool findCollisionFreeHash(vector<string>& dlls, const vector<Hunk*>& imp
 				}
 			}
 
-			
 			delete[] buckets;
 		});
 
 		int best_hash_multiplier = (best_high_byte << 16) | (best_low_byte << 8) | 1;
-		printf("num_bits: %d: hash: %8x\n", num_bits, best_hash_multiplier);
 		if(best_num_bits > num_bits)
 		{
 			break;
 		}
 	}
 	int best_hash_multiplier = (best_high_byte << 16) | (best_low_byte << 8) | 1;
-
-	printf("time spent: %dms\n", GetTickCount()-stime);
-	printf("done looking for hash function\n"); fflush(stdout);
 
 	if(best_num_bits == INT_MAX)
 	{
@@ -543,9 +566,9 @@ static bool findCollisionFreeHash(vector<string>& dlls, const vector<Hunk*>& imp
 	std::vector<std::string> new_dlls(num_dlls);
 	for(int i = 0; i < num_dlls; i++)
 	{
-		new_dlls[i] = dlls[best_dll_order[i]];
+		new_dlls[i] = dll_names[best_dll_order[i]];
 	}
-	dlls = new_dlls;
+	dll_names = new_dlls;
 	
 	hash_multiplier = best_hash_multiplier;
 	hash_bits = best_num_bits;
@@ -553,8 +576,10 @@ static bool findCollisionFreeHash(vector<string>& dlls, const vector<Hunk*>& imp
 }
 
 HunkList* ImportHandler::createImportHunks1K(HunkList* hunklist, bool verbose, int& hash_bits, int& max_dll_name_length) {
-	if(verbose)
+	if (verbose)
+	{
 		printf("\n-Imports----------------------------------\n");
+	}
 
 	vector<Hunk*> importHunks;
 	set<string> dll_set;
@@ -616,11 +641,27 @@ HunkList* ImportHandler::createImportHunks1K(HunkList* hunklist, bool verbose, i
 	Hunk* importList = new Hunk("ImportListHunk", 0, HUNK_IS_WRITEABLE, 8, 0, 65536*256);
 	importList->addSymbol(new Symbol("_HashMultiplier", hash_multiplier, 0, importList));
 	importList->addSymbol(new Symbol("_ImportList", 0, SYMBOL_IS_RELOCATEABLE, importList));
-	for(vector<Hunk*>::iterator it = importHunks.begin(); it != importHunks.end(); it++)
+	for(Hunk* importHunk : importHunks)
 	{
-		Hunk* importHunk = *it;
 		unsigned int hashcode = hashCode_1k(importHunk->getImportName(), hash_multiplier, hash_bits);
 		importList->addSymbol(new Symbol(importHunk->getName(), hashcode*4, SYMBOL_IS_RELOCATEABLE, importList));
+	}
+
+	if(verbose)
+	{
+		for(string dllname : dlls)
+		{
+			printf("%s\n", dllname.c_str());
+				
+			for(Hunk* importHunk : importHunks)
+			{
+				if(strcmp(importHunk->getImportDll(), dllname.c_str()) == 0)
+				{
+					int ordinal = getOrdinal(importHunk->getImportName(), importHunk->getImportDll());
+					printf("  %s (ordinal %d)\n", importHunk->getImportName(), ordinal);
+				}
+			}
+		}
 	}
 
 	HunkList* newHunks = new HunkList;

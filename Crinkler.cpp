@@ -330,7 +330,7 @@ void Crinkler::setHeaderConstants(Hunk* header, Hunk* phase1, int hashsize, int 
 	header->addSymbol(new Symbol("_HashTableSize", hashsize/2, 0, header));
 	header->addSymbol(new Symbol("_UnpackedData", CRINKLER_CODEBASE, 0, header));
 	header->addSymbol(new Symbol("_ImageBase", CRINKLER_IMAGEBASE, 0, header));
-	header->addSymbol(new Symbol("_ModelMask", modelmask << 1, 0, header));
+	header->addSymbol(new Symbol("_ModelMask", modelmask, 0, header));
 
 	if (use1kHeader)
 	{
@@ -1020,12 +1020,12 @@ void Crinkler::link(const char* filename) {
 	Hunk* phase1, *phase1Untransformed;
 	m_hunkPool[0]->addSymbol(new Symbol("_HeaderHashes", CRINKLER_IMAGEBASE+header->getRawSize(), SYMBOL_IS_SECTION, m_hunkPool[0]));
 
-	if (!m_transform->linkAndTransform(&m_hunkPool, importSymbol, CRINKLER_CODEBASE, phase1, &phase1Untransformed, &splittingPoint, true, m_1KMode))
+	if (!m_transform->linkAndTransform(&m_hunkPool, importSymbol, CRINKLER_CODEBASE, phase1, &phase1Untransformed, &splittingPoint, true))
 	{
 		// Transform failed, run again
 		delete phase1;
 		delete phase1Untransformed;
-		m_transform->linkAndTransform(&m_hunkPool, importSymbol, CRINKLER_CODEBASE, phase1, &phase1Untransformed, &splittingPoint, false, m_1KMode);
+		m_transform->linkAndTransform(&m_hunkPool, importSymbol, CRINKLER_CODEBASE, phase1, &phase1Untransformed, &splittingPoint, false);
 	}
 	int maxsize = phase1->getRawSize()*2+1000;	//allocate plenty of memory	
 
@@ -1048,7 +1048,7 @@ void Crinkler::link(const char* filename) {
 			EmpiricalHunkSorter::sortHunkList(&m_hunkPool, *m_transform, m_modellist1, m_modellist2, m_modellist1k, CRINKLER_BASEPROB, m_saturate, m_hunktries, m_showProgressBar ? &m_windowBar : NULL, m_1KMode);
 			delete phase1;
 			delete phase1Untransformed;
-			m_transform->linkAndTransform(&m_hunkPool, importSymbol, CRINKLER_CODEBASE, phase1, &phase1Untransformed, &splittingPoint, true, m_1KMode);
+			m_transform->linkAndTransform(&m_hunkPool, importSymbol, CRINKLER_CODEBASE, phase1, &phase1Untransformed, &splittingPoint, true);
 
 			idealsize = estimateModels((unsigned char*)phase1->getPtr(), phase1->getRawSize(), splittingPoint, true, m_1KMode);
 		}
