@@ -22,6 +22,8 @@ global _importSafeFallbackRangeObj
 global _importSafeFallbackRangeObj_end
 global _calltransObj
 global _calltransObj_end
+global _knownDllExports
+global _knownDllExports_end
 
 section	.data
 
@@ -72,3 +74,7 @@ _importSafeFallbackRangeObj_end:
 _calltransObj:
 	incbin "modules/calltrans.obj"
 _calltransObj_end:
+
+_knownDllExports:
+	incbin "known_dll_exports.dat"
+_knownDllExports_end:
