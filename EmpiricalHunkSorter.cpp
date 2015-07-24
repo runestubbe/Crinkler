@@ -23,13 +23,7 @@ int EmpiricalHunkSorter::tryHunkCombination(HunkList* hunklist, Transform& trans
 	Hunk* phase1;
 	Symbol* import = hunklist->findSymbol("_Import");
 	transform.linkAndTransform(hunklist, import, CRINKLER_CODEBASE, phase1, NULL, &splittingPoint, false);
-	
-	char contexts[2][8];
-	memset(contexts[0], 0, 8);
-	memset(contexts[1], 0, 8);
-	int context_size = 8;
-	if (splittingPoint < 8) context_size = splittingPoint;
-	memcpy(contexts[1]+(8-context_size), phase1->getPtr()+splittingPoint-context_size, context_size);
+
 
 	int size = 0;
 	if (use1KMode)
@@ -53,6 +47,13 @@ int EmpiricalHunkSorter::tryHunkCombination(HunkList* hunklist, Transform& trans
 				sizes[i] = cs.EvaluateSizeQuick((unsigned char*)phase1->getPtr()+splittingPoint, phase1->getRawSize()-splittingPoint, dataModels, baseprob, contexts[1], i - 8);
 		}
 #else
+		char contexts[2][8];
+		memset(contexts[0], 0, 8);
+		memset(contexts[1], 0, 8);
+		int context_size = 8;
+		if (splittingPoint < 8) context_size = splittingPoint;
+		memcpy(contexts[1] + (8 - context_size), phase1->getPtr() + splittingPoint - context_size, context_size);
+
 		concurrency::parallel_for(0, 16, [&](int i)
 		{
 			if (i < 8)
