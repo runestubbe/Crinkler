@@ -19,8 +19,7 @@ public:
 	~CompressionStream();
 
 	void Compress(const unsigned char* data, int size, const ModelList& models, int baseprob, int hashsize, bool first, bool finish);
-	int EvaluateSize(const unsigned char* data, int size, const ModelList& models, int baseprob, char* context);
-	int EvaluateSizeQuick(const unsigned char* data, int size, const ModelList& models, int baseprob, char* context, int bitpos);
+	int EvaluateSize(const unsigned char* data, int size, const ModelList& models, int baseprob, char* context, int bitpos);
 	int Close();
 };
 
