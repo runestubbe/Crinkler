@@ -3,6 +3,7 @@
 #define _COMPRESSOR_H_
 
 const int MAX_INPUT_SIZE = 128000;
+const int MAX_CONTEXT_LENGTH = 8;
 
 enum CompressionType {COMPRESSION_INSTANT, COMPRESSION_FAST, COMPRESSION_SLOW, COMPRESSION_VERYSLOW};
 
@@ -30,7 +31,7 @@ public:
 
 //Approximates the models for a given data chunk
 ModelList1k ApproximateModels1k(const unsigned char* data, int datasize, int* compsize, ProgressBar* progressBar, bool verbose);
-ModelList ApproximateModels4k(const unsigned char* data, int datasize, int baseprob, bool saturate, int* compsize, ProgressBar* progressBar, bool verbose, CompressionType compressionType);
+ModelList ApproximateModels4k(const unsigned char* data, int datasize, int baseprob, bool saturate, int* compsize, ProgressBar* progressBar, bool verbose, CompressionType compressionType, char* context);
 ModelList InstantModels();
 
 int Compress1K(unsigned char* data, int size, unsigned char* compressed, int compressed_size, int boost_factor, int b0, int b1, unsigned int modelmask, int* sizefill, int* internal_size);

@@ -151,7 +151,7 @@ ModelList InstantModels() {
 	return models;
 }
 
-ModelList ApproximateModels4k(const unsigned char* data, int datasize, int baseprob, bool saturate, int* compsize, ProgressBar* progressBar, bool verbose, CompressionType compressionType) {
+ModelList ApproximateModels4k(const unsigned char* data, int datasize, int baseprob, bool saturate, int* compsize, ProgressBar* progressBar, bool verbose, CompressionType compressionType, char* context) {
 	unsigned char masks[256];
 	int m;
 	int mask;
@@ -161,7 +161,7 @@ ModelList ApproximateModels4k(const unsigned char* data, int datasize, int basep
 	ModelList models;
 	SoftwareCompressionStateEvaluator evaluator;
 
-	CompressionState cs(data, datasize, baseprob, saturate, &evaluator);
+	CompressionState cs(data, datasize, baseprob, saturate, &evaluator, context);
 
 	for (m = 0 ; m <= 255 ; m++) {
 		mask = m;

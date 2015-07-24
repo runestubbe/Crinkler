@@ -5,6 +5,7 @@
 #include "ModelList.h"
 #include "aritcode.h"
 #include "model.h"
+#include "compressor.h"
 
 
 struct HashEntry {
@@ -82,13 +83,13 @@ ModelPredictions CompressionState::applyModel(const unsigned char* data, int bit
 	return mp;
 }
 
-CompressionState::CompressionState(const unsigned char* data, int size, int baseprob, bool saturate, CompressionStateEvaluator* evaluator) :
+CompressionState::CompressionState(const unsigned char* data, int size, int baseprob, bool saturate, CompressionStateEvaluator* evaluator, char* context) :
 	m_size(size*8), m_saturate(saturate), m_stateEvaluator(evaluator)
 {	
 	//create temporary data buffer with heading zeros
-	unsigned char* data2 = new unsigned char[size+8];
-	memset(data2, 0, 8);
-	memcpy(data2+8, data, size);
+	unsigned char* data2 = new unsigned char[size+MAX_CONTEXT_LENGTH];
+	memcpy(data2, context, MAX_CONTEXT_LENGTH);
+	memcpy(data2+MAX_CONTEXT_LENGTH, data, size);
 
 	//apply models
 #if USE_OPENMP

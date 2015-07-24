@@ -37,16 +37,7 @@ int EmpiricalHunkSorter::tryHunkCombination(HunkList* hunklist, Transform& trans
 	{
 		CompressionStream cs(NULL, NULL, 0, saturate);
 		int sizes[16];
-#if USE_OPENMP
-#pragma omp parallel for
-		for(int i = 0; i < 16; i++)
-		{
-			if(i < 8)
-				sizes[i] = cs.EvaluateSizeQuick((unsigned char*)phase1->getPtr(), splittingPoint, codeModels, baseprob, contexts[0], i);
-			else
-				sizes[i] = cs.EvaluateSizeQuick((unsigned char*)phase1->getPtr()+splittingPoint, phase1->getRawSize()-splittingPoint, dataModels, baseprob, contexts[1], i - 8);
-		}
-#else
+
 		char contexts[2][8];
 		memset(contexts[0], 0, 8);
 		memset(contexts[1], 0, 8);
@@ -57,11 +48,11 @@ int EmpiricalHunkSorter::tryHunkCombination(HunkList* hunklist, Transform& trans
 		concurrency::parallel_for(0, 16, [&](int i)
 		{
 			if (i < 8)
-				sizes[i] = cs.EvaluateSizeQuick((unsigned char*)phase1->getPtr(), splittingPoint, codeModels, baseprob, contexts[0], i);
+				sizes[i] = cs.EvaluateSize((unsigned char*)phase1->getPtr(), splittingPoint, codeModels, baseprob, contexts[0], i);
 			else
-				sizes[i] = cs.EvaluateSizeQuick((unsigned char*)phase1->getPtr() + splittingPoint, phase1->getRawSize() - splittingPoint, dataModels, baseprob, contexts[1], i - 8);
+				sizes[i] = cs.EvaluateSize((unsigned char*)phase1->getPtr() + splittingPoint, phase1->getRawSize() - splittingPoint, dataModels, baseprob, contexts[1], i - 8);
 		});
-#endif
+
 		delete phase1;
 
 		for (int i = 0; i < 16; i++)
@@ -169,6 +160,7 @@ void EmpiricalHunkSorter::sortHunkList(HunkList* hunklist, Transform& transform,
 	fflush(stdout);
 
 	int bestsize = tryHunkCombination(hunklist, transform, codeModels, dataModels, models1k, baseprob, saturate, use1KMode);
+	printf("  Iteration: %5d  Size: %5.2f\n", 0, bestsize / (BITPREC * 8.0f));
 	
 	if(progress)
 		progress->beginTask("Reordering sections");
@@ -176,7 +168,7 @@ void EmpiricalHunkSorter::sortHunkList(HunkList* hunklist, Transform& transform,
 	Hunk** backup = new Hunk*[nHunks];
 	int fails = 0;
 	int stime = clock();
-	for(int i = 0; i < numIterations; i++) {
+	for(int i = 1; i < numIterations; i++) {
 		for(int j = 0; j < nHunks; j++)
 			backup[j] = (*hunklist)[j];
 
