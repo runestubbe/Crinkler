@@ -16,7 +16,7 @@ EmpiricalHunkSorter::EmpiricalHunkSorter() {
 EmpiricalHunkSorter::~EmpiricalHunkSorter() {
 }
 
-int EmpiricalHunkSorter::tryHunkCombination(HunkList* hunklist, Transform& transform, ModelList& codeModels, ModelList& dataModels, ModelList1k& models1k, int baseprob, bool saturate, bool use1KMode)
+int EmpiricalHunkSorter::tryHunkCombination(HunkList* hunklist, Transform& transform, ModelList& codeModels, ModelList& dataModels, ModelList1k& models1k, int baseprob, bool saturate, bool use1KMode, int* out_size1, int* out_size2)
 {
 	int splittingPoint;
 
@@ -25,13 +25,16 @@ int EmpiricalHunkSorter::tryHunkCombination(HunkList* hunklist, Transform& trans
 	transform.linkAndTransform(hunklist, import, CRINKLER_CODEBASE, phase1, NULL, &splittingPoint, false);
 
 
-	int size = 0;
+	int totalsize = 0;
 	if (use1KMode)
 	{
 		int max_size = phase1->getRawSize() * 2 + 1000;
 		unsigned char* compressed_data_ptr = new unsigned char[max_size];
-		Compress1K((unsigned char*)phase1->getPtr(), phase1->getRawSize(), compressed_data_ptr, max_size, models1k.boost, models1k.baseprob0, models1k.baseprob1, models1k.modelmask, nullptr, &size);	//TODO: estimate instead of compress
+		Compress1K((unsigned char*)phase1->getPtr(), phase1->getRawSize(), compressed_data_ptr, max_size, models1k.boost, models1k.baseprob0, models1k.baseprob1, models1k.modelmask, nullptr, &totalsize);	//TODO: estimate instead of compress
 		delete[] compressed_data_ptr;
+
+		if(out_size1) *out_size1 = totalsize;
+		if(out_size2) *out_size2 = 0;
 	}
 	else
 	{
@@ -55,11 +58,20 @@ int EmpiricalHunkSorter::tryHunkCombination(HunkList* hunklist, Transform& trans
 
 		delete phase1;
 
-		for (int i = 0; i < 16; i++)
-			size += sizes[i];
+		int size1 = codeModels.nmodels * 8 * BITPREC;
+		int size2 = dataModels.nmodels * 8 * BITPREC;
+		for(int i = 0; i < 8; i++)
+		{
+			size1 += sizes[i];
+			size2 += sizes[i+8];
+		}
+
+		totalsize = size1 + size2;
+		if(out_size1) *out_size1 = size1;
+		if(out_size2) *out_size2 = size2;
 	}
 
-	return size;
+	return totalsize;
 }
 
 void permuteHunklist(HunkList* hunklist, int strength) {
@@ -153,14 +165,24 @@ void randomPermute(HunkList* hunklist) {
 	}
 }
 
-void EmpiricalHunkSorter::sortHunkList(HunkList* hunklist, Transform& transform, ModelList& codeModels, ModelList& dataModels, ModelList1k& models1k, int baseprob, bool saturate, int numIterations, ProgressBar* progress, bool use1KMode) {
+int EmpiricalHunkSorter::sortHunkList(HunkList* hunklist, Transform& transform, ModelList& codeModels, ModelList& dataModels, ModelList1k& models1k, int baseprob, bool saturate, int numIterations, ProgressBar* progress, bool use1KMode, int* out_size1, int* out_size2)
+{
 	int nHunks = hunklist->getNumHunks();
-
+	
 	printf("\n\nReordering sections...\n");
 	fflush(stdout);
-
-	int bestsize = tryHunkCombination(hunklist, transform, codeModels, dataModels, models1k, baseprob, saturate, use1KMode);
-	printf("  Iteration: %5d  Size: %5.2f\n", 0, bestsize / (BITPREC * 8.0f));
+	
+	int best_size1;
+	int best_size2;
+	int best_total_size = tryHunkCombination(hunklist, transform, codeModels, dataModels, models1k, baseprob, saturate, use1KMode, &best_size1, &best_size2);
+	if(use1KMode)
+	{
+		printf("  Iteration: %5d  Size: %5.2f\n", 0, best_total_size / (BITPREC * 8.0f));
+	}
+	else
+	{
+		printf("  Iteration: %5d  Code: %.2f  Data: %.2f  Size: %.2f\n", 0, best_size1 / (BITPREC * 8.0f), best_size2 / (BITPREC * 8.0f), best_total_size / (BITPREC * 8.0f));
+	}
 	
 	if(progress)
 		progress->beginTask("Reordering sections");
@@ -183,20 +205,29 @@ void EmpiricalHunkSorter::sortHunkList(HunkList* hunklist, Transform& transform,
 			}
 		}
 
-		permuteHunklist(hunklist, 2/*(int)sqrt((double)fails)/10+1*/);
-		//randomPermute(hunklist);
-
+		permuteHunklist(hunklist, 2);
+		
 		// restore export hunk, if present
 		if (eh) {
 			hunklist->insertHunk(ehi, eh);
 		}
-
-		int size = tryHunkCombination(hunklist, transform, codeModels, dataModels, models1k, baseprob, saturate, use1KMode);
+		int size1, size2;
+		int total_size = tryHunkCombination(hunklist, transform, codeModels, dataModels, models1k, baseprob, saturate, use1KMode, &size1, &size2);
 		//printf("size: %5.2f\n", size / (BITPREC * 8.0f));
-		if(size < bestsize) {
-			printf("  Iteration: %5d  Size: %5.2f\n", i, size / (BITPREC * 8.0f));
+		if(total_size < best_total_size) {
+			if(use1KMode)
+			{
+				printf("  Iteration: %5d  Size: %5.2f\n", i, total_size / (BITPREC * 8.0f));
+			}
+			else
+			{
+				printf("  Iteration: %5d  Code: %.2f  Data: %.2f  Size: %.2f\n", i, size1 / (BITPREC * 8.0f), size2 / (BITPREC * 8.0f), total_size / (BITPREC * 8.0f));
+			}
+			
 			fflush(stdout);
-			bestsize = size;
+			best_total_size = total_size;
+			best_size1 = size1;
+			best_size2 = size2;
 			fails = 0;
 		} else {
 			fails++;
@@ -210,7 +241,11 @@ void EmpiricalHunkSorter::sortHunkList(HunkList* hunklist, Transform& transform,
 	if(progress)
 		progress->endTask();
 
+	if(out_size1) *out_size1 = best_size1;
+	if(out_size2) *out_size2 = best_size2;
+
 	delete[] backup;
 	int timespent = (clock() - stime)/CLOCKS_PER_SEC;
 	printf("Time spent: %dm%02ds\n", timespent/60, timespent%60);
+	return best_total_size;
 }

@@ -36,6 +36,8 @@ public:
 	unsigned int boost;
 	unsigned int baseprob0;
 	unsigned int baseprob1;
+
+	void print() const;
 };
 
 #endif

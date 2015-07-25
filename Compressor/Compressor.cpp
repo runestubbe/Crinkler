@@ -151,7 +151,7 @@ ModelList InstantModels() {
 	return models;
 }
 
-ModelList ApproximateModels4k(const unsigned char* data, int datasize, int baseprob, bool saturate, int* compsize, ProgressBar* progressBar, bool verbose, CompressionType compressionType, char* context) {
+ModelList ApproximateModels4k(const unsigned char* data, int datasize, int baseprob, bool saturate, int* compsize, ProgressBar* progressBar, CompressionType compressionType, char* context) {
 	unsigned char masks[256];
 	int m;
 	int mask;
@@ -234,11 +234,6 @@ ModelList ApproximateModels4k(const unsigned char* data, int datasize, int basep
 	if(compsize)
 		*compsize = size;
 
-	float bytesize = size / (float) (BITPREC * 8);
-	printf("Ideal compressed size: %.2f\n", bytesize);
-	if (verbose) {
-		models.print();
-	}
 	return models;
 }
 
@@ -770,7 +765,7 @@ int evaluate1K(unsigned char* data, int size, int* modeldata, int* out_b0, int* 
 }
 #endif
 
-ModelList1k ApproximateModels1k(const unsigned char* org_data, int datasize, int* compsize, ProgressBar* progressBar, bool verbose)
+ModelList1k ApproximateModels1k(const unsigned char* org_data, int datasize, int* compsize, ProgressBar* progressBar)
 {
 	unsigned char* data = new unsigned char[datasize + 16];
 	memset(data, 0, 16);
@@ -870,8 +865,6 @@ ModelList1k ApproximateModels1k(const unsigned char* org_data, int datasize, int
 		*compsize = best_size;
 	}
 
-	float bytesize = best_size / (float)(BITPREC * 8);
-	printf("Ideal compressed size: %.2f\n", bytesize);
 	return model;
 }
 
