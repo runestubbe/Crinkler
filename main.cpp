@@ -382,6 +382,7 @@ int main(int argc, char* argv[]) {
 
 	//set Crinkler options
 	crinkler.setUseTinyCompressor(tinyCompressor.getValue());
+	crinkler.setUseTinyImport(tinyImport.getValue());
 	crinkler.setImportingType(!unsafeImportArg.getValue());
 	crinkler.setEntry(entryArg.getValue());
 	crinkler.setHashsize(hashsizeArg.getValue());
@@ -414,6 +415,8 @@ int main(int argc, char* argv[]) {
 
 	//print some info
 	printf("Target: %s\n", outArg.getValue());
+	printf("Tiny compressor: %s\n", tinyCompressor.getValue() ? "YES" : "NO");
+	printf("Tiny import: %s\n", tinyImport.getValue() ? "YES" : "NO");
 	printf("Subsystem type: %s\n", subsystemArg.getValue() == SUBSYSTEM_CONSOLE ? "CONSOLE" : "WINDOWS");
 	printf("Large address aware: %s\n", largeAddressAwareArg.getValueIfPresent(0) ? "YES" : "NO");
 	printf("Compression mode: %s\n", compTypeName((CompressionType)compmodeArg.getValue()));
