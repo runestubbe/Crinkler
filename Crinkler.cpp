@@ -29,7 +29,7 @@ Crinkler::Crinkler():
 	m_subsystem(SUBSYSTEM_WINDOWS),
 	m_hashsize(100*1024*1024),
 	m_compressionType(COMPRESSION_FAST),
-	m_useSafeImporting(false),
+	m_useSafeImporting(true),
 	m_hashtries(0),
 	m_hunktries(0),
 	m_printFlags(0),
@@ -616,6 +616,8 @@ void Crinkler::recompress(const char* input_filename, const char* output_filenam
 			splittingPoint = (*(int*)&indata[models_offset]) / 8;
 		}
 	}
+
+	setUseTinyCompressor(is_tiny_compressor);
 	
 	CompressionType compmode = m_modellist1.detectCompressionType();
 	int subsystem_version = indata[pe_header_offset+0x5C];
@@ -773,6 +775,8 @@ void Crinkler::recompress(const char* input_filename, const char* output_filenam
 	{
 		Log::error("", "Cannot find old import code to patch\n");
 	}
+
+	setUseTinyImport(is_tiny_import);
 
 	printf("\n");
 
@@ -963,14 +967,6 @@ void Crinkler::recompress(const char* input_filename, const char* output_filenam
 		setCompressionType(compmode);
 	}
 
-	CompressionReportRecord* csr = phase1->getCompressionSummary(sizefill, splittingPoint);
-	if(m_printFlags & PRINT_LABELS)
-		verboseLabels(csr);
-	if(!m_summaryFilename.empty())
-		htmlReport(csr, m_summaryFilename.c_str(), *phase1, *phase1, sizefill, output_filename, this);
-	delete csr;
-	delete[] sizefill;
-
 	phase1Compressed = new Hunk("compressed data", (char*)data, 0, 0, size, size);
 	delete[] data;
 
@@ -1022,6 +1018,8 @@ void Crinkler::recompress(const char* input_filename, const char* output_filenam
 	if (m_largeAddressAware == -1) {
 		m_largeAddressAware = large_address_aware;
 	}
+	setSubsystem((subsystem_version == IMAGE_SUBSYSTEM_WINDOWS_GUI) ? SUBSYSTEM_WINDOWS : SUBSYSTEM_CONSOLE);
+
 	int new_exports_rva = 0;
 	if(!is_tiny_compressor && !m_exports.empty())
 	{
@@ -1029,6 +1027,15 @@ void Crinkler::recompress(const char* input_filename, const char* output_filenam
 	}
 	setHeaderConstants(phase2, phase1, best_hashsize, m_modellist1k.boost, m_modellist1k.baseprob0, m_modellist1k.baseprob1, m_modellist1k.modelmask, subsystem_version, new_exports_rva, is_tiny_compressor);
 	phase2->relocate(CRINKLER_IMAGEBASE);
+
+	CompressionReportRecord* csr = phase1->getCompressionSummary(sizefill, splittingPoint);
+	if(m_printFlags & PRINT_LABELS)
+		verboseLabels(csr);
+	if(!m_summaryFilename.empty())
+		htmlReport(csr, m_summaryFilename.c_str(), *phase1, *phase1, sizefill, output_filename, this);
+	delete csr;
+	delete[] sizefill;
+
 
 	if (!outfile) {
 		if(fopen_s(&outfile, output_filename, "wb")) {
@@ -1361,13 +1368,20 @@ void Crinkler::printOptions(FILE *out) {
 		fprintf(out, " /TINYCOMPRESSOR");
 	}
 	if(m_useTinyImport) {
-		fprintf(out, " /TINYCOMPRESSOR");
+		fprintf(out, " /TINYIMPORT");
 	}
-		
-	fprintf(out, " /COMPMODE:%s", compTypeName(m_compressionType));
-	fprintf(out, " /HASHSIZE:%d", m_hashsize/1048576);
+	
+	if(!m_useTinyCompressor)
+	{
+		fprintf(out, " /COMPMODE:%s", compTypeName(m_compressionType));
+		fprintf(out, " /HASHSIZE:%d", m_hashsize / 1048576);
+	}
+	
 	if (m_compressionType != COMPRESSION_INSTANT) {
-		fprintf(out, " /HASHTRIES:%d", m_hashtries);
+		if(!m_useTinyCompressor)
+		{
+			fprintf(out, " /HASHTRIES:%d", m_hashtries);
+		}
 		fprintf(out, " /ORDERTRIES:%d", m_hunktries);
 	}
 	for(int i = 0; i < (int)m_rangeDlls.size(); i++) {
