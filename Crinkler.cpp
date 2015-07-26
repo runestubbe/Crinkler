@@ -776,6 +776,11 @@ void Crinkler::recompress(const char* input_filename, const char* output_filenam
 		Log::error("", "Cannot find old import code to patch\n");
 	}
 
+	if(is_tiny_compressor && dll_names_address - CRINKLER_CODEBASE < splittingPoint)
+	{
+		splittingPoint = dll_names_address - CRINKLER_CODEBASE;	// makes the 1k report a little more readable
+	}
+
 	setUseTinyImport(is_tiny_import);
 
 	printf("\n");
@@ -785,7 +790,7 @@ void Crinkler::recompress(const char* input_filename, const char* output_filenam
 		if(is_tiny_compressor)
 		{
 			char* start_ptr = (char*)&rawdata[dll_names_address - CRINKLER_CODEBASE];
-			char* end_ptr = (char*)&rawdata[rawsize - CRINKLER_CODEBASE];
+			char* end_ptr = (char*)&rawdata[rawsize];
 			for(auto& kv : m_replaceDlls)
 			{
 				char* pos = std::search(start_ptr, end_ptr, kv.first.begin(), kv.first.end());
