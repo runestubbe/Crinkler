@@ -4,13 +4,13 @@ CRINKLER - Compressing linker for Windows specialized for 4k intros
 Aske Simon Christensen "Blueberry/Loonies"
 Rune L. H. Stubbe "Mentor/TBC"
 
-Version 2.0 (July 27, 2015)
+Version 2.0 (July 28, 2015)
 
 
 
 VERSION HISTORY
 ---------------
-27.07.15: 2.0:  /TINYHEADER option: smaller decompressor for 1k intros.
+28.07.15: 2.0:  /TINYHEADER option: smaller decompressor for 1k intros.
                 /TINYIMPORT option: smaller import code for 1k intros.
                 /EXPORT option to export code and data symbols.
                 /SATURATE option to saturate context counters.
