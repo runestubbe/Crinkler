@@ -193,8 +193,19 @@ int EmpiricalHunkSorter::sortHunkList(HunkList* hunklist, Transform& transform, 
 	for(int i = 1; i < numIterations; i++) {
 		for(int j = 0; j < nHunks; j++)
 			backup[j] = (*hunklist)[j];
+		
+		// save dll hunk
+		Hunk* dllhunk = nullptr;
+		int dlli;
+		for(dlli = 0; dlli < hunklist->getNumHunks(); dlli++) {
+			if((*hunklist)[dlli]->getFlags() & HUNK_IS_LEADING) {
+				dllhunk = (*hunklist)[dlli];
+				hunklist->removeHunk(dllhunk);
+				break;
+			}
+		}
+		
 
-		// save export hunk, if present
 		Hunk* eh = nullptr;
 		int ehi;
 		for (ehi = 0; ehi < hunklist->getNumHunks(); ehi++) {
@@ -211,6 +222,13 @@ int EmpiricalHunkSorter::sortHunkList(HunkList* hunklist, Transform& transform, 
 		if (eh) {
 			hunklist->insertHunk(ehi, eh);
 		}
+		
+		if(dllhunk)
+		{
+			hunklist->insertHunk(dlli, dllhunk);
+		}
+
+
 		int size1, size2;
 		int total_size = tryHunkCombination(hunklist, transform, codeModels, dataModels, models1k, baseprob, saturate, use1KMode, &size1, &size2);
 		//printf("size: %5.2f\n", size / (BITPREC * 8.0f));

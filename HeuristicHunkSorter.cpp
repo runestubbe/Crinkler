@@ -24,6 +24,12 @@ bool hunkRelation(Hunk* h1, Hunk* h2) {
 	if(h1->getRawSize() == 0)
 		return h1->getVirtualSize() < h2->getVirtualSize();
 
+	if(h1->getFlags() & HUNK_IS_LEADING)
+		return true;
+	if(h2->getFlags() & HUNK_IS_LEADING)
+		return false;
+
+
 	if (h1->getFlags() & HUNK_IS_TRAILING)
 		return false;
 	if (h2->getFlags() & HUNK_IS_TRAILING)
