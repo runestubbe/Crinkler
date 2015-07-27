@@ -200,7 +200,7 @@ int main(int argc, char* argv[]) {
 	CmdParamSwitch unsafeImportArg("UNSAFEIMPORT", "crash if a DLL is missing", 0);
 	CmdParamSwitch showProgressArg("PROGRESSGUI", "show a graphical progress bar", 0);
 
-	CmdParamSwitch tinyCompressor("TINYCOMPRESSOR", "use tiny compressor", 0);
+	CmdParamSwitch tinyHeader("TINYHEADER", "use tiny header", 0);
 	CmdParamSwitch tinyImport("TINYIMPORT", "use tiny import", 0);
 	CmdParamFlags subsystemArg("SUBSYSTEM", "select subsystem", PARAM_FORBID_MULTIPLE_DEFINITIONS, SUBSYSTEM_CONSOLE, 
 						"WINDOWS", SUBSYSTEM_WINDOWS, "CONSOLE", SUBSYSTEM_CONSOLE, NULL);
@@ -232,7 +232,7 @@ int main(int argc, char* argv[]) {
 	cmdline.addParams(&crinklerFlag, &hashsizeArg, &hashtriesArg, &hunktriesArg, &entryArg, &outArg, &summaryArg, &unsafeImportArg,
 						&subsystemArg, &largeAddressAwareArg, &truncateFloatsArg, &overrideAlignmentsArg, &unalignCodeArg, &compmodeArg, &saturateArg, &printArg, &transformArg, &libpathArg, 
 						&rangeImportArg, &replaceDllArg, &fallbackDllArg, &exportArg, &stripExportsArg, &noInitializersArg, &filesArg, &priorityArg, &showProgressArg, &recompressFlag,
-						&tinyCompressor, &tinyImport,
+						&tinyHeader, &tinyImport,
 						NULL);
 	
 
@@ -381,7 +381,7 @@ int main(int argc, char* argv[]) {
 	}
 
 	//set Crinkler options
-	crinkler.setUseTinyCompressor(tinyCompressor.getValue());
+	crinkler.setUseTinyHeader(tinyHeader.getValue());
 	crinkler.setUseTinyImport(tinyImport.getValue());
 	crinkler.setImportingType(!unsafeImportArg.getValue());
 	crinkler.setEntry(entryArg.getValue());
@@ -415,7 +415,7 @@ int main(int argc, char* argv[]) {
 
 	//print some info
 	printf("Target: %s\n", outArg.getValue());
-	printf("Tiny compressor: %s\n", tinyCompressor.getValue() ? "YES" : "NO");
+	printf("Tiny compressor: %s\n", tinyHeader.getValue() ? "YES" : "NO");
 	printf("Tiny import: %s\n", tinyImport.getValue() ? "YES" : "NO");
 	printf("Subsystem type: %s\n", subsystemArg.getValue() == SUBSYSTEM_CONSOLE ? "CONSOLE" : "WINDOWS");
 	printf("Large address aware: %s\n", largeAddressAwareArg.getValueIfPresent(0) ? "YES" : "NO");

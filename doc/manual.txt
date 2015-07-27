@@ -4,13 +4,13 @@ CRINKLER - Compressing linker for Windows specialized for 4k intros
 Aske Simon Christensen "Blueberry/Loonies"
 Rune L. H. Stubbe "Mentor/TBC"
 
-Version 2.0 (July ??, 2015)
+Version 2.0 (July 27, 2015)
 
 
 
 VERSION HISTORY
 ---------------
-??.07.15: 2.0:  New header and import code specialized for 1k intros.
+27.07.15: 2.0:  New header and import code specialized for 1k intros.
                 /EXPORT option to export code and data symbols.
                 /SATURATE option to saturate context counters.
                 /FALLBACKDLL option for when a DLL is not available.
@@ -466,7 +466,7 @@ Linker/Command Line/Additional Options:
     default value is 20. Higher values rarely improve the size by more
     than a few bytes.
 
-/TINYCOMPRESSOR
+/TINYHEADER
     Enables an alternative compression algorithm trading off some
     compression efficiency for an even smaller decompression overhead.
     This can be beneficial when targeting extremely small file sizes
@@ -475,8 +475,8 @@ Linker/Command Line/Additional Options:
     a O(n^2) decompression time which can become prohibitively slow
     for files significantly larger than 1kb.
 
-    The HASHSIZE, HASHTRIES, COMPMODE and EXPORT options are ignored
-    when TINYCOMPRESSOR is enabled.
+    The HASHSIZE, HASHTRIES, COMPMODE, SATURATE and EXPORT options are
+    ignored when TINYHEADER is enabled.
 
 /TINYIMPORT
     Enables a more compact function importing scheme that does not
@@ -493,7 +493,7 @@ Linker/Command Line/Additional Options:
     future windows versions, so it is recommended to also distribute
     safe versions when using this option.
 
-    The UNSAFEIMPORT, FALLBACKDLL and RANGEIMPORT options are ignored
+    The UNSAFEIMPORT, FALLBACKDLL and RANGE options are ignored
     when TINYIMPORT is enabled.
 
 /ORDERTRIES:[number of retries]
