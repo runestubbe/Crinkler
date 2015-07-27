@@ -55,7 +55,7 @@ class Crinkler {
 	bool					m_stripExports;
 	bool					m_showProgressBar;
 	Transform*				m_transform;
-	bool					m_useTinyCompressor;
+	bool					m_useTinyHeader;
 	bool					m_useTinyImport;
 	bool					m_truncateFloats;
 	int						m_truncateBits;
@@ -115,7 +115,7 @@ public:
 	void setStripExports(bool strip)						{ m_stripExports = strip; }
 	void showProgressBar(bool show)							{ m_showProgressBar = show; }
 
-	void setUseTinyCompressor(bool useTinyCompressor)		{ m_useTinyCompressor = useTinyCompressor; }
+	void setUseTinyHeader(bool useTinyHeader)				{ m_useTinyHeader = useTinyHeader; }
 	void setUseTinyImport(bool useTinyImport)				{ m_useTinyImport = useTinyImport; }
 
 	void setEntry(const char* entry)						{ m_entry = entry; }
