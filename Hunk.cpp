@@ -251,7 +251,7 @@ void Hunk::setRawSize(int size) {
 
 void Hunk::setAlignmentBits(int alignmentBits) {
 	m_alignmentBits = alignmentBits;
-	m_flags != HUNK_IS_ALIGNED;
+	m_flags |= HUNK_IS_ALIGNED;
 }
 
 void Hunk::setAlignmentOffset(int alignmentOffset) {
