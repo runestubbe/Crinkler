@@ -466,6 +466,36 @@ Linker/Command Line/Additional Options:
     default value is 20. Higher values rarely improve the size by more
     than a few bytes.
 
+/TINYCOMPRESSOR
+    Enables an alternative compression algorithm trading off some
+    compression efficiency for an even smaller decompression overhead.
+    This can be beneficial when targeting extremely small file sizes
+    such as 1kb. The simpler decompressor gathers statistics by
+    repeated linear searches instead of hashing. This results in
+    a O(n^2) decompression time which can become prohibitively slow
+    for files significantly larger than 1kb.
+
+    The HASHSIZE, HASHTRIES, COMPMODE and EXPORT options are ignored
+    when TINYCOMPRESSOR is enabled.
+
+/TINYIMPORT
+    Enables a more compact function importing scheme that does not
+    require the explicit storage of function name hashes. This is
+    achieved by indiscriminately importing every function from the
+    relevant DLLs. Imported functions are distributed in an import
+    table based on their function name hashes. Intuitively, this
+    embeds the hash code entropy directly into the call instruction.
+
+    Crinkler ensures that the import table size and hash function are
+    chosen such that there are no collisions for the functions in use.
+
+    This technique is potentially less resilient to changes in
+    future windows versions, so it is recommended to also distribute
+    safe versions when using this option.
+
+    The UNSAFEIMPORT, FALLBACKDLL and RANGEIMPORT options are ignored
+    when TINYIMPORT is enabled.
+
 /ORDERTRIES:[number of retries]
 
     Specify the number of section reordering iterations that the
@@ -986,11 +1016,12 @@ gives some advice on these.
   you perform on smaller files might turn out to behave differently
   when you get nearer to 4k.
 
-- As a matter of good conduct, do not use UNSAFEIMPORT if you can
-  spare the space, and do not set HASHSIZE higher than you need. In
-  other words, if your final intro is well below the size limit,
-  remove the UNSAFEIMPORT option (if you added it in the first place)
-  and then lower HASHSIZE in order not to waste memory unnecessarily.
+- As a matter of good conduct, do not use TINYIMPORT or UNSAFEIMPORT
+  if you can spare the space, and do not set HASHSIZE higher than
+  you need. In other words, if your final intro is well below the size
+  limit, remove the UNSAFEIMPORT option (if you added it in the
+  first place) and then lower HASHSIZE in order not to waste memory
+  unnecessarily.
 
 
 
