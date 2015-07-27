@@ -1,6 +1,6 @@
 
 Crinkler - compressing linker for Windows
-Copyright 2005-2013 Aske Simon Christensen and Rune L. H. Stubbe.
+Copyright 2005-2015 Aske Simon Christensen and Rune L. H. Stubbe.
 
 
 DISTRIBUTION
