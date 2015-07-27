@@ -1,0 +1,1122 @@
+
+CRINKLER - Compressing linker for Windows specialized for 4k intros
+
+Aske Simon Christensen "Blueberry/Loonies"
+Rune L. H. Stubbe "Mentor/TBC"
+
+Version 2.0 (July 28, 2015)
+
+
+
+VERSION HISTORY
+---------------
+28.07.15: 2.0:  /TINYHEADER option: smaller decompressor for 1k intros.
+                /TINYIMPORT option: smaller import code for 1k intros.
+                /EXPORT option to export code and data symbols.
+                /SATURATE option to saturate context counters.
+                /FALLBACKDLL option for when a DLL is not available.
+                /UNALIGNCODE option to set alignment of all code to 1.
+                Support for /REPLACEDLL during recompression.
+                Consistent size between model estimation and reordering.
+                Header size reduced by 2 bytes.
+                Print previous size of output file.
+                Accept version specifier after /SUBSYSTEM value.
+                Switched from Intel OpenMP to MSVC concurrency API.
+
+19.01.13: 1.4:  Output EXE files work with recent NVIDIA drivers.
+                New zero-section header layout saving around 30-50 bytes.
+                Forwarded RVA imports supported via link-time forwarding.
+                Dynamic C++ initializers supported.
+                Support for producing Large Address Aware executables.
+                Crinkler is Large Address Aware, handling larger inputs.
+                Report all unresolved symbols and the location of each.
+                Better resolving of ambiguous label references in report.
+                Various adjustments to textual output.
+                /RECOMPRESS overwrites input file by default.
+
+05.03.11: 1.3:  Fixed Crinkler crash on some AMD systems.
+                Header size reduced by 21 bytes.
+                Slightly improved model hash function.
+                /OVERRIDEALIGNMENTS option to specify label alignments.
+                No limit on the number of calls in call transform.
+                Import code and entry point movable by section reordering.
+                Fixed bug in handling of files with absolute path.
+                Fixed labels in report showing up in the wrong section.
+                Crinkler writes .dmp files in case of a crash.
+
+05.09.09: 1.2:  Output EXE files are now Windows 7 compatible.
+                Output EXE files are no longer Windows 2000 compatible.
+                Header size reduced by 16 bytes.
+                Non-range import code is (usually) slightly smaller.
+                Slightly improved section ordering estimation.
+                /RECOMPRESS option to recompress Crinkler-compressed
+                executables, optionally with different parameters.
+                /FIX removed, as it is subsumed by /RECOMPRESS.
+
+14.01.09: 1.1a: Fixed /TRUNCATEFLOATS crashing in some cases.
+                Improved /ORDERTRIES estimation when call transform is used.
+                Sometimes sections were misplaced in the HTML report.
+                Various improvements to the HTML report.
+                The /FIX option can input and output to the same file.
+                Helpful error messages for various unsupported features.
+                Prefer a custom entry point to a standard library one.
+                New section in the manual about runtime libraries.
+
+12.01.08: 1.1:  Support for weak externals (virtual C++ destructors).
+                Fixed compatibility with Data Execution Prevention.
+                /REPORT option for a colorful HTML compression report.
+                /TRUNCATEFLOATS option to mutilate float constants.
+                /SAFEIMPORT is now default, disabled with /UNSAFEIMPORT.
+                Slightly smaller overhead if range importing is not used.
+                Fixed some problems with compressing very small files.
+                /VERBOSE:FUNCTIONS removed, as it is subsumed by /REPORT.
+                Remaining /VERBOSE options renamed to /PRINT.
+                Maximum number of ORDERTRIES increased to 100000.
+
+07.01.07: 1.0a: New /VERBOSE:FUNCTIONS options to sort the functions.
+                Various verbose output fixes.
+                Various crash fixes.
+                A fix to the /FIX Crinkler version recognizer.
+
+27.12.06: 1.0:  Output EXE files are now Windows Vista compatible.
+                Compression tweak for greatly improved compression ratio.
+                Much faster compression.
+                Automatically takes advantage of multiple processors.
+                Improved Visual Studio 2005 integration.
+                /COMPMODE:INSTANT option for very quick compression.
+                /ORDERTRIES option to try out different section orderings.
+                /SAFEIMPORT option to insert a check for nonexistent DLLs.
+                /PROGRESSGUI option for a graphical progress bar.
+                /REPLACEDLL option to replace one DLL with another.
+                /FIX option to fix compatibility problems of older versions.
+
+09.02.06: 0.4a: Fixed linker crash problem with blank member entries
+                in some library files (such as glut32).
+                The /PRIORITY option was not mentioned in the
+                commandline usage help.
+
+18.12.05: 0.4:  Changed header and import code to make output EXE files
+                compatible with 64-bit versions of Windows.
+                Fixed a bug in the ordinal range import mechanism.
+                Added a switch to control the process priority.
+                Added a warning for range import of an unused DLL.
+                Some more header squeezing.
+
+31.10.05: 0.3:  Output EXE files are now Windows 2000 compatible.
+                Added a number of verbose options to output useful
+                information about the program being compressed.
+                Added an option for transforming function calls to
+                use absolute offsets to improve compression.
+                Fixed a bug in the linker regarding identically named
+                sections.
+                Fixed a potential crash bug in the linker.
+                Various small tweaks and optimizations.
+
+23.07.05: 0.2:  Fixed bug in the decompressor.
+                Changed the behaviour of the /CRINKLER option.
+                Added timing to the progress bars.
+                Some updates to the manual and usage description.
+
+21.07.05: 0.1:  First release.
+
+
+
+BACKGROUND
+----------
+
+Ever since the concept of size-limited demo competitions was
+introduced in the early 1990's (and before that as well), people have
+been using executable file compressors to reduce the size of their
+final executables. An executable file compressor is a program that
+takes as input an executable file and produces a new executable file
+which has the same behaviour as the original one but is (hopefully)
+smaller.
+
+The usual technique employed by executable file compressors is to
+compress the contents of the executable file using some general
+purpose data compression method and prepend to this compressed data a
+small piece of code (the decompressor) which decompresses the contents
+into memory in such a way that it looks to the code as if the original
+executable file had been loaded into memory in the normal way.
+
+The size of the decompressor is usually around a few hundred bytes,
+depending on the complexity of the compression method. This
+constitutes an unavoidable overhead in the compressed file, which is
+particularly evident for small files, such as 4k intros. Furthermore,
+the header of the Windows EXE file format contains a lot of
+information that needs to be there at fixed offsets in order for
+Windows to be able to load the file. The presence of these overheads
+from the header and decompressor motivated people to look for other
+means of compressing their 4k intros.
+
+Until Crinkler came around, the most popular strategy for compressing
+4k intros for Windows was CAB dropping: A few simple transformations
+are performed on the executable to make it compress better (such as
+merging sections and setting unused header fields to zero), and the
+result is compressed using the Cabinet Compression tool included with
+Windows. The resulting .CAB file is renamed to have .BAT extension,
+and some commands are inserted into the file such that when the .BAT
+file is executed, it decompresses the executable to disk (using the
+Cabinet decompression command), runs the executable and then deletes
+the executable again. This saves the size of the decompression code
+(since an external program is used to do the decompression) and some
+of the size of the header (since the header can be compressed).
+
+Various dropping strategies combined with other space-saving hacks
+people employed on their 4k intros (in particular import by ordinal)
+caused severe compatibility problems. More often than not, people
+who wanted to run a newly released 4k intro found that it did not
+work on their own machine. It became customary to include a
+'compatible' version in the distribution which was larger than 4k
+but worked on all machines. For a time, it seemed that the term
+'4k intro' meant '4k on the compo machine' intro.
+
+The main motivation for starting the Crinkler project was the feeling
+that the existing means available for compressing 4k intros were
+unsatisfactory. We want 4k intros that are self-contained EXE
+files. We want 4k intros that are 4 kilobytes in size. Our aim for
+Crinkler is to be the cleanest, most effective and most compatible
+executable file compressor for Windows 4k intros.
+
+
+
+COMPATIBILITY
+-------------
+
+The goal of Crinkler is for the produced EXE files to be compatible
+with all widely used Windows versions and configurations. As of
+version 2.0, the EXE files produced by Crinkler are, to the best of
+our knowledge, compatible with Windows XP, Windows Vista, Windows 7,
+Windows 8 and Windows 10, both 32 bit and 64 bit versions. They are
+compatible with Data Execution Prevention and with execution hooks
+that inspect the import or export table of launched executables
+(graphics drivers are known to do this).
+
+It is not a primary goal of Crinkler to anticipate incompatibilities
+that may arise in the future as a consequence of new Windows versions,
+graphics drivers or other widespread system changes. Guaranteeing such
+compatibility would require Crinkler to follow the EXE file format
+specification to the letter, precluding most of the header hacks that
+Crinkler utilizes in order to reduce the size overhead of the EXE
+format as much as possible. Rather, we strive to continually monitor
+the compatibility situation and release a new, fixed version of
+Crinkler whenever a situation arises that affects the compatibility
+severely (such as a new, incompatible version of Windows). This has
+occurred several times already throughout the history of Crinkler.
+
+Each new version of Crinkler not only produces executables that are
+compatible with the current majority of targeted systems. It also
+includes a way of fixing old Crinkler executables to have the same
+level of compatibility. See the section on recompression for more
+details on this feature.
+
+This compatibility strategy ensures that intros made using Crinkler
+will continue to be accessible to their audience, even if the Windows
+EXE loader changes in an incompatible way that could not be
+anticipated at the time the intro was produced.
+
+
+
+INTRODUCTION
+------------
+
+Crinkler is a different approach to executable file compression. While
+an ordinary executable file compressor operates on the executable file
+produced by the linker from object files, Crinkler replaces the linker
+by a combined linker and compressor. The result is an EXE file which
+does not do any kind of dropping. It decompresses into memory like a
+traditional executable file compressor.
+
+Crinkler employs a range of techniques to reduce the size of the
+resulting EXE file beyond what is usually obtained by using CAB
+compression:
+
+- Having control over the linking step gives much more flexibility in
+  the optimizations and transformations possible on the data before
+  and after compression.
+
+- The compression technique used by Crinkler is based on context
+  modelling, which is far superior in compression ratio to the LZ
+  variants used by CAB and most other compressors. The disadvantage of
+  context modelling is that it is extremely slow, but this is of
+  little importance when only 4 kilobytes need to be compressed. It
+  also needs quite a lot of memory for decompression, but this is
+  again not a problem, since the typical 4k intro uses a lot of memory
+  anyway.
+
+- The actual compression algorithm performs many passes over the data
+  in order to optimize the internal parameters of the compressor. This
+  results in slower compression, but this is usually a reasonable
+  price to pay for the extra bytes gained on the file size.
+
+- The contents of the executable are split into two parts - a code
+  part and a data part - and each of these are compressed
+  individually. This leads to better compression, as code and data are
+  usually very different in structure and so do not benefit from being
+  compressed together.
+
+- DLL functions are imported by hash code. This is robust to
+  structural changes to the DLL between different versions while being
+  quite compact - only 4 bytes per imported function. For DLLs with
+  fixed relative ordinals (such as opengl32), a special technique,
+  ordinal range import, can be used to further reduce the number of
+  hash codes needed.
+
+- Much of the data in the EXE header is actually ignored by the EXE
+  loader. This space is used for some of the decompression code.
+
+Using Crinkler is somewhat different from using an ordinary executable
+file compressor because of the linking step. In the following
+sections, we describe its use in detail.
+
+
+
+INSTALLATION
+------------
+
+To use as a stand-alone linker, Crinkler does not need any
+installation. Simply run crinkler.exe from the commandline with
+appropriate arguments, as described in the next section.
+
+However, if you are using Microsoft Visual Studio to develop your
+intro, the easiest way to use Crinkler is to run it in place of the
+normal Visual Studio linker. Crinkler has been designed as a drop-in
+replacement of the Visual Studio linker, supporting the same basic
+options. All of the options can then be set using the Visual Studio
+configuration window.
+
+Unfortunately, Visual Studio does not (as of this writing) support
+replacing its linker by a different one. So what you have to do to
+make Visual Studio use Crinkler for linking is the following:
+
+- Copy crinkler.exe to your project directory or to some other
+  directory of your choice and rename it to link.exe. If you are using
+  some other linker with a different name, such as the one used with
+  the Intel C++ compiler, call it whatever the name of the linker is.
+
+- For Visual Studio 2008 and older, select Tools/Options... and go to
+  Projects and Solutions/VC++ Directories. For Visual Studio 2010 or
+  newer, open a project, select View/Property Manager, expand a project
+  and a configuration, double click on Microsoft.Cpp.Win32.user and go
+  to Common Properties/VC++ Directories.
+
+- At the top of the list for Executable files, add the directory where
+  you placed Crinkler named link.exe, or add $(SolutionDir) to make it
+  search in the project directory.
+
+- In the Release configuration (or whichever configuration you want to
+  enable compression), under Linker/Command Line/Additional Options,
+  type in /CRINKLER, along with any other Crinkler options you want to
+  set. See the next section for more details on options. Also set
+  Linker/Manifest File/Generate Manifest to No and
+  C/C++/Optimization/Whole Program Optimization to No.
+
+If you have Visual Studio installed but want to run Crinkler from the
+commandline, the easiest way is to use the Visual Studio Command
+Prompt (available from the Start menu), since this sets up the LIB
+environment variable correctly. You can read off the value of the
+environment variables by running the 'set' command in this command
+prompt. If you are using a different command prompt, you will have to
+set up the LIB environment variable manually, or use the /LIBPATH
+option.
+
+
+
+USAGE
+-----
+
+The general form of the command line for Crinkler is:
+
+CRINKLER [options] [object files] [library files] [@commandfile]
+
+When running from within Visual Studio, the object files will be the
+ones generated from the sources in the project. The library files will
+be the standard set of Win32 libraries, plus any additional library
+files specified under Linker/Input/Additional Dependencies. If you are
+using a standard runtime library, such as msvcrt, you will have to
+specify this one manually. See the section on standard libraries for
+more information.
+
+
+The following options are compatible with the VS linker and can be set
+using switches in the Visual Studio configuration window:
+
+/SUBSYSTEM:CONSOLE
+/SUBSYSTEM:WINDOWS
+(Linker/System/SubSystem)
+
+    Specify the Windows subsystem to use. If the subsystem is CONSOLE,
+    a console window will be opened when the program starts. The
+    subsystem also determines the name of the default entry point (see
+    /ENTRY). The default subsystem is WINDOWS.
+
+/LARGEADDRESSAWARE
+/LARGEADDRESSAWARE:NO
+(Linker/System/Enable Large Addresses)
+
+    Specify whether the executable is able to handle addresses above
+    2 gigabytes. If this option is enabled, the executable will be able
+    to allocate close to 4 gigabytes of memory.
+
+/OUT:[file]
+(Linker/General/Output File)
+
+    Specify the name of the resulting executable file. The default
+    name is out.exe.
+
+/ENTRY:[symbol]
+(Linker/Advanced/Entry Point)
+
+    Specify the entry label in the code. The default entry label is
+    mainCRTStartup for CONSOLE subsystem applications and
+    WinMainCRTStartup for WINDOWS subsystem applications.
+
+/LIBPATH:[path]
+(Linker/General/Additional Library Directories)
+
+    Add a number of directories (separated by semicolons) to the ones
+    searched for library files. If a library is not found in any of
+    these, the directories mentioned in the LIB environment variable
+    are searched.
+
+@commandfile
+
+    Commandline arguments will be read from the given file, as if they
+    were given directly on the commandline.
+
+
+In addition to the above options, a number of options can be given to
+control the compression process. These can be specified under
+Linker/Command Line/Additional Options:
+
+/CRINKLER
+
+    Enable the Crinkler compressor. If this option is disabled,
+    Crinkler will search through the path for a command with the same
+    name as itself, skipping itself, and pass all arguments on to this
+    command instead. This will normally invoke the Visual Studio
+    linker. If the name of the Crinkler executable is crinkler.exe,
+    this option is enabled by default, otherwise it is disabled by
+    default.
+
+/RECOMPRESS
+
+    Decompress a Crinkler-compressed executable and recompress it
+    using the given options. The resulting executable will have the
+    same level of compatibility as one produced directly by the
+    current version of Crinkler. See the section on compatibility for
+    more information on the compatibility of Crinkler-produced
+    executables.
+
+    When this option is specified, Crinkler takes a single file
+    argument, which must be an EXE file produced by Crinkler 0.4 or
+    newer.
+
+    See the section on recompression below for a description of the
+    options that can be given to control the decompression process.
+
+/PRIORITY:IDLE
+/PRIORITY:BELOWNORMAL
+/PRIORITY:NORMAL
+
+    Select the process priority at which Crinkler will run while
+    compressing. The default priority is BELOWNORMAL. Use IDLE if you
+    want Crinkler to disturb you as little as possible. Use NORMAL if
+    you don't need your machine for anything else while compressing.
+
+/COMPMODE:INSTANT
+/COMPMODE:FAST
+/COMPMODE:SLOW
+
+    Choose between three different compression modes. The FAST mode
+    usually compresses in a couple of seconds, while the SLOW one can
+    take up to a few minutes to complete. The slow one usually
+    compresses about 10-40 bytes better on a 4k executable. Use
+    INSTANT if you just want to check that your program works in
+    compressed form and don't care about the size. The default
+    compression mode is FAST.
+
+/SATURATE
+
+    The compressor and decompressor use pairs of 8-bit counters to
+    track the distributions of 0 and 1 bits for each context. If your
+    data is very repetitive (contains large blocks of the same pattern
+    of values repeated over and over again), these counters may wrap
+    around, which can sometimes hurt compression of these repetitive
+    areas.
+
+    This option inserts extra code in the decompression header to keep
+    these counters from wrapping. It is worth trying out if you have
+    large, repetitive regions and see in the compression report that
+    the data in these regions suddenly jumps up from lightest green to
+    slightly darker green for no apparent reason.
+
+/HASHSIZE:[memory size]
+
+    Specify the amount of memory the decompressor is allowed to use
+    while decompressing, in megabytes. In general, the more memory the
+    decompressor is allowed to use, the better the compression ratio
+    will be, though only slightly. The memory requirements of the
+    final executable (the size of the executable image when loaded
+    into memory) will be the maximum of this value and the original
+    image size. The memory will not be deallocated until the program
+    terminates, and any heap allocation the program performs will add
+    to this memory usage. The default value is 100, which is usually a
+    good compromise.
+
+/HASHTRIES:[number of retries]
+
+    Specify the number of different hash table sizes the compressor
+    will try in order to find one with few collisions. More tries lead
+    to longer compression time but slightly better compression. The
+    default value is 20. Higher values rarely improve the size by more
+    than a few bytes.
+
+/TINYHEADER
+    Enables an alternative compression algorithm trading off some
+    compression efficiency for an even smaller decompression overhead.
+    This can be beneficial when targeting extremely small file sizes
+    such as 1kb. The simpler decompressor gathers statistics by
+    repeated linear searches instead of hashing. This results in
+    an O(n^2) decompression time which can become prohibitively slow
+    for files significantly larger than 1kb.
+
+    The HASHSIZE, HASHTRIES, COMPMODE, SATURATE and EXPORT options are
+    ignored when TINYHEADER is enabled.
+
+/TINYIMPORT
+    Enables a more compact function importing scheme that does not
+    require the explicit storage of function name hashes. This is
+    achieved by indiscriminately importing every function from the
+    relevant DLLs. Imported functions are distributed in an import
+    table based on their function name hashes. Intuitively, this
+    embeds the hash code entropy directly into the call instruction.
+
+    Crinkler ensures that the import table size and hash function are
+    chosen such that there are no collisions for the functions in use.
+
+    This technique is potentially less resilient to changes in
+    future windows versions, so it is recommended to also distribute
+    safe versions when using this option.
+
+    The UNSAFEIMPORT, FALLBACKDLL and RANGE options are ignored
+    when TINYIMPORT is enabled.
+
+/ORDERTRIES:[number of retries]
+
+    Specify the number of section reordering iterations that the
+    linker will try out in search for the ordering that gives the best
+    compression ratio. The default is not to do any reordering.
+    Specifying this option drastically increases the compression time,
+    since Crinkler has to calculate the compressed size anew on every
+    reordering. Usually, the size does not improve noticeably after a
+    few thousand iterations.
+
+/RANGE:[DLL name]
+
+    Import functions from the given DLL (without the .dll suffix)
+    using ordinal range import. Ordinal range import imports the first
+    used function by hash and the rest by ordinal relative to the
+    first one. Ordinal range import is safe to use on DLLs in which
+    the ordinals are fixed relative to each other, such as opengl32 or
+    d3dx9_??. This option can be specified multiple times, for
+    different DLLs.
+
+/REPLACEDLL:[oldDLL]=[newDLL]
+
+    Whenever a function is imported from oldDLL, import it from newDLL
+    instead. DLL replacement is useful when the end user might not
+    have the version of the DLL that you are linking to. A typical use
+    is to replace one version of d3dx9_?? by another. Only use this
+    option if you know that the two DLLs are compatible. When
+    REPLACEDLL and RANGE are used together, RANGE must refer to the
+    new DLL.
+
+/FALLBACKDLL:[firstDLL]=[otherDLL]
+
+    If firstDLL fails to load, try loading otherDLL and import the
+    functions from there instead. For instance, to use d3dcompiler_47
+    when available but fall back to d3dcompiler_43 otherwise (since
+    the shader compiler in d3dcompiler_47 is much faster), link
+    to d3dcompiler_47 and use:
+
+    /FALLBACKDLL:d3dcompiler_47=d3dcompiler_43
+
+    The FALLBACKDLL option can be used together with REPLACEDLL to
+    specify a primary DLL other than the one your SDK links to. For
+    instance, if you are using the legacy DirectX SDK (which links to
+    d3dcompiler_43) and want to have the above prioritization, use:
+
+    /REPLACEDLL:d3dcompiler_43=d3dcompiler_47
+    /FALLBACKDLL:d3dcompiler_47=d3dcompiler_43
+
+    Arbitrarily long chains of DLL fallback can be used by specifying
+    the FALLBACKDLL option multiple times, though the chains can of
+    course not be cyclic.
+
+/EXPORT:[name]
+/EXPORT:[name]=[symbol]
+/EXPORT:[name]=[value]
+
+    Include an export table into the executable, containing an export
+    with the given name.
+
+    The first version exports an existing symbol under its existing
+    name. The second version exports an existing symbol under a
+    different name. The third version creates a 32-bit integer with
+    the given value and exports it under the given name. The value
+    can be specified in octal (prefixed with 0), decimal or hexadecimal
+    (prefixed with 0x) format.
+
+    The first version is compatible with the VS linker, but there is
+    currently no specific field for it in the configuration window.
+
+    The export table will be compressed along with the other data
+    in the executable and decompressed to the memory address specified
+    in the export table pointer in the PE header. Thus, the exports
+    defined this way are only visible to code inspecting the export
+    table after decompression has taken place.
+
+    For PE header technical reasons, all exports must be placed earlier
+    in memory than the export table. Thus, only symbols in the code and
+    data sections can be exported. If an uninitialized (BSS) symbol is
+    exported, it will be automatically moved to the data section (with
+    a warning). Beware that this will move the whole section containing
+    the symbol, so other symbols might be moved along with it.
+
+    The EXPORT option can be used to signal to the graphics driver that
+    your program desires to run on the high-performance GPU in a multi-
+    GPU system. This saves the user from having to right-click on the
+    executable and select "Run with graphics processor...".
+
+    To request high performance on NVIDIA Optimus systems, use:
+
+    /EXPORT:NvOptimusEnablement=1
+
+    To request high performance on AMD PowerXpress/Enduro systems, use:
+
+    /EXPORT:AmdPowerXpressRequestHighPerformance=1
+
+    An arbitrary number of exports can be specified, so the two high
+    performance declarations can be used together if you have space
+    enough to spare.
+
+/UNSAFEIMPORT
+
+    If the executable fails to load some DLL, it will normally pop up
+    a message box with the DLL name. This option disables this check
+    to save a few bytes (usually around 20). With unsafe import, the
+    executable will crash if a needed DLL is not found.
+
+/TRANSFORM:CALLS
+
+    Change the relative jump offsets in all internal call instructions
+    (E8 opcode) into absolute offsets from the start of the code. This
+    usually improves compression, since multiple calls to the same
+    function become identical. The transformation has an overhead of
+    about 20 bytes for the detransformation code, but the net savings
+    on a full 4k can be as large as 50 bytes, depending on the number
+    of calls in your code.
+
+/NOINITIALIZERS
+
+    Disable the inclusion of dynamic C++ initializers. The default is
+    to insert calls to each of the initializers just before the entry
+    point.
+
+/TRUNCATEFLOATS:[number of bits]
+
+    Floating point constants can take up a significant amount of space
+    in an intro, and often much of this space is wasted because the
+    constants have more precision than needed. Typically, many bytes
+    can be saved by rounding floating point constants to "nice" values
+    - that is, values where many bits in the mantissa are zero.
+    However, such rounding is cumbersome, especially when the
+    constants are written in decimal notation.
+
+    The purpose of the /TRUNCATEFLOATS option is to automate this
+    rounding process. When this option is given, Crinkler tries to
+    identify float and double constants and round them to the number
+    of bits given (between 1 and 64). If no number is given, 64 is
+    assumed.
+
+    Typically, object files do not contain any information about what
+    data is floating point constants and what is not (though the file
+    format does support such information). This means that in order to
+    identify floating point constants, Crinkler has to resort to
+    heuristics based on label names. These heuristics are able to
+    recognize constants in code and some variables, but far from all.
+
+    You can tell Crinkler explicitly that some variable contains float
+    data and how much it should be truncated by having the variable
+    name (or label) start with tf[n]_ where [n] is the number of bits
+    to truncate the constants to. The number of bits can be omitted,
+    in which case the number of bits given in the argument to
+    /TRUNCATEFLOATS is used. Such variables will still only be
+    truncated if the /TRUNCATEFLOATS option is given. Example:
+
+    const float tf14_positions[] = { 0.1f, 0.35f, 0.25f };
+
+    This will truncate the constants in the table to 14 bits (5 bits
+    of mantissa), resulting in the values 0.099609375, 0.3515625 and
+    0.25, respectively. Tip: rather than changing the variable name
+    and all references to it each time you want to change the
+    truncation precision, use a define:
+
+    #define positions tf14_positions
+
+    Note that /TRUNCATEFLOATS is an unstable and highly experimental
+    feature. Make sure to test the compressed file to verify that the
+    result is acceptable. Remember to include the musician in this
+    verification process. :)
+
+/OVERRIDEALIGNMENTS:[bits of alignment]
+
+    It is often possible to improve compression by placing
+    uninitialized variables at addresses divisible by high powers of
+    two, since this will cause all references to these addresses to
+    contain more zeros.
+
+    The PE file format only supports up to 13 bits of alignment
+    (8192), and some tools do not even expose this support fully (for
+    instance, Nasm only supports alignments up to 64). Usually, much
+    higher alignments are desirable.
+
+    Crinkler supports explicit alignment of labels at up to one
+    gigabyte (30 bits). When you specify the /OVERRIDEALIGNMENTS
+    option, Crinkler will look for labels containing the string
+    align[n] where [n] is the number of bits of alignment desired
+    (e.g. 8 for 256-byte alignment). It will then align the section
+    containing that label such that the label address is divisible by
+    2^[n]. The label does not have to be at the beginning of the
+    section, but there can be at most one explicitly aligned label in
+    each section.
+
+    The alignment specifier can optionally include an alignment
+    offset, specified by the string align[n]_[m] where [n] is the
+    number of bits of alignment and [m] is the offset in bytes. This
+    will place the label [m] bytes after an aligned address, i.e. such
+    that the address minus [m] is divisible by 2^[n].
+
+    If a numerical argument is given to /OVERRIDEALIGNMENTS, all
+    uninitialized sections which do not contain an explicitly aligned
+    label will be aligned to the given number of bits (if larger than
+    their original alignment). If the option is specified without
+    argument, uninitialized sections which do not contain an
+    explicitly aligned label will be aligned as specified in the
+    object file, as normally.
+
+    A convenient way to specify explicit alignments in C++ code is in
+    a header file included by all files in the project, containing
+    definitions like this:
+
+    #define MusicBuffer MusicBuffer_align24
+
+    In assembler files, alignments can be specified as local labels:
+
+    MusicBuffer:
+    .align24
+    ; buffer space here
+
+    Explicit alignment can be used on code and data sections as well,
+    except for the section containing the entry point, which will
+    always be 1-byte aligned. The space between the sections will be
+    padded with zero bytes.
+
+/UNALIGNCODE
+
+    Force all code sections to use alignment of 1, eliminating all
+    padding between them. This usually improves compression, but
+    can result in slightly lower performance if some functions are
+    called in performance critical loops.
+
+    The /OVERRIDEALIGNMENTS mechanism has priority over /UNALIGNCODE,
+    so if you want to excempt a few functions from being unaligned,
+    you can specify an explicit alignment for these as described for
+    /OVERRIDEALIGNMENTS.
+
+
+Finally, Crinkler has a number of options for controlling the output
+during compression. Just like the other options, these can be
+specified under Linker/Command Line/Additional Options:
+
+/REPORT:[HTML file name]
+
+    Write an HTML file with a detailed, colorful, interactive report
+    on the compression result. The code section will be shown as hex
+    dump and disassembly of the code, and the data section will be
+    shown as hex and ascii dump. All bytes will be colored to show how
+    much that byte was compressed. This report can be useful in
+    determining which parts of the executable take up the most space
+    and which things to change to reduce the size.
+
+/PRINT:LABELS
+
+    Print a list of all labels in the program along with uncompressed
+    and compressed sizes for the data between the labels. This is a
+    stripped down version of the information provided by the /REPORT
+    option.
+
+/PRINT:IMPORTS
+
+    List all functions imported from DLLs. The functions are grouped
+    by DLL, and functions imported by ordinal range import are grouped
+    into ranges.
+
+/PRINT:MODELS
+
+    List the model masks and weights selected by the compressor. This
+    is mostly for internal use.
+
+/PROGRESSGUI
+
+    Open a window showing a graphical progress indicator.
+
+
+An example commandline for linking and compressing an intro could look
+like this (split on multiple lines for readability):
+
+crinkler.exe /OUT:micropolis.exe /SUBSYSTEM:WINDOWS /RANGE:opengl32
+ /COMPMODE:SLOW /ORDERTRIES:1000 /PRINT:IMPORTS /PRINT:LABELS
+ kernel32.lib user32.lib gdi32.lib opengl32.lib glu32.lib winmm.lib
+ micropolis\startup.obj micropolis\render.obj
+ micropolis\render-asm.obj micropolis\sound.obj
+ micropolis\sound-asm.obj
+
+
+
+RECOMPRESSION
+-------------
+
+A new feature in Crinkler 1.2 is the abillity to recompress an already
+Crinkler-compressed executable. The main purpose for the feature is to
+patch an executable compressed using an earlier version of Crinkler so
+that it runs on recent Windows versions. But it can also be used
+more generally to change some of the compression parameters of a
+compressed program without performing the whole linking and
+compression process from scratch and without access to the original
+object files. Particularly, if your output executable after a long
+time spent compressing is just a few bytes too big due to bytes lost
+to hashing, you can recompress the output executable, specifying a
+higher value for /HASHSIZE and/or /HASHTRIES, and thus avoid running
+through the whole compression process again.
+
+Recompression mode is activated by the /RECOMPRESS option. When this
+option is specified, Crinkler takes a single file argument, which must
+be an EXE file produced by Crinkler 0.4 or newer. Most options then
+take on slightly different meanings, as described here.
+
+The /CRINKLER, /PRIORITY, @commandfile and /PROGRESSGUI options work
+as normally. The /ENTRY, /LIBPATH, /ORDERTRIES, /RANGE, /FALLBACKDLL,
+/UNSAFEIMPORT, /TRANSFORM:CALLS, /NOINITIALIZERS, /TRUNCATEFLOATS,
+/OVERRIDEALIGNMENTS, /UNALIGNCODE, /TINYHEADER and /TINYIMPORT options
+are ignored, as the parameters specified by these options cannot be
+changed via recompression. The /PRINT options are also ignored. The
+remaining options work as follows:
+
+/SUBSYSTEM:CONSOLE
+/SUBSYSTEM:WINDOWS
+
+    If this option is given, it specifies the Windows subsystem to use
+    as normally. If it is omitted, the original subsystem will be
+    used.
+
+/LARGEADDRESSAWARE
+/LARGEADDRESSAWARE:NO
+
+    If this option is given, it specifies large address awareness of the
+    executable as normally. If it is omitted, the original large address
+    awareness will be used.
+
+/OUT:[file]
+
+    Specify the name of the resulting executable file. The default is
+    to overwrite the input file.
+
+/COMPMODE:INSTANT
+/COMPMODE:FAST
+/COMPMODE:SLOW
+
+    If this option is specified, the compression models will be
+    reestimated using the specified compression mode. If the option is
+    omitted, the models used for the original compression will be used
+    for the recompression, and no model estimation will be performed.
+    If the executable was originally produced by Crinkler 1.0 or
+    newer, this will typically yield a compression ratio similar to
+    the original compression.
+
+/SATURATE
+/SATURATE:NO
+
+    If this option is given, it specifies saturation as normally. If
+    it is omitted, the original saturation mode will be used.
+
+/HASHSIZE:[memory size]
+
+    If neither this option nor a compression mode is specified, the
+    original, optimized hash size will be used. Recompression speed
+    will be similar to INSTANT compression mode in this case.
+
+    If a compression mode is specified but this option is omitted,
+    hash size optimization will be performed using the hash size
+    specified for the original file.
+
+    If this option is given, hash size optimization takes place
+    normally, using the specified maximum size.
+
+/HASHTRIES:[number of retries]
+
+    If hash size optimization takes place, this option specifies the
+    number of tries as normally. Otherwise it is ignored.
+
+/REPLACEDLL:[oldDLL]=[newDLL]
+
+    Replaces an original DLL by a new one. Only works if the names
+    of the DLLs are exactly the same length.
+
+/STRIPEXPORTS
+
+    This is a recompression specific option which instructs Crinkler
+    to strip away any existing exports from the executable. New exports
+    can be added using the /EXPORT option whether or not the existing
+    exports are stripped away.
+
+/EXPORT:[name]
+/EXPORT:[name]=[symbol]
+/EXPORT:[name]=[value]
+
+    Adds an export to the executable, as normally. The first two
+    versions can only refer to an existing export in the executable
+    that was exported using one of the first two versions in the first
+    place. They can refer to such an export even if existing exports
+    are stripped away using the /STRIPEXPORTS option.
+
+    If an export already exists with the same name, the new export
+    replaces the existing one.
+
+/REPORT:[HTML file name]
+
+    Writes out an HTML file as normally. Since no symbol information
+    is available, this will be a plain disassembly/hex dump without
+    labels or cross-linking.
+
+
+
+STANDARD RUNTIME LIBRARIES
+--------------------------
+
+Under normal circumstances, the Visual Studio compiler generates code
+that requires a C runtime library containing standard C functions and
+various support functions. These functions can either be linked in
+statically (included into the executable) or dynamically via a runtime
+DLL. For size-sensitive applications, you should always link
+dynamically, which is achieved by setting C/C++/Code
+Generation/Runtime Library to Multi-threaded DLL (/MD).
+
+Note however, that the standard runtime libraries for Visual Studio
+2005 or newer will not work with Crinkler-compressed executables,
+since these runtime libraries require a manifest in the executable,
+and Crinkler does not support manifests. Furthermore, these DLLs are
+not present by default on Windows installations, so you will usually
+not want your program to be dependent on them.
+
+To work around this, link to the Visual Studio 6 runtime library -
+msvcrt.dll - which is distributed with all Windows versions. This is
+done by using the Visual Studio 6 version of msvcrt.lib, which can be
+obtained thus:
+
+- Download Service Pack 6 for Visual Studio 6.0 at
+  http://msdn.microsoft.com/en-us/vstudio/aa718364.aspx
+- Place the downloaded self-extractor in an empty directory and run
+  it, or open it using an archive tool such as WinRAR.
+- Open the VS6sp61.cab file and go to the vc98\lib directory. There
+  you will find the msvcrt.lib file.
+- Rename this file to something else (such as msvcrt_old.lib) and
+  place it in your project directory.
+- Add msvcrt_old.lib to the list of libraries to link to at
+  Linker/Input/Additional Dependencies.
+
+There are a couple of caveats to using an older runtime library than
+the compiler expects, though. With out-of-the-box compilation
+options, the Visual Studio compiler generates code that requires some
+support functions which are only present in newer runtime DLLs. To
+avoid these dependencies, set the following options under C/C++/Code
+Generation:
+
+- Basic Runtime Checks: Default
+- Buffer Security Check: No (/GS-)
+
+Also, do not use C++ exception handling in your code. And do not use
+STL classes, since they use exceptions all over.
+
+Finally, even when using the DLL-based runtime, not all support code
+is linked dynamically. The runtime library contains an entry function
+which is included into the executable and takes care of things like
+parsing the commandline and executing dynamic initializers. The entry
+function then calls the main function.
+
+The standard entry function is around half a kilobyte in size and is
+usually not needed for intro code to function properly. To avoid this
+overhead, define your own entry function, either by defining a
+function called mainCRTStartup or WinMainCRTStartup (depending on
+which Windows subsystem you use) or by using the /ENTRY option.
+
+The best strategy is of course to avoid linking to a runtime DLL at
+all, assuming you can do without the functions provided by the
+standard runtime library. This will save the space for importing the
+runtime DLL.
+
+To reduce the dependencies on the standard runtime DLL as much as
+possible, set the following options:
+
+- C/C++/Optimization/Enable Intrinsic Functions: Yes (/Oi). This will
+  cause several standard functions (mainly math, string and memory
+  functions) to generate inline code rather than a function call.
+- C/C++/Code Generation/Floating Point Model: Fast (/fp:fast).
+- C/C++/Command Line: Add the option /QIfist. This will cause
+  conversions from floating point to integer to use the FIST
+  instruction rather than calling a conversion function. Note that
+  this changes the semantics of conversions from truncation to
+  round-to-nearest (unless you explicitly change the rounding mode of
+  the FPU). On the other hand, it will also give a considerable speed
+  boost.
+
+
+
+RECOMMENDATIONS
+---------------
+
+There are a number of things you can do as intro programmer to boost
+the compression achieved by Crinkler even further. This section
+gives some advice on these.
+
+- Since much of the effectiveness of Crinkler comes from separating
+  code and data into different parts of the file and compressing each
+  part individually, it is important that this separation is
+  possible. Mark your code and data sections as containing code and
+  data, respectively, and do not put both code and data into the same
+  section. See your assembler manual for information about how to do
+  this. For instance, in Nasm, you can write the keyword "text" or
+  "data" after the section name and give sections different names to
+  prevent them from being merged by the assembler.
+
+- Split both your code and your data into as many sections as
+  possible. This gives Crinkler more opportunities to select the
+  ordering of the sections to optimize the compression ratio.
+
+- If you are using OpenGL, try using ordinal range import for
+  opengl32. If you are using Direct3D, try using ordinal range import
+  for d3dx9_??. This may reduce the space needed for function hash
+  codes.
+
+- If you are only importing functions from DLLs which are present on
+  all Windows systems (d3dx9_?? is not), you can "safely" use the
+  /UNSAFEIMPORT option. Run Crinkler with the /PRINT:IMPORTS option
+  to check which DLLs you are importing from.
+
+- Avoid large blocks of data, even if they are all zero. Use
+  uninitialized (bss) sections instead. Crinkler does not cope well
+  with large amounts of data. Be aware that the compressor may use an
+  amount of memory up to about 4000 times the uncompressed code/data
+  size (whichever is largest).
+
+- When you perform detailed size comparisons, always use the SLOW
+  compression mode with plenty of ORDERTRIES and compare the
+  "Reestimated ideal compressed total size" values. The INSTANT and
+  FAST modes are only intended for use during testing and to give a
+  rough estimate of the compressed size. Also note that the
+  compression is tuned for the 4k size target, so any size comparisons
+  you perform on smaller files might turn out to behave differently
+  when you get nearer to 4k.
+
+- As a matter of good conduct, do not use TINYIMPORT or UNSAFEIMPORT
+  if you can spare the space, and do not set HASHSIZE higher than
+  you need. In other words, if your final intro is well below the size
+  limit, remove the UNSAFEIMPORT option (if you added it in the
+  first place) and then lower HASHSIZE in order not to waste memory
+  unnecessarily. Also consider adding the high-performance GPU request
+  exports as described under the EXPORT option if your intro could
+  benefit from it.
+
+
+
+COMMON PROBLEMS, KNOWN BUGS AND LIMITATIONS
+-------------------------------------------
+
+Any DLL that is needed by a program that Crinkler compresses must be
+available to Crinkler itself. If you get the error message 'Could not
+open DLL ...', it means that Crinkler needed the DLL but could not
+find it. You must place it either in the same directory as the
+Crinkler executable or somewhere in the DLL path, such as
+C:\WINDOWS\system32. Alternatively, you can use the REPLACEDLL option
+to replace it by one that is available. If you get this message for
+msvcr?? DLLs, you have a dependency on the runtime DLL you need to get
+rid of. See the section on standard libraries.
+
+When running inside Visual Studio, the textual progress bars are not
+updated correctly, since the Visual Studio console does not flush the
+output until a newline is reached, even when explicitly flushed by the
+running program. Use the /PROGRESSGUI option to get a graphical
+progress bar.
+
+The code for parsing object and library files contains only a minimum
+of sanity checks. If you pass a corrupt file to Crinkler, it will most
+likely crash.
+
+The final compressed size must be less than 128k, or Crinkler will fail
+horribly. You shouldn't use it for such big files anyway.
+
+
+
+SUPPORT
+-------
+
+Try out Crinkler, and let us know what you think about it. If you have
+any problems, comments or suggestions, please write a message at the
+Pouet.net forum:
+
+http://www.pouet.net/prod.php?which=18158
+
+If you want to contact us directly, e.g. for sending us a file, write
+to authors@crinkler.net.
+
+If Crinkler crashes, it will write two dump files named
+dump<n>_mini.dmp and dump<n>_full.dmp, where <n> is an integer making
+the file name unique. These files contain information about the
+execution state of Crinkler at the time of the crash. When reporting a
+crash, please include at least the mini dump, or, if possible, both.
+
+The newest released version of Crinkler can always be found at
+http://www.crinkler.net.
+
+
+
+ACKNOWLEDGEMENTS
+----------------
+
+The compression technique used by Crinkler is much inspired by the PAQ
+compressor by Matt Mahoney.
+
+The import code is loosely based on the hashed imports code by Peci.
+
+The disassembly feature of the compression report uses the diStorm
+disassembler library by Gil Dabah.
+
+Many thanks to all the people who have given us comments, bug reports
+and test material, in particular to Rambo, Kusma, Polaris, Gargaj,
+Frenetic, Buzzie, Shash, Auld, Minas, Skarab, Dwing, Freak5, Hunta,
+Snq, Darkblade, Abductee, iq, Las, pirx, Hitchhikr, Gloom, Zephod,
+coda, KK, XMunkki, KammutierSpule, acidbrain, xTrim, jix, SubV242,
+w23, ryg, shinmai, Decipher, xtrium, TomasRiker, smoothstep, XT95,
+NeKoFu, n3Xus, Moerder, merry, RCL, zoom, vampire7, Key-Real,
+quiller, Seven, and all the ones we have forgotten. Also thanks to
+Dwarf, Polygon7 and Gargaj for suggestions for our web design.
+
+Big thanks to Rrrola for his valuable suggestions for optimizing the
+decompression code, and to qkumba for his guidance on the zero-section
+header and for tracking down the NVIDIA driver issue.
+
+Our special thanks to the many people who have demonstrated the
+usefulness of Crinkler by using it for their own productions.
+
+Keep it going! We greatly appreciate your feedback.
