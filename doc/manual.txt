@@ -18,6 +18,7 @@ VERSION HISTORY
                 /UNALIGNCODE option to set alignment of all code to 1.
                 Support for /REPLACEDLL during recompression.
                 Consistent size between model estimation and reordering.
+                Header size reduced by 2 bytes.
                 Print previous size of output file.
                 Accept version specifier after /SUBSYSTEM value.
                 Switched from Intel OpenMP to MSVC concurrency API.
