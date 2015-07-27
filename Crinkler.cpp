@@ -1381,6 +1381,9 @@ void Crinkler::printOptions(FILE *out) {
 	if(!m_useTinyHeader)
 	{
 		fprintf(out, " /COMPMODE:%s", compTypeName(m_compressionType));
+		if (m_saturate) {
+			fprintf(out, " /SATURATE");
+		}
 		fprintf(out, " /HASHSIZE:%d", m_hashsize / 1048576);
 	}
 	
@@ -1397,7 +1400,10 @@ void Crinkler::printOptions(FILE *out) {
 	for(map<string, string>::iterator it = m_replaceDlls.begin(); it != m_replaceDlls.end(); it++) {
 		fprintf(out, " /REPLACEDLL:%s=%s", it->first.c_str(), it->second.c_str());
 	}
-	if (!m_useSafeImporting) {
+	for (map<string, string>::iterator it = m_fallbackDlls.begin(); it != m_fallbackDlls.end(); it++) {
+		fprintf(out, " /FALLBACKDLL:%s=%s", it->first.c_str(), it->second.c_str());
+	}
+	if (!m_useTinyHeader && !m_useSafeImporting) {
 		fprintf(out, " /UNSAFEIMPORT");
 	}
 	if (m_transform->getDetransformer() != NULL) {
@@ -1413,8 +1419,20 @@ void Crinkler::printOptions(FILE *out) {
 			fprintf(out, ":%d", m_alignmentBits);
 		}
 	}
+	if (m_unalignCode) {
+		fprintf(out, " /UNALIGNCODE");
+	}
 	if (!m_runInitializers) {
 		fprintf(out, " /NOINITIALIZERS");
+	}
+	for (const Export& e : m_exports) {
+		if (e.hasValue()) {
+			fprintf(out, " /EXPORT:%s=0x%08X", e.getName().c_str(), e.getValue());
+		} else if (e.getName() == e.getSymbol()) {
+			fprintf(out, " /EXPORT:%s", e.getName().c_str());
+		} else {
+			fprintf(out, " /EXPORT:%s=%s", e.getName().c_str(), e.getSymbol().c_str());
+		}
 	}
 }
 
