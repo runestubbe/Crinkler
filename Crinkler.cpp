@@ -147,7 +147,8 @@ void Crinkler::removeUnreferencedHunks(Hunk* base)
 			Symbol* sym = m_hunkPool.findSymbol(e.getSymbol().c_str());
 			if (sym) {
 				if (sym->hunk->getRawSize() == 0) {
-					Log::error("", "Export of uninitialized symbol '%s' not supported.", e.getSymbol().c_str());
+					sym->hunk->setRawSize(sym->hunk->getVirtualSize());
+					Log::warning("", "Uninitialized hunk '%s' forced to data section because of exported symbol '%s'.", sym->hunk->getName(), e.getSymbol().c_str());
 				}
 				startHunks.push_back(sym->hunk);
 			} else {
@@ -883,7 +884,8 @@ void Crinkler::recompress(const char* input_filename, const char* output_filenam
 				}
 			}
 
-			phase1->setVirtualSize(phase1->getRawSize());
+			int padding = exports_rva ? 0 : 16;
+			phase1->setVirtualSize(phase1->getRawSize() + padding);
 			Hunk* export_hunk = createExportTable(m_exports);
 			HunkList hl;
 			hl.addHunkBack(phase1);
