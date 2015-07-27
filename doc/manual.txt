@@ -10,11 +10,16 @@ Version 2.0 (July 27, 2015)
 
 VERSION HISTORY
 ---------------
-27.07.15: 2.0:  New header and import code specialized for 1k intros.
+27.07.15: 2.0:  /TINYHEADER option: smaller decompressor for 1k intros.
+                /TINYIMPORT option: smaller import code for 1k intros.
                 /EXPORT option to export code and data symbols.
                 /SATURATE option to saturate context counters.
                 /FALLBACKDLL option for when a DLL is not available.
+                /UNALIGNCODE option to set alignment of all code to 1.
+                Support for /REPLACEDLL during recompression.
+                Consistent size between model estimation and reordering.
                 Print previous size of output file.
+                Accept version specifier after /SUBSYSTEM value.
                 Switched from Intel OpenMP to MSVC concurrency API.
 
 19.01.13: 1.4:  Output EXE files work with recent NVIDIA drivers.
@@ -472,7 +477,7 @@ Linker/Command Line/Additional Options:
     This can be beneficial when targeting extremely small file sizes
     such as 1kb. The simpler decompressor gathers statistics by
     repeated linear searches instead of hashing. This results in
-    a O(n^2) decompression time which can become prohibitively slow
+    an O(n^2) decompression time which can become prohibitively slow
     for files significantly larger than 1kb.
 
     The HASHSIZE, HASHTRIES, COMPMODE, SATURATE and EXPORT options are
@@ -571,9 +576,16 @@ Linker/Command Line/Additional Options:
     defined this way are only visible to code inspecting the export
     table after decompression has taken place.
 
-    This option can be used to signal to the graphics driver that your
-    program desires to run on the high-performance GPU in a multi-GPU
-    system. This saves the user from having to right-click on the
+    For PE header technical reasons, all exports must be placed earlier
+    in memory than the export table. Thus, only symbols in the code and
+    data sections can be exported. If an uninitialized (BSS) symbol is
+    exported, it will be automatically moved to the data section (with
+    a warning). Beware that this will move the whole section containing
+    the symbol, so other symbols might be moved along with it.
+
+    The EXPORT option can be used to signal to the graphics driver that
+    your program desires to run on the high-performance GPU in a multi-
+    GPU system. This saves the user from having to right-click on the
     executable and select "Run with graphics processor...".
 
     To request high performance on NVIDIA Optimus systems, use:
@@ -796,10 +808,10 @@ take on slightly different meanings, as described here.
 The /CRINKLER, /PRIORITY, @commandfile and /PROGRESSGUI options work
 as normally. The /ENTRY, /LIBPATH, /ORDERTRIES, /RANGE, /FALLBACKDLL,
 /UNSAFEIMPORT, /TRANSFORM:CALLS, /NOINITIALIZERS, /TRUNCATEFLOATS,
-/OVERRIDEALIGNMENTS and /UNALIGNCODE options are ignored, as the
-parameters specified by these options cannot be changed via
-recompression. The /PRINT options are also ignored. The remaining
-options work as follows:
+/OVERRIDEALIGNMENTS, /UNALIGNCODE, /TINYHEADER and /TINYIMPORT options
+are ignored, as the parameters specified by these options cannot be
+changed via recompression. The /PRINT options are also ignored. The
+remaining options work as follows:
 
 /SUBSYSTEM:CONSOLE
 /SUBSYSTEM:WINDOWS
@@ -1021,7 +1033,9 @@ gives some advice on these.
   you need. In other words, if your final intro is well below the size
   limit, remove the UNSAFEIMPORT option (if you added it in the
   first place) and then lower HASHSIZE in order not to waste memory
-  unnecessarily.
+  unnecessarily. Also consider adding the high-performance GPU request
+  exports as described under the EXPORT option if your intro could
+  benefit from it.
 
 
 
@@ -1094,8 +1108,8 @@ Snq, Darkblade, Abductee, iq, Las, pirx, Hitchhikr, Gloom, Zephod,
 coda, KK, XMunkki, KammutierSpule, acidbrain, xTrim, jix, SubV242,
 w23, ryg, shinmai, Decipher, xtrium, TomasRiker, smoothstep, XT95,
 NeKoFu, n3Xus, Moerder, merry, RCL, zoom, vampire7, Key-Real,
-quiller, and all the ones we have forgotten. Also thanks to Dwarf,
-Polygon7 and Gargaj for suggestions for our web design.
+quiller, Seven, and all the ones we have forgotten. Also thanks to
+Dwarf, Polygon7 and Gargaj for suggestions for our web design.
 
 Big thanks to Rrrola for his valuable suggestions for optimizing the
 decompression code, and to qkumba for his guidance on the zero-section
