@@ -75,6 +75,7 @@ HunkList* CoffLibraryLoader::load(const char* data, int size, const char* module
 	for(int i = 0; i < numberOfMembers; i++) {
 		char memberModuleName[256];
 		sprintf_s(memberModuleName, 256, "%s|%d", module, i);
+		if (offsets[i] == 0) continue;
 		ptr = data + offsets[i];
 		ptr += 60;	//skip member header
 
@@ -89,6 +90,7 @@ HunkList* CoffLibraryLoader::load(const char* data, int size, const char* module
 	//add imports
 	for(int i = 0; i < numberOfSymbols; i++) {
 		int idx = indices[i] - 1;
+		if (offsets[idx] == 0) continue;
 		ptr = data + offsets[idx];
 		ptr += 60;
 
