@@ -40,7 +40,6 @@ Output/UI:
 Linker:
 	Bogus messages about alignment of imports with default alignment override
 	Control presence of exports from source?
-	TINYIMPORT imports MessageBox
 	FALLBACK checks
 	FALLBACKDLL vs RANGE ?
 	Linker options from object files?
