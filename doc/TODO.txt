@@ -15,7 +15,6 @@ Report:
 	print time spent
 	imported function label names for recompression
 	Copy calltrans header to untransformed for correct disassembly of number
-	Alignment of last line of hex dump
 	Choose label belonging to section of origin
 	Upgrade to newest diStorm (BSD license)
 
@@ -40,10 +39,8 @@ Output/UI:
 
 Linker:
 	Bogus messages about alignment of imports with default alignment override
-	Crash with ole32 on Windows 8
 	Forwarded RVA with TINYIMPORT
 	Control presence of exports from source?
-	forward import from ole32
 	TINYIMPORT imports MessageBox
 	FALLBACK checks
 	FALLBACKDLL vs RANGE ?
