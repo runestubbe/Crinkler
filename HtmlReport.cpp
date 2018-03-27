@@ -267,34 +267,43 @@ static int toAscii(int c) {
 	return (c > 32 && c <= 126 || c >= 160) ? c : '.';
 }
 
-static int printRow(FILE *out, Hunk& hunk, const int *sizefill, int index, int n, bool ascii, bool spacing) {
-	int width = 0;
-	for(int x = 0; x < n; x++) {
-		unsigned char c = 0;
-		int size = 0;
-		int idx = index + x;
-		if(idx < hunk.getRawSize()) {
-			size = sizefill[idx+1]-sizefill[idx];
-			c = hunk.getPtr()[idx++];
-		}
-
-		if (spacing && x > 0 && (x&3) == 0)
+static void printRow(FILE *out, Hunk& hunk, const int *sizefill, int index, int n, bool ascii, bool spacing) {
+	for(int x = 0; x < NUM_COLUMNS; x++) {
+		if (spacing && x > 0 && (x & 3) == 0)
 		{
-			fprintf(out,"<td>&nbsp;</td>");
-			width += 1;
+			fprintf(out, "<td>&nbsp;</td>");
 		}
 
-		if (ascii) {
-			fprintf(out,"<td title='%.2f bits' style='color: #%.6X;'>"
-				"&#x%.2X;</td>", size / (float)BITPREC, sizeToColor(size), toAscii(c));
-			width += 1;
+		if (x < n) {
+			unsigned char c = 0;
+			int size = 0;
+			int idx = index + x;
+			if (idx < hunk.getRawSize()) {
+				size = sizefill[idx + 1] - sizefill[idx];
+				c = hunk.getPtr()[idx++];
+			}
+
+			if (ascii) {
+				fprintf(out, "<td title='%.2f bits' style='color: #%.6X;'>"
+					"&#x%.2X;</td>", size / (float)BITPREC, sizeToColor(size), toAscii(c));
+			}
+			else {
+				fprintf(out, "<td title='%.2f bits' style='color: #%.6X;'>"
+					"%.2X</td>", size / (float)BITPREC, sizeToColor(size), c);
+			}
 		} else {
-			fprintf(out,"<td title='%.2f bits' style='color: #%.6X;'>"
-				"%.2X</td>", size / (float)BITPREC, sizeToColor(size), c);
-			width += 2;
+			if (ascii) {
+				fprintf(out, "<td>&nbsp;</td>");
+			} else {
+				fprintf(out, "<td>&nbsp;&nbsp;</td>");
+			}
 		}
 	}
-	return width;
+	if (!ascii) {
+		for (int x = NUM_COLUMNS * 2 + (spacing ? 3 : 0); x < HEX_WIDTH; x++) {
+			fprintf(out, "<td>&nbsp;</td>");
+		}
+	}
 }
 
 //return the relocation symbol offset bytes into the instruction. Handles off bounds reads gracefully
@@ -565,12 +574,7 @@ static void htmlReportRecursive(CompressionReportRecord* csr, FILE* out, Hunk& h
 						
 						//hexdump
 						fprintf(out, "<td nowrap colspan=4 class='hexdump'><table class='data'><tr>");
-						int hexsize = printRow(out, hunk, sizefill, (int)insts[i].offset - CRINKLER_CODEBASE, insts[i].size, false, false);
-						fprintf(out, "<td>");
-						for (int j = 0 ; j < HEX_WIDTH-hexsize ; j++) {
-							fprintf(out, "&nbsp;");
-						}
-						fprintf(out, "</td>");
+						printRow(out, hunk, sizefill, (int)insts[i].offset - CRINKLER_CODEBASE, insts[i].size, false, false);
 
 						//disassembly
 						// Make hex digits uppercase
@@ -637,12 +641,7 @@ static void htmlReportRecursive(CompressionReportRecord* csr, FILE* out, Hunk& h
 
 						//hexdump
 						fprintf(out, "<td nowrap colspan=4 class='hexdump'><table class='data'><tr>");
-						int hexsize = printRow(out, hunk, sizefill, idx, *it, false, true);
-						fprintf(out, "<td>");
-						for (int j = 0 ; j < HEX_WIDTH-hexsize ; j++) {
-							fprintf(out, "&nbsp;");
-						}
-						fprintf(out, "</td>");
+						printRow(out, hunk, sizefill, idx, *it, false, true);
 
 						map<int, Symbol*>::iterator jt = relocs.find(idx);
 						if(jt != relocs.end()) {
