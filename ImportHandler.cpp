@@ -112,6 +112,23 @@ const int hashCode(const char* str) {
 }
 
 
+Hunk* forwardImport(Hunk* hunk) {
+	do {
+		char *forward = getForwardRVA(hunk->getImportDll(), hunk->getImportName());
+		if (forward == NULL) break;
+
+		string dllName, functionName;
+		int sep = strstr(forward, ".") - forward;
+		dllName.append(forward, sep);
+		dllName = toLower(dllName);
+		functionName.append(&forward[sep + 1], strlen(forward) - (sep + 1));
+		Log::warning("", "Import '%s' from '%s' uses forwarded RVA. Replaced by '%s' from '%s'",
+			hunk->getImportName(), hunk->getImportDll(), functionName.c_str(), dllName.c_str());
+		hunk = new Hunk(hunk->getName(), functionName.c_str(), dllName.c_str());
+	} while (true);
+	return hunk;
+}
+
 HunkList* ImportHandler::createImportHunks(HunkList* hunklist, Hunk*& hashHunk, map<string, string>& fallbackDlls, const vector<string>& rangeDlls, bool verbose, bool& enableRangeImport) {
 	if(verbose)
 		printf("\n-Imports----------------------------------\n");
@@ -125,19 +142,7 @@ HunkList* ImportHandler::createImportHunks(HunkList* hunklist, Hunk*& hashHunk, 
 	for(int i = 0; i <hunklist->getNumHunks(); i++) {
 		Hunk* hunk = (*hunklist)[i];
 		if(hunk->getFlags() & HUNK_IS_IMPORT) {
-			do {
-				char *forward = getForwardRVA(hunk->getImportDll(), hunk->getImportName());
-				if (forward == NULL) break;
-
-				string dllName, functionName;
-				int sep = strstr(forward, ".")-forward;
-				dllName.append(forward, sep);
-				dllName = toLower(dllName);
-				functionName.append(&forward[sep+1], strlen(forward)-(sep+1));
-				Log::warning("", "Import '%s' from '%s' uses forwarded RVA. Replaced by '%s' from '%s'", 
-					hunk->getImportName(), hunk->getImportDll(), functionName.c_str(), dllName.c_str());
-				hunk = new Hunk(hunk->getName(), functionName.c_str(), dllName.c_str());
-			} while (true);
+			hunk = forwardImport(hunk);
 
 			//is the dll a range dll?
 			for(int i = 0; i < (int)rangeDlls.size(); i++) {
@@ -592,15 +597,12 @@ HunkList* ImportHandler::createImportHunks1K(HunkList* hunklist, bool verbose, i
 		Hunk* hunk = (*hunklist)[i];
 		if(hunk->getFlags() & HUNK_IS_IMPORT)
 		{
+			hunk = forwardImport(hunk);
 			if(strcmp(hunk->getImportDll(), "kernel32") == 0)
 			{
 				found_kernel32 = true;
 			}
 			dll_set.insert(hunk->getImportDll());
-			if(getForwardRVA(hunk->getImportDll(), hunk->getImportName()) != NULL)
-			{
-				Log::error("", "Import '%s' from '%s' uses forwarded RVA. This feature is not supported by crinkler (yet)", hunk->getImportName(), hunk->getImportDll());
-			}
 			importHunks.push_back(hunk);
 		}
 	}

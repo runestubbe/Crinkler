@@ -39,7 +39,6 @@ Output/UI:
 
 Linker:
 	Bogus messages about alignment of imports with default alignment override
-	Forwarded RVA with TINYIMPORT
 	Control presence of exports from source?
 	TINYIMPORT imports MessageBox
 	FALLBACK checks
