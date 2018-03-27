@@ -163,7 +163,7 @@ void Crinkler::removeUnreferencedHunks(Hunk* base)
 	Symbol* dynamicInitializers = m_hunkPool.findSymbol("__DynamicInitializers");
 	if(loadLibrary != NULL)
 		startHunks.push_back(loadLibrary->hunk);
-	if(m_useSafeImporting && messageBox != NULL)
+	if(m_useSafeImporting && !m_useTinyImport && messageBox != NULL)
 		startHunks.push_back(messageBox->hunk);
 	if(dynamicInitializers != NULL)
 		startHunks.push_back(dynamicInitializers->hunk);
