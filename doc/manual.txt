@@ -4,12 +4,22 @@ CRINKLER - Compressing linker for Windows specialized for 4k intros
 Aske Simon Christensen "Blueberry/Loonies"
 Rune L. H. Stubbe "Mentor/TBC"
 
-Version 2.0 (July 28, 2015)
+Version 2.0a (March 28, 2018)
 
 
 
 VERSION HISTORY
 ---------------
+28.03.18: 2.0a: Fixed Crinkler crash on recent Windows SDK versions.
+                Fixed Crinkler crash on forwards from ole32.dll.
+                Corrected horizontal alignment issue in HTML report.
+                Support forwarded RVA imports with TINYIMPORT.
+                Fixed spurious import of MessageBox with TINYIMPORT.
+                Print compatibility warning when using TINYIMPORT.
+                Updated internal function list to Windows version 1803.
+                Extended description in the manual of TINYIMPORT.
+                Updated download link for the lib file for msvcrt.dll.
+
 28.07.15: 2.0:  /TINYHEADER option: smaller decompressor for 1k intros.
                 /TINYIMPORT option: smaller import code for 1k intros.
                 /EXPORT option to export code and data symbols.
@@ -185,7 +195,7 @@ COMPATIBILITY
 
 The goal of Crinkler is for the produced EXE files to be compatible
 with all widely used Windows versions and configurations. As of
-version 2.0, the EXE files produced by Crinkler are, to the best of
+version 2.0a, the EXE files produced by Crinkler are, to the best of
 our knowledge, compatible with Windows XP, Windows Vista, Windows 7,
 Windows 8 and Windows 10, both 32 bit and 64 bit versions. They are
 compatible with Data Execution Prevention and with execution hooks
@@ -504,12 +514,13 @@ Linker/Command Line/Additional Options:
     system on which Crinkler is run, plus an internal list consisting
     of functions from commonly imported DLLs covering most supported
     Windows versions available at the time of release (Spring Creators
-    Update 2018 as of Crinkler 2.0a).
+    Update 2018 version 1803 as of Crinkler 2.0a).
 
     Thus, this import technique is less resilient to changes in
     future windows versions, since when functions are added in a
     future version of the DLL, they may collide with functions used by
     the program, in which case the program will cease to work.
+    Programs broken this way cannot be fixed by recompression.
 
     When using this options, it is strongly recommended to also
     distribute safe versions using ths normal import mechanism.
