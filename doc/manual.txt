@@ -13,11 +13,11 @@ VERSION HISTORY
 28.03.18: 2.0a: Fixed Crinkler crash on recent Windows SDK versions.
                 Fixed Crinkler crash on forwards from ole32.dll.
                 Corrected horizontal alignment issue in HTML report.
-                Support forwarded RVA imports with TINYIMPORT.
-                Fixed spurious import of MessageBox with TINYIMPORT.
-                Print compatibility warning when using TINYIMPORT.
+                Support forwarded RVA imports with /TINYIMPORT.
+                Fixed spurious import of MessageBox with /TINYIMPORT.
+                Print compatibility warning when using /TINYIMPORT.
                 Updated internal function list to Windows version 1803.
-                Extended description in the manual of TINYIMPORT.
+                Extended description in the manual of /TINYIMPORT.
                 Updated download link for the lib file for msvcrt.dll.
 
 28.07.15: 2.0:  /TINYHEADER option: smaller decompressor for 1k intros.
