@@ -485,19 +485,34 @@ Linker/Command Line/Additional Options:
     ignored when TINYHEADER is enabled.
 
 /TINYIMPORT
-    Enables a more compact function importing scheme that does not
-    require the explicit storage of function name hashes. This is
-    achieved by indiscriminately importing every function from the
-    relevant DLLs. Imported functions are distributed in an import
-    table based on their function name hashes. Intuitively, this
-    embeds the hash code entropy directly into the call instruction.
+    Enables a more compact, but less future-proof, function importing
+    scheme which does not require the explicit storage of function
+    name hashes. This is achieved by indiscriminately importing every
+    function from the relevant DLLs. The imported functions are
+    scattered in an import table based on their function name hashes.
+    Intuitively, this embeds the hash code entropy directly into the
+    call instruction.
 
     Crinkler ensures that the import table size and hash function are
-    chosen such that there are no collisions for the functions in use.
+    chosen such that there are no collisions between the functions
+    used by the linked program and other functions which are imported
+    later from the DLLs. This way, the desired function pointers will
+    be intact in the import table.
 
-    This technique is potentially less resilient to changes in
-    future windows versions, so it is recommended to also distribute
-    safe versions when using this option.
+    However, Crinkler can only ensure this for functions that it knows
+    about. These include the functions present in the DLLs on the
+    system on which Crinkler is run, plus an internal list consisting
+    of functions from commonly imported DLLs covering most supported
+    Windows versions available at the time of release (Spring Creators
+    Update 2018 as of Crinkler 2.0a).
+
+    Thus, this import technique is less resilient to changes in
+    future windows versions, since when functions are added in a
+    future version of the DLL, they may collide with functions used by
+    the program, in which case the program will cease to work.
+
+    When using this options, it is strongly recommended to also
+    distribute safe versions using ths normal import mechanism.
 
     The UNSAFEIMPORT, FALLBACKDLL and RANGE options are ignored
     when TINYIMPORT is enabled.
@@ -926,7 +941,7 @@ done by using the Visual Studio 6 version of msvcrt.lib, which can be
 obtained thus:
 
 - Download Service Pack 6 for Visual Studio 6.0 at
-  http://msdn.microsoft.com/en-us/vstudio/aa718364.aspx
+  https://www.microsoft.com/en-us/download/details.aspx?id=9183
 - Place the downloaded self-extractor in an empty directory and run
   it, or open it using an archive tool such as WinRAR.
 - Open the VS6sp61.cab file and go to the vc98\lib directory. There
