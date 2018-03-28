@@ -673,5 +673,14 @@ HunkList* ImportHandler::createImportHunks1K(HunkList* hunklist, bool verbose, i
 	newHunks->addHunkBack(importList);
 	max_dll_name_length = max_name_length;
 
+	printf(
+		"\n"
+		"Note: Programs linked using the TINYIMPORT option may break if a future Windows\n"
+		"version adds functions to one of the imported DLLs. Such breakage cannot be\n"
+		"fixed by using the RECOMPRESS feature. When using this option, it is strongly\n"
+		"recommended to also distribute a version of your program linked using the\n"
+		"normal import mechanism (without the TINYIMPORT option).\n"
+	);
+
 	return newHunks;
 }
