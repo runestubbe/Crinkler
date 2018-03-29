@@ -35,6 +35,7 @@ Output/UI:
 	Disable dumps
 	only write one dump if multiple threads crash
 	Icon
+        ProgressGUI crashes if you have DisplayFusion installed
 
 Linker:
 	Broken MASM lib files from jin_x
