@@ -235,9 +235,6 @@
     <ClInclude Include="Transform.h">
       <Filter>Transforms</Filter>
     </ClInclude>
-    <ClInclude Include="data.h">
-      <Filter>data</Filter>
-    </ClInclude>
     <ClInclude Include="CompositeProgressBar.h">
       <Filter>ProgressBars</Filter>
     </ClInclude>
@@ -249,6 +246,9 @@
     </ClInclude>
     <ClInclude Include="Export.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="data.h">
+      <Filter>data</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

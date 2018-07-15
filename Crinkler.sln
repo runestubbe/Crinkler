@@ -1,16 +1,16 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 2013
-VisualStudioVersion = 12.0.31101.0
+# Visual Studio 15
+VisualStudioVersion = 15.0.27703.2000
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "modules", "modules\modules.vcxproj", "{AB2067AF-F5A9-4C9E-90F2-4AEF60F5465D}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Compressor", "source\Compressor\Compressor.vcxproj", "{869F3A10-26E8-49E6-980F-FE72F642714F}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Crinkler", "Crinkler.vcxproj", "{B0591735-B8E8-4E45-8394-5A01A5F53984}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "modules", "source\modules\modules.vcxproj", "{AB2067AF-F5A9-4C9E-90F2-4AEF60F5465D}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Crinkler", "source\Crinkler.vcxproj", "{B0591735-B8E8-4E45-8394-5A01A5F53984}"
 	ProjectSection(ProjectDependencies) = postProject
 		{869F3A10-26E8-49E6-980F-FE72F642714F} = {869F3A10-26E8-49E6-980F-FE72F642714F}
 		{AB2067AF-F5A9-4C9E-90F2-4AEF60F5465D} = {AB2067AF-F5A9-4C9E-90F2-4AEF60F5465D}
 	EndProjectSection
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Compressor", "Compressor\Compressor.vcxproj", "{869F3A10-26E8-49E6-980F-FE72F642714F}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -18,6 +18,10 @@ Global
 		Release|Win32 = Release|Win32
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{869F3A10-26E8-49E6-980F-FE72F642714F}.Debug|Win32.ActiveCfg = Debug|Win32
+		{869F3A10-26E8-49E6-980F-FE72F642714F}.Debug|Win32.Build.0 = Debug|Win32
+		{869F3A10-26E8-49E6-980F-FE72F642714F}.Release|Win32.ActiveCfg = Release|Win32
+		{869F3A10-26E8-49E6-980F-FE72F642714F}.Release|Win32.Build.0 = Release|Win32
 		{AB2067AF-F5A9-4C9E-90F2-4AEF60F5465D}.Debug|Win32.ActiveCfg = Debug|Win32
 		{AB2067AF-F5A9-4C9E-90F2-4AEF60F5465D}.Debug|Win32.Build.0 = Debug|Win32
 		{AB2067AF-F5A9-4C9E-90F2-4AEF60F5465D}.Release|Win32.ActiveCfg = Release|Win32
@@ -26,12 +30,11 @@ Global
 		{B0591735-B8E8-4E45-8394-5A01A5F53984}.Debug|Win32.Build.0 = Debug|Win32
 		{B0591735-B8E8-4E45-8394-5A01A5F53984}.Release|Win32.ActiveCfg = Release|Win32
 		{B0591735-B8E8-4E45-8394-5A01A5F53984}.Release|Win32.Build.0 = Release|Win32
-		{869F3A10-26E8-49E6-980F-FE72F642714F}.Debug|Win32.ActiveCfg = Debug|Win32
-		{869F3A10-26E8-49E6-980F-FE72F642714F}.Debug|Win32.Build.0 = Debug|Win32
-		{869F3A10-26E8-49E6-980F-FE72F642714F}.Release|Win32.ActiveCfg = Release|Win32
-		{869F3A10-26E8-49E6-980F-FE72F642714F}.Release|Win32.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {8AC86BD3-6036-4950-AEAC-A2A25EC274FD}
 	EndGlobalSection
 EndGlobal

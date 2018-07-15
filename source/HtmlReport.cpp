@@ -12,7 +12,7 @@
 #include "Symbol.h"
 #include "Crinkler.h"
 #include "StringMisc.h"
-#include "distorm.h"
+#include "../external/distorm/distorm.h"
 
 using namespace std;
 

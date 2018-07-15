@@ -14,6 +14,7 @@
     <ProjectGuid>{B0591735-B8E8-4E45-8394-5A01A5F53984}</ProjectGuid>
     <RootNamespace>Crinkler</RootNamespace>
     <Keyword>Win32Proj</Keyword>
+    <WindowsTargetPlatformVersion>7.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
@@ -43,13 +44,13 @@
     <_ProjectFileVersion>11.0.50727.1</_ProjectFileVersion>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <OutDir>Debug\</OutDir>
-    <IntDir>Debug\</IntDir>
+    <OutDir>$(SolutionDir)build\$(Configuration)\$(ProjectName)\</OutDir>
+    <IntDir>$(SolutionDir)artifacts\$(Configuration)\$(ProjectName)\</IntDir>
     <LinkIncremental>true</LinkIncremental>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <OutDir>Release\</OutDir>
-    <IntDir>Release\</IntDir>
+    <OutDir>$(SolutionDir)build\$(Configuration)\$(ProjectName)\</OutDir>
+    <IntDir>$(SolutionDir)artifacts\$(Configuration)\$(ProjectName)\</IntDir>
     <IgnoreImportLibrary>false</IgnoreImportLibrary>
     <LinkIncremental>false</LinkIncremental>
     <GenerateManifest>false</GenerateManifest>
@@ -69,7 +70,7 @@
       <DisableSpecificWarnings>4530</DisableSpecificWarnings>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>comctl32.lib;Dbghelp.lib;distorm.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>comctl32.lib;Dbghelp.lib;../external/distorm/distorm.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>$(OutDir)Crinkler.exe</OutputFile>
       <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -106,7 +107,7 @@
       <DisableSpecificWarnings>4530</DisableSpecificWarnings>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>comctl32.lib;Dbghelp.lib;distorm.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>comctl32.lib;Dbghelp.lib;../external/distorm/distorm.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>$(OutDir)Crinkler.exe</OutputFile>
       <ManifestFile />
       <IgnoreAllDefaultLibraries>false</IgnoreAllDefaultLibraries>
@@ -162,6 +163,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Crinkler.h" />
+    <ClInclude Include="data.h" />
     <ClInclude Include="distorm.h" />
     <ClInclude Include="Export.h" />
     <ClInclude Include="Fix.h" />
@@ -194,7 +196,6 @@
     <ClInclude Include="CallTransform.h" />
     <ClInclude Include="IdentityTransform.h" />
     <ClInclude Include="Transform.h" />
-    <ClInclude Include="data.h" />
     <ClInclude Include="CompositeProgressBar.h" />
     <ClInclude Include="ConsoleProgressBar.h" />
     <ClInclude Include="WindowProgressBar.h" />
