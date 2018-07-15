@@ -206,26 +206,36 @@
   <ItemGroup>
     <CustomBuild Include="data.asm">
       <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Assembling data..</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">nasmw -f win32 -Xvc modules\import20.asm -o modules\import20.obj
-nasmw -f win32 -Xvc -dIMPORT_RANGE modules\import20.asm -o modules\import20-range.obj
-nasmw -f win32 -Xvc -dIMPORT_SAFE modules\import20.asm -o modules\import20-safe.obj
-nasmw -f win32 -Xvc -dIMPORT_SAFE -dIMPORT_RANGE modules\import20.asm -o modules\import20-safe-range.obj
-nasmw -f win32 -Xvc -dIMPORT_SAFE -dIMPORT_FALLBACK modules\import20.asm -o modules\import20-safe-fallback.obj
-nasmw -f win32 -Xvc -dIMPORT_SAFE -dIMPORT_FALLBACK -dIMPORT_RANGE modules\import20.asm -o modules\import20-safe-fallback-range.obj
-nasmw -f win32 %(FullPath) -o $(TargetDir)\%(Filename).obj
-</Command>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">modules/calltrans.asm;modules/header20.asm;modules/header20-compatibility.asm;modules/header20_1k.asm;modules/import20.asm;modules/import20_1k.asm;known_dll_exports.dat;%(AdditionalInputs)</AdditionalInputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">nasmw -f win32 -Xvc modules\calltrans.asm -o $(IntermediateOutputPath)\calltrans.obj
+nasmw -f win32 -Xvc modules\header11.asm -o $(IntermediateOutputPath)\header11.obj
+nasmw -f win32 -Xvc modules\header20.asm -o $(IntermediateOutputPath)\header20.obj
+nasmw -f win32 -Xvc modules\header20_compatibility.asm -o $(IntermediateOutputPath)\header20_compatibility.obj
+nasmw -f win32 -Xvc modules\header20_1k.asm -o $(IntermediateOutputPath)\header20_1k.obj
+nasmw -f win32 -Xvc modules\import20.asm -o $(IntermediateOutputPath)\import20.obj
+nasmw -f win32 -Xvc -dIMPORT_RANGE modules\import20.asm -o $(IntermediateOutputPath)\import20-range.obj
+nasmw -f win32 -Xvc -dIMPORT_SAFE modules\import20.asm -o $(IntermediateOutputPath)\import20-safe.obj
+nasmw -f win32 -Xvc -dIMPORT_SAFE -dIMPORT_RANGE modules\import20.asm -o $(IntermediateOutputPath)\\import20-safe-range.obj
+nasmw -f win32 -Xvc -dIMPORT_SAFE -dIMPORT_FALLBACK modules\import20.asm -o $(IntermediateOutputPath)\import20-safe-fallback.obj
+nasmw -f win32 -Xvc -dIMPORT_SAFE -dIMPORT_FALLBACK -dIMPORT_RANGE modules\import20.asm -o $(IntermediateOutputPath)\import20-safe-fallback-range.obj
+nasmw -f win32 -Xvc modules\import20_1k.asm -o $(IntermediateOutputPath)\import20_1k.obj
+nasmw -f win32 -Xvc -dPATH=$(IntermediateOutputPath) %(FullPath) -o $(IntermediateOutputPath)\%(Filename).obj</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">modules/calltrans.asm;modules/header11.asm;modules/header20.asm;modules/header20-compatibility.asm;modules/header20_1k.asm;modules/import20.asm;modules/import20_1k.asm;known_dll_exports.dat;%(AdditionalInputs)</AdditionalInputs>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(TargetDir)\%(Filename).obj;%(Outputs)</Outputs>
       <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Assembling data..</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">nasmw -f win32 -Xvc modules\import20.asm -o modules\import20.obj
-nasmw -f win32 -Xvc -dIMPORT_RANGE modules\import20.asm -o modules\import20-range.obj
-nasmw -f win32 -Xvc -dIMPORT_SAFE modules\import20.asm -o modules\import20-safe.obj
-nasmw -f win32 -Xvc -dIMPORT_SAFE -dIMPORT_RANGE modules\import20.asm -o modules\import20-safe-range.obj
-nasmw -f win32 -Xvc -dIMPORT_SAFE -dIMPORT_FALLBACK modules\import20.asm -o modules\import20-safe-fallback.obj
-nasmw -f win32 -Xvc -dIMPORT_SAFE -dIMPORT_FALLBACK -dIMPORT_RANGE modules\import20.asm -o modules\import20-safe-fallback-range.obj
-nasmw -f win32 %(FullPath) -o $(TargetDir)\%(Filename).obj
-</Command>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">modules/calltrans.asm;modules/header20.asm;modules/header20-compatibility.asm;modules/header20_1k.asm;modules/import20.asm;modules/import20_1k.asm;known_dll_exports.dat;%(AdditionalInputs)</AdditionalInputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">nasmw -f win32 -Xvc modules\calltrans.asm -o $(IntermediateOutputPath)\calltrans.obj
+nasmw -f win32 -Xvc modules\header11.asm -o $(IntermediateOutputPath)\header11.obj
+nasmw -f win32 -Xvc modules\header20.asm -o $(IntermediateOutputPath)\header20.obj
+nasmw -f win32 -Xvc modules\header20_compatibility.asm -o $(IntermediateOutputPath)\header20_compatibility.obj
+nasmw -f win32 -Xvc modules\header20_1k.asm -o $(IntermediateOutputPath)\header20_1k.obj
+nasmw -f win32 -Xvc modules\import20.asm -o $(IntermediateOutputPath)\import20.obj
+nasmw -f win32 -Xvc -dIMPORT_RANGE modules\import20.asm -o $(IntermediateOutputPath)\import20-range.obj
+nasmw -f win32 -Xvc -dIMPORT_SAFE modules\import20.asm -o $(IntermediateOutputPath)\import20-safe.obj
+nasmw -f win32 -Xvc -dIMPORT_SAFE -dIMPORT_RANGE modules\import20.asm -o $(IntermediateOutputPath)\\import20-safe-range.obj
+nasmw -f win32 -Xvc -dIMPORT_SAFE -dIMPORT_FALLBACK modules\import20.asm -o $(IntermediateOutputPath)\import20-safe-fallback.obj
+nasmw -f win32 -Xvc -dIMPORT_SAFE -dIMPORT_FALLBACK -dIMPORT_RANGE modules\import20.asm -o $(IntermediateOutputPath)\import20-safe-fallback-range.obj
+nasmw -f win32 -Xvc modules\import20_1k.asm -o $(IntermediateOutputPath)\import20_1k.obj
+nasmw -f win32 -Xvc -dPATH=$(IntermediateOutputPath) %(FullPath) -o $(IntermediateOutputPath)\%(Filename).obj</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">modules/calltrans.asm;modules/header11.asm;modules/header20.asm;modules/header20-compatibility.asm;modules/header20_1k.asm;modules/import20.asm;modules/import20_1k.asm;known_dll_exports.dat;%(AdditionalInputs)</AdditionalInputs>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(TargetDir)\%(Filename).obj;%(Outputs)</Outputs>
     </CustomBuild>
   </ItemGroup>
@@ -236,6 +246,15 @@ nasmw -f win32 %(FullPath) -o $(TargetDir)\%(Filename).obj
     <ProjectReference Include="Compressor\Compressor.vcxproj">
       <Project>{869f3a10-26e8-49e6-980f-fe72f642714f}</Project>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="modules\calltrans.asm" />
+    <None Include="modules\header11.asm" />
+    <None Include="modules\header20.asm" />
+    <None Include="modules\header20_1k.asm" />
+    <None Include="modules\header20_compatibility.asm" />
+    <None Include="modules\import20.asm" />
+    <None Include="modules\import20_1k.asm" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

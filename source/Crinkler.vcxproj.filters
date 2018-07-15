@@ -30,6 +30,9 @@
     <Filter Include="ProgressBars">
       <UniqueIdentifier>{7def0845-64fa-49b6-a4ec-aa0427de4a3e}</UniqueIdentifier>
     </Filter>
+    <Filter Include="modules">
+      <UniqueIdentifier>{71362877-0dfb-42e6-bf7c-60339bdde878}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Crinkler.cpp">
@@ -263,5 +266,28 @@
     <CustomBuild Include="data.asm">
       <Filter>data</Filter>
     </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="modules\import20.asm">
+      <Filter>modules</Filter>
+    </None>
+    <None Include="modules\header11.asm">
+      <Filter>modules</Filter>
+    </None>
+    <None Include="modules\header20.asm">
+      <Filter>modules</Filter>
+    </None>
+    <None Include="modules\header20_compatibility.asm">
+      <Filter>modules</Filter>
+    </None>
+    <None Include="modules\header20_1k.asm">
+      <Filter>modules</Filter>
+    </None>
+    <None Include="modules\import20_1k.asm">
+      <Filter>modules</Filter>
+    </None>
+    <None Include="modules\calltrans.asm">
+      <Filter>modules</Filter>
+    </None>
   </ItemGroup>
 </Project>
