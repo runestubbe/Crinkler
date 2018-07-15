@@ -21,22 +21,20 @@
     <CustomBuild Include="header11.asm">
       <Filter>Source Files</Filter>
     </CustomBuild>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="header20.asm">
+    <CustomBuild Include="header20.asm">
       <Filter>Source Files</Filter>
-    </None>
-    <None Include="header20_1k.asm">
+    </CustomBuild>
+    <CustomBuild Include="header20_1k.asm">
       <Filter>Source Files</Filter>
-    </None>
-    <None Include="header20_compatibility.asm">
+    </CustomBuild>
+    <CustomBuild Include="header20_compatibility.asm">
       <Filter>Source Files</Filter>
-    </None>
-    <None Include="import20.asm">
+    </CustomBuild>
+    <CustomBuild Include="import20.asm">
       <Filter>Source Files</Filter>
-    </None>
-    <None Include="import20_1k.asm">
+    </CustomBuild>
+    <CustomBuild Include="import20_1k.asm">
       <Filter>Source Files</Filter>
-    </None>
+    </CustomBuild>
   </ItemGroup>
 </Project>

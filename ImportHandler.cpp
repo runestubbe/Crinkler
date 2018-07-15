@@ -14,6 +14,7 @@
 #include <set>
 #include <iostream>
 #include <ppl.h>
+#include <assert.h>
 
 using namespace std;
 
