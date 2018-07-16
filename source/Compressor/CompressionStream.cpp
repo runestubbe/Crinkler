@@ -155,12 +155,12 @@ void CompressionStream::Compress(const unsigned char* d, int size, const ModelLi
 	delete[] data;
 }
 
-inline unsigned int QuickHash(const byte *data, int pos, __m64 mask, int bytemask) {
-	__m64 contextdata = *(__m64 *)&data[pos-8];
-	__m64 scrambler = _mm_set_pi8(23,5,17,13,11,7,19,3);
-	__m64 sample = _mm_mullo_pi16(_mm_and_si64(contextdata, mask), scrambler);
-	unsigned int contexthash1 = _mm_cvtsi64_si32(sample);
-	unsigned int contexthash2 = _mm_cvtsi64_si32(_mm_srli_si64(sample, 32));
+inline unsigned int QuickHash(const byte *data, int pos, __m128i mask, int bytemask) {
+	__m128i contextdata = _mm_loadl_epi64((__m128i *)&data[pos-8]);
+	__m128i scrambler = _mm_set_epi8(0,0,0,0,0,0,0,0,23,5,17,13,11,7,19,3);
+	__m128i sample = _mm_mullo_epi16(_mm_and_si128(contextdata, mask), scrambler);
+	unsigned int contexthash1 = sample.m128i_u32[0];
+	unsigned int contexthash2 = sample.m128i_u32[1];
 	unsigned int contexthash = contexthash1 ^ contexthash2;
 	unsigned char databyte = (unsigned char)(data[pos] & bytemask);
 	return contexthash + ((unsigned int)databyte);
@@ -209,7 +209,7 @@ int CompressionStream::EvaluateSize(const unsigned char* d, int size, const Mode
 		for (int i = 0 ; i < 8 ; i++) {
 			maskbytes[i] = ((w >> i) & 1) * 0xff;
 		}
-		__m64 mask = *(__m64 *)maskbytes;
+		__m128i mask = _mm_loadl_epi64((__m128i*)maskbytes);
 		uint64_t mask64 = *(uint64_t *)maskbytes;
 
 		for(int pos = 0; pos < size; pos++) {
@@ -278,8 +278,6 @@ int CompressionStream::EvaluateSize(const unsigned char* d, int size, const Mode
 	totalsize = combinable_totalsize.combine(std::plus<long long>());
 #endif
 	
-	_mm_empty();
-
 	delete[] hashtable;
 
 	data -= MAX_CONTEXT_LENGTH;
