@@ -75,7 +75,7 @@ int __cdecl AritCodeEnd(struct AritState *state)
 	unsigned int interval_min = state->interval_min;
 	unsigned int interval_size = state->interval_size;
 	
-	if(interval_min + interval_size < interval_min)
+	if(interval_min + interval_size >= interval_min)	// not carry
 	{
 		dest_bit++;
 	}
