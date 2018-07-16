@@ -78,7 +78,7 @@ ModelPredictions CompressionState::applyModel(const unsigned char* data, int bit
 	delete[] hashtable;
 
 	ModelPredictions mp;
-	mp.nWeights = w - weights;
+	mp.nWeights = int(w - weights);
 	mp.weights = weights;
 	return mp;
 }

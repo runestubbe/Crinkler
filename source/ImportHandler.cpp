@@ -18,27 +18,38 @@
 
 using namespace std;
 
-char *LoadDLL(const char *name) {
-	char* module = (char *)((int)LoadLibraryEx(name, 0, DONT_RESOLVE_DLL_REFERENCES) & -4096);
-	if(module == 0) {
-		Log::error("", "Cannot open DLL '%s'", name);
+char *LoadDLL(const char *name);
+
+unsigned int RVAToFileOffset(char* module, unsigned int rva)
+{
+	IMAGE_DOS_HEADER* pDH = (PIMAGE_DOS_HEADER)module;
+	IMAGE_NT_HEADERS32* pNTH = (PIMAGE_NT_HEADERS32)(module + pDH->e_lfanew);
+	unsigned int numSections = pNTH->FileHeader.NumberOfSections;
+	unsigned int numDataDirectories = pNTH->OptionalHeader.NumberOfRvaAndSizes;
+	IMAGE_SECTION_HEADER* sectionHeaders = (IMAGE_SECTION_HEADER*)&pNTH->OptionalHeader.DataDirectory[numDataDirectories];
+	for(int i = 0; i < numSections; i++)
+	{
+		if(rva >= sectionHeaders[i].VirtualAddress && rva < sectionHeaders[i].VirtualAddress + sectionHeaders[i].SizeOfRawData)
+		{
+			return rva - sectionHeaders[i].VirtualAddress + sectionHeaders[i].PointerToRawData;
+		}
 	}
-	return module;
+	return 0;
 }
 
 int getOrdinal(const char* function, const char* dll) {
 	char* module = LoadDLL(dll);
 
 	IMAGE_DOS_HEADER* dh = (IMAGE_DOS_HEADER*)module;
-	IMAGE_FILE_HEADER* coffHeader = (IMAGE_FILE_HEADER*)(module + dh->e_lfanew+4);
-	IMAGE_OPTIONAL_HEADER32* pe = (IMAGE_OPTIONAL_HEADER32*)(coffHeader+1);
-	IMAGE_EXPORT_DIRECTORY* exportdir = (IMAGE_EXPORT_DIRECTORY*) (module + pe->DataDirectory[IMAGE_DIRECTORY_ENTRY_EXPORT].VirtualAddress);
+	IMAGE_FILE_HEADER* coffHeader = (IMAGE_FILE_HEADER*)(module + dh->e_lfanew + 4);
+	IMAGE_OPTIONAL_HEADER32* pe = (IMAGE_OPTIONAL_HEADER32*)(coffHeader + 1);
+	IMAGE_EXPORT_DIRECTORY* exportdir = (IMAGE_EXPORT_DIRECTORY*) (module + RVAToFileOffset(module, pe->DataDirectory[IMAGE_DIRECTORY_ENTRY_EXPORT].VirtualAddress));
 	
-	short* ordinalTable = (short*) (module + exportdir->AddressOfNameOrdinals);
-	int* nameTable = (int*)(module + exportdir->AddressOfNames);
+	short* ordinalTable = (short*) (module + RVAToFileOffset(module, exportdir->AddressOfNameOrdinals));
+	int* nameTable = (int*)(module + RVAToFileOffset(module, exportdir->AddressOfNames));
 	for(int i = 0; i < (int)exportdir->NumberOfNames; i++) {
 		int ordinal = ordinalTable[i] + exportdir->Base;
-		char* name = module+nameTable[i];
+		char* name = module + RVAToFileOffset(module, nameTable[i]);
 		if(strcmp(name, function) == 0) {
 			return ordinal;
 		}
@@ -48,19 +59,21 @@ int getOrdinal(const char* function, const char* dll) {
 	return -1;
 }
 
+
 char *getForwardRVA(const char* dll, const char* function) {
 	char* module = LoadDLL(dll);
 	IMAGE_DOS_HEADER* pDH = (PIMAGE_DOS_HEADER)module;
-	IMAGE_NT_HEADERS* pNTH = (PIMAGE_NT_HEADERS)(module + pDH->e_lfanew);
-	IMAGE_EXPORT_DIRECTORY* pIED = (PIMAGE_EXPORT_DIRECTORY)(module + pNTH->OptionalHeader.DataDirectory[0].VirtualAddress);
+	IMAGE_NT_HEADERS32* pNTH = (PIMAGE_NT_HEADERS32)(module + pDH->e_lfanew);
 
-	short* ordinalTable = (short*)(module + pIED->AddressOfNameOrdinals);
-	DWORD* namePointerTable = (DWORD*)(module + pIED->AddressOfNames);
-	DWORD* addressTableRVAOffset = addressTableRVAOffset = (DWORD*)(module + pIED->AddressOfFunctions);
+	IMAGE_EXPORT_DIRECTORY* pIED = (PIMAGE_EXPORT_DIRECTORY)(module + RVAToFileOffset(module, pNTH->OptionalHeader.DataDirectory[0].VirtualAddress));
+
+	short* ordinalTable = (short*)(module + RVAToFileOffset(module, pIED->AddressOfNameOrdinals));
+	DWORD* namePointerTable = (DWORD*)(module + RVAToFileOffset(module, pIED->AddressOfNames));
+	DWORD* addressTableRVAOffset = addressTableRVAOffset = (DWORD*)(module + RVAToFileOffset(module, pIED->AddressOfFunctions));
 
 	for(unsigned int i = 0; i < pIED->NumberOfNames; i++) {
 		short ordinal = ordinalTable[i];
-		char* name = (char*)(module + namePointerTable[i]);
+		char* name = (char*)(module + RVAToFileOffset(module, namePointerTable[i]));
 
 		if(strcmp(name, function) == 0) {
 			DWORD address = addressTableRVAOffset[ordinal];
