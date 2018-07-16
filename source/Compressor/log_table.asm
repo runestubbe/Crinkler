@@ -1,7 +1,9 @@
+	global	LogTable
 	global	_LogTable
 
 	section	logtable data
 
+LogTable:
 _LogTable:
 
 dd      0,-49151,-45055,-42659,-40959,-39640,-38563,-37652,-36863,-36167,-35544,-34981,-34467,-33994,-33556,-33148
