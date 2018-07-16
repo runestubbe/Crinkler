@@ -169,7 +169,6 @@ inline unsigned int QuickHash(const byte *data, int pos, __m64 mask, int bytemas
 int CompressionStream::EvaluateSize(const unsigned char* d, int size, const ModelList& models, int baseprob, char* context, int bitpos) {
 	struct HashEntry
 	{
-		unsigned int hash;
 		int pos;
 		unsigned char prob[2];
 	};
@@ -199,7 +198,6 @@ int CompressionStream::EvaluateSize(const unsigned char* d, int size, const Mode
 		//clear hashtable
 		for(int i = 0; i < tinyhashsize; i++)
 		{
-			hashtable[i].hash = 0;
 			hashtable[i].pos = -1;
 			hashtable[i].prob[0] = 0;
 			hashtable[i].prob[1] = 0;
@@ -212,6 +210,7 @@ int CompressionStream::EvaluateSize(const unsigned char* d, int size, const Mode
 			maskbytes[i] = ((w >> i) & 1) * 0xff;
 		}
 		__m64 mask = *(__m64 *)maskbytes;
+		uint64_t mask64 = *(uint64_t *)maskbytes;
 
 		for(int pos = 0; pos < size; pos++) {
 			int bit = (data[pos] >> (7-bitpos)) & 1;
@@ -221,47 +220,25 @@ int CompressionStream::EvaluateSize(const unsigned char* d, int size, const Mode
 			//unsigned int tinyHash = hash & (tinyhashsize-1);
 			HashEntry *he = &hashtable[tinyHash];
 
+			uint64_t contextBytes = *(uint64_t*)&data[pos - 8];
+
 			while(true)
 			{
 				if(he->pos == -1)
 					break;
 
-				if(he->hash == hash)
+				if((data[pos] & bytemask) == (data[he->pos] & bytemask))
 				{
-					bool match = false;
-					if((data[pos] & bytemask) == (data[he->pos] & bytemask))
-					{
-						match = true;
-						int msk = w;
-						int k = -8;
-						while(msk)
-						{
-							if(msk & 1)
-							{
-								if(data[pos + k] != data[he->pos + k])
-								{
-									match = false;
-									break;
-								}
-							}
-							k++;
-							msk >>= 1;
-						}
-					}
-
-					if(match)
-					{
+					if(((contextBytes ^ *(uint64_t*)&data[he->pos - 8]) & mask64) == 0)
 						break;
-					}
 				}
-
+		
 				tinyHash++;
 				if(tinyHash >= tinyhashsize)
 					tinyHash = 0;
 				he = &hashtable[tinyHash];
 			}
 
-			he->hash = hash;
 			he->pos = pos;
 
 			int fac = weight;
