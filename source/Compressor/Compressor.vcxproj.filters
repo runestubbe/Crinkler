@@ -35,6 +35,9 @@
     <ClCompile Include="AritCode.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Model.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="aritcode.h">
@@ -66,9 +69,6 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <CustomBuild Include="model.asm">
-      <Filter>Assembly Files</Filter>
-    </CustomBuild>
     <CustomBuild Include="log_table.asm">
       <Filter>Assembly Files</Filter>
     </CustomBuild>
