@@ -5,9 +5,17 @@
       <Configuration>Debug</Configuration>
       <Platform>Win32</Platform>
     </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
     <ProjectConfiguration Include="Release|Win32">
       <Configuration>Release</Configuration>
       <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
@@ -23,7 +31,18 @@
     <CharacterSet>MultiByte</CharacterSet>
     <WholeProgramOptimization>false</WholeProgramOptimization>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <PlatformToolset>v141_xp</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+    <WholeProgramOptimization>false</WholeProgramOptimization>
+  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <PlatformToolset>v141_xp</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <PlatformToolset>v141_xp</PlatformToolset>
     <CharacterSet>MultiByte</CharacterSet>
@@ -35,7 +54,15 @@
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
     <Import Project="$(VCTargetsPath)Microsoft.CPP.UpgradeFromVC71.props" />
   </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="$(VCTargetsPath)Microsoft.CPP.UpgradeFromVC71.props" />
+  </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="$(VCTargetsPath)Microsoft.CPP.UpgradeFromVC71.props" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
     <Import Project="$(VCTargetsPath)Microsoft.CPP.UpgradeFromVC71.props" />
   </ImportGroup>
@@ -44,17 +71,30 @@
     <_ProjectFileVersion>11.0.50727.1</_ProjectFileVersion>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <OutDir>$(SolutionDir)build\$(Configuration)\$(ProjectName)\</OutDir>
-    <IntDir>$(SolutionDir)artifacts\$(Configuration)\$(ProjectName)\</IntDir>
+    <OutDir>$(SolutionDir)build\$(Platform)\$(Configuration)\$(ProjectName)\</OutDir>
+    <IntDir>$(SolutionDir)artifacts\$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
     <LinkIncremental>true</LinkIncremental>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <LinkIncremental>true</LinkIncremental>
+    <IntDir>$(SolutionDir)artifacts\$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
+    <OutDir>$(SolutionDir)build\$(Platform)\$(Configuration)\$(ProjectName)\</OutDir>
+  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <OutDir>$(SolutionDir)build\$(Configuration)\$(ProjectName)\</OutDir>
-    <IntDir>$(SolutionDir)artifacts\$(Configuration)\$(ProjectName)\</IntDir>
+    <OutDir>$(SolutionDir)build\$(Platform)\$(Configuration)\$(ProjectName)\</OutDir>
+    <IntDir>$(SolutionDir)artifacts\$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
     <IgnoreImportLibrary>false</IgnoreImportLibrary>
     <LinkIncremental>false</LinkIncremental>
     <GenerateManifest>false</GenerateManifest>
     <EmbedManifest>true</EmbedManifest>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <IgnoreImportLibrary>false</IgnoreImportLibrary>
+    <LinkIncremental>false</LinkIncremental>
+    <GenerateManifest>false</GenerateManifest>
+    <EmbedManifest>true</EmbedManifest>
+    <IntDir>$(SolutionDir)artifacts\$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
+    <OutDir>$(SolutionDir)build\$(Platform)\$(Configuration)\$(ProjectName)\</OutDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -77,6 +117,29 @@
       <ProgramDatabaseFile>$(OutDir)Crinkler.pdb</ProgramDatabaseFile>
       <SubSystem>Console</SubSystem>
       <TargetMachine>MachineX86</TargetMachine>
+      <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <Optimization>Disabled</Optimization>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;D3D_DEBUG_INFO;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <OpenMPSupport>false</OpenMPSupport>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <DisableSpecificWarnings>4530</DisableSpecificWarnings>
+    </ClCompile>
+    <Link>
+      <AdditionalDependencies>comctl32.lib;Dbghelp.lib;../external/distorm/distorm.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <OutputFile>$(OutDir)Crinkler.exe</OutputFile>
+      <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <ProgramDatabaseFile>$(OutDir)Crinkler.pdb</ProgramDatabaseFile>
+      <SubSystem>Console</SubSystem>
       <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
     </Link>
   </ItemDefinitionGroup>
@@ -122,9 +185,56 @@
       <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
     </Link>
   </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <AdditionalOptions>/MP %(AdditionalOptions)</AdditionalOptions>
+      <Optimization>MaxSpeed</Optimization>
+      <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
+      <OmitFramePointers>true</OmitFramePointers>
+      <WholeProgramOptimization>false</WholeProgramOptimization>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <StringPooling>true</StringPooling>
+      <ExceptionHandling>
+      </ExceptionHandling>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <BufferSecurityCheck>false</BufferSecurityCheck>
+      <FloatingPointModel>Fast</FloatingPointModel>
+      <FloatingPointExceptions>false</FloatingPointExceptions>
+      <ForceConformanceInForLoopScope>true</ForceConformanceInForLoopScope>
+      <RuntimeTypeInfo>false</RuntimeTypeInfo>
+      <OpenMPSupport>false</OpenMPSupport>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <AssemblerOutput>
+      </AssemblerOutput>
+      <WarningLevel>Level3</WarningLevel>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <CallingConvention>Cdecl</CallingConvention>
+      <DisableSpecificWarnings>4530</DisableSpecificWarnings>
+    </ClCompile>
+    <Link>
+      <AdditionalDependencies>comctl32.lib;Dbghelp.lib;../external/distorm/distorm.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <OutputFile>$(OutDir)Crinkler.exe</OutputFile>
+      <ManifestFile>
+      </ManifestFile>
+      <IgnoreAllDefaultLibraries>false</IgnoreAllDefaultLibraries>
+      <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <GenerateMapFile>true</GenerateMapFile>
+      <SubSystem>Console</SubSystem>
+      <OptimizeReferences>true</OptimizeReferences>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <EntryPointSymbol>
+      </EntryPointSymbol>
+      <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
+    </Link>
+  </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Crinkler.cpp">
       <Optimization Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">MaxSpeed</Optimization>
+      <Optimization Condition="'$(Configuration)|$(Platform)'=='Release|x64'">MaxSpeed</Optimization>
     </ClCompile>
     <ClCompile Include="Export.cpp" />
     <ClCompile Include="Fix.cpp" />
@@ -206,6 +316,7 @@
   <ItemGroup>
     <CustomBuild Include="data.asm">
       <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Assembling data..</Message>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Assembling data..</Message>
       <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">nasmw -f win32 -Xvc modules\calltrans.asm -o $(IntermediateOutputPath)\calltrans.obj
 nasmw -f win32 -Xvc modules\header11.asm -o $(IntermediateOutputPath)\header11.obj
 nasmw -f win32 -Xvc modules\header20.asm -o $(IntermediateOutputPath)\header20.obj
@@ -219,9 +330,25 @@ nasmw -f win32 -Xvc -dIMPORT_SAFE -dIMPORT_FALLBACK modules\import20.asm -o $(In
 nasmw -f win32 -Xvc -dIMPORT_SAFE -dIMPORT_FALLBACK -dIMPORT_RANGE modules\import20.asm -o $(IntermediateOutputPath)\import20-safe-fallback-range.obj
 nasmw -f win32 -Xvc modules\import20_1k.asm -o $(IntermediateOutputPath)\import20_1k.obj
 nasmw -f win32 -Xvc -dPATH=$(IntermediateOutputPath) %(FullPath) -o $(IntermediateOutputPath)\%(Filename).obj</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">nasmw -f win32 -Xvc modules\calltrans.asm -o $(IntermediateOutputPath)\calltrans.obj
+nasmw -f win32 -Xvc modules\header11.asm -o $(IntermediateOutputPath)\header11.obj
+nasmw -f win32 -Xvc modules\header20.asm -o $(IntermediateOutputPath)\header20.obj
+nasmw -f win32 -Xvc modules\header20_compatibility.asm -o $(IntermediateOutputPath)\header20_compatibility.obj
+nasmw -f win32 -Xvc modules\header20_1k.asm -o $(IntermediateOutputPath)\header20_1k.obj
+nasmw -f win32 -Xvc modules\import20.asm -o $(IntermediateOutputPath)\import20.obj
+nasmw -f win32 -Xvc -dIMPORT_RANGE modules\import20.asm -o $(IntermediateOutputPath)\import20-range.obj
+nasmw -f win32 -Xvc -dIMPORT_SAFE modules\import20.asm -o $(IntermediateOutputPath)\import20-safe.obj
+nasmw -f win32 -Xvc -dIMPORT_SAFE -dIMPORT_RANGE modules\import20.asm -o $(IntermediateOutputPath)\\import20-safe-range.obj
+nasmw -f win32 -Xvc -dIMPORT_SAFE -dIMPORT_FALLBACK modules\import20.asm -o $(IntermediateOutputPath)\import20-safe-fallback.obj
+nasmw -f win32 -Xvc -dIMPORT_SAFE -dIMPORT_FALLBACK -dIMPORT_RANGE modules\import20.asm -o $(IntermediateOutputPath)\import20-safe-fallback-range.obj
+nasmw -f win32 -Xvc modules\import20_1k.asm -o $(IntermediateOutputPath)\import20_1k.obj
+nasmw -f win32 -Xvc -dPATH=$(IntermediateOutputPath) %(FullPath) -o $(IntermediateOutputPath)\%(Filename).obj</Command>
       <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">modules/calltrans.asm;modules/header11.asm;modules/header20.asm;modules/header20-compatibility.asm;modules/header20_1k.asm;modules/import20.asm;modules/import20_1k.asm;known_dll_exports.dat;%(AdditionalInputs)</AdditionalInputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">modules/calltrans.asm;modules/header11.asm;modules/header20.asm;modules/header20-compatibility.asm;modules/header20_1k.asm;modules/import20.asm;modules/import20_1k.asm;known_dll_exports.dat;%(AdditionalInputs)</AdditionalInputs>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntermediateOutputPath)\%(Filename).obj;</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(IntermediateOutputPath)\%(Filename).obj;</Outputs>
       <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Assembling data..</Message>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Assembling data..</Message>
       <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">nasmw -f win32 -Xvc modules\calltrans.asm -o $(IntermediateOutputPath)\calltrans.obj
 nasmw -f win32 -Xvc modules\header11.asm -o $(IntermediateOutputPath)\header11.obj
 nasmw -f win32 -Xvc modules\header20.asm -o $(IntermediateOutputPath)\header20.obj
@@ -235,8 +362,23 @@ nasmw -f win32 -Xvc -dIMPORT_SAFE -dIMPORT_FALLBACK modules\import20.asm -o $(In
 nasmw -f win32 -Xvc -dIMPORT_SAFE -dIMPORT_FALLBACK -dIMPORT_RANGE modules\import20.asm -o $(IntermediateOutputPath)\import20-safe-fallback-range.obj
 nasmw -f win32 -Xvc modules\import20_1k.asm -o $(IntermediateOutputPath)\import20_1k.obj
 nasmw -f win32 -Xvc -dPATH=$(IntermediateOutputPath) %(FullPath) -o $(IntermediateOutputPath)\%(Filename).obj</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">nasmw -f win32 -Xvc modules\calltrans.asm -o $(IntermediateOutputPath)\calltrans.obj
+nasmw -f win32 -Xvc modules\header11.asm -o $(IntermediateOutputPath)\header11.obj
+nasmw -f win32 -Xvc modules\header20.asm -o $(IntermediateOutputPath)\header20.obj
+nasmw -f win32 -Xvc modules\header20_compatibility.asm -o $(IntermediateOutputPath)\header20_compatibility.obj
+nasmw -f win32 -Xvc modules\header20_1k.asm -o $(IntermediateOutputPath)\header20_1k.obj
+nasmw -f win32 -Xvc modules\import20.asm -o $(IntermediateOutputPath)\import20.obj
+nasmw -f win32 -Xvc -dIMPORT_RANGE modules\import20.asm -o $(IntermediateOutputPath)\import20-range.obj
+nasmw -f win32 -Xvc -dIMPORT_SAFE modules\import20.asm -o $(IntermediateOutputPath)\import20-safe.obj
+nasmw -f win32 -Xvc -dIMPORT_SAFE -dIMPORT_RANGE modules\import20.asm -o $(IntermediateOutputPath)\\import20-safe-range.obj
+nasmw -f win32 -Xvc -dIMPORT_SAFE -dIMPORT_FALLBACK modules\import20.asm -o $(IntermediateOutputPath)\import20-safe-fallback.obj
+nasmw -f win32 -Xvc -dIMPORT_SAFE -dIMPORT_FALLBACK -dIMPORT_RANGE modules\import20.asm -o $(IntermediateOutputPath)\import20-safe-fallback-range.obj
+nasmw -f win32 -Xvc modules\import20_1k.asm -o $(IntermediateOutputPath)\import20_1k.obj
+nasmw -f win32 -Xvc -dPATH=$(IntermediateOutputPath) %(FullPath) -o $(IntermediateOutputPath)\%(Filename).obj</Command>
       <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">modules/calltrans.asm;modules/header11.asm;modules/header20.asm;modules/header20-compatibility.asm;modules/header20_1k.asm;modules/import20.asm;modules/import20_1k.asm;known_dll_exports.dat;%(AdditionalInputs)</AdditionalInputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">modules/calltrans.asm;modules/header11.asm;modules/header20.asm;modules/header20-compatibility.asm;modules/header20_1k.asm;modules/import20.asm;modules/import20_1k.asm;known_dll_exports.dat;%(AdditionalInputs)</AdditionalInputs>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntermediateOutputPath)\%(Filename).obj;</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(IntermediateOutputPath)\%(Filename).obj;</Outputs>
     </CustomBuild>
   </ItemGroup>
   <ItemGroup>

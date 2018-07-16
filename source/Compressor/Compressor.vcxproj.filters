@@ -32,6 +32,9 @@
     <ClCompile Include="SoftwareCompressionStateEvaluator.cpp">
       <Filter>CompressionStateEvaluators</Filter>
     </ClCompile>
+    <ClCompile Include="AritCode.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="aritcode.h">
@@ -63,10 +66,10 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <CustomBuild Include="aritcode.asm">
+    <CustomBuild Include="model.asm">
       <Filter>Assembly Files</Filter>
     </CustomBuild>
-    <CustomBuild Include="model.asm">
+    <CustomBuild Include="log_table.asm">
       <Filter>Assembly Files</Filter>
     </CustomBuild>
   </ItemGroup>
