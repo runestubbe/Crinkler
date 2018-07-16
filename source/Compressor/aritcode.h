@@ -32,16 +32,6 @@ extern "C" {
 	void __cdecl breakpoint();
 }
 
-
-static inline unsigned int __stdcall BitScanReverse_MY(int v) {
-	unsigned int r;
-	__asm {
-		bsr eax, v
-		mov r, eax
-	}
-	return r;
-}
-
 inline int AritSize2(int right_prob, int wrong_prob) {
 	assert(right_prob > 0);
 	assert(wrong_prob > 0);
@@ -51,13 +41,11 @@ inline int AritSize2(int right_prob, int wrong_prob) {
 	if(total_prob < BITPREC_TABLE) {
 		return LogTable[total_prob] - LogTable[right_prob];
 	}
-	right_len = BitScanReverse_MY(right_prob);
-	total_len = BitScanReverse_MY(total_prob);
+	_BitScanReverse((unsigned long*)&right_len, right_prob);
+	_BitScanReverse((unsigned long*)&total_len, total_prob);
 	right_len = max(right_len - 12, 0);
 	total_len = max(total_len - 12, 0);
-	return LogTable[total_prob >> total_len]
-	- LogTable[right_prob >> right_len]
-	+ ((total_len - right_len) << 12);
+	return LogTable[total_prob >> total_len] - LogTable[right_prob >> right_len] + ((total_len - right_len) << 12);
 }
 
 
