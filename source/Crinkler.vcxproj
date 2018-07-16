@@ -110,7 +110,7 @@
       <DisableSpecificWarnings>4530</DisableSpecificWarnings>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>comctl32.lib;Dbghelp.lib;../external/distorm/distorm.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>comctl32.lib;Dbghelp.lib;../external/distorm/x86/distorm.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>$(OutDir)Crinkler.exe</OutputFile>
       <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -134,7 +134,7 @@
       <DisableSpecificWarnings>4530</DisableSpecificWarnings>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>comctl32.lib;Dbghelp.lib;../external/distorm/distorm.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>comctl32.lib;Dbghelp.lib;../external/distorm/x64/distorm.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>$(OutDir)Crinkler.exe</OutputFile>
       <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -170,7 +170,7 @@
       <DisableSpecificWarnings>4530</DisableSpecificWarnings>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>comctl32.lib;Dbghelp.lib;../external/distorm/distorm.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>comctl32.lib;Dbghelp.lib;../external/distorm/x86/distorm.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>$(OutDir)Crinkler.exe</OutputFile>
       <ManifestFile />
       <IgnoreAllDefaultLibraries>false</IgnoreAllDefaultLibraries>
@@ -215,7 +215,7 @@
       <DisableSpecificWarnings>4530</DisableSpecificWarnings>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>comctl32.lib;Dbghelp.lib;../external/distorm/distorm.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>comctl32.lib;Dbghelp.lib;../external/distorm/x64/distorm.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>$(OutDir)Crinkler.exe</OutputFile>
       <ManifestFile>
       </ManifestFile>
