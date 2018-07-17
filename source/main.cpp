@@ -34,10 +34,24 @@ static bool fileExists(const char* filename) {
 	return false;
 }
 
+static void findFileInPathInner(vector<string> &res, std::string path, const char* filename)
+{
+	if(path[path.size() - 1] != '\\' && path[path.size() - 1] != '/')
+		path += "\\";
+	path += filename;
+
+	char canonicalName[1024];
+	GetFullPathName(path.c_str(), sizeof(canonicalName), canonicalName, NULL);
+
+	if(fileExists(canonicalName)) {
+		res.push_back(toUpper(canonicalName));
+	}
+}
+
 //returns a list of found files in uppercase
-static vector<string> findFileInPath(const char* filename, const char* path) {
+static vector<string> findFileInPath(const char* filename, const char* path_string, bool isDll) {
 	vector<string> res;
-	string str = path;
+	string str = path_string;
 
 	char canonicalName[1024];
 	if(GetFullPathName(filename, sizeof(canonicalName), canonicalName, NULL) && fileExists(canonicalName)) {
@@ -51,29 +65,17 @@ static vector<string> findFileInPath(const char* filename, const char* path) {
 	while(string::npos != pos || string::npos != lastPos)
 	{
 		// Found a token, add it to the vector.
-		string token = toUpper(str.substr(lastPos, pos - lastPos));
-//#ifdef _WIN64
+		string path = toUpper(str.substr(lastPos, pos - lastPos));
+
+		if(isDll)
 		{
-			size_t index = token.find("SYSTEM32");
+			string path64 = path;
+			size_t index = path64.find("SYSTEM32");
 			if(index != string::npos)
-				token.replace(index, 8, "SYSWOW64");
+				path64.replace(index, 8, "SYSWOW64");
+			findFileInPathInner(res, path64, filename);
 		}
-//#endif
-
-		if(token[token.size()-1] != '\\' && token[token.size()-1] != '/')
-			token += "\\";
-		token += filename;
-
-		GetFullPathName(
-			token.c_str(),
-			sizeof(canonicalName),
-			canonicalName,
-			NULL
-			);
-
-		if(fileExists(canonicalName)) {
-			res.push_back(toUpper(canonicalName));
-		}
+		findFileInPathInner(res, path, filename);
 		
 		lastPos = str.find_first_not_of(delimiters, pos);
 		pos = str.find_first_of(delimiters, lastPos);
@@ -98,7 +100,6 @@ static string getEnv(const char* varname) {
 	}
 }
 
-#if 1
 std::map<string, MemoryFile*> dllFileMap;
 char *LoadDLL(const char *name) {
 	string strName = toUpper(name);
@@ -109,9 +110,7 @@ char *LoadDLL(const char *name) {
 	if(it != dllFileMap.end())
 		return it->second->getPtr();
 	
-	
-	vector<string> filepaths = findFileInPath(strName.c_str(), getEnv("PATH").c_str());
-
+	vector<string> filepaths = findFileInPath(strName.c_str(), getEnv("PATH").c_str(), true);
 	if(filepaths.empty())
 	{
 		Log::error("", "Cannot find DLL '%s'", strName.c_str());
@@ -128,15 +127,7 @@ char *LoadDLL(const char *name) {
 	dllFileMap[strName] = mf;
 	return mf->getPtr();
 }
-#else
-char *LoadDLL(const char *name) {
-	char* module = (char *)((int)LoadLibraryEx(name, 0, DONT_RESOLVE_DLL_REFERENCES) & -4096);
-	if(module == 0) {
-		Log::error("", "Cannot open DLL '%s'", name);
-	}
-	return module;
-}
-#endif
+
 
 static bool runExecutable(const char* filename) {
 	char args[MAX_PATH];
@@ -180,7 +171,7 @@ static void parseExports(CmdParamMultiAssign& arg, Crinkler& crinkler) {
 }
 
 static void runOriginalLinker(const char* linkerName) {
-	vector<string> res = findFileInPath(linkerName, getEnv("PATH").c_str());
+	vector<string> res = findFileInPath(linkerName, getEnv("PATH").c_str(), false);
 	const char* needle = "Crinkler";
 	const int needleLength = strlen(needle);
 
@@ -563,7 +554,7 @@ int main(int argc, char* argv[]) {
 		while(filesArg.hasNext()) {
 			const char* filename = filesArg.getValue();
 			filesArg.next();
-			vector<string> res = findFileInPath(filename, lib.c_str());
+			vector<string> res = findFileInPath(filename, lib.c_str(), false);
 			if(res.size() == 0) {
 				Log::error(filename, "Cannot open file");
 				return -1;
