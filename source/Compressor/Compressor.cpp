@@ -371,7 +371,7 @@ static int* GenerateModelData1k(const unsigned char* org_data, int datasize)
 	return modeldata;
 }
 
-static int previousPowerOf2(int v) {
+static int nextPowerOf2(int v) {
 	v--;
 	v |= v >> 1;
 	v |= v >> 2;
@@ -411,7 +411,7 @@ int Compress1K(unsigned char* org_data, int datasize, unsigned char* compressed,
 	SEncodeEntry* encode_entries = new SEncodeEntry[8 * datasize];	//zero
 	memset(encode_entries, 0, 8 * datasize * sizeof(SEncodeEntry));
 
-	const int hash_table_size = previousPowerOf2(datasize * 2);
+	const int hash_table_size = nextPowerOf2(datasize * 2);
 
 	SHashEntry1* hash_table_data = new SHashEntry1[hash_table_size * 8];
 	

@@ -19,7 +19,7 @@ const int MAX_N_MODELS = 32;
 
 void updateWeights(Weights *w, int bit, bool saturate);
 
-static int previousPowerOf2(int v) {
+static int nextPowerOf2(int v) {
 	v--;
 	v |= v >> 1;
 	v |= v >> 2;
@@ -60,7 +60,7 @@ void CompressionStream::Compress(const unsigned char* d, int size, const ModelLi
 		weightmasks[n] = (unsigned int)masks[n] | (w & 0xFFFFFF00);
 	}
 
-	unsigned int tinyhashsize = previousPowerOf2(bitlength*nmodels);
+	unsigned int tinyhashsize = nextPowerOf2(bitlength*nmodels);
 	TinyHashEntry* hashtable = new TinyHashEntry[tinyhashsize];
 	memset(hashtable, 0, tinyhashsize*sizeof(TinyHashEntry));
 	TinyHashEntry* hashEntries[MAX_N_MODELS];
@@ -155,17 +155,6 @@ void CompressionStream::Compress(const unsigned char* d, int size, const ModelLi
 	delete[] data;
 }
 
-inline unsigned int QuickHash(const byte *data, int pos, __m128i mask, int bytemask) {
-	__m128i contextdata = _mm_loadl_epi64((__m128i *)&data[pos-8]);
-	__m128i scrambler = _mm_set_epi8(0,0,0,0,0,0,0,0,23,5,17,13,11,7,19,3);
-	__m128i sample = _mm_mullo_epi16(_mm_and_si128(contextdata, mask), scrambler);
-	unsigned int contexthash1 = sample.m128i_u32[0];
-	unsigned int contexthash2 = sample.m128i_u32[1];
-	unsigned int contexthash = contexthash1 ^ contexthash2;
-	unsigned char databyte = (unsigned char)(data[pos] & bytemask);
-	return contexthash + ((unsigned int)databyte);
-}
-
 int CompressionStream::EvaluateSize(const unsigned char* d, int size, const ModelList& models, int baseprob, char* context, int bitpos) {
 	struct HashEntry
 	{
@@ -173,15 +162,13 @@ int CompressionStream::EvaluateSize(const unsigned char* d, int size, const Mode
 		unsigned char prob[2];
 	};
 
-	unsigned char* data = new unsigned char[size+MAX_CONTEXT_LENGTH];
+	unsigned char* data = new unsigned char[size + MAX_CONTEXT_LENGTH + 16];	// ensure 128bit operations are safe
 	memcpy(data, context, MAX_CONTEXT_LENGTH);
 	data += MAX_CONTEXT_LENGTH;
 	memcpy(data, d, size);
 
-	unsigned int tinyhashsize = previousPowerOf2(size*2);
-	unsigned int recths = ((1<<31)/tinyhashsize-1)*2+1;
-	unsigned int recthslog = 0;
-	while((1u<<recthslog) <= recths) recthslog++;
+	unsigned int tinyhashsize = nextPowerOf2(size*3/2);
+	unsigned int tinyhashmask = tinyhashsize - 1u;
 	HashEntry* hashtable = new HashEntry[tinyhashsize];
 
 	unsigned int* sums = new unsigned int[size*2];	//summed predictions
@@ -204,38 +191,42 @@ int CompressionStream::EvaluateSize(const unsigned char* d, int size, const Mode
 		}
 
 		int weight = models[modeli].weight;
-		unsigned char w = (unsigned char)models[modeli].mask;
-		unsigned char maskbytes[8];
-		for (int i = 0 ; i < 8 ; i++) {
+		unsigned char w = (unsigned char)models[modeli].mask; 
+
+		unsigned char maskbytes[16] = {};
+		for(int i = 0; i < 8; i++) {
 			maskbytes[i] = ((w >> i) & 1) * 0xff;
 		}
-		__m128i mask = _mm_loadl_epi64((__m128i*)maskbytes);
-		uint64_t mask64 = *(uint64_t *)maskbytes;
-
+		maskbytes[8] = bytemask;
+		__m128i mask = *(__m128i*)maskbytes;
+		
+		__m128i scrambler = _mm_set_epi8(113, 23, 5, 17, 13, 11, 7, 19, 3, 23, 29, 31, 37, 41, 43, 47);
 		for(int pos = 0; pos < size; pos++) {
 			int bit = (data[pos] >> (7-bitpos)) & 1;
 
-			unsigned int hash = QuickHash(data, pos, mask, bytemask);
-			unsigned int tinyHash = (hash*recths)>>recthslog;
-			//unsigned int tinyHash = hash & (tinyhashsize-1);
-			HashEntry *he = &hashtable[tinyHash];
+			__m128i contextdata = *(__m128i *)&data[pos - MAX_CONTEXT_LENGTH];
+			__m128i masked_contextdata = _mm_and_si128(contextdata, mask);
+			
+			__m128i sample = _mm_mullo_epi16(masked_contextdata, scrambler);
+			sample = _mm_add_epi32(_mm_add_epi32(sample, _mm_shuffle_epi32(sample, _MM_SHUFFLE(1, 1, 1, 1))), _mm_shuffle_epi32(sample, _MM_SHUFFLE(2, 2, 2, 2)));
+			unsigned int hash = _mm_cvtsi128_si32(sample);
 
-			uint64_t contextBytes = *(uint64_t*)&data[pos - 8];
+			uint64_t tmp = (uint64_t)hash * 0xd451151b;
+			hash = (uint32_t)tmp ^ uint32_t(tmp >> 32);
+
+			unsigned int tinyHash = hash & tinyhashmask;//(hash*recths)>>recthslog;
+			HashEntry *he = &hashtable[tinyHash];
 
 			while(true)
 			{
 				if(he->pos == -1)
 					break;
-
-				if((data[pos] & bytemask) == (data[he->pos] & bytemask))
-				{
-					if(((contextBytes ^ *(uint64_t*)&data[he->pos - 8]) & mask64) == 0)
-						break;
-				}
+				
+				if(_mm_movemask_epi8(_mm_cmpeq_epi8(_mm_and_si128(*(__m128i *)&data[he->pos - MAX_CONTEXT_LENGTH], mask), masked_contextdata)) == 0xFFFF)
+					break;
 		
-				tinyHash++;
-				if(tinyHash >= tinyhashsize)
-					tinyHash = 0;
+				tinyHash = (tinyHash + 1) & tinyhashmask;
+				
 				he = &hashtable[tinyHash];
 			}
 
