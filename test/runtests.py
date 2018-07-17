@@ -7,7 +7,9 @@ import time
 
 LIBS = [
     'kernel32.lib',
+    'd3d11.lib',
     'd3d9.lib',
+    'd3dcompiler.lib',
     'd3dx9.lib',
     'dinput8.lib',
     'dsound.lib',
@@ -22,16 +24,16 @@ LIBS = [
 
 #'/ORDERTRIES:10000', 
 
-FIXED_OPTIONS = ['/UNSAFEIMPORT', '/ORDERTRIES:10000', '/COMPMODE:SLOW', '/HASHSIZE:500', '/HASHTRIES:100', '/PROGRESSGUI', '/PRINT:IMPORTS', '/PRINT:MODELS', '/PRIORITY:IDLE', '/LIBPATH:C:\\Program Files (x86)\\Windows Kits\\8.1\\Lib\\winv6.3\\um\\x86;C:\\Program Files (x86)\\Microsoft DirectX SDK (June 2010)\\Lib\\x86']
+FIXED_OPTIONS = ['/UNSAFEIMPORT', '/ORDERTRIES:10000', '/COMPMODE:SLOW', '/HASHSIZE:500', '/HASHTRIES:100', '/PRINT:IMPORTS', '/PRINT:MODELS', '/PRIORITY:IDLE', '/LIBPATH:libs']
 
-#VARYING_OPTIONS = [[], ['/TRANSFORM:CALLS'], ['/RANGE:opengl32', '/RANGE:d3dx9_38'], ['/TRANSFORM:CALLS', '/RANGE:opengl32', '/RANGE:d3dx9_38']]
-#VARYING_OPTION_NAMES = ['_', 'T', 'R', 'TR']
+VARYING_OPTIONS = [[], ['/TRANSFORM:CALLS'], ['/RANGE:opengl32', '/RANGE:d3dx9_43'], ['/TRANSFORM:CALLS', '/RANGE:opengl32', '/RANGE:d3dx9_43']]
+VARYING_OPTION_NAMES = ['_', 'T', 'R', 'TR']
 
 #VARYING_OPTIONS = [[], ['/TRANSFORM:CALLS']]
 #VARYING_OPTION_NAMES = ['_', 'T']
 
-VARYING_OPTIONS = [[]]
-VARYING_OPTION_NAMES = ['_']
+#VARYING_OPTIONS = [[]]
+#VARYING_OPTION_NAMES = ['_']
 
 
 crinkler_exe = sys.argv[1]

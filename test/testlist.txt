@@ -1,4 +1,4 @@
-traceless		/SUBSYSTEM:WINDOWS /ENTRY:entry traceless\intro.obj /REPLACEDLL:d3dx9_43=d3dx9_24 
+traceless	/SUBSYSTEM:WINDOWS /ENTRY:entry traceless\intro.obj /REPLACEDLL:d3dx9_43=d3dx9_24
 sinuous		/SUBSYSTEM:WINDOWS /ENTRY:entry sinuous\startup.obj sinuous\source_asm.obj
 als		/SUBSYSTEM:WINDOWS als\main.obj als\midi.obj als\miniglsl.obj
 amalgam		/SUBSYSTEM:WINDOWS /ENTRY:entry amalgam\main.obj
@@ -15,6 +15,7 @@ mollusk		/SUBSYSTEM:CONSOLE /ENTRY:main mollusk\song.obj mollusk\bp4k.obj
 nevada		/SUBSYSTEM:WINDOWS nevada\miniglsl.obj nevada\music.obj nevada\spheretracing.obj nevada\synth.obj
 nvl		/SUBSYSTEM:CONSOLE NVL_objects\comcall.obj NVL_objects\main.obj NVL_objects\startup.obj NVL_objects\DXInit.obj NVL_objects\startupcommon.obj
 objz		/SUBSYSTEM:CONSOLE /ENTRY:main objz\asm4k.obj objz\bass.asm.obj objz\bumpshader.obj objz\geom.obj objz\scene.obj objz\texgen.obj
+ootd		/SUBSYSTEM:WINDOWS /ENTRY:AsmEntryPoint ootd\asm_main.obj ootd\main.obj ootd\oidos.obj ootd\random.obj ootd\Rendering.obj ootd\ShaderCompiler.obj ootd\syncdata.obj
 parsec		/SUBSYSTEM:CONSOLE parsec\intro.obj
 ptnz		/SUBSYSTEM:WINDOWS /ENTRY:entry ptnz\main.obj
 rambo		/SUBSYSTEM:WINDOWS /ENTRY:start rambo\main.obj rambo\vmath.obj rambo\synth.obj

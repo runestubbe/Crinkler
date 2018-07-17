@@ -2,3 +2,7 @@
 /artifacts/
 /build/
 *.user
+/test/libs
+/test/*.exe
+/test/*.html
+/test/testlog.txt
