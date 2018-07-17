@@ -67,14 +67,15 @@ long long SoftwareCompressionStateEvaluator::changeWeight(int modelIndex, int di
 		for(int n = start_idx; n < end_idx; n++)
 		{
 			int i = model[n].pos & 0x7FFFFFFF;
-			int boost = (model[n].pos >> 30) & 0x2;
+			int boost = (model[n].pos >> 30);
 
 			int oldsize = m_sums[i].old_size;
-			m_sums[i].p0 += (model[n].prob[0] * diffw)<<boost;
-			m_sums[i].p1 += (model[n].prob[1] * diffw)<<boost;
+			int factor = diffw << boost;
+			m_sums[i].p0 += model[n].prob[0] * factor;
+			m_sums[i].p1 += model[n].prob[1] * factor;
 			int newsize = AritSize2(m_sums[i].p0, m_sums[i].p1);
-			m_sums[i].old_size = newsize;
 			diffsize2 += (newsize - oldsize);
+			m_sums[i].old_size = newsize;
 		}
 		diffsize.local() += diffsize2;
 	});

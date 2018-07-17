@@ -226,11 +226,10 @@ int CompressionStream::EvaluateSize(const unsigned char* d, int size, const Mode
 				
 				if(_mm_movemask_epi8(_mm_cmpeq_epi8(_mm_and_si128(*(__m128i *)&data[candidate_pos - MAX_CONTEXT_LENGTH], mask), masked_contextdata)) == 0xFFFF)
 				{
-					int fac = weight;
 					int p0 = hash_probs[tinyHash * 2 + 0];
 					int p1 = hash_probs[tinyHash * 2 + 1];
 
-					unsigned int shift = (1 - (((p0 + 255)&(p1 + 255)) >> 8)) * 2 + fac;
+					unsigned int shift = weight - (((p0 - 1)|(p1 - 1)) >> 31) * 2;
 					sums[pos * 2 + 0] += (p0 << shift);
 					sums[pos * 2 + 1] += (p1 << shift);
 
