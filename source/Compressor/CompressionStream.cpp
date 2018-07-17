@@ -156,12 +156,6 @@ void CompressionStream::Compress(const unsigned char* d, int size, const ModelLi
 }
 
 int CompressionStream::EvaluateSize(const unsigned char* d, int size, const ModelList& models, int baseprob, char* context, int bitpos) {
-	struct HashEntry
-	{
-		int pos;
-		unsigned char prob[2];
-	};
-
 	unsigned char* data = new unsigned char[size + MAX_CONTEXT_LENGTH + 16];	// ensure 128bit operations are safe
 	memcpy(data, context, MAX_CONTEXT_LENGTH);
 	data += MAX_CONTEXT_LENGTH;
@@ -169,7 +163,8 @@ int CompressionStream::EvaluateSize(const unsigned char* d, int size, const Mode
 
 	unsigned int tinyhashsize = nextPowerOf2(size*3/2);
 	unsigned int tinyhashmask = tinyhashsize - 1u;
-	HashEntry* hashtable = new HashEntry[tinyhashsize];
+	int* hash_positions = new int[tinyhashsize];
+	byte* hash_probs = new byte[tinyhashsize*2];
 
 	unsigned int* sums = new unsigned int[size*2];	//summed predictions
 
@@ -185,9 +180,7 @@ int CompressionStream::EvaluateSize(const unsigned char* d, int size, const Mode
 		//clear hashtable
 		for(int i = 0; i < tinyhashsize; i++)
 		{
-			hashtable[i].pos = -1;
-			hashtable[i].prob[0] = 0;
-			hashtable[i].prob[1] = 0;
+			hash_positions[i] = -1;
 		}
 
 		int weight = models[modeli].weight;
@@ -199,7 +192,7 @@ int CompressionStream::EvaluateSize(const unsigned char* d, int size, const Mode
 		}
 		maskbytes[8] = bytemask;
 		__m128i mask = *(__m128i*)maskbytes;
-		
+
 		__m128i scrambler = _mm_set_epi8(113, 23, 5, 17, 13, 11, 7, 19, 3, 23, 29, 31, 37, 41, 43, 47);
 		for(int pos = 0; pos < size; pos++) {
 			int bit = (data[pos] >> (7-bitpos)) & 1;
@@ -215,31 +208,42 @@ int CompressionStream::EvaluateSize(const unsigned char* d, int size, const Mode
 			hash = (uint32_t)tmp ^ uint32_t(tmp >> 32);
 
 			unsigned int tinyHash = hash & tinyhashmask;//(hash*recths)>>recthslog;
-			HashEntry *he = &hashtable[tinyHash];
+			//HashEntry *he = &hashtable[tinyHash];
 
 			while(true)
 			{
-				if(he->pos == -1)
+				int candidate_pos = hash_positions[tinyHash];
+				if(candidate_pos == -1)
+				{
+					hash_positions[tinyHash] = pos;
+
+					//update weights
+					int bit_idx = tinyHash * 2 + bit;
+					hash_probs[bit_idx] = 1;
+					hash_probs[bit_idx ^ 1] = 0;
 					break;
+				}
 				
-				if(_mm_movemask_epi8(_mm_cmpeq_epi8(_mm_and_si128(*(__m128i *)&data[he->pos - MAX_CONTEXT_LENGTH], mask), masked_contextdata)) == 0xFFFF)
+				if(_mm_movemask_epi8(_mm_cmpeq_epi8(_mm_and_si128(*(__m128i *)&data[candidate_pos - MAX_CONTEXT_LENGTH], mask), masked_contextdata)) == 0xFFFF)
+				{
+					int fac = weight;
+					int p0 = hash_probs[tinyHash * 2 + 0];
+					int p1 = hash_probs[tinyHash * 2 + 1];
+
+					unsigned int shift = (1 - (((p0 + 255)&(p1 + 255)) >> 8)) * 2 + fac;
+					sums[pos * 2 + 0] += (p0 << shift);
+					sums[pos * 2 + 1] += (p1 << shift);
+
+					//update weights
+					int bit_idx = tinyHash * 2 + bit;
+					int not_bit_idx = bit_idx ^ 1;
+					if(!m_saturate || hash_probs[bit_idx] < 255) hash_probs[bit_idx] += 1;
+					if(hash_probs[not_bit_idx] > 1) hash_probs[not_bit_idx] >>= 1;
 					break;
-		
+				}
+					
 				tinyHash = (tinyHash + 1) & tinyhashmask;
-				
-				he = &hashtable[tinyHash];
 			}
-
-			he->pos = pos;
-
-			int fac = weight;
-			unsigned int shift = (1 - (((he->prob[0]+255)&(he->prob[1]+255)) >> 8))*2 + fac;
-			sums[pos*2+0] += ((int)he->prob[0] << shift);
-			sums[pos*2+1] += ((int)he->prob[1] << shift);
-
-			//update weights
-			if (!m_saturate || he->prob[bit] < 255) he->prob[bit] += 1;
-			if (he->prob[!bit] > 1) he->prob[!bit] >>= 1;
 		}
 	}
 
@@ -269,7 +273,8 @@ int CompressionStream::EvaluateSize(const unsigned char* d, int size, const Mode
 	totalsize = combinable_totalsize.combine(std::plus<long long>());
 #endif
 	
-	delete[] hashtable;
+	delete[] hash_positions;
+	delete[] hash_probs;
 
 	data -= MAX_CONTEXT_LENGTH;
 	delete[] data;
