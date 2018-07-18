@@ -3,7 +3,7 @@
 #include <memory>
 #include <ctime>
 #include <cstdio>
-#include <mmintrin.h>
+#include <xmmintrin.h>
 #include <intrin.h>
 #include <ppl.h>
 

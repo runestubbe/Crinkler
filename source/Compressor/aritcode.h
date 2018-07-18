@@ -3,7 +3,8 @@
 #define _ARITCODE_H_
 
 const int BITPREC = 256;
-const int BITPREC_TABLE = 4096;
+const int BITPREC_TABLE_BITS = 12;
+const int BITPREC_TABLE = 1 << BITPREC_TABLE_BITS;
 
 #include <cassert>
 #include <cstdlib>

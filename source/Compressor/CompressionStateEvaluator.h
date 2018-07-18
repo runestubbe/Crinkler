@@ -3,9 +3,10 @@
 #define _COMPRESSION_STATE_EVALUATOR_H_
 
 #include "ModelList.h"
+#include <xmmintrin.h>
 
 struct CounterPair {
-	int p0, p1;
+	float p0, p1;
 	int old_size;
 };
 
@@ -14,9 +15,15 @@ struct Weights {
 	unsigned int pos;
 };
 
+struct Package
+{
+	__m128 p0, p1;	// pre-boosted counts
+};
+
 struct ModelPredictions {
-	int nWeights;
-	Weights* weights;
+	int numPackages;
+	Package* packages;
+	int* packageOffsets;
 };
 
 class CompressionStateEvaluator {
