@@ -66,6 +66,7 @@ ModelPredictions CompressionState::applyModel(const unsigned char* data, int bit
 	HashEntry* hashtable = new HashEntry[hashsize];
 	memset(hashtable, 0, hashsize*sizeof(HashEntry));
 	
+	__m128 logScale = _mm_set1_ps(m_logScale);
 	for (int idx = 0 ; idx < maxPackages; idx++) {
 		int bitpos = (idx * 4);
 		
@@ -88,8 +89,8 @@ ModelPredictions CompressionState::applyModel(const unsigned char* data, int bit
 			int boost2 = (e2->w.prob[0] == 0 || e2->w.prob[1] == 0) ? 2 : 0;
 			int boost3 = (e3->w.prob[0] == 0 || e3->w.prob[1] == 0) ? 2 : 0;
 			
-			packages[numPackages].p0 = _mm_setr_ps(e0->w.prob[b0] << boost0, e1->w.prob[b1] << boost1, e2->w.prob[b2] << boost2, e3->w.prob[b3] << boost3);
-			packages[numPackages].p1 = _mm_setr_ps(e0->w.prob[!b0] << boost0, e1->w.prob[!b1] << boost1, e2->w.prob[!b2] << boost2, e3->w.prob[!b3] << boost3);
+			packages[numPackages].p_right = _mm_mul_ps(_mm_setr_ps(e0->w.prob[b0] << boost0, e1->w.prob[b1] << boost1, e2->w.prob[b2] << boost2, e3->w.prob[b3] << boost3), logScale);
+			packages[numPackages].p_total = _mm_mul_ps(_mm_setr_ps((e0->w.prob[0] + e0->w.prob[1]) << boost0, (e1->w.prob[0] + e1->w.prob[1]) << boost1, (e2->w.prob[0] + e2->w.prob[1]) << boost2, (e3->w.prob[0] + e3->w.prob[1]) << boost3), logScale);
 			packageOffsets[numPackages] = idx;
 			numPackages++;
 		}
@@ -111,11 +112,16 @@ ModelPredictions CompressionState::applyModel(const unsigned char* data, int bit
 
 CompressionState::CompressionState(const unsigned char* data, int size, int baseprob, bool saturate, CompressionStateEvaluator* evaluator, char* context) :
 	m_size(size*8), m_saturate(saturate), m_stateEvaluator(evaluator)
-{	
+{
 	//create temporary data buffer with heading zeros
 	unsigned char* data2 = new unsigned char[size+MAX_CONTEXT_LENGTH];
 	memcpy(data2, context, MAX_CONTEXT_LENGTH);
 	memcpy(data2+MAX_CONTEXT_LENGTH, data, size);
+
+	assert(baseprob >= 4);
+	//m_logScale = pow(pow(2.0, -126.0) / baseprob, 1.0 / 16.0);
+	//(*(int*)&m_logScale)++;
+	m_logScale = 1.0f / 256.0f;	// baseprob * logScale^16 >= FLT_MIN
 
 	//apply models
 #if USE_OPENMP
@@ -130,7 +136,8 @@ CompressionState::CompressionState(const unsigned char* data, int size, int base
 	});
 #endif
 	delete[] data2;
-	m_stateEvaluator->init(m_models, size*8, baseprob);
+
+	m_stateEvaluator->init(m_models, size*8, baseprob, m_logScale);
 	m_compressedsize = BITPREC_TABLE*(long long)m_size;
 }
 

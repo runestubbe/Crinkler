@@ -10,8 +10,8 @@ class SoftwareCompressionStateEvaluator : public CompressionStateEvaluator {
 	ModelPredictions*		m_models;
 	
 	int						m_length;
-	__m128*					m_p0s;
-	__m128*					m_p1s;
+	__m128*					m_p_rights;
+	__m128*					m_p_totals;
 	__m128i*				m_oldsizes;
 
 	long long				m_compressedSize;
@@ -25,7 +25,7 @@ public:
 	SoftwareCompressionStateEvaluator();
 	~SoftwareCompressionStateEvaluator();
 
-	bool init(ModelPredictions* models, int length, int baseprob);
+	bool init(ModelPredictions* models, int length, int baseprob, float logScale);
 	long long evaluate(const ModelList& models);
 };
 

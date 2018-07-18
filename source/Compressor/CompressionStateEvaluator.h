@@ -17,7 +17,7 @@ struct Weights {
 
 struct Package
 {
-	__m128 p0, p1;	// pre-boosted counts
+	__m128 p_right, p_total;	// pre-boosted counts
 };
 
 struct ModelPredictions {
@@ -29,7 +29,7 @@ struct ModelPredictions {
 class CompressionStateEvaluator {
 public:
 	virtual ~CompressionStateEvaluator() {};
-	virtual bool init(ModelPredictions* models, int length, int baseprob) = 0;
+	virtual bool init(ModelPredictions* models, int length, int baseprob, float logScale) = 0;
 	virtual long long evaluate(const ModelList& models) = 0;
 };
 
