@@ -5,6 +5,8 @@
 
 #include "aritcode.h"
 
+#define IACA_VC64_START __writegsbyte(111, 111);
+#define IACA_VC64_END   __writegsbyte(222, 222);
 
 SoftwareCompressionStateEvaluator::SoftwareCompressionStateEvaluator() :
 	m_models(NULL), m_p0s(NULL), m_p1s(NULL), m_oldsizes(NULL)
@@ -81,16 +83,10 @@ int SoftwareCompressionStateEvaluator::AritSize_Test(int right_prob, int wrong_p
 }
 
 long long SoftwareCompressionStateEvaluator::changeWeight(int modelIndex, int diffw) {
-	
-	
-	int numPackages = m_models[modelIndex].numPackages;
-	int* packageOffsets = m_models[modelIndex].packageOffsets;
-	Package* packages = m_models[modelIndex].packages;
-
-
 	concurrency::combinable<long long> diffsize;
 
-	const int BLOCK_SIZE = 32;
+	int numPackages = m_models[modelIndex].numPackages;
+	const int BLOCK_SIZE = 64;
 	int num_blocks = (numPackages + BLOCK_SIZE - 1) / BLOCK_SIZE;
 
 	//for(int n = 0; n < length; n++)
@@ -99,27 +95,33 @@ long long SoftwareCompressionStateEvaluator::changeWeight(int modelIndex, int di
 		int start_idx = block * BLOCK_SIZE;
 		int end_idx = std::min(start_idx + BLOCK_SIZE, numPackages);
 
+		
+		int* packageOffsets = m_models[modelIndex].packageOffsets;
+		Package* packages = m_models[modelIndex].packages;
+
 		__m128 vlogScale = _mm_set1_ps(m_logScale);
 		__m128 vdiffw = _mm_set1_ps(diffw);
 		__m128i vdiffsize = _mm_setzero_si128();
+		__m128* p0s = m_p0s;
+		__m128* p1s = m_p1s;
+		__m128i* oldsizes = m_oldsizes;
 
 		for(int i = start_idx; i < end_idx; i++)
 		{
+			//IACA_VC64_START
 			int packageOffset = packageOffsets[i];
 			Package* package = &packages[i];
 
 			__m128 vmodel_p0 = package->p0;
 			__m128 vmodel_p1 = package->p1;
 
-			__m128 vtotal_p0 = m_p0s[packageOffset];
-			__m128 vtotal_p1 = m_p1s[packageOffset];
+			__m128 vtotal_p0 = p0s[packageOffset];
+			__m128 vtotal_p1 = p1s[packageOffset];
 
 			vtotal_p0 = _mm_add_ps(vtotal_p0, _mm_mul_ps(vmodel_p0, vdiffw));
 			vtotal_p1 = _mm_add_ps(vtotal_p1, _mm_mul_ps(vmodel_p1, vdiffw));
-			m_p0s[packageOffset] = vtotal_p0;
-			m_p1s[packageOffset] = vtotal_p1;
-
-			__m128i voldsize = m_oldsizes[packageOffset];
+			p0s[packageOffset] = vtotal_p0;
+			p1s[packageOffset] = vtotal_p1;
 
 			__m128 vfr = _mm_mul_ps(vtotal_p0, vlogScale);
 			__m128 vft = _mm_mul_ps(_mm_add_ps(vtotal_p0, vtotal_p1), vlogScale);
@@ -130,10 +132,12 @@ long long SoftwareCompressionStateEvaluator::changeWeight(int modelIndex, int di
 			__m128i vlog_fr = _mm_srli_epi32(_mm_castps_si128(vfr), 27 - BITPREC_TABLE_BITS);
 			__m128i vlog_ft = _mm_srli_epi32(_mm_castps_si128(vft), 27 - BITPREC_TABLE_BITS);
 
+			__m128i voldsize = oldsizes[packageOffset];
 			__m128i vnewsize = _mm_sub_epi32(vlog_ft, vlog_fr);
-			m_oldsizes[packageOffset] = vnewsize;
+			oldsizes[packageOffset] = vnewsize;
 
 			vdiffsize = _mm_add_epi32(vdiffsize, _mm_sub_epi32(vnewsize, voldsize));
+			//IACA_VC64_END
 		}
 
 		diffsize.local() += vdiffsize.m128i_i32[0] + vdiffsize.m128i_i32[1] + vdiffsize.m128i_i32[2] + vdiffsize.m128i_i32[3];
