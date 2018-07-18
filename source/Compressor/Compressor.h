@@ -38,6 +38,10 @@ ModelList1k ApproximateModels1k(const unsigned char* data, int datasize, int* co
 ModelList ApproximateModels4k(const unsigned char* data, int datasize, int baseprob, bool saturate, int* compsize, ProgressBar* progressBar, CompressionType compressionType, char* context);
 ModelList InstantModels();
 
+int Compress(unsigned char* compressed, int* sizefill, int maxsize, bool saturate,
+	const unsigned char* data, int rawsize, int splittingPoint,
+	const ModelList& models1, const ModelList& models2, int baseprob, int hashsize);
+	
 int Compress1K(unsigned char* data, int size, unsigned char* compressed, int compressed_size, int boost_factor, int b0, int b1, unsigned int modelmask, int* sizefill, int* internal_size);
 
 const char *compTypeName(CompressionType ct);

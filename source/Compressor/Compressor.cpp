@@ -390,6 +390,16 @@ static int reverse_byte(int x)
 
 }
 
+int Compress(unsigned char* compressed, int* sizefill, int maxsize, bool saturate,
+	const unsigned char* data, int rawsize, int splittingPoint,
+	const ModelList& models1, const ModelList& models2, int baseprob, int hashsize)
+{
+	CompressionStream cs(compressed, sizefill, maxsize, saturate);
+	cs.Compress(data, splittingPoint, models1, baseprob, hashsize, true, false);
+	cs.Compress(data + splittingPoint, rawsize - splittingPoint, models2, baseprob, hashsize, false, true);
+	return cs.Close();
+}
+
 int Compress1K(unsigned char* org_data, int datasize, unsigned char* compressed, int compressed_size, int boost_factor, int b0, int b1, unsigned int modelmask, int* sizefill, int* internal_size)
 {
 	unsigned char* data = new unsigned char[datasize + 32];

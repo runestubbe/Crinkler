@@ -267,12 +267,10 @@ int Crinkler::optimizeHashsize(unsigned char* data, int datasize, int hashsize, 
 	m_progressBar.beginTask("Optimizing hash table size");
 
 	for(int i = 0; i < tries; i++) {
-		CompressionStream cs(buff, NULL, maxsize, m_saturate != 0);
-		hashsize = previousPrime(hashsize/2)*2;
-		cs.Compress(data, splittingPoint, m_modellist1, CRINKLER_BASEPROB, hashsize, true, false);
-		cs.Compress(data + splittingPoint, datasize - splittingPoint, m_modellist2, CRINKLER_BASEPROB, hashsize, false, true);
+		hashsize = previousPrime(hashsize / 2) * 2;
+		int size = Compress(buff, nullptr, maxsize, m_saturate != 0, data, datasize, splittingPoint,
+			m_modellist1, m_modellist2, CRINKLER_BASEPROB, hashsize);
 
-		int size = cs.Close();
 		if(size <= bestsize) {
 			bestsize = size;
 			best_hashsize = hashsize;
@@ -962,10 +960,11 @@ void Crinkler::recompress(const char* input_filename, const char* output_filenam
 			}
 		}
 
-		CompressionStream cs(data, sizefill, maxsize, m_saturate != 0);
-		cs.Compress((unsigned char*)phase1->getPtr(), splittingPoint, m_modellist1, CRINKLER_BASEPROB, best_hashsize, true, false);
-		cs.Compress((unsigned char*)phase1->getPtr() + splittingPoint, phase1->getRawSize() - splittingPoint, m_modellist2, CRINKLER_BASEPROB, best_hashsize, false, true);
-		size = cs.Close() + (m_modellist1.nmodels + m_modellist2.nmodels);
+		size = Compress(data, sizefill, maxsize, m_saturate != 0,
+			(unsigned char*)phase1->getPtr(), phase1->getRawSize(), splittingPoint,
+			m_modellist1, m_modellist2, CRINKLER_BASEPROB, best_hashsize);
+		size += m_modellist1.nmodels + m_modellist2.nmodels;
+
 		if(m_compressionType != -1 && m_compressionType != COMPRESSION_INSTANT) {
 			float byteslost = size - idealsize / (float)(BITPREC * 8);
 			printf("Real compressed total size: %d\nBytes lost to hashing: %.2f\n", size, byteslost);
@@ -1290,10 +1289,10 @@ void Crinkler::link(const char* filename) {
 	}
 	else
 	{
-		CompressionStream cs(data, sizefill, maxsize, m_saturate != 0);
-		cs.Compress((unsigned char*)phase1->getPtr(), splittingPoint, m_modellist1, CRINKLER_BASEPROB, best_hashsize, true, false);
-		cs.Compress((unsigned char*)phase1->getPtr() + splittingPoint, phase1->getRawSize() - splittingPoint, m_modellist2, CRINKLER_BASEPROB, best_hashsize, false, true);
-		size = cs.Close() + (m_modellist1.nmodels + m_modellist2.nmodels);
+		size = Compress(data, sizefill, maxsize, m_saturate != 0,
+			(unsigned char*)phase1->getPtr(), phase1->getRawSize(), splittingPoint,
+			m_modellist1, m_modellist2, CRINKLER_BASEPROB, best_hashsize);
+		size += m_modellist1.nmodels + m_modellist2.nmodels;
 
 		modelHunk = createModelHunk(splittingPoint, phase1->getRawSize());
 	}
