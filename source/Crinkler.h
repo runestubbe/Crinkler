@@ -86,6 +86,8 @@ class Crinkler {
 	void initProgressBar();
 	void deinitProgressBar();
 
+	Hunk *finalLink(Hunk *header, Hunk *depacker, Hunk *hashHunk, Hunk *modelHunk, Hunk *phase1, unsigned char *data, int size, int hashsize);
+
 	int optimizeHashsize(unsigned char* data, int datasize, int hashsize, int splittingPoint, int tries);
 	int estimateModels(unsigned char* data, int datasize, int splittingPoint, bool reestimate, bool use1kMode, int target_size1, int target_size2);
 	void setHeaderSaturation(Hunk* header);

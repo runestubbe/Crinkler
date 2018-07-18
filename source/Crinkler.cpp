@@ -831,13 +831,11 @@ void Crinkler::recompress(const char* input_filename, const char* output_filenam
 		}
 	}
 	
-
 	Hunk* header = headerHunks->findSymbol("_header")->hunk;
-	Hunk* depacker = headerHunks->findSymbol("_DepackEntry")->hunk;
+	Hunk* depacker = nullptr;
 	
-
-	if(!is_tiny_header)
-	{
+	if (is_compatibility_header) {
+		depacker = headerHunks->findSymbol("_DepackEntry")->hunk;
 		setHeaderSaturation(depacker);
 	}
 
@@ -910,7 +908,6 @@ void Crinkler::recompress(const char* input_filename, const char* output_filenam
 
 	unsigned char* data = new unsigned char[maxsize];
 	int best_hashsize;
-	Hunk* phase1Compressed;
 	int size;
 	if(is_tiny_header)
 	{
@@ -973,11 +970,6 @@ void Crinkler::recompress(const char* input_filename, const char* output_filenam
 		setCompressionType(compmode);
 	}
 
-	phase1Compressed = new Hunk("compressed data", (char*)data, 0, 0, size, size);
-	delete[] data;
-
-	phase1Compressed->addSymbol(new Symbol("_PackedData", 0, SYMBOL_IS_RELOCATEABLE, phase1Compressed));
-	
 	if(is_compatibility_header)
 	{	//copy hashes from old header
 		DWORD* new_header_ptr = (DWORD*)header->getPtr();
@@ -991,34 +983,22 @@ void Crinkler::recompress(const char* input_filename, const char* output_filenam
 		header->setVirtualSize(depacker_start);
 	}
 
-	HunkList phase2list;
-	phase2list.addHunkBack(header);
-
-	if(is_compatibility_header)
-	{
-		phase2list.addHunkBack(depacker);
-	}
-	if(!is_compatibility_header && !is_tiny_import)
+	Hunk *hashHunk = nullptr;
+	if (!is_compatibility_header && !is_tiny_import)
 	{
 		//create hashes hunk
 		int hashes_offset = hashes_address - CRINKLER_IMAGEBASE;
 		int hashes_bytes = is_tiny_header ? (compressed_data_rva - CRINKLER_IMAGEBASE - hashes_offset) : (models_offset - hashes_offset);
-		Hunk* hashHunk = new Hunk("HashHunk", (char*)&indata[hashes_offset], 0, 0, hashes_bytes, hashes_bytes);
-		phase2list.addHunkBack(hashHunk);
+		hashHunk = new Hunk("HashHunk", (char*)&indata[hashes_offset], 0, 0, hashes_bytes, hashes_bytes);
 	}
 
-	if(!is_tiny_header)
+	Hunk *models = nullptr;
+	if (!is_tiny_header)
 	{
-		Hunk* models = createModelHunk(splittingPoint, phase1->getRawSize());
-		phase2list.addHunkBack(models);
+		models = createModelHunk(splittingPoint, phase1->getRawSize());
 	}
-		
-	phase2list.addHunkBack(phase1Compressed);
-	header->addSymbol(new Symbol("_HashTable", CRINKLER_SECTIONSIZE * 2 + phase1->getRawSize(), SYMBOL_IS_RELOCATEABLE, header));
-	
 
-	Hunk* phase2 = phase2list.toHunk("final", CRINKLER_IMAGEBASE);
-	if(m_subsystem >= 0) {
+	if (m_subsystem >= 0) {
 		subsystem_version = (m_subsystem == SUBSYSTEM_WINDOWS) ? IMAGE_SUBSYSTEM_WINDOWS_GUI : IMAGE_SUBSYSTEM_WINDOWS_CUI;
 	}
 	if (m_largeAddressAware == -1) {
@@ -1026,13 +1006,8 @@ void Crinkler::recompress(const char* input_filename, const char* output_filenam
 	}
 	setSubsystem((subsystem_version == IMAGE_SUBSYSTEM_WINDOWS_GUI) ? SUBSYSTEM_WINDOWS : SUBSYSTEM_CONSOLE);
 
-	int new_exports_rva = 0;
-	if(!is_tiny_header && !m_exports.empty())
-	{
-		new_exports_rva = phase1->findSymbol("_ExportTable")->value + CRINKLER_CODEBASE - CRINKLER_IMAGEBASE;
-	}
-	setHeaderConstants(phase2, phase1, best_hashsize, m_modellist1k.boost, m_modellist1k.baseprob0, m_modellist1k.baseprob1, m_modellist1k.modelmask, subsystem_version, new_exports_rva, is_tiny_header);
-	phase2->relocate(CRINKLER_IMAGEBASE);
+	Hunk *phase2 = finalLink(header, depacker, hashHunk, models, phase1, data, size, best_hashsize);
+	delete[] data;
 
 	CompressionReportRecord* csr = phase1->getCompressionSummary(sizefill, splittingPoint);
 	if(m_printFlags & PRINT_LABELS)
@@ -1252,7 +1227,6 @@ void Crinkler::link(const char* filename) {
 
 	unsigned char* data = new unsigned char[maxsize];
 	int best_hashsize = previousPrime(m_hashsize/2)*2;
-	Hunk* phase1Compressed;
 	int size, idealsize = 0;
 	if (m_useTinyHeader || m_compressionType != COMPRESSION_INSTANT)
 	{
@@ -1310,32 +1284,8 @@ void Crinkler::link(const char* filename) {
 	delete csr;
 	delete[] sizefill;
 	
-	phase1Compressed = new Hunk("compressed data", (char*)data, 0, 0, size, size);
+	Hunk *phase2 = finalLink(header, nullptr, hashHunk, modelHunk, phase1, data, size, best_hashsize);
 	delete[] data;
-	phase1Compressed->addSymbol(new Symbol("_PackedData", 0, SYMBOL_IS_RELOCATEABLE, phase1Compressed));
-
-	HunkList phase2list;
-	phase2list.addHunkBack(header);
-	if (hashHunk)
-	{
-		phase2list.addHunkBack(hashHunk);
-	}
-	if (modelHunk)
-	{
-		phase2list.addHunkBack(modelHunk);
-	}
-	
-	phase2list.addHunkBack(phase1Compressed);
-	if (!m_useTinyHeader)
-	{
-		header->addSymbol(new Symbol("_HashTable", CRINKLER_SECTIONSIZE * 2 + phase1->getRawSize(), SYMBOL_IS_RELOCATEABLE, header));
-	}
-	
-	Hunk* phase2 = phase2list.toHunk("final", CRINKLER_IMAGEBASE);
-	//add constants
-	int exports_rva = m_exports.empty() ? 0 : phase1->findSymbol("_ExportTable")->value + CRINKLER_CODEBASE - CRINKLER_IMAGEBASE;
-	setHeaderConstants(phase2, phase1, best_hashsize, m_modellist1k.boost, m_modellist1k.baseprob0, m_modellist1k.baseprob1, m_modellist1k.modelmask, m_subsystem == SUBSYSTEM_WINDOWS ? IMAGE_SUBSYSTEM_WINDOWS_GUI : IMAGE_SUBSYSTEM_WINDOWS_CUI, exports_rva, m_useTinyHeader);
-	phase2->relocate(CRINKLER_IMAGEBASE);
 
 	fwrite(phase2->getPtr(), 1, phase2->getRawSize(), outfile);
 	fclose(outfile);
@@ -1360,6 +1310,32 @@ void Crinkler::link(const char* filename) {
 	delete phase1;
 	delete phase1Untransformed;
 	delete phase2;
+}
+
+Hunk *Crinkler::finalLink(Hunk *header, Hunk *depacker, Hunk *hashHunk, Hunk *modelHunk,
+	Hunk *phase1, unsigned char *data, int size, int hashsize)
+{
+	Hunk* phase1Compressed = new Hunk("compressed data", (char*)data, 0, 0, size, size);
+	phase1Compressed->addSymbol(new Symbol("_PackedData", 0, SYMBOL_IS_RELOCATEABLE, phase1Compressed));
+
+	HunkList phase2list;
+	phase2list.addHunkBack(header);
+	if (depacker) phase2list.addHunkBack(depacker);
+	if (hashHunk) phase2list.addHunkBack(hashHunk);
+	if (modelHunk) phase2list.addHunkBack(modelHunk);
+	phase2list.addHunkBack(phase1Compressed);
+	if (!m_useTinyHeader)
+	{
+		header->addSymbol(new Symbol("_HashTable", CRINKLER_SECTIONSIZE * 2 + phase1->getRawSize(), SYMBOL_IS_RELOCATEABLE, header));
+	}
+	Hunk* phase2 = phase2list.toHunk("final", CRINKLER_IMAGEBASE);
+
+	//add constants
+	int exports_rva = m_useTinyHeader || m_exports.empty() ? 0 : phase1->findSymbol("_ExportTable")->value + CRINKLER_CODEBASE - CRINKLER_IMAGEBASE;
+	setHeaderConstants(phase2, phase1, hashsize, m_modellist1k.boost, m_modellist1k.baseprob0, m_modellist1k.baseprob1, m_modellist1k.modelmask, m_subsystem == SUBSYSTEM_WINDOWS ? IMAGE_SUBSYSTEM_WINDOWS_GUI : IMAGE_SUBSYSTEM_WINDOWS_CUI, exports_rva, m_useTinyHeader);
+	phase2->relocate(CRINKLER_IMAGEBASE);
+
+	return phase2;
 }
 
 void Crinkler::printOptions(FILE *out) {
