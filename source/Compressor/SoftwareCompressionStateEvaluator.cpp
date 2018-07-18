@@ -89,11 +89,8 @@ long long SoftwareCompressionStateEvaluator::changeWeight(int modelIndex, int di
 			vfr = _mm_mul_ps(vfr, vfr);	vfr = _mm_mul_ps(vfr, vfr);	vfr = _mm_mul_ps(vfr, vfr);	vfr = _mm_mul_ps(vfr, vfr);
 			vft = _mm_mul_ps(vft, vft);	vft = _mm_mul_ps(vft, vft);	vft = _mm_mul_ps(vft, vft);	vft = _mm_mul_ps(vft, vft);
 
-			__m128i vlog_fr = _mm_srli_epi32(_mm_castps_si128(vfr), 27 - BITPREC_TABLE_BITS);
-			__m128i vlog_ft = _mm_srli_epi32(_mm_castps_si128(vft), 27 - BITPREC_TABLE_BITS);
-
 			__m128i voldsize = oldsizes[packageOffset];
-			__m128i vnewsize = _mm_sub_epi32(vlog_ft, vlog_fr);
+			__m128i vnewsize = _mm_srli_epi32(_mm_sub_epi32(_mm_castps_si128(vft), _mm_castps_si128(vfr)), 27 - BITPREC_TABLE_BITS);
 			oldsizes[packageOffset] = vnewsize;
 
 			vdiffsize = _mm_add_epi32(vdiffsize, _mm_sub_epi32(vnewsize, voldsize));
