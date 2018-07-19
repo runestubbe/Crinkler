@@ -68,7 +68,7 @@ long long SoftwareCompressionStateEvaluator::changeWeight(int modelIndex, int di
 		int diffsize2 = 0;
 		for(int i = 0; i < PACKAGES_PER_JOB && package_idx_base + i < numPackages; i++)
 		{
-			IACA_VC64_START
+			//IACA_VC64_START
 			int package_idx = package_idx_base + i;
 			
 			int packageOffset = packageOffsets[package_idx];
@@ -139,7 +139,7 @@ long long SoftwareCompressionStateEvaluator::changeWeight(int modelIndex, int di
 			int oldsize = packageSizes[packageOffset];
 			packageSizes[packageOffset] = newsize;
 			diffsize2 += newsize - oldsize;
-			IACA_VC64_END
+			//IACA_VC64_END
 		}
 
 		diffsize.local() += diffsize2;
