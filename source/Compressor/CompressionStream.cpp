@@ -69,7 +69,7 @@ void CompressionStream::Compress(const unsigned char* d, int size, const ModelLi
 		int bit = 1;
 
 		// Query models
-		unsigned int probs[2] = { baseprob, baseprob };
+		unsigned int probs[2] = { (unsigned int)baseprob, (unsigned int)baseprob };
 		for(int m = 0 ; m < nmodels; m++) {
 			unsigned int hash = ModelHashStart(weightmasks[m], HASH_MULTIPLIER) % hashsize;
 			unsigned int tinyHash = hash & (tinyhashsize-1);
@@ -109,7 +109,7 @@ void CompressionStream::Compress(const unsigned char* d, int size, const ModelLi
 		}
 
 		// Query models
-		unsigned int probs[2] = { baseprob, baseprob };
+		unsigned int probs[2] = { (unsigned int)baseprob, (unsigned int)baseprob };
 		for(int m = 0 ; m < nmodels; m++) {
 			unsigned int hash = ModelHash(data, bitpos, weightmasks[m], HASH_MULTIPLIER) % hashsize;
 			unsigned int tinyHash = hash & (tinyhashsize-1);
@@ -178,7 +178,7 @@ int CompressionStream::EvaluateSize(const unsigned char* d, int size, const Mode
 	for(int modeli = 0; modeli < nmodels; modeli++)
 	{
 		//clear hashtable
-		for(int i = 0; i < tinyhashsize; i++)
+		for(unsigned int i = 0; i < tinyhashsize; i++)
 		{
 			hash_positions[i] = -1;
 		}

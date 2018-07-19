@@ -209,27 +209,27 @@ void verboseLabels(CompressionReportRecord* csr) {
 void Crinkler::loadImportCode(bool use1kMode, bool useSafeImporting, bool useDllFallback, bool useRangeImport) {
 	//do imports
 	if (use1kMode){
-		load(import1KObj, import1KObj_end - import1KObj, "Crinkler import");
+		load(import1KObj, int(import1KObj_end - import1KObj), "Crinkler import");
 	} else {
 		if (useSafeImporting)
 			if (useDllFallback)
 				if (useRangeImport)
-					load(importSafeFallbackRangeObj, importSafeFallbackRangeObj_end - importSafeFallbackRangeObj, "Crinkler import");
+					load(importSafeFallbackRangeObj, int(importSafeFallbackRangeObj_end - importSafeFallbackRangeObj), "Crinkler import");
 				else
-					load(importSafeFallbackObj, importSafeFallbackObj_end - importSafeFallbackObj, "Crinkler import");
+					load(importSafeFallbackObj, int(importSafeFallbackObj_end - importSafeFallbackObj), "Crinkler import");
 			else
 				if (useRangeImport)
-					load(importSafeRangeObj, importSafeRangeObj_end - importSafeRangeObj, "Crinkler import");
+					load(importSafeRangeObj, int(importSafeRangeObj_end - importSafeRangeObj), "Crinkler import");
 				else
-					load(importSafeObj, importSafeObj_end - importSafeObj, "Crinkler import");
+					load(importSafeObj, int(importSafeObj_end - importSafeObj), "Crinkler import");
 		else
 			if (useDllFallback)
 				Log::error("", "DLL fallback cannot be used with unsafe importing");
 			else
 				if (useRangeImport)
-					load(importRangeObj, importRangeObj_end - importRangeObj, "Crinkler import");
+					load(importRangeObj, int(importRangeObj_end - importRangeObj), "Crinkler import");
 				else
-					load(importObj, importObj_end - importObj, "Crinkler import");
+					load(importObj, int(importObj_end - importObj), "Crinkler import");
 	}
 }
 
@@ -691,8 +691,8 @@ void Crinkler::recompress(const char* input_filename, const char* output_filenam
 		}
 
 		if(de.dwDebugEventCode == EXCEPTION_DEBUG_EVENT && 
-			(de.u.Exception.ExceptionRecord.ExceptionAddress == (PVOID)(0x410000+return_offset) ||
-			de.u.Exception.ExceptionRecord.ExceptionAddress == (PVOID)(0x400000+return_offset)))
+			(de.u.Exception.ExceptionRecord.ExceptionAddress == (PVOID)(size_t)(0x410000+return_offset) ||
+			de.u.Exception.ExceptionRecord.ExceptionAddress == (PVOID)(size_t)(0x400000+return_offset)))
 		{
 			done = true;
 		}
@@ -824,17 +824,17 @@ void Crinkler::recompress(const char* input_filename, const char* output_filenam
 	HunkList* headerHunks = NULL;
 	if(is_tiny_header)
 	{
-		headerHunks = m_hunkLoader.load(header1KObj, header1KObj_end - header1KObj, "crinkler header");
+		headerHunks = m_hunkLoader.load(header1KObj, int(header1KObj_end - header1KObj), "crinkler header");
 	}
 	else
 	{
 		if(is_compatibility_header)
 		{
-			headerHunks = m_hunkLoader.load(headerCompatibilityObj, headerCompatibilityObj_end - headerCompatibilityObj, "crinkler header");
+			headerHunks = m_hunkLoader.load(headerCompatibilityObj, int(headerCompatibilityObj_end - headerCompatibilityObj), "crinkler header");
 		}
 		else
 		{
-			headerHunks = m_hunkLoader.load(headerObj, headerObj_end - headerObj, "crinkler header");
+			headerHunks = m_hunkLoader.load(headerObj, int(headerObj_end - headerObj), "crinkler header");
 		}
 	}
 	
@@ -1055,7 +1055,7 @@ Hunk* Crinkler::createDynamicInitializerHunk()
 
 	if(!symbols.empty())
 	{
-		const int num_symbols = symbols.size();
+		const int num_symbols = (int)symbols.size();
 		const int hunk_size = num_symbols*5;
 		Hunk* hunk = new Hunk("dynamic initializer calls", NULL, HUNK_IS_CODE, 0, hunk_size, hunk_size);
 
@@ -1145,8 +1145,8 @@ void Crinkler::link(const char* filename) {
 	}
 
 	//load appropriate header
-	HunkList* headerHunks = m_useTinyHeader ?	m_hunkLoader.load(header1KObj, header1KObj_end - header1KObj, "crinkler header") :
-										m_hunkLoader.load(headerObj, headerObj_end - headerObj, "crinkler header");
+	HunkList* headerHunks = m_useTinyHeader ?	m_hunkLoader.load(header1KObj, int(header1KObj_end - header1KObj), "crinkler header") :
+										m_hunkLoader.load(headerObj, int(headerObj_end - headerObj), "crinkler header");
 
 	Hunk* header = headerHunks->findSymbol("_header")->hunk;
 	if(!m_useTinyHeader)

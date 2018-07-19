@@ -24,8 +24,8 @@ unsigned int RVAToFileOffset(char* module, unsigned int rva)
 {
 	IMAGE_DOS_HEADER* pDH = (PIMAGE_DOS_HEADER)module;
 	IMAGE_NT_HEADERS32* pNTH = (PIMAGE_NT_HEADERS32)(module + pDH->e_lfanew);
-	unsigned int numSections = pNTH->FileHeader.NumberOfSections;
-	unsigned int numDataDirectories = pNTH->OptionalHeader.NumberOfRvaAndSizes;
+	int numSections = pNTH->FileHeader.NumberOfSections;
+	int numDataDirectories = pNTH->OptionalHeader.NumberOfRvaAndSizes;
 	IMAGE_SECTION_HEADER* sectionHeaders = (IMAGE_SECTION_HEADER*)&pNTH->OptionalHeader.DataDirectory[numDataDirectories];
 	for(int i = 0; i < numSections; i++)
 	{
@@ -132,7 +132,7 @@ Hunk* forwardImport(Hunk* hunk) {
 		if (forward == NULL) break;
 
 		string dllName, functionName;
-		int sep = strstr(forward, ".") - forward;
+		int sep = int(strstr(forward, ".") - forward);
 		dllName.append(forward, sep);
 		dllName = toLower(dllName);
 		functionName.append(&forward[sep + 1], strlen(forward) - (sep + 1));
@@ -281,14 +281,14 @@ HunkList* ImportHandler::createImportHunks(HunkList* hunklist, Hunk*& hashHunk, 
 	importList->addSymbol(new Symbol("_ImportList", 0, SYMBOL_IS_RELOCATEABLE, importList));
 	importList->addSymbol(new Symbol(".bss", 0, SYMBOL_IS_RELOCATEABLE|SYMBOL_IS_SECTION, importList, "crinkler import"));
 
-	hashHunk = new Hunk("HashHunk", (char*)&hashes[0], 0, 0, hashes.size()*sizeof(unsigned int), hashes.size()*sizeof(unsigned int));
+	hashHunk = new Hunk("HashHunk", (char*)&hashes[0], 0, 0, int(hashes.size()*sizeof(unsigned int)), int(hashes.size()*sizeof(unsigned int)));
 	
 	//create new hunklist
 	HunkList* newHunks = new HunkList;
 
 	newHunks->addHunkBack(importList);
 
-	Hunk* dllNamesHunk = new Hunk("DllNames", dllNames, HUNK_IS_WRITEABLE | HUNK_IS_LEADING, 0, dllNamesPtr - dllNames, dllNamesPtr - dllNames);
+	Hunk* dllNamesHunk = new Hunk("DllNames", dllNames, HUNK_IS_WRITEABLE | HUNK_IS_LEADING, 0, int(dllNamesPtr - dllNames), int(dllNamesPtr - dllNames));
 	dllNamesHunk->addSymbol(new Symbol(".data", 0, SYMBOL_IS_RELOCATEABLE|SYMBOL_IS_SECTION, dllNamesHunk, "crinkler import"));
 	dllNamesHunk->addSymbol(new Symbol("_DLLNames", 0, SYMBOL_IS_RELOCATEABLE, dllNamesHunk));
 	newHunks->addHunkBack(dllNamesHunk);
@@ -321,7 +321,7 @@ static bool solve_dll_order_constraints(std::vector<unsigned int>& constraints, 
 	std::vector<unsigned int> constraints2 = constraints;
 	unsigned int used_mask = 0;
 
-	int num = constraints.size();
+	int num = (int)constraints.size();
 	for(int i = 0; i < num; i++)
 	{
 		int selected = -1;
@@ -399,7 +399,7 @@ static bool findCollisionFreeHash(vector<string>& dll_names, const vector<Hunk*>
 		std::vector<char>			used;
 	};
 
-	int num_dlls = dll_names.size();
+	int num_dlls = (int)dll_names.size();
 	std::vector<unsigned int> best_dll_order(num_dlls);
 
 	// load dlls and mark functions that are imported
@@ -434,7 +434,7 @@ static bool findCollisionFreeHash(vector<string>& dll_names, const vector<Hunk*>
 		std::sort(info.exports.begin(), info.exports.end());
 		info.exports.erase(std::unique(info.exports.begin(), info.exports.end()), info.exports.end());
 
-		int num_exports = info.exports.size();
+		int num_exports = (int)info.exports.size();
 		info.used.resize(num_exports);
 
 		for(Hunk* importHunk : importHunks)
@@ -446,7 +446,7 @@ static bool findCollisionFreeHash(vector<string>& dll_names, const vector<Hunk*>
 				
 				if(it != info.exports.end())
 				{
-					int idx = std::distance(info.exports.begin(), it);
+					int idx = (int)std::distance(info.exports.begin(), it);
 					info.used[idx] = 1;
 				}
 				else
@@ -488,7 +488,7 @@ static bool findCollisionFreeHash(vector<string>& dll_names, const vector<Hunk*>
 			}
 			std::vector<unsigned int> dll_constraints(num_dlls);
 			std::vector<unsigned int> new_dll_order(num_dlls);
-			SBucket* buckets = new SBucket[1 << num_bits];
+			SBucket* buckets = new SBucket[(size_t)1 << num_bits];
 			for(int low_byte = 0; low_byte < 256; low_byte++)
 			{
 				for(int dll_index = 0; dll_index < num_dlls; dll_index++)
@@ -681,7 +681,7 @@ HunkList* ImportHandler::createImportHunks1K(HunkList* hunklist, bool verbose, i
 	}
 
 	HunkList* newHunks = new HunkList;
-	Hunk* dllNamesHunk = new Hunk("DllNames", dllnames.c_str(), HUNK_IS_WRITEABLE | HUNK_IS_LEADING, 0, dllnames.size() + 1, dllnames.size() + 1);
+	Hunk* dllNamesHunk = new Hunk("DllNames", dllnames.c_str(), HUNK_IS_WRITEABLE | HUNK_IS_LEADING, 0, (int)dllnames.size() + 1, (int)dllnames.size() + 1);
 	dllNamesHunk->addSymbol(new Symbol("_DLLNames", 0, SYMBOL_IS_RELOCATEABLE, dllNamesHunk));
 	newHunks->addHunkBack(dllNamesHunk);
 	newHunks->addHunkBack(importList);

@@ -97,7 +97,7 @@ void ModelList::setFromModelsAndMask(const unsigned char* models, int weightmask
 		weightmask <<= 1;
 
 		if(weightmask) {
-			Model m = {weight, models[nmodels]};
+			Model m = {(unsigned char)weight, models[nmodels]};
 			m_models[nmodels] = m;
 			nmodels++;
 		}

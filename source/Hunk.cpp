@@ -222,7 +222,7 @@ char* Hunk::getPtr() {
 }
 
 int Hunk::getRawSize() const {
-	return m_data.size();
+	return (int)m_data.size();
 }
 
 int Hunk::getVirtualSize() const {
@@ -547,10 +547,10 @@ const string& Hunk::getID() {
 			}
 		}
 		string section_name;
-		int i0 = m_name.find_first_of('[', 0);
-		int i1 = m_name.find_last_of('\\');
-		int i2 = m_name.find_first_of(']', 0);
-		int i3 = m_name.find_last_of('!');
+		int i0 = (int)m_name.find_first_of('[', 0);
+		int i1 = (int)m_name.find_last_of('\\');
+		int i2 = (int)m_name.find_first_of(']', 0);
+		int i3 = (int)m_name.find_last_of('!');
 		i1 = max(i0, i1);
 		if (i1 != -1 && i2 != -1 && i3 != -1 && i1 < i2 && i2 < i3) {
 			section_name = m_name.substr(i1 + 1, i2 - (i1 + 1)) + ":" + m_name.substr(i3 + 1);

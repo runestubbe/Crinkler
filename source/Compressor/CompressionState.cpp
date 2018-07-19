@@ -62,7 +62,7 @@ ModelPredictions CompressionState::applyModel(const unsigned char* data, int bit
 	int maxPackages = (bitlength + PACKAGE_SIZE - 1) / PACKAGE_SIZE;
 	int numPackages = 0;
 
-	CompactPackage* packages = new CompactPackage[maxPackages];
+	CompactPackage* packages = (CompactPackage*)_aligned_malloc(maxPackages * sizeof(CompactPackage), alignof(CompactPackage));
 	int* packageOffsets = new int[maxPackages];
 	HashEntry* hashtable = new HashEntry[hashsize];
 	memset(hashtable, 0, hashsize*sizeof(HashEntry));
@@ -144,7 +144,7 @@ CompressionState::CompressionState(const unsigned char* data, int size, int base
 
 CompressionState::~CompressionState() {
 	for(int i = 0; i < 256; i++) {
-		delete[] m_models[i].packages;
+		_aligned_free(m_models[i].packages);
 		delete[] m_models[i].packageOffsets;
 	}
 }

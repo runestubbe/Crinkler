@@ -174,7 +174,7 @@ static void parseExports(CmdParamMultiAssign& arg, Crinkler& crinkler) {
 static void runOriginalLinker(const char* linkerName) {
 	vector<string> res = findFileInPath(linkerName, getEnv("PATH").c_str(), false);
 	const char* needle = "Crinkler";
-	const int needleLength = strlen(needle);
+	const int needleLength = (int)strlen(needle);
 
 	for(vector<string>::const_iterator it = res.begin(); it != res.end(); it++) {
 		MemoryFile mf(it->c_str());

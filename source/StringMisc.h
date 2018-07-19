@@ -14,5 +14,5 @@ std::string escapeHtml(const std::string& s);
 bool startsWith(const char* str, const char* start);
 bool endsWith(const char* str, const char* ending);
 
-std::vector<std::string> intoLines(const char *data, size_t length);
+std::vector<std::string> intoLines(const char *data, int length);
 #endif

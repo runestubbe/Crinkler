@@ -8,7 +8,7 @@
 
 Hunk* CallTransform::getDetransformer() {
 	CoffObjectLoader loader;
-	HunkList* hl = loader.load(calltransObj, calltransObj_end - calltransObj, "call detransform");
+	HunkList* hl = loader.load(calltransObj, int(calltransObj_end - calltransObj), "call detransform");
 	Hunk* h = hl->toHunk("call detransformer");
 	delete hl;
 	return h;

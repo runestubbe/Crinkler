@@ -12,7 +12,7 @@ static void fix(char *data, char *hptr, int offset, int size) {
 
 void FixMemory(char* data) {
 	CoffObjectLoader loader;
-	HunkList *hl = loader.load(header11Obj, header11Obj_end-header11Obj, "");
+	HunkList *hl = loader.load(header11Obj, int(header11Obj_end-header11Obj), "");
 	Symbol *sym = hl->findSymbol("_header");
 	char *hptr = sym->hunk->getPtr()+sym->value;
 

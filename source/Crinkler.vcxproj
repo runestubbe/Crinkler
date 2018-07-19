@@ -107,7 +107,7 @@
       <PrecompiledHeader />
       <WarningLevel>Level3</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
-      <DisableSpecificWarnings>4530</DisableSpecificWarnings>
+      <DisableSpecificWarnings>4530; 4091</DisableSpecificWarnings>
     </ClCompile>
     <Link>
       <AdditionalDependencies>comctl32.lib;Dbghelp.lib;../external/distorm/x86/distorm.lib;%(AdditionalDependencies)</AdditionalDependencies>
@@ -131,7 +131,7 @@
       </PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
-      <DisableSpecificWarnings>4530</DisableSpecificWarnings>
+      <DisableSpecificWarnings>4530; 4091</DisableSpecificWarnings>
     </ClCompile>
     <Link>
       <AdditionalDependencies>comctl32.lib;Dbghelp.lib;../external/distorm/x64/distorm.lib;%(AdditionalDependencies)</AdditionalDependencies>
@@ -167,7 +167,7 @@
       <WarningLevel>Level3</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <CallingConvention>Cdecl</CallingConvention>
-      <DisableSpecificWarnings>4530</DisableSpecificWarnings>
+      <DisableSpecificWarnings>4530; 4091</DisableSpecificWarnings>
     </ClCompile>
     <Link>
       <AdditionalDependencies>comctl32.lib;Dbghelp.lib;../external/distorm/x86/distorm.lib;%(AdditionalDependencies)</AdditionalDependencies>
@@ -212,7 +212,7 @@
       <WarningLevel>Level3</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <CallingConvention>Cdecl</CallingConvention>
-      <DisableSpecificWarnings>4530</DisableSpecificWarnings>
+      <DisableSpecificWarnings>4530; 4091</DisableSpecificWarnings>
     </ClCompile>
     <Link>
       <AdditionalDependencies>comctl32.lib;Dbghelp.lib;../external/distorm/x64/distorm.lib;%(AdditionalDependencies)</AdditionalDependencies>

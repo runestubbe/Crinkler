@@ -21,6 +21,7 @@ static const char *reuseTypeName(ReuseType mode) {
 	case REUSE_STABLE:
 		return "STABLE";
 	}
+	return "";
 }
 
 class Reuse {

@@ -16,7 +16,7 @@ CmdLineInterface::~CmdLineInterface() {
 }
 
 void CmdLineInterface::addTokens(const char* str) {
-	int len = strlen(str)+1;
+	int len = (int)strlen(str)+1;
 	char* tmp = new char[len];
 	char* ptr = tmp;
 	char* token_start = tmp;

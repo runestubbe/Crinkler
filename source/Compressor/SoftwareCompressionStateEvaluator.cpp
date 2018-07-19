@@ -15,7 +15,7 @@ SoftwareCompressionStateEvaluator::SoftwareCompressionStateEvaluator() :
 }
 
 SoftwareCompressionStateEvaluator::~SoftwareCompressionStateEvaluator() {
-	delete[] m_packages;
+	_aligned_free(m_packages);
 	delete[] m_packageSizes;
 }
 
@@ -27,7 +27,7 @@ bool SoftwareCompressionStateEvaluator::init(ModelPredictions* models, int lengt
 
 	int numPackages = (length + PACKAGE_SIZE - 1) / PACKAGE_SIZE;
 	m_logScale = logScale;
-	m_packages = new Package[numPackages];
+	m_packages = (Package*)_aligned_malloc(numPackages * sizeof(Package), alignof(Package));
 	m_packageSizes = new unsigned int[numPackages];
 	for(int i = 0; i < numPackages; i++) {
 		for(int j = 0; j < NUM_PACKAGE_VECTORS; j++)

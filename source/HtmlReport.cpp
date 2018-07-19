@@ -344,7 +344,7 @@ static std::string generateLabel(Symbol* symbol, int value, map<int, Symbol*>& s
 }
 
 //finds a hexnumber, removes it from the string and returns its position. value is set to the value of the number
-static void extractNumber(string& str, int begin, int& value, string::size_type& startpos, string::size_type& endpos) {
+static void extractNumber(string& str, string::size_type begin, int& value, string::size_type& startpos, string::size_type& endpos) {
 	startpos = str.find("0x", begin);
 	if(startpos == string::npos)
 		return;
@@ -396,7 +396,7 @@ static string calculateInstructionOperands(_DecodedInst& inst, Hunk& hunk, map<i
 		int delta = 0;	//the amount label2 will need to be displaced
 		if(reloc_symbol1) {
 			string label = generateLabel(reloc_symbol1, number1_value, symbols);
-			delta = label.size() - (number1_endpos-number1_startpos);
+			delta = int(label.size() - (number1_endpos-number1_startpos));
 			operands.erase(number1_startpos, number1_endpos-number1_startpos);
 			operands.insert(number1_startpos, label);
 		}
@@ -570,7 +570,7 @@ static void htmlReportRecursive(CompressionReportRecord* csr, FILE* out, Hunk& h
 					for(int i = 0; i < (int)numinsts; i++) {
 						fprintf(out, "<tr>");
 						//address
-						fprintf(out, "<td nowrap class='address'>&nbsp;%.8X&nbsp;</td>", insts[i].offset);
+						fprintf(out, "<td nowrap class='address'>&nbsp;%.8X&nbsp;</td>", (unsigned int)insts[i].offset);
 						
 						//hexdump
 						fprintf(out, "<td nowrap colspan=4 class='hexdump'><table class='data'><tr>");

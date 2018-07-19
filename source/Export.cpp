@@ -47,15 +47,15 @@ Hunk* createExportTable(const std::set<Export>& exports) {
 		if (e.hasValue()) {
 			values[e.getValue()] = 0;
 		}
-		total_name_length += e.getName().length() + 1;
+		total_name_length += (int)e.getName().length() + 1;
 	}
 
 	// Space for hunk
-	int table_offset = values.size() * 4;
+	int table_offset = (int)values.size() * 4;
 	int addresses_offset = table_offset + 40;
-	int name_pointers_offset = addresses_offset + exports.size() * 4;
-	int ordinals_offset = name_pointers_offset + exports.size() * 4;
-	int names_offset = ordinals_offset + exports.size() * 2;
+	int name_pointers_offset = addresses_offset + (int)exports.size() * 4;
+	int ordinals_offset = name_pointers_offset + (int)exports.size() * 4;
+	int names_offset = ordinals_offset + (int)exports.size() * 2;
 	int hunk_size = names_offset + total_name_length;
 	std::vector<char> data(hunk_size);
 	int* words = (int*)&data[0];
@@ -74,8 +74,8 @@ Hunk* createExportTable(const std::set<Export>& exports) {
 	*words++ = 0;					// major/minor version
 	*words++ = 0;					// name rva
 	*words++ = 1;					// ordinal base
-	*words++ = exports.size();		// address table entries
-	*words++ = exports.size();		// number of name pointers
+	*words++ = (int)exports.size();	// address table entries
+	*words++ = (int)exports.size();	// number of name pointers
 	*words++ = -CRINKLER_IMAGEBASE;	// export address table rva
 	*words++ = -CRINKLER_IMAGEBASE;	// name pointer rva
 	*words++ = -CRINKLER_IMAGEBASE;	// ordinal table rva
@@ -122,7 +122,7 @@ Hunk* createExportTable(const std::set<Export>& exports) {
 	for (const Export& e : exports) {
 		std::string name_label = "_ExportName_" + e.getName();
 		hunk->addSymbol(new Symbol(name_label.c_str(), name_offset, SYMBOL_IS_RELOCATEABLE, hunk));
-		name_offset += e.getName().length() + 1;
+		name_offset += (int)e.getName().length() + 1;
 	}
 
 	// Add relocations

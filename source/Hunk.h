@@ -51,7 +51,7 @@ struct CompressionReportRecord {
 	void calculateSize(int size, int compressedSize) {
 		this->size = size;
 		this->compressedSize = compressedSize;
-		int nchildren = children.size()-1;
+		int nchildren = (int)children.size()-1;
 		for(int i = 0; i < nchildren; i++) {
 			int nextCompressedSize = (children[i+1]->compressedPos >= 0) ? children[i+1]->compressedPos : (compressedPos + compressedSize);
 			children[i]->calculateSize(children[i+1]->pos - children[i]->pos, nextCompressedSize - children[i]->compressedPos);
@@ -105,7 +105,7 @@ public:
 	~Hunk();
 
 	void addRelocation(relocation r);
-	int getNumRelocations() const { return m_relocations.size(); }
+	int getNumRelocations() const { return (int)m_relocations.size(); }
 	relocation* getRelocations() { return &m_relocations[0]; }
 	void addSymbol(Symbol* s);
 	void setContinuation(Symbol *s);

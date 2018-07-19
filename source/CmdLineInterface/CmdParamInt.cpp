@@ -19,7 +19,7 @@ int CmdParamInt::parse(const char* str, char* errorMsg, int buffsize) {
 	int v;
 	char c;
 	
-	int len = sscanf_s(str, "%d%c", &v, &c);
+	int len = sscanf(str, "%d%c", &v, &c);
 	if(len == 1) {
 		m_value = v;
 		if(v < m_minValue || v > m_maxValue) {

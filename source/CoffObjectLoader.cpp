@@ -36,7 +36,7 @@ static string getSymbolName(const IMAGE_SYMBOL* symbol, const char* stringTable)
 }
 
 static string stripNumeral(const string& s) {
-	int idx = s.size()-1;
+	int idx = (int)s.size()-1;
 	while(idx >= 0 && s[idx] != '|') idx--;
 	if (idx == 0) return s;
 	return s.substr(0, idx);

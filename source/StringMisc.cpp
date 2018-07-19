@@ -16,7 +16,7 @@ string toLower(const string& s) {
 }
 
 std::string stripPath(const std::string& s) {
-	int idx = s.size()-1;
+	int idx = (int)s.size()-1;
 	while(idx >= 0 && s[idx] != ':' && s[idx] != '/' && s[idx] != '\\') idx--;
 	return s.substr(idx+1, s.size() - (idx+1));
 }
@@ -40,8 +40,8 @@ std::string escapeHtml(const std::string& s) {
 }
 
 bool endsWith(const char* str, const char* ending) {
-	int slen = strlen(str);
-	int elen = strlen(ending);
+	int slen = (int)strlen(str);
+	int elen = (int)strlen(ending);
 	if(slen < elen)
 		return false;
 	return memcmp(str+slen-elen, ending, elen) == 0;
@@ -58,7 +58,7 @@ bool startsWith(const char* str, const char* start) {
 	}
 }
 
-std::vector<std::string> intoLines(const char *data, size_t length) {
+std::vector<std::string> intoLines(const char *data, int length) {
 	std::vector<std::string> lines;
 	int start = 0;
 	for (int i = 0; i <= length; i++) {
