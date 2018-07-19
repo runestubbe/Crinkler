@@ -53,55 +53,56 @@ void updateWeights(Weights *w, int bit, bool saturate) {
 	if (!saturate || w->prob[bit] < 255) w->prob[bit] += 1;
 	if (w->prob[!bit] > 1) w->prob[!bit] >>= 1;
 }
+int totalNumPackages = 0;
+int totalMaxPackages = 0;
 
 ModelPredictions CompressionState::applyModel(const unsigned char* data, int bitlength, unsigned char mask) {
 	int hashsize = previousPrime(bitlength*2);
-	assert(bitlength % 4 == 0);
 	
-	int maxPackages = bitlength / 4;
+	int maxPackages = (bitlength + PACKAGE_SIZE - 1) / PACKAGE_SIZE;
 	int numPackages = 0;
 
-	Package* packages = new Package[maxPackages];
+	CompactPackage* packages = new CompactPackage[maxPackages];
 	int* packageOffsets = new int[maxPackages];
 	HashEntry* hashtable = new HashEntry[hashsize];
 	memset(hashtable, 0, hashsize*sizeof(HashEntry));
 	
 	__m128 logScale = _mm_set1_ps(m_logScale);
 	for (int idx = 0 ; idx < maxPackages; idx++) {
-		int bitpos = (idx * 4);
+		int bitpos_base = idx * PACKAGE_SIZE;
 		
-		int b0 = GetBit(data, bitpos + 0);
-		int b1 = GetBit(data, bitpos + 1);
-		int b2 = GetBit(data, bitpos + 2);
-		int b3 = GetBit(data, bitpos + 3);
-		
-		HashEntry *e0 = findEntry(hashtable, hashsize, mask, data, bitpos + 0);
-		HashEntry *e1 = findEntry(hashtable, hashsize, mask, data, bitpos + 1);
-		HashEntry *e2 = findEntry(hashtable, hashsize, mask, data, bitpos + 2);
-		HashEntry *e3 = findEntry(hashtable, hashsize, mask, data, bitpos + 3);
-
-		assert(e0 != e1 && e0 != e2 && e0 != e3 && e1 != e2 && e1 != e3 && e2 != e3);
-		
-		if(e0->w.prob[0] || e0->w.prob[1] || e1->w.prob[0] || e1->w.prob[1] || e2->w.prob[0] || e2->w.prob[1] || e3->w.prob[0] || e3->w.prob[1])	// we have to test all of them as e0 might have overflowed back to (0,0)
+		bool package_needs_commit = false;
+		for(int bitpos_offset = 0; bitpos_offset < PACKAGE_SIZE; bitpos_offset++)
 		{
-			int boost0 = (e0->w.prob[0] == 0 || e0->w.prob[1] == 0) ? 2 : 0;
-			int boost1 = (e1->w.prob[0] == 0 || e1->w.prob[1] == 0) ? 2 : 0;
-			int boost2 = (e2->w.prob[0] == 0 || e2->w.prob[1] == 0) ? 2 : 0;
-			int boost3 = (e3->w.prob[0] == 0 || e3->w.prob[1] == 0) ? 2 : 0;
-			
-			packages[numPackages].p_right = _mm_mul_ps(_mm_setr_ps(e0->w.prob[b0] << boost0, e1->w.prob[b1] << boost1, e2->w.prob[b2] << boost2, e3->w.prob[b3] << boost3), logScale);
-			packages[numPackages].p_total = _mm_mul_ps(_mm_setr_ps((e0->w.prob[0] + e0->w.prob[1]) << boost0, (e1->w.prob[0] + e1->w.prob[1]) << boost1, (e2->w.prob[0] + e2->w.prob[1]) << boost2, (e3->w.prob[0] + e3->w.prob[1]) << boost3), logScale);
-			packageOffsets[numPackages] = idx;
-			numPackages++;
-		}
+			int p_right = 0;
+			int p_total = 0;
+			if(bitpos_base + bitpos_offset < bitlength)
+			{
+				int bit = GetBit(data, bitpos_base + bitpos_offset);
+				HashEntry *e = findEntry(hashtable, hashsize, mask, data, bitpos_base + bitpos_offset);
+				int boost = (e->w.prob[0] == 0 || e->w.prob[1] == 0) ? 2 : 0;
+				if(e->w.prob[0] || e->w.prob[1])
+					package_needs_commit = true;
 
-		updateWeights(&e0->w, b0, m_saturate);
-		updateWeights(&e1->w, b1, m_saturate);
-		updateWeights(&e2->w, b2, m_saturate);
-		updateWeights(&e3->w, b3, m_saturate);
+				p_right = (e->w.prob[bit] << boost);
+				p_total = ((e->w.prob[0] + e->w.prob[1]) << boost);
+				updateWeights(&e->w, bit, m_saturate);
+			}
+			assert(p_right < 65536);
+			assert(p_total < 65536);
+			packages[numPackages].prob[bitpos_offset >> 2].m128i_u16[(bitpos_offset & 3)] = p_right;
+			packages[numPackages].prob[bitpos_offset >> 2].m128i_u16[4 + (bitpos_offset & 3)] = p_total;
+		}
+		packageOffsets[numPackages] = idx;
+		if(package_needs_commit)
+			numPackages++;	// actually commit the package if 
 	}
 
 	delete[] hashtable;
+
+	totalNumPackages += numPackages;
+	totalMaxPackages += maxPackages;
+	//printf("%d / %d\n", totalNumPackages, totalMaxPackages);
 
 	ModelPredictions mp;
 	mp.numPackages = numPackages;

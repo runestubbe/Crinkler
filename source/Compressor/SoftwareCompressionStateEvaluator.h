@@ -10,9 +10,9 @@ class SoftwareCompressionStateEvaluator : public CompressionStateEvaluator {
 	ModelPredictions*		m_models;
 	
 	int						m_length;
-	__m128*					m_p_rights;
-	__m128*					m_p_totals;
-	__m128i*				m_oldsizes;
+	int						m_numPackages;
+	Package*				m_packages;
+	unsigned int*			m_packageSizes;
 
 	long long				m_compressedSize;
 	int						m_baseprob;

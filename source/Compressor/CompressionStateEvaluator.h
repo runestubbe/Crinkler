@@ -2,8 +2,9 @@
 #ifndef _COMPRESSION_STATE_EVALUATOR_H_
 #define _COMPRESSION_STATE_EVALUATOR_H_
 
+#include "Compressor.h"
 #include "ModelList.h"
-#include <xmmintrin.h>
+#include <emmintrin.h>
 
 struct CounterPair {
 	float p0, p1;
@@ -15,14 +16,19 @@ struct Weights {
 	unsigned int pos;
 };
 
+struct CompactPackage
+{
+	__m128i prob[NUM_PACKAGE_VECTORS];	//0..63: right, 64..127: total
+};
+
 struct Package
 {
-	__m128 p_right, p_total;	// pre-boosted counts
+	__m128 prob[NUM_PACKAGE_VECTORS][2];	//right, total
 };
 
 struct ModelPredictions {
 	int numPackages;
-	Package* packages;
+	CompactPackage* packages;
 	int* packageOffsets;
 };
 
