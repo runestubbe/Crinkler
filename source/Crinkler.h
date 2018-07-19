@@ -33,9 +33,9 @@ const int PRINT_LABELS =			1;
 const int PRINT_IMPORTS =			2;
 const int PRINT_MODELS =			4;
 
-#define CRINKLER_TITLE "Crinkler 2.0a (" __DATE__ ") (c) 2005-2018 Aske Simon Christensen & Rune Stubbe"
-#define CRINKLER_WITH_VERSION "Crinkler 2.0a"
-const int CRINKLER_LINKER_VERSION = 0x3032;
+#define CRINKLER_TITLE "Crinkler 2.1 BETA (" __DATE__ ") (c) 2005-2018 Aske Simon Christensen & Rune Stubbe"
+#define CRINKLER_WITH_VERSION "Crinkler 2.1 BETA"
+const int CRINKLER_LINKER_VERSION = 0x3132;
 
 class Crinkler {
 	MultiLoader				m_hunkLoader;
