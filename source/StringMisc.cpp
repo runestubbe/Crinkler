@@ -57,3 +57,17 @@ bool startsWith(const char* str, const char* start) {
 		start++;
 	}
 }
+
+std::vector<std::string> intoLines(const char *data, size_t length) {
+	std::vector<std::string> lines;
+	int start = 0;
+	for (int i = 0; i <= length; i++) {
+		if (i == length || (data[i] < ' ' && data[i] != '\t')) {
+			if (i > start) {
+				lines.emplace_back(&data[start], i - start);
+			}
+			start = i + 1;
+		}
+	}
+	return lines;
+}

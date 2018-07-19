@@ -236,6 +236,7 @@
       <Optimization Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">MaxSpeed</Optimization>
       <Optimization Condition="'$(Configuration)|$(Platform)'=='Release|x64'">MaxSpeed</Optimization>
     </ClCompile>
+    <ClCompile Include="ExplicitHunkSorter.cpp" />
     <ClCompile Include="Export.cpp" />
     <ClCompile Include="Fix.cpp" />
     <ClCompile Include="HtmlReport.cpp" />
@@ -244,6 +245,7 @@
     <ClCompile Include="ImportHandler.cpp" />
     <ClCompile Include="LTCGLoader.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="Reuse.cpp" />
     <ClCompile Include="Symbol.cpp" />
     <ClCompile Include="Log.cpp" />
     <ClCompile Include="MemoryFile.cpp" />
@@ -275,6 +277,7 @@
     <ClInclude Include="Crinkler.h" />
     <ClInclude Include="data.h" />
     <ClInclude Include="distorm.h" />
+    <ClInclude Include="ExplicitHunkSorter.h" />
     <ClInclude Include="Export.h" />
     <ClInclude Include="Fix.h" />
     <ClInclude Include="HtmlReport.h" />
@@ -283,6 +286,7 @@
     <ClInclude Include="ImportHandler.h" />
     <ClInclude Include="LTCGLoader.h" />
     <ClInclude Include="resource.h" />
+    <ClInclude Include="Reuse.h" />
     <ClInclude Include="Symbol.h" />
     <ClInclude Include="Log.h" />
     <ClInclude Include="MemoryFile.h" />

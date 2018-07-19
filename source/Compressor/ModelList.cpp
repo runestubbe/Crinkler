@@ -48,12 +48,15 @@ const Model& ModelList::operator[] (unsigned idx) const {
 	return m_models[idx];
 }
 
-void ModelList::print() const {
-	printf("Models:");
+void ModelList::addModel(Model model) {
+	m_models[nmodels++] = model;
+}
+
+void ModelList::print(FILE *f) const {
 	for(int m = 0 ; m < nmodels; m++) {
-		printf(" %02X:%d", m_models[m].mask, m_models[m].weight);
+		fprintf(f, "%s%02X:%d", m == 0 ? "" : " ", m_models[m].mask, m_models[m].weight);
 	}
-	printf("\n");
+	fprintf(f, "\n");
 }
 
 //copy a sorted modellist to masks and return the corresponding weightmask

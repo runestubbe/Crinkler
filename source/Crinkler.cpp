@@ -14,6 +14,7 @@
 #include "ImportHandler.h"
 #include "Log.h"
 #include "HeuristicHunkSorter.h"
+#include "ExplicitHunkSorter.h"
 #include "EmpiricalHunkSorter.h"
 #include "misc.h"
 #include "data.h"
@@ -29,6 +30,7 @@ Crinkler::Crinkler():
 	m_subsystem(SUBSYSTEM_WINDOWS),
 	m_hashsize(100*1024*1024),
 	m_compressionType(COMPRESSION_FAST),
+	m_reuseType(REUSE_OFF),
 	m_useSafeImporting(true),
 	m_hashtries(0),
 	m_hunktries(0),
@@ -329,8 +331,10 @@ int Crinkler::estimateModels(unsigned char* data, int datasize, int splittingPoi
 			m_modellist1 = modellist1;
 		}
 		printf("Ideal compressed size: %.2f\n", size1 / (float)(BITPREC * 8));
-		if(verbose) m_modellist1.print();
-
+		if (verbose) {
+			printf("Models: ");
+			m_modellist1.print(stdout);
+		}
 
 		m_progressBar.beginTask(reestimate ? "Reestimating models for data" : "Estimating models for data");
 		modellist2 = ApproximateModels4k(data + splittingPoint, datasize - splittingPoint, CRINKLER_BASEPROB, m_saturate != 0, &new_size2, &m_progressBar, m_compressionType, contexts[1]);
@@ -343,7 +347,10 @@ int Crinkler::estimateModels(unsigned char* data, int datasize, int splittingPoi
 			m_modellist2 = modellist2;
 		}
 		printf("Ideal compressed size: %.2f\n", size2 / (float)(BITPREC * 8));
-		if(verbose) m_modellist2.print();
+		if (verbose) {
+			printf("Models: ");
+			m_modellist2.print(stdout);
+		}
 
 		int total_size = size1 + size2;
 		float bytesize = total_size / (float)(BITPREC * 8);
@@ -960,10 +967,10 @@ void Crinkler::recompress(const char* input_filename, const char* output_filenam
 		size = Compress(data, sizefill, maxsize, m_saturate != 0,
 			(unsigned char*)phase1->getPtr(), phase1->getRawSize(), splittingPoint,
 			m_modellist1, m_modellist2, CRINKLER_BASEPROB, best_hashsize);
-		size += m_modellist1.nmodels + m_modellist2.nmodels;
 
 		if(m_compressionType != -1 && m_compressionType != COMPRESSION_INSTANT) {
-			float byteslost = size - idealsize / (float)(BITPREC * 8);
+			int sizeIncludingModels = size + m_modellist1.nmodels + m_modellist2.nmodels;
+			float byteslost = sizeIncludingModels - idealsize / (float)(BITPREC * 8);
 			printf("Real compressed total size: %d\nBytes lost to hashing: %.2f\n", size, byteslost);
 		}
 
@@ -992,12 +999,6 @@ void Crinkler::recompress(const char* input_filename, const char* output_filenam
 		hashHunk = new Hunk("HashHunk", (char*)&indata[hashes_offset], 0, 0, hashes_bytes, hashes_bytes);
 	}
 
-	Hunk *models = nullptr;
-	if (!is_tiny_header)
-	{
-		models = createModelHunk(splittingPoint, phase1->getRawSize());
-	}
-
 	if (m_subsystem >= 0) {
 		subsystem_version = (m_subsystem == SUBSYSTEM_WINDOWS) ? IMAGE_SUBSYSTEM_WINDOWS_GUI : IMAGE_SUBSYSTEM_WINDOWS_CUI;
 	}
@@ -1006,7 +1007,7 @@ void Crinkler::recompress(const char* input_filename, const char* output_filenam
 	}
 	setSubsystem((subsystem_version == IMAGE_SUBSYSTEM_WINDOWS_GUI) ? SUBSYSTEM_WINDOWS : SUBSYSTEM_CONSOLE);
 
-	Hunk *phase2 = finalLink(header, depacker, hashHunk, models, phase1, data, size, best_hashsize);
+	Hunk *phase2 = finalLink(header, depacker, hashHunk, phase1, data, size, splittingPoint, best_hashsize);
 	delete[] data;
 
 	CompressionReportRecord* csr = phase1->getCompressionSummary(sizefill, splittingPoint);
@@ -1206,6 +1207,22 @@ void Crinkler::link(const char* filename) {
 	//sort hunks heuristically
 	HeuristicHunkSorter::sortHunkList(&m_hunkPool);
 
+	int best_hashsize = previousPrime(m_hashsize / 2) * 2;
+
+	Reuse *reuse = nullptr;
+	int reuse_filesize = 0;
+	ReuseType reuseType = m_useTinyHeader ? REUSE_OFF : m_reuseType;
+	if (reuseType != REUSE_OFF) {
+		reuse = loadReuseFile(m_reuseFilename.c_str());
+		if (reuse != nullptr) {
+			m_modellist1 = *reuse->getCodeModels();
+			m_modellist2 = *reuse->getDataModels();
+			ExplicitHunkSorter::sortHunkList(&m_hunkPool, reuse);
+			best_hashsize = reuse->getHashSize();
+			printf("\nRead reuse file: %s\n", m_reuseFilename.c_str());
+		}
+	}
+
 	//create phase 1 data hunk
 	int splittingPoint;
 	Hunk* phase1, *phase1Untransformed;
@@ -1219,21 +1236,31 @@ void Crinkler::link(const char* filename) {
 		m_transform->linkAndTransform(&m_hunkPool, importSymbol, CRINKLER_CODEBASE, phase1, &phase1Untransformed, &splittingPoint, false);
 	}
 	int maxsize = phase1->getRawSize()*2+1000;	//allocate plenty of memory	
+	unsigned char* data = new unsigned char[maxsize];
+
+	if (reuseType == REUSE_IMPROVE && reuse != nullptr) {
+		int size = Compress(data, nullptr, maxsize, m_saturate != 0,
+			(unsigned char*)phase1->getPtr(), phase1->getRawSize(), splittingPoint,
+			m_modellist1, m_modellist2, CRINKLER_BASEPROB, best_hashsize);
+		Hunk *phase2 = finalLink(header, nullptr, hashHunk, phase1, data, size, splittingPoint, best_hashsize);
+		reuse_filesize = phase2->getRawSize();
+		delete phase2;
+
+		printf("\nFile size with reuse parameters: %d\n", reuse_filesize);
+	}
 
 	printf("\nUncompressed size of code: %5d\n", splittingPoint);
 	printf("Uncompressed size of data: %5d\n", phase1->getRawSize() - splittingPoint);
 
 	int* sizefill = new int[maxsize];
-
-	unsigned char* data = new unsigned char[maxsize];
-	int best_hashsize = previousPrime(m_hashsize/2)*2;
 	int size, idealsize = 0;
-	if (m_useTinyHeader || m_compressionType != COMPRESSION_INSTANT)
+	bool doCompression = m_useTinyHeader || m_compressionType != COMPRESSION_INSTANT && !(reuseType == REUSE_STABLE && reuse != nullptr);
+	if (doCompression)
 	{
 		bool verbose_models = (m_printFlags & PRINT_MODELS) != 0;
 		initProgressBar();
-		idealsize = estimateModels((unsigned char*)phase1->getPtr(), phase1->getRawSize(), splittingPoint, false, m_useTinyHeader, INT_MAX, INT_MAX);		
-		
+
+		idealsize = estimateModels((unsigned char*)phase1->getPtr(), phase1->getRawSize(), splittingPoint, false, m_useTinyHeader, INT_MAX, INT_MAX);
 
 		if(m_hunktries > 0)
 		{
@@ -1249,13 +1276,12 @@ void Crinkler::link(const char* filename) {
 		//hashing time
 		if (!m_useTinyHeader)
 		{
+			best_hashsize = previousPrime(m_hashsize / 2) * 2;
 			best_hashsize = optimizeHashsize((unsigned char*)phase1->getPtr(), phase1->getRawSize(), best_hashsize, splittingPoint, m_hashtries);
 		}
 		
 		deinitProgressBar();
 	}
-
-	Hunk* modelHunk = nullptr;
 
 	if (m_useTinyHeader)
 	{
@@ -1266,13 +1292,11 @@ void Crinkler::link(const char* filename) {
 		size = Compress(data, sizefill, maxsize, m_saturate != 0,
 			(unsigned char*)phase1->getPtr(), phase1->getRawSize(), splittingPoint,
 			m_modellist1, m_modellist2, CRINKLER_BASEPROB, best_hashsize);
-		size += m_modellist1.nmodels + m_modellist2.nmodels;
-
-		modelHunk = createModelHunk(splittingPoint, phase1->getRawSize());
 	}
 	
-	if(!m_useTinyHeader && m_compressionType != COMPRESSION_INSTANT) {
-		float byteslost = size - idealsize / (float) (BITPREC * 8);
+	if(!m_useTinyHeader && doCompression) {
+		int sizeIncludingModels = size + m_modellist1.nmodels + m_modellist2.nmodels;
+		float byteslost = sizeIncludingModels - idealsize / (float) (BITPREC * 8);
 		printf("Real compressed total size: %d\nBytes lost to hashing: %.2f\n", size, byteslost);
 	}
 
@@ -1284,7 +1308,7 @@ void Crinkler::link(const char* filename) {
 	delete csr;
 	delete[] sizefill;
 	
-	Hunk *phase2 = finalLink(header, nullptr, hashHunk, modelHunk, phase1, data, size, best_hashsize);
+	Hunk *phase2 = finalLink(header, nullptr, hashHunk, phase1, data, size, splittingPoint, best_hashsize);
 	delete[] data;
 
 	fwrite(phase2->getPtr(), 1, phase2->getRawSize(), outfile);
@@ -1302,32 +1326,58 @@ void Crinkler::link(const char* filename) {
 	}
 	printf("\n\n");
 
+	if (reuseType != REUSE_OFF) {
+		bool write = false;
+		if (reuse == nullptr) {
+			printf("Writing reuse file: %s\n\n", m_reuseFilename.c_str());
+			write = true;
+		}
+		else if (reuseType == REUSE_IMPROVE) {
+			if (phase2->getRawSize() < reuse_filesize) {
+				printf("Overwriting reuse file: %s\n\n", m_reuseFilename.c_str());
+				write = true;
+				delete reuse;
+			}
+			else {
+				printf("Size not better than with reuse parameters - keeping reuse file: %s\n\n", m_reuseFilename.c_str());
+			}
+		}
+		if (write) {
+			reuse = new Reuse(m_modellist1, m_modellist2, m_hunkPool, best_hashsize);
+			reuse->save(m_reuseFilename.c_str());
+		}
+	}
+
 	if (phase2->getRawSize() > 128*1024)
 	{
 		Log::error(filename, "Output file too big. Crinkler does not support final file sizes of more than 128k.");
 	}
 
+	if (reuse) delete reuse;
 	delete phase1;
 	delete phase1Untransformed;
 	delete phase2;
 }
 
-Hunk *Crinkler::finalLink(Hunk *header, Hunk *depacker, Hunk *hashHunk, Hunk *modelHunk,
-	Hunk *phase1, unsigned char *data, int size, int hashsize)
+Hunk *Crinkler::finalLink(Hunk *header, Hunk *depacker, Hunk *hashHunk,
+	Hunk *phase1, unsigned char *data, int size, int splittingPoint, int hashsize)
 {
 	Hunk* phase1Compressed = new Hunk("compressed data", (char*)data, 0, 0, size, size);
 	phase1Compressed->addSymbol(new Symbol("_PackedData", 0, SYMBOL_IS_RELOCATEABLE, phase1Compressed));
 
-	HunkList phase2list;
-	phase2list.addHunkBack(header);
-	if (depacker) phase2list.addHunkBack(depacker);
-	if (hashHunk) phase2list.addHunkBack(hashHunk);
-	if (modelHunk) phase2list.addHunkBack(modelHunk);
-	phase2list.addHunkBack(phase1Compressed);
+	Hunk *modelHunk = nullptr;
 	if (!m_useTinyHeader)
 	{
 		header->addSymbol(new Symbol("_HashTable", CRINKLER_SECTIONSIZE * 2 + phase1->getRawSize(), SYMBOL_IS_RELOCATEABLE, header));
+		modelHunk = createModelHunk(splittingPoint, phase1->getRawSize());
 	}
+
+	HunkList phase2list;
+	phase2list.addHunkBack(new Hunk(*header));
+	if (depacker) phase2list.addHunkBack(new Hunk(*depacker));
+	if (hashHunk) phase2list.addHunkBack(new Hunk(*hashHunk));
+	if (modelHunk) phase2list.addHunkBack(modelHunk);
+	phase2list.addHunkBack(phase1Compressed);
 	Hunk* phase2 = phase2list.toHunk("final", CRINKLER_IMAGEBASE);
 
 	//add constants

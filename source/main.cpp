@@ -17,6 +17,7 @@
 #include "CallTransform.h"
 #include "IdentityTransform.h"
 #include "Fix.h"
+#include "Reuse.h"
 #include "MemoryFile.h"
 #include "misc.h"
 #include "NameMangling.h"
@@ -235,6 +236,10 @@ int main(int argc, char* argv[]) {
 						PARAM_IS_SWITCH|PARAM_FORBID_MULTIPLE_DEFINITIONS, "out.exe");
 	CmdParamString summaryArg("REPORT", "report html filename", "filename", 
 						PARAM_IS_SWITCH|PARAM_FORBID_MULTIPLE_DEFINITIONS, "");
+	CmdParamString reuseFileArg("REUSE", "reuse html filename", "filename",
+		PARAM_IS_SWITCH | PARAM_FORBID_MULTIPLE_DEFINITIONS, "");
+	CmdParamFlags reuseArg("REUSEMODE", "select reuse mode", PARAM_FORBID_MULTIPLE_DEFINITIONS, REUSE_STABLE,
+		"OFF", REUSE_OFF, "IMPROVE", REUSE_IMPROVE, "STABLE", REUSE_STABLE, NULL);
 	CmdParamSwitch crinklerFlag("CRINKLER", "enables Crinkler", 0);
 	CmdParamSwitch recompressFlag("RECOMPRESS", "recompress a Crinkler file", 0);
 	CmdParamSwitch unsafeImportArg("UNSAFEIMPORT", "crash if a DLL is missing", 0);
@@ -269,7 +274,7 @@ int main(int argc, char* argv[]) {
 	CmdParamString filesArg("FILES", "list of filenames", "", PARAM_HIDE_IN_PARAM_LIST, 0);
 	CmdLineInterface cmdline(CRINKLER_TITLE, CMDI_PARSE_FILES);
 
-	cmdline.addParams(&crinklerFlag, &hashsizeArg, &hashtriesArg, &hunktriesArg, &entryArg, &outArg, &summaryArg, &unsafeImportArg,
+	cmdline.addParams(&crinklerFlag, &hashsizeArg, &hashtriesArg, &hunktriesArg, &entryArg, &outArg, &summaryArg, &reuseFileArg, &reuseArg, &unsafeImportArg,
 						&subsystemArg, &largeAddressAwareArg, &truncateFloatsArg, &overrideAlignmentsArg, &unalignCodeArg, &compmodeArg, &saturateArg, &printArg, &transformArg, &libpathArg, 
 						&rangeImportArg, &replaceDllArg, &fallbackDllArg, &exportArg, &stripExportsArg, &noInitializersArg, &filesArg, &priorityArg, &showProgressArg, &recompressFlag,
 						&tinyHeader, &tinyImport,
@@ -441,6 +446,9 @@ int main(int argc, char* argv[]) {
 	crinkler.setAlignmentBits(overrideAlignmentsArg.getValue());
 	crinkler.setRunInitializers(!noInitializersArg.getValue());
 	crinkler.setSummary(summaryArg.getValue());
+	if (reuseFileArg.getNumMatches() > 0) {
+		crinkler.setReuse((ReuseType)reuseArg.getValue(), reuseFileArg.getValue());
+	}
 	parseExports(exportArg, crinkler);
 
 
@@ -464,6 +472,13 @@ int main(int argc, char* argv[]) {
 	printf("Hash size: %d MB\n", hashsizeArg.getValue());
 	printf("Hash tries: %d\n", hashtriesArg.getValue());
 	printf("Order tries: %d\n", hunktriesArg.getValue());
+	if (reuseFileArg.getNumMatches() > 0) {
+		printf("Reuse mode: %s\n", reuseTypeName((ReuseType)reuseArg.getValue()));
+		printf("Reuse file: %s\n", reuseFileArg.getValue());
+	}
+	else {
+		printf("Reuse mode: OFF (no file specified)\n");
+	}
 	printf("Report: %s\n", strlen(summaryArg.getValue()) > 0 ? summaryArg.getValue() : "NONE");
 	printf("Transforms: %s\n", (transformArg.getValue() & TRANSFORM_CALLS) ? "CALLS" : "NONE");
 

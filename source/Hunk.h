@@ -95,6 +95,7 @@ class Hunk {
 	std::string m_name;
 	std::string m_importName;
 	std::string m_importDll;
+	std::string m_cached_id;
 
 	int			m_numReferences;
 public:
@@ -143,6 +144,7 @@ public:
 	void setImportDll(const char* dll);
 	std::map<int, Symbol*> getOffsetToRelocationMap();
 	std::map<int, Symbol*> getOffsetToSymbolMap();
+	const std::string& getID();
 };
 
 #endif

@@ -140,6 +140,12 @@
     <ClCompile Include="Export.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Reuse.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ExplicitHunkSorter.cpp">
+      <Filter>HunkSorters</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Crinkler.h">
@@ -252,6 +258,12 @@
     </ClInclude>
     <ClInclude Include="data.h">
       <Filter>data</Filter>
+    </ClInclude>
+    <ClInclude Include="Reuse.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ExplicitHunkSorter.h">
+      <Filter>HunkSorters</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

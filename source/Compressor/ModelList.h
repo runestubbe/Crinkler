@@ -2,6 +2,8 @@
 #ifndef _MODEL_LIST_
 #define _MODEL_LIST_
 
+#include <cstdio>
+
 class Compressor;
 enum CompressionType;
 
@@ -22,9 +24,10 @@ public:
 	ModelList& ModelList::operator=(const ModelList& ml);
 	Model& operator[] (unsigned idx);
 	const Model& operator[] (unsigned idx) const;
+	void addModel(Model model);
 
 	void setFromModelsAndMask(const unsigned char* models, int weightmask);
-	void print() const;
+	void print(FILE *f) const;
 	unsigned int getMaskList(unsigned char* masks, bool terminate) const;
 	CompressionType detectCompressionType() const;
 };

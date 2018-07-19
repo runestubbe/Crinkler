@@ -16,6 +16,7 @@
 #include "WindowProgressBar.h"
 #include "CompositeProgressBar.h"
 #include "Export.h"
+#include "Reuse.h"
 
 
 class HunkLoader;
@@ -41,6 +42,7 @@ class Crinkler {
 	HunkList				m_hunkPool;
 	std::string				m_entry;
 	std::string				m_summaryFilename;
+	std::string				m_reuseFilename;
 	SubsystemType			m_subsystem;
 	int						m_hashsize;
 	int						m_hashtries;
@@ -48,6 +50,7 @@ class Crinkler {
 	int						m_printFlags;
 	bool					m_useSafeImporting;
 	CompressionType			m_compressionType;
+	ReuseType				m_reuseType;
 	std::vector<std::string>	m_rangeDlls;
 	std::map<std::string, std::string>	m_replaceDlls;
 	std::map<std::string, std::string>	m_fallbackDlls;
@@ -86,14 +89,13 @@ class Crinkler {
 	void initProgressBar();
 	void deinitProgressBar();
 
-	Hunk *finalLink(Hunk *header, Hunk *depacker, Hunk *hashHunk, Hunk *modelHunk, Hunk *phase1, unsigned char *data, int size, int hashsize);
+	Hunk *finalLink(Hunk *header, Hunk *depacker, Hunk *hashHunk, Hunk *phase1, unsigned char *data, int size, int splittingPoint, int hashsize);
 
 	int optimizeHashsize(unsigned char* data, int datasize, int hashsize, int splittingPoint, int tries);
 	int estimateModels(unsigned char* data, int datasize, int splittingPoint, bool reestimate, bool use1kMode, int target_size1, int target_size2);
 	void setHeaderSaturation(Hunk* header);
 	void setHeaderConstants(Hunk* header, Hunk* phase1, int hashsize, int boostfactor, int baseprob0, int baseprob1, unsigned int modelmask, int subsystem_version, int exports_rva, bool use1kHeader);
 
-	int appendExportTable(Hunk* phase1);
 public:
 	Crinkler();
 	~Crinkler();
@@ -131,6 +133,7 @@ public:
 	
 	void setImportingType(bool safe)						{ m_useSafeImporting = safe; }
 	void setSummary(const char* summaryFilename)			{ m_summaryFilename = summaryFilename; }
+	void setReuse(ReuseType type, const char* filename)		{ m_reuseType = type;  m_reuseFilename = filename; }
 	void setTruncateFloats(bool enabled)					{ m_truncateFloats = enabled; }
 	void setTruncateBits(int bits)							{ m_truncateBits = bits; }
 	void setOverrideAlignments(bool enabled)				{ m_overrideAlignments = enabled; }

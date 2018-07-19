@@ -535,3 +535,30 @@ void Hunk::markHunkAsLibrary() {
 		it->second->fromLibrary = true;
 	}
 }
+
+const string& Hunk::getID() {
+	if (m_cached_id.empty()) {
+		Symbol *first = nullptr;
+		for (auto s : m_symbols) {
+			if (!(s.second->flags & SYMBOL_IS_SECTION)) {
+				if (first == nullptr || symbolComparator(s.second, first)) {
+					first = s.second;
+				}
+			}
+		}
+		string section_name;
+		int i0 = m_name.find_first_of('[', 0);
+		int i1 = m_name.find_last_of('\\');
+		int i2 = m_name.find_first_of(']', 0);
+		int i3 = m_name.find_last_of('!');
+		i1 = max(i0, i1);
+		if (i1 != -1 && i2 != -1 && i3 != -1 && i1 < i2 && i2 < i3) {
+			section_name = m_name.substr(i1 + 1, i2 - (i1 + 1)) + ":" + m_name.substr(i3 + 1);
+		}
+		else {
+			section_name = m_name;
+		}
+		m_cached_id = section_name + ":" + stripCrinklerSymbolPrefix(first->name.c_str());
+	}
+	return m_cached_id;
+}

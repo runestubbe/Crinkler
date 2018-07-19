@@ -78,6 +78,5 @@ void HeuristicHunkSorter::sortHunkList(HunkList* hunklist) {
 	hunklist->addHunkBack(entry_hunk);
 
 	//copy back hunks to hunklist
-	for(vector<Hunk*>::const_iterator it = hunks.begin(); it != hunks.end(); it++)
-		hunklist->addHunkBack(*it);	
+	for(Hunk *hunk : hunks) hunklist->addHunkBack(hunk);
 }
