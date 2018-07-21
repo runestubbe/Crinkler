@@ -60,6 +60,7 @@ long long SoftwareCompressionStateEvaluator::changeWeight(int modelIndex, int di
 		__m128i vzero = _mm_setzero_si128();
 		__m128i vmantissa_mask = _mm_set1_epi32(0x7fffff);
 		__m128i vone_exponent_bits = _mm_set1_epi32(0x3f800000);
+		__m128i vffff0000 = _mm_set1_epi32(0xFFFF0000);
 		
 		Package* sum_packages = m_packages;
 		CompactPackage* model_packages = m_models[modelIndex].packages;
@@ -79,37 +80,39 @@ long long SoftwareCompressionStateEvaluator::changeWeight(int modelIndex, int di
 			__m128 vprod_right = _mm_set1_ps(1.0f);
 			__m128 vprod_total  = _mm_set1_ps(1.0f);
 			__m128 vsum_p_right, vsum_p_total;
+			__m128i packed;
 
-			/*
+			
 #define DO(_IDX) \
 			vsum_p_right = sum_package->prob[_IDX][0]; \
 			vsum_p_total = sum_package->prob[_IDX][1]; \
 			packed = model_package->prob[_IDX]; \
-			vsum_p_right = _mm_add_ps(vsum_p_right, _mm_mul_ps(_mm_cvtepi32_ps(_mm_unpacklo_epi16(packed, vzero)), vdiffw)); \
-			vsum_p_total = _mm_add_ps(vsum_p_total, _mm_mul_ps(_mm_cvtepi32_ps(_mm_unpackhi_epi16(packed, vzero)), vdiffw)); \
+			vsum_p_right = _mm_add_ps(vsum_p_right, _mm_mul_ps(_mm_castsi128_ps(_mm_unpacklo_epi16(vzero, packed)), vdiffw)); \
+			vsum_p_total = _mm_add_ps(vsum_p_total, _mm_mul_ps(_mm_castsi128_ps(_mm_unpackhi_epi16(vzero, packed)), vdiffw)); \
 			sum_package->prob[_IDX][0] = vsum_p_right; \
 			sum_package->prob[_IDX][1] = vsum_p_total; \
 			vprod_right = _mm_mul_ps(vprod_right, vsum_p_right); \
 			vprod_total = _mm_mul_ps(vprod_total, vsum_p_total);
-
+	
 			DO(0) DO(1) DO(2) DO(3);
 			DO(4) DO(5) DO(6) DO(7);
 			DO(8) DO(9) DO(10) DO(11);
 			DO(12) DO(13) DO(14) DO(15);
-			*/
+#undef DO
+			/*
 			for(int j = 0; j < NUM_PACKAGE_VECTORS; j++)
 			{
 				vsum_p_right = sum_package->prob[j][0];
 				vsum_p_total = sum_package->prob[j][1];
 				__m128i packed = model_package->prob[j];
-				vsum_p_right = _mm_add_ps(vsum_p_right, _mm_mul_ps(_mm_cvtepi32_ps(_mm_unpacklo_epi16(packed, vzero)), vdiffw));
-				vsum_p_total = _mm_add_ps(vsum_p_total, _mm_mul_ps(_mm_cvtepi32_ps(_mm_unpackhi_epi16(packed, vzero)), vdiffw));
+				vsum_p_right = _mm_add_ps(vsum_p_right, _mm_mul_ps(_mm_castsi128_ps(_mm_unpacklo_epi16(vzero, packed)), vdiffw));
+				vsum_p_total = _mm_add_ps(vsum_p_total, _mm_mul_ps(_mm_castsi128_ps(_mm_unpackhi_epi16(vzero, packed)), vdiffw));
 				sum_package->prob[j][0] = vsum_p_right;
 				sum_package->prob[j][1] = vsum_p_total;
 				vprod_right = _mm_mul_ps(vprod_right, vsum_p_right);
 				vprod_total = _mm_mul_ps(vprod_total, vsum_p_total);
 			}
-			
+			*/
 #if 1
 			// log refinement
 			__m128i viprod_right = _mm_castps_si128(vprod_right);

@@ -74,8 +74,8 @@ ModelPredictions CompressionState::applyModel(const unsigned char* data, int bit
 		bool package_needs_commit = false;
 		for(int bitpos_offset = 0; bitpos_offset < PACKAGE_SIZE; bitpos_offset++)
 		{
-			int p_right = 0;
-			int p_total = 0;
+			float p_right = 0;
+			float p_total = 0;
 			if(bitpos_base + bitpos_offset < bitlength)
 			{
 				int bit = GetBit(data, bitpos_base + bitpos_offset);
@@ -88,10 +88,12 @@ ModelPredictions CompressionState::applyModel(const unsigned char* data, int bit
 				p_total = ((e->w.prob[0] + e->w.prob[1]) << boost);
 				updateWeights(&e->w, bit, m_saturate);
 			}
-			assert(p_right < 65536);
-			assert(p_total < 65536);
-			packages[numPackages].prob[bitpos_offset >> 2].m128i_u16[(bitpos_offset & 3)] = p_right;
-			packages[numPackages].prob[bitpos_offset >> 2].m128i_u16[4 + (bitpos_offset & 3)] = p_total;
+
+			assert((*(int*)&p_right & 0xFFFF) == 0);
+			assert((*(int*)&p_total & 0xFFFF) == 0);
+
+			packages[numPackages].prob[bitpos_offset >> 2].m128i_u16[(bitpos_offset & 3)] = *(int*)&p_right >> 16;
+			packages[numPackages].prob[bitpos_offset >> 2].m128i_u16[4 + (bitpos_offset & 3)] = *(int*)&p_total >> 16;
 		}
 		packageOffsets[numPackages] = idx;
 		if(package_needs_commit)
