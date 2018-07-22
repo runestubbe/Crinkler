@@ -38,6 +38,10 @@ ModelList1k ApproximateModels1k(const unsigned char* data, int datasize, int* co
 ModelList ApproximateModels4k(const unsigned char* data, int datasize, int baseprob, bool saturate, int* compsize, ProgressBar* progressBar, CompressionType compressionType, char* context);
 ModelList InstantModels();
 
+int EvaluateSize(const unsigned char* data, int rawsize, int splittingPoint,
+	const ModelList& models1, const ModelList& models2, int baseprob, bool saturate,
+	int* out_size1, int* out_size2);
+
 int Compress(unsigned char* compressed, int* sizefill, int maxsize, bool saturate,
 	const unsigned char* data, int rawsize, int splittingPoint,
 	const ModelList& models1, const ModelList& models2, int baseprob, int hashsize);

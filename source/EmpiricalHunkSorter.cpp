@@ -38,37 +38,8 @@ int EmpiricalHunkSorter::tryHunkCombination(HunkList* hunklist, Transform& trans
 	}
 	else
 	{
-		CompressionStream cs(NULL, NULL, 0, saturate);
-		int sizes[16];
-
-		char contexts[2][8];
-		memset(contexts[0], 0, 8);
-		memset(contexts[1], 0, 8);
-		int context_size = 8;
-		if (splittingPoint < 8) context_size = splittingPoint;
-		memcpy(contexts[1] + (8 - context_size), phase1->getPtr() + splittingPoint - context_size, context_size);
-
-		concurrency::parallel_for(0, 16, [&](int i)
-		{
-			if (i < 8)
-				sizes[i] = cs.EvaluateSize((unsigned char*)phase1->getPtr(), splittingPoint, codeModels, baseprob, contexts[0], i);
-			else
-				sizes[i] = cs.EvaluateSize((unsigned char*)phase1->getPtr() + splittingPoint, phase1->getRawSize() - splittingPoint, dataModels, baseprob, contexts[1], i - 8);
-		});
-
+		totalsize = EvaluateSize((unsigned char*)phase1->getPtr(), phase1->getRawSize(), splittingPoint, codeModels, dataModels, baseprob, saturate, out_size1, out_size2);
 		delete phase1;
-
-		int size1 = codeModels.nmodels * 8 * BITPREC;
-		int size2 = dataModels.nmodels * 8 * BITPREC;
-		for(int i = 0; i < 8; i++)
-		{
-			size1 += sizes[i];
-			size2 += sizes[i+8];
-		}
-
-		totalsize = size1 + size2;
-		if(out_size1) *out_size1 = size1;
-		if(out_size2) *out_size2 = size2;
 	}
 
 	return totalsize;
