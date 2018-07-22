@@ -155,6 +155,24 @@ void CompressionStream::Compress(const unsigned char* d, int size, const ModelLi
 	delete[] data;
 }
 
+__forceinline uint32_t Hash(const byte* data, __m128i& masked_contextdata, __m128i mask)
+{
+	__m128i scrambler = _mm_set_epi8(113, 23, 5, 17, 13, 11, 7, 19, 3, 23, 29, 31, 37, 41, 43, 47);
+	masked_contextdata = _mm_and_si128(*(__m128i *)data, mask);
+	__m128i sample = _mm_mullo_epi16(masked_contextdata, scrambler);
+	sample = _mm_add_epi32(_mm_add_epi32(sample, _mm_shuffle_epi32(sample, _MM_SHUFFLE(1, 1, 1, 1))), _mm_shuffle_epi32(sample, _MM_SHUFFLE(2, 2, 2, 2)));
+	uint32_t hash = _mm_cvtsi128_si32(sample);
+
+	uint64_t tmp = (uint64_t)hash * 0xd451151b;
+	return (uint32_t)tmp ^ uint32_t(tmp >> 32);
+}
+
+struct state
+{
+	uint16_t next_state[2];
+	uint16_t boosted_counters[2];
+};
+
 int CompressionStream::EvaluateSize(const unsigned char* d, int size, const ModelList& models, int baseprob, char* context, int bitpos) {
 	unsigned char* data = new unsigned char[size + MAX_CONTEXT_LENGTH + 16];	// ensure 128bit operations are safe
 	memcpy(data, context, MAX_CONTEXT_LENGTH);
@@ -193,32 +211,27 @@ int CompressionStream::EvaluateSize(const unsigned char* d, int size, const Mode
 		maskbytes[8] = bytemask;
 		__m128i mask = *(__m128i*)maskbytes;
 
-		__m128i scrambler = _mm_set_epi8(113, 23, 5, 17, 13, 11, 7, 19, 3, 23, 29, 31, 37, 41, 43, 47);
+		__m128i next_masked_contextdata;
+		unsigned int next_tinyhash;
+
+		next_tinyhash = Hash(data - MAX_CONTEXT_LENGTH, next_masked_contextdata, mask) & tinyhashmask;
+		
 		for(int pos = 0; pos < size; pos++) {
 			int bit = (data[pos] >> (7-bitpos)) & 1;
 
-			__m128i contextdata = *(__m128i *)&data[pos - MAX_CONTEXT_LENGTH];
-			__m128i masked_contextdata = _mm_and_si128(contextdata, mask);
-			
-			__m128i sample = _mm_mullo_epi16(masked_contextdata, scrambler);
-			sample = _mm_add_epi32(_mm_add_epi32(sample, _mm_shuffle_epi32(sample, _MM_SHUFFLE(1, 1, 1, 1))), _mm_shuffle_epi32(sample, _MM_SHUFFLE(2, 2, 2, 2)));
-			unsigned int hash = _mm_cvtsi128_si32(sample);
-
-			uint64_t tmp = (uint64_t)hash * 0xd451151b;
-			hash = (uint32_t)tmp ^ uint32_t(tmp >> 32);
-
-			unsigned int tinyHash = hash & tinyhashmask;//(hash*recths)>>recthslog;
-			//HashEntry *he = &hashtable[tinyHash];
+			__m128i masked_contextdata = next_masked_contextdata;
+			size_t tinyhash = next_tinyhash;
+			next_tinyhash = Hash(data + pos + 1 - MAX_CONTEXT_LENGTH, next_masked_contextdata, mask) & tinyhashmask;
 
 			while(true)
 			{
-				int candidate_pos = hash_positions[tinyHash];
+				int candidate_pos = hash_positions[tinyhash];
 				if(candidate_pos == -1)
 				{
-					hash_positions[tinyHash] = pos;
+					hash_positions[tinyhash] = pos;
 
 					//update weights
-					int bit_idx = tinyHash * 2 + bit;
+					size_t bit_idx = tinyhash * 2 + bit;
 					hash_probs[bit_idx] = 1;
 					hash_probs[bit_idx ^ 1] = 0;
 					break;
@@ -226,51 +239,31 @@ int CompressionStream::EvaluateSize(const unsigned char* d, int size, const Mode
 				
 				if(_mm_movemask_epi8(_mm_cmpeq_epi8(_mm_and_si128(*(__m128i *)&data[candidate_pos - MAX_CONTEXT_LENGTH], mask), masked_contextdata)) == 0xFFFF)
 				{
-					int p0 = hash_probs[tinyHash * 2 + 0];
-					int p1 = hash_probs[tinyHash * 2 + 1];
+					int p0 = hash_probs[tinyhash * 2 + 0];
+					int p1 = hash_probs[tinyhash * 2 + 1];
 
 					unsigned int shift = weight - (((p0 - 1)|(p1 - 1)) >> 31) * 2;
 					sums[pos * 2 + 0] += (p0 << shift);
 					sums[pos * 2 + 1] += (p1 << shift);
 
 					//update weights
-					int bit_idx = tinyHash * 2 + bit;
-					int not_bit_idx = bit_idx ^ 1;
+					size_t bit_idx = tinyhash * 2 + bit;
+					size_t not_bit_idx = bit_idx ^ 1;
 					if(!m_saturate || hash_probs[bit_idx] < 255) hash_probs[bit_idx] += 1;
 					if(hash_probs[not_bit_idx] > 1) hash_probs[not_bit_idx] >>= 1;
 					break;
 				}
 					
-				tinyHash = (tinyHash + 1) & tinyhashmask;
+				tinyhash = (tinyhash + 1) & tinyhashmask;
 			}
 		}
 	}
 
-	//sum 
-	long long totalsize = 0;
-#if USE_OPENMP
-	#pragma omp parallel for reduction(+:totalsize)
+	uint64_t totalsize = 0;
 	for(int pos = 0; pos < size; pos++) {
-		int bit = (data[pos] >> (7-bitpos)) & 1;
-		totalsize += AritSize2(sums[pos*2+bit], sums[pos*2+!bit]);
+		int bit = (data[pos] >> (7 - bitpos)) & 1;
+		totalsize += AritSize2(sums[pos * 2 + bit], sums[pos * 2 + !bit]);
 	}
-#else
-	concurrency::combinable<long long> combinable_totalsize;
-	const int BLOCK_SIZE = 64;
-	int num_blocks = (size + BLOCK_SIZE - 1) / BLOCK_SIZE;
-	concurrency::parallel_for(0, num_blocks, [&](int block)
-	{
-		int start_idx = block * BLOCK_SIZE;
-		int end_idx = std::min(start_idx + BLOCK_SIZE, size);
-		long long block_size = 0;
-		for(int pos = start_idx; pos < end_idx; pos++) {
-			int bit = (data[pos] >> (7-bitpos)) & 1;
-			block_size += AritSize2(sums[pos*2+bit], sums[pos*2+!bit]);
-		}
-		combinable_totalsize.local() += block_size;
-	});
-	totalsize = combinable_totalsize.combine(std::plus<long long>());
-#endif
 	
 	delete[] hash_positions;
 	delete[] hash_probs;
