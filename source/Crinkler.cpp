@@ -971,7 +971,7 @@ void Crinkler::recompress(const char* input_filename, const char* output_filenam
 		if(m_compressionType != -1 && m_compressionType != COMPRESSION_INSTANT) {
 			int sizeIncludingModels = size + m_modellist1.nmodels + m_modellist2.nmodels;
 			float byteslost = sizeIncludingModels - idealsize / (float)(BITPREC * 8);
-			printf("Real compressed total size: %d\nBytes lost to hashing: %.2f\n", size, byteslost);
+			printf("Real compressed total size: %d\nBytes lost to hashing: %.2f\n", sizeIncludingModels, byteslost);
 		}
 
 		setCompressionType(compmode);
@@ -1297,7 +1297,7 @@ void Crinkler::link(const char* filename) {
 	if(!m_useTinyHeader && doCompression) {
 		int sizeIncludingModels = size + m_modellist1.nmodels + m_modellist2.nmodels;
 		float byteslost = sizeIncludingModels - idealsize / (float) (BITPREC * 8);
-		printf("Real compressed total size: %d\nBytes lost to hashing: %.2f\n", size, byteslost);
+		printf("Real compressed total size: %d\nBytes lost to hashing: %.2f\n", sizeIncludingModels, byteslost);
 	}
 
 	CompressionReportRecord* csr = phase1->getCompressionSummary(sizefill, splittingPoint);
