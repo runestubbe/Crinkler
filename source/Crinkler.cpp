@@ -302,7 +302,7 @@ int Crinkler::estimateModels(unsigned char* data, int datasize, int splittingPoi
 			m_modellist1k = new_modellist1k;
 		}
 		m_progressBar.endTask();
-		printf(reestimate ? "\nReestimated ideal compressed size: %.2f\n" : "\nEstimated ideal compressed size: %.2f\n", size / (float)(BITPREC * 8));
+		printf("\nEstimated compressed size: %.2f\n", size / (float)(BITPREC * 8));
 		if(verbose) m_modellist1k.print();
 		return new_size;
 	}
@@ -330,11 +330,11 @@ int Crinkler::estimateModels(unsigned char* data, int datasize, int splittingPoi
 			size1 = new_size1;
 			m_modellist1 = modellist1;
 		}
-		printf("Ideal compressed size: %.2f\n", size1 / (float)(BITPREC * 8));
 		if (verbose) {
 			printf("Models: ");
 			m_modellist1.print(stdout);
 		}
+		printf("Estimated compressed size of code: %.2f\n", size1 / (float)(BITPREC * 8));
 
 		m_progressBar.beginTask(reestimate ? "Reestimating models for data" : "Estimating models for data");
 		modellist2 = ApproximateModels4k(data + splittingPoint, datasize - splittingPoint, CRINKLER_BASEPROB, m_saturate != 0, &new_size2, &m_progressBar, m_compressionType, contexts[1]);
@@ -346,17 +346,19 @@ int Crinkler::estimateModels(unsigned char* data, int datasize, int splittingPoi
 			size2 = new_size2;
 			m_modellist2 = modellist2;
 		}
-		printf("Ideal compressed size: %.2f\n", size2 / (float)(BITPREC * 8));
 		if (verbose) {
 			printf("Models: ");
 			m_modellist2.print(stdout);
 		}
+		printf("Estimated compressed size of data: %.2f\n", size2 / (float)(BITPREC * 8));
 
-		int total_size = size1 + size2;
-		float bytesize = total_size / (float)(BITPREC * 8);
-		printf(reestimate ? "\nReestimated ideal compressed total size: %.2f\n" :"\nEstimated ideal compressed total size: %.2f\n", bytesize);
+		int idealsize = EvaluateSize(data, datasize, splittingPoint,
+			m_modellist1, m_modellist2, CRINKLER_BASEPROB, m_saturate != 0, &size1, &size2);
+		printf("\nIdeal compressed size of code: %.2f\n", size1 / (float)(BITPREC * 8));
+		printf("Ideal compressed size of data: %.2f\n", size2 / (float)(BITPREC * 8));
+		printf("Ideal compressed total size: %.2f\n", idealsize / (float)(BITPREC * 8));
 
-		return total_size;
+		return idealsize;
 	}
 }
 
