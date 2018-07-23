@@ -569,8 +569,12 @@ Linker/Command Line/Additional Options:
     run some extra reordering iterations (if reordering is enabled)
     to see if this improves compression.
 
+    For both modes, it can be useful to edit the reuse file by hand
+    to try out parameters manually or to nudge Crinkler in some
+    direction.
+
     With OFF, it is as if no reuse file is specified. This is simply
-    a way to disable the option without deleting the file from the
+    a way to disable the option without removing the file from the
     commandline.
 
     If COMPMODE is set to INSTANT, the reuse mode is also considered
