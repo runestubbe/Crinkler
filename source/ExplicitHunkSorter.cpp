@@ -22,7 +22,7 @@ vector<Hunk*> pickHunks(const vector<string>& ids, unordered_map<string, Hunk*>&
 			hunk_by_id.erase(hunk_it);
 		}
 		else {
-			Log::warning("", "Reused hunk not present: %s", id);
+			Log::warning("", "Reused hunk not present: %s", id.c_str());
 		}
 	}
 	return hunks;
