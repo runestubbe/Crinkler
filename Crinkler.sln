@@ -9,6 +9,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Crinkler", "source\Crinkler
 		{869F3A10-26E8-49E6-980F-FE72F642714F} = {869F3A10-26E8-49E6-980F-FE72F642714F}
 	EndProjectSection
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ExportScraper", "tools\ExportScraper\ExportScraper.vcxproj", "{54D0095A-6993-431C-81D1-9CEE4D7CEE9E}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -33,6 +35,14 @@ Global
 		{B0591735-B8E8-4E45-8394-5A01A5F53984}.Release|Win32.Build.0 = Release|Win32
 		{B0591735-B8E8-4E45-8394-5A01A5F53984}.Release|x64.ActiveCfg = Release|x64
 		{B0591735-B8E8-4E45-8394-5A01A5F53984}.Release|x64.Build.0 = Release|x64
+		{54D0095A-6993-431C-81D1-9CEE4D7CEE9E}.Debug|Win32.ActiveCfg = Debug|Win32
+		{54D0095A-6993-431C-81D1-9CEE4D7CEE9E}.Debug|Win32.Build.0 = Debug|Win32
+		{54D0095A-6993-431C-81D1-9CEE4D7CEE9E}.Debug|x64.ActiveCfg = Debug|Win32
+		{54D0095A-6993-431C-81D1-9CEE4D7CEE9E}.Debug|x64.Build.0 = Debug|Win32
+		{54D0095A-6993-431C-81D1-9CEE4D7CEE9E}.Release|Win32.ActiveCfg = Release|Win32
+		{54D0095A-6993-431C-81D1-9CEE4D7CEE9E}.Release|Win32.Build.0 = Release|Win32
+		{54D0095A-6993-431C-81D1-9CEE4D7CEE9E}.Release|x64.ActiveCfg = Release|Win32
+		{54D0095A-6993-431C-81D1-9CEE4D7CEE9E}.Release|x64.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

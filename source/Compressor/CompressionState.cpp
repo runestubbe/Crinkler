@@ -84,8 +84,8 @@ ModelPredictions CompressionState::applyModel(const unsigned char* data, int bit
 				if(e->w.prob[0] || e->w.prob[1])
 					package_needs_commit = true;
 
-				p_right = (e->w.prob[bit] << boost);
-				p_total = ((e->w.prob[0] + e->w.prob[1]) << boost);
+				p_right = (float)(e->w.prob[bit] << boost);
+				p_total = (float)((e->w.prob[0] + e->w.prob[1]) << boost);
 				updateWeights(&e->w, bit, m_saturate);
 			}
 
