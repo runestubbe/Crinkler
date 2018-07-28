@@ -390,6 +390,42 @@ static int reverse_byte(int x)
 
 }
 
+int EvaluateSize(const unsigned char* data, int rawsize, int splittingPoint,
+	const ModelList& models1, const ModelList& models2, int baseprob, bool saturate,
+	int* out_size1, int* out_size2)
+{
+	CompressionStream cs(NULL, NULL, 0, saturate);
+	int sizes[16];
+
+	char contexts[2][8];
+	memset(contexts[0], 0, 8);
+	memset(contexts[1], 0, 8);
+	int context_size = 8;
+	if (splittingPoint < 8) context_size = splittingPoint;
+	memcpy(contexts[1] + (8 - context_size), data + splittingPoint - context_size, context_size);
+
+	concurrency::parallel_for(0, 16, [&](int i)
+	{
+		if (i < 8)
+			sizes[i] = cs.EvaluateSize(data, splittingPoint, models1, baseprob, contexts[0], i);
+		else
+			sizes[i] = cs.EvaluateSize(data + splittingPoint, rawsize - splittingPoint, models2, baseprob, contexts[1], i - 8);
+	});
+
+	int size1 = models1.nmodels * 8 * BITPREC;
+	int size2 = models2.nmodels * 8 * BITPREC;
+	for (int i = 0; i < 8; i++)
+	{
+		size1 += sizes[i];
+		size2 += sizes[i + 8];
+	}
+
+	if (out_size1) *out_size1 = size1;
+	if (out_size2) *out_size2 = size2;
+
+	return size1 + size2;
+}
+
 int Compress(unsigned char* compressed, int* sizefill, int maxsize, bool saturate,
 	const unsigned char* data, int rawsize, int splittingPoint,
 	const ModelList& models1, const ModelList& models2, int baseprob, int hashsize)

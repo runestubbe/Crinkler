@@ -491,8 +491,8 @@ Linker/Command Line/Additional Options:
     an O(n^2) decompression time which can become prohibitively slow
     for files significantly larger than 1kb.
 
-    The HASHSIZE, HASHTRIES, COMPMODE, SATURATE and EXPORT options are
-    ignored when TINYHEADER is enabled.
+    The COMPMODE, HASHSIZE, HASHTRIES, REUSE, SATURATE and EXPORT
+    options are ignored when TINYHEADER is enabled.
 
 /TINYIMPORT
     Enables a more compact, but less future-proof, function importing
@@ -537,6 +537,48 @@ Linker/Command Line/Additional Options:
     since Crinkler has to calculate the compressed size anew on every
     reordering. Usually, the size does not improve noticeably after a
     few thousand iterations.
+
+/REUSE:[reuse parameter file name]
+/REUSEMODE:STABLE
+/REUSEMODE:IMPROVE
+/REUSEMODE:OFF
+
+    After compression, write information about the selected models,
+    the ordering of sections and the optimized hash table size to a
+    text file with the specified name. If the file exists already,
+    use the parameters in the file as input to the compression in a
+    manner dependent on the chosen REUSEMODE:
+
+    With STABLE (the default), skip all model estimation, section
+    reordering and hash table size optimization and simply use the
+    parameters exactly as in the file. Keep the reuse file as is.
+    This option can be used to try out small changes to the contents
+    of the code and data with a stable compression. Thus, it gives
+    a much more reliable estimation of whether the change was an
+    improvement or not. It is also useful as a way to compress very
+    quickly after the first time with a similar compression ratio.
+
+    With IMPROVE, only the section ordering from the file is reused,
+    and a normal compression procedure is performed. The file is
+    written back only if the final file size is smaller than what
+    the parameters in the reuse file would have given (which is not
+    necessarily the size of the existing file, depending on what
+    changes and operations are performed in the meantime).
+    The option can be used to check whether better parameters can be
+    found than the ones cached in the reuse file. It is also a way to
+    run some extra reordering iterations (if reordering is enabled)
+    to see if this improves compression.
+
+    For both modes, it can be useful to edit the reuse file by hand
+    to try out parameters manually or to nudge Crinkler in some
+    direction.
+
+    With OFF, it is as if no reuse file is specified. This is simply
+    a way to disable the option without removing the file from the
+    commandline.
+
+    If COMPMODE is set to INSTANT, the reuse mode is also considered
+    to be OFF.
 
 /RANGE:[DLL name]
 

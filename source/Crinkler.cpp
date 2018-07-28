@@ -302,7 +302,7 @@ int Crinkler::estimateModels(unsigned char* data, int datasize, int splittingPoi
 			m_modellist1k = new_modellist1k;
 		}
 		m_progressBar.endTask();
-		printf(reestimate ? "\nReestimated ideal compressed size: %.2f\n" : "\nEstimated ideal compressed size: %.2f\n", size / (float)(BITPREC * 8));
+		printf("\nEstimated compressed size: %.2f\n", size / (float)(BITPREC * 8));
 		if(verbose) m_modellist1k.print();
 		return new_size;
 	}
@@ -330,11 +330,11 @@ int Crinkler::estimateModels(unsigned char* data, int datasize, int splittingPoi
 			size1 = new_size1;
 			m_modellist1 = modellist1;
 		}
-		printf("Ideal compressed size: %.2f\n", size1 / (float)(BITPREC * 8));
 		if (verbose) {
 			printf("Models: ");
 			m_modellist1.print(stdout);
 		}
+		printf("Estimated compressed size of code: %.2f\n", size1 / (float)(BITPREC * 8));
 
 		m_progressBar.beginTask(reestimate ? "Reestimating models for data" : "Estimating models for data");
 		modellist2 = ApproximateModels4k(data + splittingPoint, datasize - splittingPoint, CRINKLER_BASEPROB, m_saturate != 0, &new_size2, &m_progressBar, m_compressionType, contexts[1]);
@@ -346,17 +346,19 @@ int Crinkler::estimateModels(unsigned char* data, int datasize, int splittingPoi
 			size2 = new_size2;
 			m_modellist2 = modellist2;
 		}
-		printf("Ideal compressed size: %.2f\n", size2 / (float)(BITPREC * 8));
 		if (verbose) {
 			printf("Models: ");
 			m_modellist2.print(stdout);
 		}
+		printf("Estimated compressed size of data: %.2f\n", size2 / (float)(BITPREC * 8));
 
-		int total_size = size1 + size2;
-		float bytesize = total_size / (float)(BITPREC * 8);
-		printf(reestimate ? "\nReestimated ideal compressed total size: %.2f\n" :"\nEstimated ideal compressed total size: %.2f\n", bytesize);
+		int idealsize = EvaluateSize(data, datasize, splittingPoint,
+			m_modellist1, m_modellist2, CRINKLER_BASEPROB, m_saturate != 0, &size1, &size2);
+		printf("\nIdeal compressed size of code: %.2f\n", size1 / (float)(BITPREC * 8));
+		printf("Ideal compressed size of data: %.2f\n", size2 / (float)(BITPREC * 8));
+		printf("Ideal compressed total size: %.2f\n", idealsize / (float)(BITPREC * 8));
 
-		return total_size;
+		return idealsize;
 	}
 }
 
@@ -971,7 +973,7 @@ void Crinkler::recompress(const char* input_filename, const char* output_filenam
 		if(m_compressionType != -1 && m_compressionType != COMPRESSION_INSTANT) {
 			int sizeIncludingModels = size + m_modellist1.nmodels + m_modellist2.nmodels;
 			float byteslost = sizeIncludingModels - idealsize / (float)(BITPREC * 8);
-			printf("Real compressed total size: %d\nBytes lost to hashing: %.2f\n", size, byteslost);
+			printf("Real compressed total size: %d\nBytes lost to hashing: %.2f\n", sizeIncludingModels, byteslost);
 		}
 
 		setCompressionType(compmode);
@@ -1254,33 +1256,44 @@ void Crinkler::link(const char* filename) {
 
 	int* sizefill = new int[maxsize];
 	int size, idealsize = 0;
-	bool doCompression = m_useTinyHeader || m_compressionType != COMPRESSION_INSTANT && !(reuseType == REUSE_STABLE && reuse != nullptr);
-	if (doCompression)
+	if (m_useTinyHeader || m_compressionType != COMPRESSION_INSTANT)
 	{
-		bool verbose_models = (m_printFlags & PRINT_MODELS) != 0;
-		initProgressBar();
-
-		idealsize = estimateModels((unsigned char*)phase1->getPtr(), phase1->getRawSize(), splittingPoint, false, m_useTinyHeader, INT_MAX, INT_MAX);
-
-		if(m_hunktries > 0)
-		{
-			int target_size1, target_size2;
-			EmpiricalHunkSorter::sortHunkList(&m_hunkPool, *m_transform, m_modellist1, m_modellist2, m_modellist1k, CRINKLER_BASEPROB, m_saturate != 0, m_hunktries, m_showProgressBar ? &m_windowBar : NULL, m_useTinyHeader, &target_size1, &target_size2);
-			delete phase1;
-			delete phase1Untransformed;
-			m_transform->linkAndTransform(&m_hunkPool, importSymbol, CRINKLER_CODEBASE, phase1, &phase1Untransformed, &splittingPoint, true);
-
-			idealsize = estimateModels((unsigned char*)phase1->getPtr(), phase1->getRawSize(), splittingPoint, true, m_useTinyHeader, target_size1, target_size2);
+		if (reuseType == REUSE_STABLE && reuse != nullptr) {
+			// Calculate ideal size with reuse parameters
+			int size1, size2;
+			idealsize = EvaluateSize((unsigned char*)phase1->getPtr(), phase1->getRawSize(), splittingPoint,
+				m_modellist1, m_modellist2, CRINKLER_BASEPROB, m_saturate != 0, &size1, &size2);
+			printf("\nIdeal compressed size of code: %.2f\n", size1 / (float)(BITPREC * 8));
+			printf("Ideal compressed size of data: %.2f\n", size2 / (float)(BITPREC * 8));
+			printf("Ideal compressed total size: %.2f\n", idealsize / (float)(BITPREC * 8));
 		}
-		
-		//hashing time
-		if (!m_useTinyHeader)
-		{
-			best_hashsize = previousPrime(m_hashsize / 2) * 2;
-			best_hashsize = optimizeHashsize((unsigned char*)phase1->getPtr(), phase1->getRawSize(), best_hashsize, splittingPoint, m_hashtries);
+		else {
+			// Full size estimation and hunk reordering
+			bool verbose_models = (m_printFlags & PRINT_MODELS) != 0;
+			initProgressBar();
+
+			idealsize = estimateModels((unsigned char*)phase1->getPtr(), phase1->getRawSize(), splittingPoint, false, m_useTinyHeader, INT_MAX, INT_MAX);
+
+			if (m_hunktries > 0)
+			{
+				int target_size1, target_size2;
+				EmpiricalHunkSorter::sortHunkList(&m_hunkPool, *m_transform, m_modellist1, m_modellist2, m_modellist1k, CRINKLER_BASEPROB, m_saturate != 0, m_hunktries, m_showProgressBar ? &m_windowBar : NULL, m_useTinyHeader, &target_size1, &target_size2);
+				delete phase1;
+				delete phase1Untransformed;
+				m_transform->linkAndTransform(&m_hunkPool, importSymbol, CRINKLER_CODEBASE, phase1, &phase1Untransformed, &splittingPoint, true);
+
+				idealsize = estimateModels((unsigned char*)phase1->getPtr(), phase1->getRawSize(), splittingPoint, true, m_useTinyHeader, target_size1, target_size2);
+			}
+
+			//hashing time
+			if (!m_useTinyHeader)
+			{
+				best_hashsize = previousPrime(m_hashsize / 2) * 2;
+				best_hashsize = optimizeHashsize((unsigned char*)phase1->getPtr(), phase1->getRawSize(), best_hashsize, splittingPoint, m_hashtries);
+			}
+
+			deinitProgressBar();
 		}
-		
-		deinitProgressBar();
 	}
 
 	if (m_useTinyHeader)
@@ -1294,10 +1307,10 @@ void Crinkler::link(const char* filename) {
 			m_modellist1, m_modellist2, CRINKLER_BASEPROB, best_hashsize);
 	}
 	
-	if(!m_useTinyHeader && doCompression) {
+	if(!m_useTinyHeader && m_compressionType != COMPRESSION_INSTANT) {
 		int sizeIncludingModels = size + m_modellist1.nmodels + m_modellist2.nmodels;
 		float byteslost = sizeIncludingModels - idealsize / (float) (BITPREC * 8);
-		printf("Real compressed total size: %d\nBytes lost to hashing: %.2f\n", size, byteslost);
+		printf("Real compressed total size: %d\nBytes lost to hashing: %.2f\n", sizeIncludingModels, byteslost);
 	}
 
 	CompressionReportRecord* csr = phase1->getCompressionSummary(sizefill, splittingPoint);
