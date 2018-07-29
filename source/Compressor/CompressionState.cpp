@@ -53,8 +53,6 @@ void updateWeights(Weights *w, int bit, bool saturate) {
 	if (!saturate || w->prob[bit] < 255) w->prob[bit] += 1;
 	if (w->prob[!bit] > 1) w->prob[!bit] >>= 1;
 }
-int totalNumPackages = 0;
-int totalMaxPackages = 0;
 
 ModelPredictions CompressionState::applyModel(const unsigned char* data, int bitlength, unsigned char mask) {
 	int hashsize = previousPrime(bitlength*2);
@@ -101,10 +99,6 @@ ModelPredictions CompressionState::applyModel(const unsigned char* data, int bit
 	}
 
 	delete[] hashtable;
-
-	totalNumPackages += numPackages;
-	totalMaxPackages += maxPackages;
-	//printf("%d / %d\n", totalNumPackages, totalMaxPackages);
 
 	ModelPredictions mp;
 	mp.numPackages = numPackages;

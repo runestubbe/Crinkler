@@ -11,6 +11,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Crinkler", "source\Crinkler
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ExportScraper", "tools\ExportScraper\ExportScraper.vcxproj", "{54D0095A-6993-431C-81D1-9CEE4D7CEE9E}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "TableGenerator", "tools\TableGenerator\TableGenerator.vcxproj", "{E358514D-4C44-497B-87D3-5DA949008092}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -43,6 +45,14 @@ Global
 		{54D0095A-6993-431C-81D1-9CEE4D7CEE9E}.Release|Win32.Build.0 = Release|Win32
 		{54D0095A-6993-431C-81D1-9CEE4D7CEE9E}.Release|x64.ActiveCfg = Release|Win32
 		{54D0095A-6993-431C-81D1-9CEE4D7CEE9E}.Release|x64.Build.0 = Release|Win32
+		{E358514D-4C44-497B-87D3-5DA949008092}.Debug|Win32.ActiveCfg = Debug|Win32
+		{E358514D-4C44-497B-87D3-5DA949008092}.Debug|Win32.Build.0 = Debug|Win32
+		{E358514D-4C44-497B-87D3-5DA949008092}.Debug|x64.ActiveCfg = Debug|Win32
+		{E358514D-4C44-497B-87D3-5DA949008092}.Debug|x64.Build.0 = Debug|Win32
+		{E358514D-4C44-497B-87D3-5DA949008092}.Release|Win32.ActiveCfg = Release|Win32
+		{E358514D-4C44-497B-87D3-5DA949008092}.Release|Win32.Build.0 = Release|Win32
+		{E358514D-4C44-497B-87D3-5DA949008092}.Release|x64.ActiveCfg = Release|Win32
+		{E358514D-4C44-497B-87D3-5DA949008092}.Release|x64.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
