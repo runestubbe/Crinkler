@@ -167,6 +167,7 @@
     <ClCompile Include="CompressionState.cpp" />
     <ClCompile Include="CompressionStream.cpp" />
     <ClCompile Include="Compressor.cpp" />
+    <ClCompile Include="CounterState.cpp" />
     <ClCompile Include="ModelList.cpp" />
     <ClCompile Include="Model.cpp" />
     <ClCompile Include="SoftwareCompressionStateEvaluator.cpp" />
@@ -176,6 +177,7 @@
     <ClInclude Include="CompressionState.h" />
     <ClInclude Include="CompressionStream.h" />
     <ClInclude Include="Compressor.h" />
+    <ClInclude Include="CounterState.h" />
     <ClInclude Include="model.h" />
     <ClInclude Include="ModelList.h" />
     <ClInclude Include="ProgressBar.h" />

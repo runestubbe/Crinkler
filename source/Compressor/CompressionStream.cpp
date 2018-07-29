@@ -10,6 +10,7 @@
 #include "model.h"
 #include "aritcode.h"
 #include "..\misc.h"
+#include "CounterState.h"
 
 using namespace std;
 
@@ -155,23 +156,18 @@ void CompressionStream::Compress(const unsigned char* d, int size, const ModelLi
 	delete[] data;
 }
 
-__forceinline uint32_t Hash(const byte* data, __m128i& masked_contextdata, __m128i mask)
+__forceinline uint32_t Hash(__m128i& masked_contextdata)
 {
 	__m128i scrambler = _mm_set_epi8(113, 23, 5, 17, 13, 11, 7, 19, 3, 23, 29, 31, 37, 41, 43, 47);
-	masked_contextdata = _mm_and_si128(*(__m128i *)data, mask);
-	__m128i sample = _mm_mullo_epi16(masked_contextdata, scrambler);
+	
+	//__m128i sample = _mm_mullo_epi16(masked_contextdata, scrambler);
+	__m128i sample = _mm_madd_epi16(masked_contextdata, scrambler);
 	sample = _mm_add_epi32(_mm_add_epi32(sample, _mm_shuffle_epi32(sample, _MM_SHUFFLE(1, 1, 1, 1))), _mm_shuffle_epi32(sample, _MM_SHUFFLE(2, 2, 2, 2)));
 	uint32_t hash = _mm_cvtsi128_si32(sample);
 
 	uint64_t tmp = (uint64_t)hash * 0xd451151b;
 	return (uint32_t)tmp ^ uint32_t(tmp >> 32);
 }
-
-struct state
-{
-	uint16_t next_state[2];
-	uint16_t boosted_counters[2];
-};
 
 int CompressionStream::EvaluateSize(const unsigned char* d, int size, const ModelList& models, int baseprob, char* context, int bitpos) {
 	unsigned char* data = new unsigned char[size + MAX_CONTEXT_LENGTH + 16];	// ensure 128bit operations are safe
@@ -182,7 +178,7 @@ int CompressionStream::EvaluateSize(const unsigned char* d, int size, const Mode
 	unsigned int tinyhashsize = nextPowerOf2(size*3/2);
 	unsigned int tinyhashmask = tinyhashsize - 1u;
 	int* hash_positions = new int[tinyhashsize];
-	byte* hash_probs = new byte[tinyhashsize*2];
+	uint16_t* hash_counter_states = new uint16_t[tinyhashsize];
 
 	unsigned int* sums = new unsigned int[size*2];	//summed predictions
 
@@ -190,18 +186,20 @@ int CompressionStream::EvaluateSize(const unsigned char* d, int size, const Mode
 		sums[i*2] = baseprob;
 		sums[i*2+1] = baseprob;
 	}
+	counter_state* counter_states_ptr = m_saturate ? saturated_counter_states : unsaturated_counter_states;
 
+	//clear hashtable
+	memset(hash_positions, -1, tinyhashsize * sizeof(hash_positions[0]));
+
+	__m128i vzero = _mm_setzero_si128();
 	int bytemask = (0xff00 >> bitpos);
-	int nmodels = models.nmodels; 
+	int inverted_bitpos = 7 - bitpos;
+	int nmodels = models.nmodels;
+	ptrdiff_t pos_threshold = 0;
 	for(int modeli = 0; modeli < nmodels; modeli++)
 	{
-		//clear hashtable
-		for(unsigned int i = 0; i < tinyhashsize; i++)
-		{
-			hash_positions[i] = -1;
-		}
-
 		int weight = models[modeli].weight;
+		__m128i vweight = _mm_setr_epi32(weight, 0, 0, 0);
 		unsigned char w = (unsigned char)models[modeli].mask; 
 
 		unsigned char maskbytes[16] = {};
@@ -209,64 +207,57 @@ int CompressionStream::EvaluateSize(const unsigned char* d, int size, const Mode
 			maskbytes[i] = ((w >> i) & 1) * 0xff;
 		}
 		maskbytes[8] = bytemask;
-		__m128i mask = *(__m128i*)maskbytes;
+		__m128i mask = _mm_loadu_si128((__m128i*)maskbytes);
 
 		__m128i next_masked_contextdata;
 		unsigned int next_tinyhash;
 
-		next_tinyhash = Hash(data - MAX_CONTEXT_LENGTH, next_masked_contextdata, mask) & tinyhashmask;
+		next_masked_contextdata = _mm_and_si128(_mm_loadu_si128((__m128i *)(data - MAX_CONTEXT_LENGTH)), mask);
+
+		next_tinyhash = Hash(next_masked_contextdata) & tinyhashmask;
 		
-		for(int pos = 0; pos < size; pos++) {
-			int bit = (data[pos] >> (7-bitpos)) & 1;
+		for(size_t pos = 0; pos < size; pos++) {
+			int bit = (data[pos] >> inverted_bitpos) & 1;
 
 			__m128i masked_contextdata = next_masked_contextdata;
 			size_t tinyhash = next_tinyhash;
-			next_tinyhash = Hash(data + pos + 1 - MAX_CONTEXT_LENGTH, next_masked_contextdata, mask) & tinyhashmask;
+			next_masked_contextdata = _mm_and_si128(_mm_loadu_si128((__m128i *)(data + pos + 1 - MAX_CONTEXT_LENGTH)), mask);
+			next_tinyhash = Hash(next_masked_contextdata) & tinyhashmask;
 
 			while(true)
 			{
-				int candidate_pos = hash_positions[tinyhash];
-				if(candidate_pos == -1)
+				ptrdiff_t candidate_pos = hash_positions[tinyhash] - pos_threshold;
+				if(candidate_pos < 0)
 				{
-					hash_positions[tinyhash] = pos;
-
-					//update weights
-					size_t bit_idx = tinyhash * 2 + bit;
-					hash_probs[bit_idx] = 1;
-					hash_probs[bit_idx ^ 1] = 0;
+					hash_positions[tinyhash] = int(pos + pos_threshold);
+					hash_counter_states[tinyhash] = bit;	// counter_states is arranges such that (1,0) is 0 and (0,1) is 1.
 					break;
 				}
 				
-				if(_mm_movemask_epi8(_mm_cmpeq_epi8(_mm_and_si128(*(__m128i *)&data[candidate_pos - MAX_CONTEXT_LENGTH], mask), masked_contextdata)) == 0xFFFF)
+				if(_mm_movemask_epi8(_mm_cmpeq_epi8(_mm_and_si128(_mm_loadu_si128((__m128i *)&data[candidate_pos - MAX_CONTEXT_LENGTH]), mask), masked_contextdata)) == 0xFFFF)
 				{
-					int p0 = hash_probs[tinyhash * 2 + 0];
-					int p1 = hash_probs[tinyhash * 2 + 1];
-
-					unsigned int shift = weight - (((p0 - 1)|(p1 - 1)) >> 31) * 2;
-					sums[pos * 2 + 0] += (p0 << shift);
-					sums[pos * 2 + 1] += (p1 << shift);
-
-					//update weights
-					size_t bit_idx = tinyhash * 2 + bit;
-					size_t not_bit_idx = bit_idx ^ 1;
-					if(!m_saturate || hash_probs[bit_idx] < 255) hash_probs[bit_idx] += 1;
-					if(hash_probs[not_bit_idx] > 1) hash_probs[not_bit_idx] >>= 1;
+					counter_state& state = counter_states_ptr[hash_counter_states[tinyhash]];
+					__m128i vsum = _mm_loadl_epi64((__m128i*)&sums[pos * 2]);
+					vsum = _mm_add_epi32(vsum, _mm_sll_epi32(_mm_unpacklo_epi16(_mm_loadl_epi64((__m128i*)state.boosted_counters), vzero), vweight));
+					_mm_storel_epi64((__m128i*)&sums[pos * 2], vsum);
+					hash_counter_states[tinyhash] = state.next_state[bit];
 					break;
 				}
 					
 				tinyhash = (tinyhash + 1) & tinyhashmask;
 			}
 		}
+		pos_threshold += size;
 	}
 
 	uint64_t totalsize = 0;
 	for(int pos = 0; pos < size; pos++) {
-		int bit = (data[pos] >> (7 - bitpos)) & 1;
+		int bit = (data[pos] >> inverted_bitpos) & 1;
 		totalsize += AritSize2(sums[pos * 2 + bit], sums[pos * 2 + !bit]);
 	}
 	
 	delete[] hash_positions;
-	delete[] hash_probs;
+	delete[] hash_counter_states;
 
 	data -= MAX_CONTEXT_LENGTH;
 	delete[] data;
