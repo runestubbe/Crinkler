@@ -18,15 +18,15 @@
 
 using namespace std;
 
-char *LoadDLL(const char *name);
+const char *LoadDLL(const char *name);
 
-unsigned int RVAToFileOffset(char* module, unsigned int rva)
+unsigned int RVAToFileOffset(const char* module, unsigned int rva)
 {
-	IMAGE_DOS_HEADER* pDH = (PIMAGE_DOS_HEADER)module;
-	IMAGE_NT_HEADERS32* pNTH = (PIMAGE_NT_HEADERS32)(module + pDH->e_lfanew);
+	const IMAGE_DOS_HEADER* pDH = (const PIMAGE_DOS_HEADER)module;
+	const IMAGE_NT_HEADERS32* pNTH = (const PIMAGE_NT_HEADERS32)(module + pDH->e_lfanew);
 	int numSections = pNTH->FileHeader.NumberOfSections;
 	int numDataDirectories = pNTH->OptionalHeader.NumberOfRvaAndSizes;
-	IMAGE_SECTION_HEADER* sectionHeaders = (IMAGE_SECTION_HEADER*)&pNTH->OptionalHeader.DataDirectory[numDataDirectories];
+	const IMAGE_SECTION_HEADER* sectionHeaders = (const IMAGE_SECTION_HEADER*)&pNTH->OptionalHeader.DataDirectory[numDataDirectories];
 	for(int i = 0; i < numSections; i++)
 	{
 		if(rva >= sectionHeaders[i].VirtualAddress && rva < sectionHeaders[i].VirtualAddress + sectionHeaders[i].SizeOfRawData)
@@ -34,22 +34,22 @@ unsigned int RVAToFileOffset(char* module, unsigned int rva)
 			return rva - sectionHeaders[i].VirtualAddress + sectionHeaders[i].PointerToRawData;
 		}
 	}
-	return 0;
+	return rva;
 }
 
 int getOrdinal(const char* function, const char* dll) {
-	char* module = LoadDLL(dll);
+	const char* module = LoadDLL(dll);
 
-	IMAGE_DOS_HEADER* dh = (IMAGE_DOS_HEADER*)module;
-	IMAGE_FILE_HEADER* coffHeader = (IMAGE_FILE_HEADER*)(module + dh->e_lfanew + 4);
-	IMAGE_OPTIONAL_HEADER32* pe = (IMAGE_OPTIONAL_HEADER32*)(coffHeader + 1);
-	IMAGE_EXPORT_DIRECTORY* exportdir = (IMAGE_EXPORT_DIRECTORY*) (module + RVAToFileOffset(module, pe->DataDirectory[IMAGE_DIRECTORY_ENTRY_EXPORT].VirtualAddress));
+	const IMAGE_DOS_HEADER* dh = (const IMAGE_DOS_HEADER*)module;
+	const IMAGE_FILE_HEADER* coffHeader = (const IMAGE_FILE_HEADER*)(module + dh->e_lfanew + 4);
+	const IMAGE_OPTIONAL_HEADER32* pe = (const IMAGE_OPTIONAL_HEADER32*)(coffHeader + 1);
+	const IMAGE_EXPORT_DIRECTORY* exportdir = (const IMAGE_EXPORT_DIRECTORY*) (module + RVAToFileOffset(module, pe->DataDirectory[IMAGE_DIRECTORY_ENTRY_EXPORT].VirtualAddress));
 	
-	short* ordinalTable = (short*) (module + RVAToFileOffset(module, exportdir->AddressOfNameOrdinals));
-	int* nameTable = (int*)(module + RVAToFileOffset(module, exportdir->AddressOfNames));
+	const short* ordinalTable = (const short*) (module + RVAToFileOffset(module, exportdir->AddressOfNameOrdinals));
+	const int* nameTable = (const int*)(module + RVAToFileOffset(module, exportdir->AddressOfNames));
 	for(int i = 0; i < (int)exportdir->NumberOfNames; i++) {
 		int ordinal = ordinalTable[i] + exportdir->Base;
-		char* name = module + RVAToFileOffset(module, nameTable[i]);
+		const char* name = module + RVAToFileOffset(module, nameTable[i]);
 		if(strcmp(name, function) == 0) {
 			return ordinal;
 		}
@@ -60,20 +60,20 @@ int getOrdinal(const char* function, const char* dll) {
 }
 
 
-char *getForwardRVA(const char* dll, const char* function) {
-	char* module = LoadDLL(dll);
-	IMAGE_DOS_HEADER* pDH = (PIMAGE_DOS_HEADER)module;
-	IMAGE_NT_HEADERS32* pNTH = (PIMAGE_NT_HEADERS32)(module + pDH->e_lfanew);
+const char *getForwardRVA(const char* dll, const char* function) {
+	const char* module = LoadDLL(dll);
+	const IMAGE_DOS_HEADER* pDH = (const PIMAGE_DOS_HEADER)module;
+	const IMAGE_NT_HEADERS32* pNTH = (const PIMAGE_NT_HEADERS32)(module + pDH->e_lfanew);
 
-	IMAGE_EXPORT_DIRECTORY* pIED = (PIMAGE_EXPORT_DIRECTORY)(module + RVAToFileOffset(module, pNTH->OptionalHeader.DataDirectory[0].VirtualAddress));
+	const IMAGE_EXPORT_DIRECTORY* pIED = (const PIMAGE_EXPORT_DIRECTORY)(module + RVAToFileOffset(module, pNTH->OptionalHeader.DataDirectory[0].VirtualAddress));
 
-	short* ordinalTable = (short*)(module + RVAToFileOffset(module, pIED->AddressOfNameOrdinals));
-	DWORD* namePointerTable = (DWORD*)(module + RVAToFileOffset(module, pIED->AddressOfNames));
-	DWORD* addressTableRVAOffset = addressTableRVAOffset = (DWORD*)(module + RVAToFileOffset(module, pIED->AddressOfFunctions));
+	const short* ordinalTable = (const short*)(module + RVAToFileOffset(module, pIED->AddressOfNameOrdinals));
+	const DWORD* namePointerTable = (const DWORD*)(module + RVAToFileOffset(module, pIED->AddressOfNames));
+	const DWORD* addressTableRVAOffset = addressTableRVAOffset = (const DWORD*)(module + RVAToFileOffset(module, pIED->AddressOfFunctions));
 
 	for(unsigned int i = 0; i < pIED->NumberOfNames; i++) {
 		short ordinal = ordinalTable[i];
-		char* name = (char*)(module + RVAToFileOffset(module, namePointerTable[i]));
+		const char* name = (const char*)(module + RVAToFileOffset(module, namePointerTable[i]));
 
 		if(strcmp(name, function) == 0) {
 			DWORD address = addressTableRVAOffset[ordinal];
@@ -128,7 +128,7 @@ const int hashCode(const char* str) {
 
 Hunk* forwardImport(Hunk* hunk) {
 	do {
-		char *forward = getForwardRVA(hunk->getImportDll(), hunk->getImportName());
+		const char *forward = getForwardRVA(hunk->getImportDll(), hunk->getImportName());
 		if (forward == NULL) break;
 
 		string dllName, functionName;
@@ -414,19 +414,17 @@ static bool findCollisionFreeHash(vector<string>& dll_names, const vector<Hunk*>
 			// scrape exports from dll on this machine
 			const char* module = LoadDLL(dllname);
 
-			const IMAGE_DOS_HEADER* dh = (IMAGE_DOS_HEADER*)module;
-			const IMAGE_FILE_HEADER* coffHeader = (IMAGE_FILE_HEADER*)(module + dh->e_lfanew + 4);
-			const IMAGE_OPTIONAL_HEADER32* pe = (IMAGE_OPTIONAL_HEADER32*)(coffHeader + 1);
-			const IMAGE_EXPORT_DIRECTORY* exportdir = (IMAGE_EXPORT_DIRECTORY*)(module + pe->DataDirectory[IMAGE_DIRECTORY_ENTRY_EXPORT].VirtualAddress);
+			const IMAGE_DOS_HEADER* dh = (const IMAGE_DOS_HEADER*)module;
+			const IMAGE_FILE_HEADER* coffHeader = (const IMAGE_FILE_HEADER*)(module + dh->e_lfanew + 4);
+			const IMAGE_OPTIONAL_HEADER32* pe = (const IMAGE_OPTIONAL_HEADER32*)(coffHeader + 1);
+			const IMAGE_EXPORT_DIRECTORY* exportdir = (const IMAGE_EXPORT_DIRECTORY*)(module + RVAToFileOffset(module, pe->DataDirectory[IMAGE_DIRECTORY_ENTRY_EXPORT].VirtualAddress));
 			int num_names = exportdir->NumberOfNames;
-			const int* name_table = (const int*)(module + exportdir->AddressOfNames);
+			const int* name_table = (const int*)(module + RVAToFileOffset(module, exportdir->AddressOfNames));
 			for(int i = 0; i < num_names; i++)
 			{
-				const char* name = module + name_table[i];
+				const char* name = module + RVAToFileOffset(module, name_table[i]);
 				info.exports.push_back(name);
 			}
-
-			FreeLibrary((HMODULE)module);
 		}
 
 		// combine with list of known exports for this dll

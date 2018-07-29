@@ -102,7 +102,7 @@ static string getEnv(const char* varname) {
 }
 
 std::map<string, MemoryFile*> dllFileMap;
-char *LoadDLL(const char *name) {
+const char *LoadDLL(const char *name) {
 	string strName = toUpper(name);
 	if(!endsWith(strName.c_str(), ".DLL"))
 		strName += ".DLL";
@@ -203,8 +203,6 @@ static void runOriginalLinker(const char* linkerName) {
 const int TRANSFORM_CALLS = 0x01;
 int main(int argc, char* argv[]) {
 	int time1 = GetTickCount();
-
-	void* p = LoadLibrary(nullptr);
 
 	//find canonical name of the Crinkler executable
 	char crinklerCanonicalName[1024];
