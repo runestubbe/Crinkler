@@ -37,7 +37,7 @@ bool SoftwareCompressionStateEvaluator::init(ModelPredictions* models, int lengt
 		}
 		m_packageSizes[i] = std::min(length - i * PACKAGE_SIZE, PACKAGE_SIZE) * BITPREC_TABLE;
 	}
-	m_compressedSize = BITPREC_TABLE*length;
+	m_compressedSize = (long long)length << BITPREC_TABLE_BITS;
 
 	return true;
 }
