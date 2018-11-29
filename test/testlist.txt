@@ -1,3 +1,4 @@
+rick		/SUBSYSTEM:WINDOWS rick\data.obj rick\entity.obj rick\render.obj rick\rick.obj rick\rickiki.obj rick\sound.obj rick\sounddata.obj rick\startup.obj rick\submap.obj rick\tinyym2149.obj
 traceless	/SUBSYSTEM:WINDOWS /ENTRY:entry traceless\intro.obj /REPLACEDLL:d3dx9_43=d3dx9_24
 sinuous		/SUBSYSTEM:WINDOWS /ENTRY:entry sinuous\startup.obj sinuous\source_asm.obj
 als		/SUBSYSTEM:WINDOWS als\main.obj als\midi.obj als\miniglsl.obj
