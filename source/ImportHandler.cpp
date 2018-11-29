@@ -69,7 +69,7 @@ const char *getForwardRVA(const char* dll, const char* function) {
 
 	const short* ordinalTable = (const short*)(module + RVAToFileOffset(module, pIED->AddressOfNameOrdinals));
 	const DWORD* namePointerTable = (const DWORD*)(module + RVAToFileOffset(module, pIED->AddressOfNames));
-	const DWORD* addressTableRVAOffset = addressTableRVAOffset = (const DWORD*)(module + RVAToFileOffset(module, pIED->AddressOfFunctions));
+	const DWORD* addressTableRVAOffset = (const DWORD*)(module + RVAToFileOffset(module, pIED->AddressOfFunctions));
 
 	for(unsigned int i = 0; i < pIED->NumberOfNames; i++) {
 		short ordinal = ordinalTable[i];
@@ -79,7 +79,7 @@ const char *getForwardRVA(const char* dll, const char* function) {
 			DWORD address = addressTableRVAOffset[ordinal];
 			if(address >= pNTH->OptionalHeader.DataDirectory[0].VirtualAddress &&
 				address < pNTH->OptionalHeader.DataDirectory[0].VirtualAddress + pNTH->OptionalHeader.DataDirectory[0].Size)
-				return module + address;
+				return module + RVAToFileOffset(module, address);
 			return NULL;
 		}
 	}
