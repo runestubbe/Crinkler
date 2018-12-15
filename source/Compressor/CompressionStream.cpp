@@ -104,7 +104,13 @@ void CompressionStream::CompressFromHashBits(const HashBits& hashbits, int basep
 	int nmodels = hashbits.weights.size();
 	int bitlength = length / nmodels;
 	assert(bitlength * nmodels == length);
+
 	hashsize /= 2;
+	uint32_t hashshift = 0;
+	while (hashsize > (1ull << hashshift))
+		hashshift++;
+	uint32_t rcp_hashsize = (((1ull << (hashshift + 31)) + hashsize - 1) / hashsize);
+	uint32_t rcp_shift = hashshift - 1u + 32u;
 
 	unsigned int tinyhashsize = nextPowerOf2(length);
 	TinyHashEntry* hashtable = new TinyHashEntry[tinyhashsize];
@@ -122,7 +128,11 @@ void CompressionStream::CompressFromHashBits(const HashBits& hashbits, int basep
 		// Query models
 		unsigned int probs[2] = { (unsigned int)baseprob, (unsigned int)baseprob };
 		for (int m = 0; m < nmodels; m++) {
-			unsigned int hash = hashbits.hashes[hashpos++] % hashsize;
+			uint32_t h = hashbits.hashes[hashpos++];
+			// hash = h % hashsize
+			unsigned int f = (uint32_t)(((uint64_t)h * rcp_hashsize) >> rcp_shift);
+			unsigned int hash = h - f * hashsize;
+
 			unsigned int tinyHash = hash & (tinyhashsize - 1);
 			TinyHashEntry *he = &hashtable[tinyHash];
 			while (he->hash != hash && he->used == 1) {
