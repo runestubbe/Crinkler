@@ -265,6 +265,8 @@ int Crinkler::optimizeHashsize(unsigned char* data, int datasize, int hashsize, 
 
 	int maxsize = datasize*2+1000;
 	unsigned char* buff = new unsigned char[maxsize];
+	int bestsize = INT_MAX;
+	int best_hashsize = hashsize;
 	m_progressBar.beginTask("Optimizing hash table size");
 
 	unsigned char context[8];
@@ -290,12 +292,10 @@ int Crinkler::optimizeHashsize(unsigned char* data, int datasize, int hashsize, 
 		m_progressBar.update(++progress, m_hashtries);
 	});
 
-	int bestsize = INT_MAX;
-	int best_hashsize = hashsize;
 	for (int i = 0; i < tries; i++) {
 		if (sizes[i] <= bestsize) {
 			bestsize = sizes[i];
-			best_hashsize = hashsize;
+			best_hashsize = hashsizes[i];
 		}
 	}
 	delete[] sizes;
