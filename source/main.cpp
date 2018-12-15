@@ -119,12 +119,6 @@ const char *LoadDLL(const char *name) {
 	}
 
 	MemoryFile* mf = new MemoryFile(filepaths[0].c_str());
-	if(mf->getPtr() == NULL)
-	{
-		Log::error("", "Cannot open DLL '%s'", strName.c_str());
-		return NULL;
-	}
-
 	dllFileMap[strName] = mf;
 	return mf->getPtr();
 }

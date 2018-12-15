@@ -2,7 +2,9 @@
 
 #include "MemoryFile.h"
 
-MemoryFile::MemoryFile(const char* filename) {
+#include "Log.h"
+
+MemoryFile::MemoryFile(const char* filename, bool abort_if_failed) {
 	FILE* file;
 	if(!fopen_s(&file, filename, "rb")) {
 		fseek(file, 0, SEEK_END);
@@ -15,6 +17,9 @@ MemoryFile::MemoryFile(const char* filename) {
 		fclose(file);
 		m_size = filesize;
 	} else {
+		if (abort_if_failed) {
+			Log::error("", "Cannot open file '%s'\n", filename);
+		}
 		m_data = NULL;
 		m_size = 0;
 	}

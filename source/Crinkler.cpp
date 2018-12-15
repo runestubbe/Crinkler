@@ -417,9 +417,6 @@ void Crinkler::setHeaderConstants(Hunk* header, Hunk* phase1, int hashsize, int 
 void Crinkler::recompress(const char* input_filename, const char* output_filename) {
 	MemoryFile file(input_filename);
 	unsigned char* indata = (unsigned char*)file.getPtr();
-	if (indata == NULL) {
-		Log::error("", "Cannot open file '%s'\n", input_filename);
-	}
 
 	FILE* outfile = 0;
 	if (strcmp(input_filename, output_filename) != 0) {

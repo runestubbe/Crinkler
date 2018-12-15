@@ -71,11 +71,6 @@ bool CmdLineInterface::setCmdParameters(int argc, char* argv[]) {
 		if(m_flags & CMDI_PARSE_FILES && arg[0] == '@') {	//expand command files (@file)
 			arg++;	//skip leading '@'
 			MemoryFile mf(arg);
-			if(mf.getPtr() == NULL) {
-				m_tokens.clear();
-				cerr << "error: failed to open file '" << arg << "'" << endl;
-				return false;
-			}
 
 			//add tokens from file
 			if(mf.getSize() >= 2 && (*(unsigned short*) mf.getPtr()) == 0xFEFF) {	//UNICODE

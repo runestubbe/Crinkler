@@ -5,7 +5,7 @@ class MemoryFile {
 	char*	m_data;
 	int		m_size;
 public:
-	MemoryFile(const char* filename);
+	MemoryFile(const char* filename, bool abort_if_failed = true);
 	~MemoryFile();
 
 	int getSize() const;

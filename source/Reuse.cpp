@@ -47,7 +47,7 @@ ModelList *parseModelList(const char *line) {
 }
 
 Reuse* loadReuseFile(const char *filename) {
-	MemoryFile mf(filename);
+	MemoryFile mf(filename, false);
 	if (mf.getPtr() == nullptr) return nullptr;
 	Reuse *reuse = new Reuse();
 	State state = INITIAL;
