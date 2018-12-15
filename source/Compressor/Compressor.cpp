@@ -430,9 +430,19 @@ int Compress(unsigned char* compressed, int* sizefill, int maxsize, bool saturat
 	const unsigned char* data, int rawsize, int splittingPoint,
 	const ModelList& models1, const ModelList& models2, int baseprob, int hashsize)
 {
+	unsigned char context[8];
+	memset(context, 0, sizeof(context));
+	HashBits hashbits1 = ComputeHashBits(data, splittingPoint, context, models1, true, false);
+	HashBits hashbits2 = ComputeHashBits(data + splittingPoint, rawsize - splittingPoint, context, models2, false, true);
+	return CompressFromHashBits(compressed, sizefill, maxsize, saturate, hashbits1, hashbits2, baseprob, hashsize);
+}
+
+int CompressFromHashBits(unsigned char* compressed, int* sizefill, int maxsize, bool saturate,
+	const HashBits& hashbits1, const HashBits& hashbits2, int baseprob, int hashsize)
+{
 	CompressionStream cs(compressed, sizefill, maxsize, saturate);
-	cs.Compress(data, splittingPoint, models1, baseprob, hashsize, true, false);
-	cs.Compress(data + splittingPoint, rawsize - splittingPoint, models2, baseprob, hashsize, false, true);
+	cs.CompressFromHashBits(hashbits1, baseprob, hashsize);
+	cs.CompressFromHashBits(hashbits2, baseprob, hashsize);
 	return cs.Close();
 }
 

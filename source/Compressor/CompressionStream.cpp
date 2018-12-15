@@ -3,6 +3,7 @@
 #include <memory>
 #include <ctime>
 #include <cstdio>
+#include <vector>
 #include <xmmintrin.h>
 #include <intrin.h>
 #include <ppl.h>
@@ -36,124 +37,125 @@ struct TinyHashEntry {
 	unsigned char used;
 };
 
-void CompressionStream::Compress(const unsigned char* d, int size, const ModelList& models, int baseprob, int hashsize, bool first, bool finish) {
-	hashsize /= 2;
-	int bitlength = size*8;
-	unsigned char* data = new unsigned char[size+MAX_CONTEXT_LENGTH];
-	memcpy(data, m_context, MAX_CONTEXT_LENGTH);
-	data += MAX_CONTEXT_LENGTH;
+HashBits ComputeHashBits(const unsigned char* d, int size, unsigned char* context, const ModelList& models, bool first, bool finish) {
+	int bitlength = first + size * 8;
+	int length = bitlength * models.nmodels;
+	HashBits out;
+	out.hashes.reserve(length);
+	out.bits.reserve(bitlength);
+	out.weights.resize(models.nmodels);
+
+	unsigned char* databuf = new unsigned char[size + MAX_CONTEXT_LENGTH];
+	unsigned char* data = databuf + MAX_CONTEXT_LENGTH;
+	memcpy(databuf, context, MAX_CONTEXT_LENGTH);
 	memcpy(data, d, size);
-		
+
 	unsigned int weightmasks[MAX_N_MODELS];
 	unsigned char masks[MAX_N_MODELS];
 	int nmodels = models.nmodels;
 	unsigned int w = models.getMaskList(masks, finish);
-	int weights[MAX_N_MODELS];
 
 	int v = 0;
-	for(int n = 0 ; n < models.nmodels ; n++) {
+	for (int n = 0; n < models.nmodels; n++) {
 		while (w & 0x80000000) {
 			w <<= 1;
 			v++;
 		}
 		w <<= 1;
-		weights[n] = v;
+		out.weights[n] = v;
 		weightmasks[n] = (unsigned int)masks[n] | (w & 0xFFFFFF00);
 	}
 
-	unsigned int tinyhashsize = nextPowerOf2(bitlength*nmodels);
-	TinyHashEntry* hashtable = new TinyHashEntry[tinyhashsize];
-	memset(hashtable, 0, tinyhashsize*sizeof(TinyHashEntry));
-	TinyHashEntry* hashEntries[MAX_N_MODELS];
-
-	if(first) {	//encode start bit
+	if (first) {	//encode start bit
 		int bit = 1;
 
 		// Query models
-		unsigned int probs[2] = { (unsigned int)baseprob, (unsigned int)baseprob };
-		for(int m = 0 ; m < nmodels; m++) {
-			unsigned int hash = ModelHashStart(weightmasks[m], HASH_MULTIPLIER) % hashsize;
-			unsigned int tinyHash = hash & (tinyhashsize-1);
-			TinyHashEntry *he = &hashtable[tinyHash];
-			while(he->hash != hash && he->used == 1) {
-				tinyHash++;
-				if(tinyHash >= tinyhashsize)
-					tinyHash = 0;
-				he = &hashtable[tinyHash];
-			}
-
-			he->hash = hash;
-			he->used = 1;
-			hashEntries[m] = he;
-
-			int fac = weights[m];
-			unsigned int shift = (1 - (((he->prob[0]+255)&(he->prob[1]+255)) >> 8))*2 + fac;
-			probs[0] += ((unsigned int)he->prob[0] << shift);
-			probs[1] += ((unsigned int)he->prob[1] << shift);
+		for (int m = 0; m < nmodels; m++) {
+			unsigned int hash = ModelHashStart(weightmasks[m], HASH_MULTIPLIER);
+			out.hashes.push_back(hash);
 		}
-
-		// Encode bit
-		AritCode(&m_aritstate, probs[1], probs[0], 1-bit);
-
-		// Update models
-		for(int m = 0; m < models.nmodels; m++) {
-			updateWeights((Weights*)hashEntries[m]->prob, bit, m_saturate);
-		}
+		out.bits.push_back(bit);
 	}
-	
 
-	for(int bitpos = 0 ; bitpos < bitlength; bitpos++) {
+	for (int bitpos = 0; bitpos < size * 8; bitpos++) {
 		int bit = GetBit(data, bitpos);
 
-		if((bitpos&7)==0 && m_sizefillptr) {
-			*m_sizefillptr++ = AritCodePos(&m_aritstate)/(BITPREC_TABLE/BITPREC);
+		// Query models
+		for (int m = 0; m < nmodels; m++) {
+			unsigned int hash = ModelHash(data, bitpos, weightmasks[m], HASH_MULTIPLIER);
+			out.hashes.push_back(hash);
+		}
+		out.bits.push_back(bit);
+	}
+
+	{	//save context for next call
+		int s = min(size, MAX_CONTEXT_LENGTH);
+		if (s > 0)
+			memcpy(context + 8 - s, data + size - s, s);
+	}
+
+	delete[] databuf;
+
+	return out;
+}
+
+void CompressionStream::CompressFromHashBits(const HashBits& hashbits, int baseprob, int hashsize) {
+	int length = hashbits.hashes.size();
+	int nmodels = hashbits.weights.size();
+	int bitlength = length / nmodels;
+	assert(bitlength * nmodels == length);
+	hashsize /= 2;
+
+	unsigned int tinyhashsize = nextPowerOf2(length);
+	TinyHashEntry* hashtable = new TinyHashEntry[tinyhashsize];
+	memset(hashtable, 0, tinyhashsize * sizeof(TinyHashEntry));
+	TinyHashEntry* hashEntries[MAX_N_MODELS];
+
+	int hashpos = 0;
+	for (int bitpos = 0; bitpos < bitlength; bitpos++) {
+		int bit = hashbits.bits[bitpos];
+
+		if (m_sizefillptr && ((bitpos - bitlength) & 7) == 0) {
+			*m_sizefillptr++ = AritCodePos(&m_aritstate) / (BITPREC_TABLE / BITPREC);
 		}
 
 		// Query models
 		unsigned int probs[2] = { (unsigned int)baseprob, (unsigned int)baseprob };
-		for(int m = 0 ; m < nmodels; m++) {
-			unsigned int hash = ModelHash(data, bitpos, weightmasks[m], HASH_MULTIPLIER) % hashsize;
-			unsigned int tinyHash = hash & (tinyhashsize-1);
+		for (int m = 0; m < nmodels; m++) {
+			unsigned int hash = hashbits.hashes[hashpos++] % hashsize;
+			unsigned int tinyHash = hash & (tinyhashsize - 1);
 			TinyHashEntry *he = &hashtable[tinyHash];
-			while(he->hash != hash && he->used == 1) {
+			while (he->hash != hash && he->used == 1) {
 				tinyHash++;
-				if(tinyHash >= tinyhashsize)
+				if (tinyHash >= tinyhashsize)
 					tinyHash = 0;
 				he = &hashtable[tinyHash];
 			}
-			
+
 			he->hash = hash;
 			he->used = 1;
 			hashEntries[m] = he;
 
-			int fac = weights[m];
-			unsigned int shift = (1 - (((he->prob[0]+255)&(he->prob[1]+255)) >> 8))*2 + fac;
+			int fac = hashbits.weights[m];
+			unsigned int shift = (1 - (((he->prob[0] + 255)&(he->prob[1] + 255)) >> 8)) * 2 + fac;
 			probs[0] += ((unsigned int)he->prob[0] << shift);
 			probs[1] += ((unsigned int)he->prob[1] << shift);
 		}
 
 		// Encode bit
-		AritCode(&m_aritstate, probs[1], probs[0], 1-bit);
+		AritCode(&m_aritstate, probs[1], probs[0], 1 - bit);
 
 		// Update models
-		for(int m = 0; m < models.nmodels; m++) {
+		for (int m = 0; m < nmodels; m++) {
 			updateWeights((Weights*)hashEntries[m]->prob, bit, m_saturate);
 		}
 	}
 
-	if(m_sizefillptr) {
-		*m_sizefillptr = AritCodePos(&m_aritstate)/(BITPREC_TABLE/BITPREC);
+	if (m_sizefillptr) {
+		*m_sizefillptr = AritCodePos(&m_aritstate) / (BITPREC_TABLE / BITPREC);
 	}
 
 	delete[] hashtable;
-	{	//save context for next call
-		int s = min(size, MAX_CONTEXT_LENGTH);
-		if(s > 0)
-			memcpy(m_context+8-s, data+size-s, s);
-	}
-
-	data -= MAX_CONTEXT_LENGTH;
-	delete[] data;
 }
 
 __forceinline uint32_t Hash(__m128i& masked_contextdata)
@@ -273,8 +275,6 @@ m_data(data), m_sizefill(sizefill), m_sizefillptr(sizefill), m_maxsize(maxsize),
 		memset(m_data, 0, m_maxsize);
 		AritCodeInit(&m_aritstate, m_data);
 	}
-	
-	memset(m_context, 0, MAX_CONTEXT_LENGTH);
 }
 
 CompressionStream::~CompressionStream() {

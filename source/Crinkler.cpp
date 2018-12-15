@@ -268,10 +268,15 @@ int Crinkler::optimizeHashsize(unsigned char* data, int datasize, int hashsize, 
 	int best_hashsize = hashsize;
 	m_progressBar.beginTask("Optimizing hash table size");
 
+	unsigned char context[8];
+	memset(context, 0, sizeof(context));
+	HashBits hashbits1 = ComputeHashBits(data, splittingPoint, context, m_modellist1, true, false);
+	HashBits hashbits2 = ComputeHashBits(data + splittingPoint, datasize - splittingPoint, context, m_modellist2, false, true);
+
 	for(int i = 0; i < tries; i++) {
 		hashsize = previousPrime(hashsize / 2) * 2;
-		int size = Compress(buff, nullptr, maxsize, m_saturate != 0, data, datasize, splittingPoint,
-			m_modellist1, m_modellist2, CRINKLER_BASEPROB, hashsize);
+		int size = CompressFromHashBits(buff, nullptr, maxsize, m_saturate != 0,
+			hashbits1, hashbits2, CRINKLER_BASEPROB, hashsize);
 
 		if(size <= bestsize) {
 			bestsize = size;

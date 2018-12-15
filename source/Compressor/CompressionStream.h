@@ -2,9 +2,16 @@
 #ifndef _COMPRESSION_STREAM_H_
 #define _COMPRESSION_STREAM_H_
 
+#include <vector>
 
 #include "aritcode.h"
 #include "ModelList.h"
+
+struct HashBits {
+	std::vector<unsigned> hashes;
+	std::vector<bool> bits;
+	std::vector<int> weights;
+};
 
 class CompressionStream {
 	AritState	m_aritstate;
@@ -13,14 +20,15 @@ class CompressionStream {
 	int*		m_sizefillptr;
 	int			m_maxsize;
 	bool		m_saturate;
-	char		m_context[8];
 public:
 	CompressionStream(unsigned char* data, int* sizefill, int maxsize, bool saturate);
 	~CompressionStream();
 
-	void Compress(const unsigned char* data, int size, const ModelList& models, int baseprob, int hashsize, bool first, bool finish);
+	void CompressFromHashBits(const HashBits& hashbits, int baseprob, int hashsize);
 	int EvaluateSize(const unsigned char* data, int size, const ModelList& models, int baseprob, char* context, int bitpos);
 	int Close();
 };
+
+HashBits ComputeHashBits(const unsigned char* d, int size, unsigned char* context, const ModelList& models, bool first, bool finish);
 
 #endif
