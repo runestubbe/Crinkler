@@ -214,18 +214,19 @@ static int num_sections;
 
 struct scol {
 	float size;
+	const char *text;
 	unsigned color;
 } sizecols[] = {
-	{ 0.1f, 0x80ff80 },
-	{ 0.5f, 0x00ff00 },
-	{ 1.0f, 0x00c000 },
-	{ 2.0f, 0x008040 },
-	{ 3.0f, 0x006090 },
-	{ 5.0f, 0x0020f0 },
-	{ 7.0f, 0x0000a0 },
-	{ 9.0f, 0x000000 },
-	{ 12.0f, 0x900000 },
-	{ 1000000.0f, 0xff0000 },
+	{ 0.1f, "0.1", 0x80ff80 },
+	{ 0.5f, "0.5", 0x00ff00 },
+	{ 1.0f, "1", 0x00c000 },
+	{ 2.0f, "2", 0x008040 },
+	{ 3.0f, "3", 0x006090 },
+	{ 5.0f, "5", 0x0020f0 },
+	{ 7.0f, "7", 0x0000a0 },
+	{ 9.0f, "9", 0x000000 },
+	{ 12.0f, "12", 0x900000 },
+	{ 1000000.0f, "a lot of", 0xff0000 },
 };
 
 //converts a string to an unique identifier consisting of only ['A'-Z']
@@ -456,20 +457,24 @@ static void htmlReportRecursive(CompressionReportRecord* csr, FILE* out, Hunk& h
 		crinkler->printOptions(out);
 		fprintf(out, "</b></p>");
 
-		fprintf(out, "<h3>Compression rate color codes:</h3><table>");
-		int ncols = sizeof(sizecols)/sizeof(scol);
-		for (int i = 0 ; i < ncols ; i++) {
-			fprintf(out, "<tr><td bgcolor='#%.6X'>&nbsp;&nbsp;</td><td>", sizecols[i].color);
+		fprintf(out, "<table><tr><td rowspan='2'><b>Bits per byte:</b></td><td>&nbsp;&nbsp;</td>");
+		int ncols = sizeof(sizecols) / sizeof(scol);
+		for (int i = 0; i < ncols; i++) {
+			fprintf(out, "<td bgcolor='#%.6X' colspan='2' title='", sizecols[i].color);
 			if (i == 0) {
-				fprintf(out, "&nbsp;Less than %1.1f bits per byte", sizecols[i].size);
-			} else if (i == ncols-1) {
-				fprintf(out, "&nbsp;More than %1.1f bits per byte", sizecols[i-1].size);
+				fprintf(out, "Less than %s bits per byte", sizecols[i].text);
+			} else if (i == ncols - 1) {
+				fprintf(out, "More than %s bits per byte", sizecols[i - 1].text);
 			} else {
-				fprintf(out, "&nbsp;Between %1.1f and %1.1f bits per byte", sizecols[i-1].size, sizecols[i].size);
+				fprintf(out, "Between %s and %s bits per byte", sizecols[i - 1].text, sizecols[i].text);
 			}
-			fprintf(out, "</td></tr>\n");
+			fprintf(out, "'>&nbsp;&nbsp;&nbsp;&nbsp;</td>");
 		}
-		fprintf(out, "</table>\n");
+		fprintf(out, "</tr>\n<tr><td colspan='2' align='center'></td>");
+		for (int i = 0; i < ncols - 1; i++) {
+			fprintf(out, "<td colspan='2' align='center'>%s</td>", sizecols[i].text);
+		}
+		fprintf(out, "<td></td></tr></table>\n");
 
 		fprintf(out, htmlHeader2);
 	} else {
