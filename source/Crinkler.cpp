@@ -264,7 +264,6 @@ int Crinkler::optimizeHashsize(unsigned char* data, int datasize, int hashsize, 
 		return hashsize;
 
 	int maxsize = datasize*2+1000;
-	unsigned char* buff = new unsigned char[maxsize];
 	int bestsize = INT_MAX;
 	int best_hashsize = hashsize;
 	m_progressBar.beginTask("Optimizing hash table size");
@@ -283,9 +282,12 @@ int Crinkler::optimizeHashsize(unsigned char* data, int datasize, int hashsize, 
 	int* sizes = new int[tries];
 
 	int progress = 0;
+	concurrency::combinable<vector<unsigned char>> buffers([maxsize]() {
+		return vector<unsigned char>(maxsize, 0);
+	});
 	concurrency::critical_section cs;
 	concurrency::parallel_for(0, tries, [&](int i) {
-		sizes[i] = CompressFromHashBits(buff, nullptr, maxsize, m_saturate != 0,
+		sizes[i] = CompressFromHashBits(buffers.local().data(), nullptr, maxsize, m_saturate != 0,
 			hashbits1, hashbits2, CRINKLER_BASEPROB, hashsizes[i]);
 
 		Concurrency::critical_section::scoped_lock l(cs);
@@ -300,7 +302,6 @@ int Crinkler::optimizeHashsize(unsigned char* data, int datasize, int hashsize, 
 	}
 	delete[] sizes;
 	delete[] hashsizes;
-	delete[] buff;
 
 	m_progressBar.endTask();
 	
