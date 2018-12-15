@@ -18,6 +18,7 @@ nvl		/SUBSYSTEM:CONSOLE NVL_objects\comcall.obj NVL_objects\main.obj NVL_objects
 objz		/SUBSYSTEM:CONSOLE /ENTRY:main objz\asm4k.obj objz\bass.asm.obj objz\bumpshader.obj objz\geom.obj objz\scene.obj objz\texgen.obj
 ootd		/SUBSYSTEM:WINDOWS /ENTRY:AsmEntryPoint ootd\asm_main.obj ootd\main.obj ootd\oidos.obj ootd\random.obj ootd\Rendering.obj ootd\ShaderCompiler.obj ootd\syncdata.obj
 parsec		/SUBSYSTEM:CONSOLE parsec\intro.obj
+pepper		/SUBSYSTEM:WINDOWS /ENTRY:AsmEntryPoint pepper\asm_main.obj pepper\compile.obj pepper\data.obj pepper\generator.obj pepper\main.obj pepper\oidos.obj pepper\pictures.obj pepper\random.obj
 ptnz		/SUBSYSTEM:WINDOWS /ENTRY:entry ptnz\main.obj
 rambo		/SUBSYSTEM:WINDOWS /ENTRY:start rambo\main.obj rambo\vmath.obj rambo\synth.obj
 solskool	/SUBSYSTEM:WINDOWS solskool\comcall.obj solskool\data.obj solskool\DXinit.obj solskool\interpret.obj solskool\random.obj solskool\render_asm.obj solskool\synth.obj
