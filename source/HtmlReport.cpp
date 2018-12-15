@@ -466,7 +466,8 @@ bool opcodeComparator(const pair<string, int>& a, const pair<string, int>& b) {
 		return a.first < b.first;
 }
 
-static void htmlReportRecursive(CompressionReportRecord* csr, FILE* out, Hunk& hunk, Hunk& untransformedHunk, const int* sizefill, bool iscode, map<int, Symbol*>& relocs, map<int, Symbol*>& symbols, map<string, int>& opcodeCounters, const char *exefilename, Crinkler *crinkler) {
+static void htmlReportRecursive(CompressionReportRecord* csr, FILE* out, Hunk& hunk, Hunk& untransformedHunk, const int* sizefill, bool iscode, map<int, Symbol*>& relocs, map<int, Symbol*>& symbols, map<string, int>& opcodeCounters,
+		const char *exefilename, int filesize, Crinkler *crinkler) {
 	string divstr;
 	//handle enter node events
 	if(csr->type & RECORD_ROOT) {
@@ -481,6 +482,9 @@ static void htmlReportRecursive(CompressionReportRecord* csr, FILE* out, Hunk& h
 		fprintf(out, "<p><b>Options:");
 		crinkler->printOptions(out);
 		fprintf(out, "</b></p>");
+
+		// Print file size
+		fprintf(out, "<p><b>Output file size: %d</b></p>", filesize);
 
 		fprintf(out, "<p><table><tr><td rowspan='2'><b>Bits per byte:</b></td><td>&nbsp;&nbsp;</td>");
 		int ncols = sizeof(sizecols) / sizeof(scol);
@@ -695,7 +699,8 @@ static void htmlReportRecursive(CompressionReportRecord* csr, FILE* out, Hunk& h
 	}
 
 	for(vector<CompressionReportRecord*>::iterator it = csr->children.begin(); it != csr->children.end(); it++)
-		htmlReportRecursive(*it, out, hunk, untransformedHunk, sizefill, iscode, relocs, symbols, opcodeCounters, exefilename, crinkler);
+		htmlReportRecursive(*it, out, hunk, untransformedHunk, sizefill, iscode, relocs, symbols, opcodeCounters,
+			exefilename, filesize, crinkler);
 
 	//handle leave node event
 	if(csr->type & RECORD_ROOT) {
@@ -705,7 +710,8 @@ static void htmlReportRecursive(CompressionReportRecord* csr, FILE* out, Hunk& h
 	}
 }
 
-void htmlReport(CompressionReportRecord* csr, const char* filename, Hunk& hunk, Hunk& untransformedHunk, const int* sizefill, const char *exefilename, Crinkler *crinkler) {
+void htmlReport(CompressionReportRecord* csr, const char* filename, Hunk& hunk, Hunk& untransformedHunk, const int* sizefill,
+		const char *exefilename, int filesize, Crinkler *crinkler) {
 	identmap.clear();
 	num_divs[0] = num_divs[1] = num_divs[2] = num_divs[3] = 0;
 	num_sections = 0;
@@ -718,7 +724,8 @@ void htmlReport(CompressionReportRecord* csr, const char* filename, Hunk& hunk, 
 		Log::error(filename, "Cannot open file for writing");
 		return;
 	}
-	htmlReportRecursive(csr, out, hunk, untransformedHunk, sizefill, false, relocs, symbols, opcodeCounters, exefilename, crinkler);
+	htmlReportRecursive(csr, out, hunk, untransformedHunk, sizefill, false, relocs, symbols, opcodeCounters,
+		exefilename, filesize, crinkler);
 
 	fclose(out);
 }

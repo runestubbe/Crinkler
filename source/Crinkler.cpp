@@ -1016,10 +1016,10 @@ void Crinkler::recompress(const char* input_filename, const char* output_filenam
 	if(m_printFlags & PRINT_LABELS)
 		verboseLabels(csr);
 	if(!m_summaryFilename.empty())
-		htmlReport(csr, m_summaryFilename.c_str(), *phase1, *phase1, sizefill, output_filename, this);
+		htmlReport(csr, m_summaryFilename.c_str(), *phase1, *phase1, sizefill,
+			output_filename, phase2->getRawSize(), this);
 	delete csr;
 	delete[] sizefill;
-
 
 	if (!outfile) {
 		if(fopen_s(&outfile, output_filename, "wb")) {
@@ -1313,17 +1313,18 @@ void Crinkler::link(const char* filename) {
 		printf("Real compressed total size: %d\nBytes lost to hashing: %.2f\n", sizeIncludingModels, byteslost);
 	}
 
+	Hunk *phase2 = finalLink(header, nullptr, hashHunk, phase1, data, size, splittingPoint, best_hashsize);
+	delete[] data;
+
 	CompressionReportRecord* csr = phase1->getCompressionSummary(sizefill, splittingPoint);
 	if(m_printFlags & PRINT_LABELS)
 		verboseLabels(csr);
 	if(!m_summaryFilename.empty())
-		htmlReport(csr, m_summaryFilename.c_str(), *phase1, *phase1Untransformed, sizefill, filename, this);
+		htmlReport(csr, m_summaryFilename.c_str(), *phase1, *phase1Untransformed, sizefill,
+			filename, phase2->getRawSize(), this);
 	delete csr;
 	delete[] sizefill;
 	
-	Hunk *phase2 = finalLink(header, nullptr, hashHunk, phase1, data, size, splittingPoint, best_hashsize);
-	delete[] data;
-
 	fwrite(phase2->getPtr(), 1, phase2->getRawSize(), outfile);
 	fclose(outfile);
 
