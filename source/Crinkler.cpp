@@ -6,6 +6,7 @@
 #include <set>
 #include <ctime>
 #include <fstream>
+#include <ppl.h>
 
 #include "HunkList.h"
 #include "Hunk.h"
@@ -264,8 +265,6 @@ int Crinkler::optimizeHashsize(unsigned char* data, int datasize, int hashsize, 
 
 	int maxsize = datasize*2+1000;
 	unsigned char* buff = new unsigned char[maxsize];
-	int bestsize = INT_MAX;
-	int best_hashsize = hashsize;
 	m_progressBar.beginTask("Optimizing hash table size");
 
 	unsigned char context[8];
@@ -273,21 +272,38 @@ int Crinkler::optimizeHashsize(unsigned char* data, int datasize, int hashsize, 
 	HashBits hashbits1 = ComputeHashBits(data, splittingPoint, context, m_modellist1, true, false);
 	HashBits hashbits2 = ComputeHashBits(data + splittingPoint, datasize - splittingPoint, context, m_modellist2, false, true);
 
-	for(int i = 0; i < tries; i++) {
+	uint32_t* hashsizes = new uint32_t[tries];
+	for (int i = 0; i < tries; i++) {
 		hashsize = previousPrime(hashsize / 2) * 2;
-		int size = CompressFromHashBits(buff, nullptr, maxsize, m_saturate != 0,
-			hashbits1, hashbits2, CRINKLER_BASEPROB, hashsize);
+		hashsizes[i] = hashsize;
+	}
 
-		if(size <= bestsize) {
-			bestsize = size;
+	int* sizes = new int[tries];
+
+	int progress = 0;
+	concurrency::critical_section cs;
+	concurrency::parallel_for(0, tries, [&](int i) {
+		sizes[i] = CompressFromHashBits(buff, nullptr, maxsize, m_saturate != 0,
+			hashbits1, hashbits2, CRINKLER_BASEPROB, hashsizes[i]);
+
+		Concurrency::critical_section::scoped_lock l(cs);
+		m_progressBar.update(++progress, m_hashtries);
+	});
+
+	int bestsize = INT_MAX;
+	int best_hashsize = hashsize;
+	for (int i = 0; i < tries; i++) {
+		if (sizes[i] <= bestsize) {
+			bestsize = sizes[i];
 			best_hashsize = hashsize;
 		}
-
-		m_progressBar.update(i+1, m_hashtries);
 	}
+	delete[] sizes;
+	delete[] hashsizes;
+	delete[] buff;
+
 	m_progressBar.endTask();
 	
-	delete[] buff;
 	return best_hashsize;
 }
 
