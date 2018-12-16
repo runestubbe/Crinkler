@@ -14,6 +14,7 @@ mich		/SUBSYSTEM:CONSOLE /ENTRY:main mich\logo.obj mich\main.obj mich\meshgenera
 micropolis	/SUBSYSTEM:WINDOWS micropolis\startup.obj micropolis\render.obj micropolis\render-asm.obj micropolis\sound.obj micropolis\sound-asm.obj
 mollusk		/SUBSYSTEM:CONSOLE /ENTRY:main mollusk\song.obj mollusk\bp4k.obj
 nevada		/SUBSYSTEM:WINDOWS nevada\miniglsl.obj nevada\music.obj nevada\spheretracing.obj nevada\synth.obj
+nexus8		/SUBSYSTEM:WINDOWS /ENTRY:AsmEntryPoint nexus8\asm_main.obj nexus8\font.obj nexus8\main.obj nexus8\naturalmotion.obj nexus8\oidos.obj nexus8\pictures.obj nexus8\random.obj nexus8\rendering.obj nexus8\ShaderCompiler.obj nexus8\syncdata.obj
 nvl		/SUBSYSTEM:CONSOLE NVL_objects\comcall.obj NVL_objects\main.obj NVL_objects\startup.obj NVL_objects\DXInit.obj NVL_objects\startupcommon.obj
 objz		/SUBSYSTEM:CONSOLE /ENTRY:main objz\asm4k.obj objz\bass.asm.obj objz\bumpshader.obj objz\geom.obj objz\scene.obj objz\texgen.obj
 ootd		/SUBSYSTEM:WINDOWS /ENTRY:AsmEntryPoint ootd\asm_main.obj ootd\main.obj ootd\oidos.obj ootd\random.obj ootd\Rendering.obj ootd\ShaderCompiler.obj ootd\syncdata.obj
