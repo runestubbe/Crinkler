@@ -23,22 +23,11 @@ LIBS = [
     'xinput.lib'
 ]
 
-#'/ORDERTRIES:10000', 
-
 FIXED_OPTIONS = [
     '/CRINKLER', '/UNSAFEIMPORT', '/ORDERTRIES:10000', '/COMPMODE:SLOW', '/HASHSIZE:500', '/HASHTRIES:100',
     '/OVERRIDEALIGNMENTS', '/UNALIGNCODE',
     '/PRINT:IMPORTS', '/PRINT:MODELS', '/PRIORITY:IDLE', '/LIBPATH:libs'
 ]
-
-VARYING_OPTIONS = [[], ['/TRANSFORM:CALLS'], ['/RANGE:opengl32', '/RANGE:d3dx9_43'], ['/TRANSFORM:CALLS', '/RANGE:opengl32', '/RANGE:d3dx9_43']]
-VARYING_OPTION_NAMES = ['_', 'T', 'R', 'TR']
-
-#VARYING_OPTIONS = [[], ['/TRANSFORM:CALLS']]
-#VARYING_OPTION_NAMES = ['_', 'T']
-
-#VARYING_OPTIONS = [[]]
-#VARYING_OPTION_NAMES = ['_']
 
 
 crinkler_exe = sys.argv[1]
@@ -59,10 +48,7 @@ if len(sys.argv) > 4:
 else:
     exefile_postfix = ""
 
-print "Name\t",
-for on in VARYING_OPTION_NAMES:
-    print "\t%5s" % on,
-print "\t  min\t time"
+print "Name\t\t Size\t Time"
 
 for test in tests:
     argi = test.rindex('\t')
@@ -74,15 +60,15 @@ for test in tests:
     print test[0:argi],
     sys.stdout.flush()
     minsize = 99999
-    for o in VARYING_OPTIONS:
-        cmdline = [crinkler_exe, "/OUT:"+exefile] + ['/REPORT:' + name + '.html'] + FIXED_OPTIONS + o + args + LIBS
-        rval = subprocess.call(cmdline, stdout=logfile)
-        if rval == 0:
-            size = os.stat(exefile).st_size
-            minsize = min(size,minsize)
-            print "\t%5d" % size,
-        else:
-            print "\terror",
-        sys.stdout.flush()
+
+    cmdline = [crinkler_exe, "/OUT:"+exefile] + ['/REPORT:' + name + '.html'] + FIXED_OPTIONS + args + LIBS
+    rval = subprocess.call(cmdline, stdout=logfile)
+    if rval == 0:
+        size = os.stat(exefile).st_size
+        print "\t%5d" % size,
+    else:
+        print "\terror",
+    sys.stdout.flush()
+
     t1 = time.time()
-    print "\t%5d\t%5d" % (minsize, t1 - t0)
+    print "\t%5d" % (t1 - t0)

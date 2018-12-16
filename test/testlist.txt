@@ -1,28 +1,28 @@
-rick		/SUBSYSTEM:WINDOWS rick\data.obj rick\entity.obj rick\render.obj rick\rick.obj rick\rickiki.obj rick\sound.obj rick\sounddata.obj rick\startup.obj rick\submap.obj rick\tinyym2149.obj
-traceless	/SUBSYSTEM:WINDOWS /ENTRY:entry traceless\intro.obj /REPLACEDLL:d3dx9_43=d3dx9_24
-sinuous		/SUBSYSTEM:WINDOWS /ENTRY:entry sinuous\startup.obj sinuous\source_asm.obj
-als		/SUBSYSTEM:WINDOWS als\main.obj als\midi.obj als\miniglsl.obj
-amalgam		/SUBSYSTEM:WINDOWS /ENTRY:entry amalgam\main.obj
-benitoite	/SUBSYSTEM:CONSOLE /ENTRY:tinyentry benitoite\comcall.obj benitoite\data.obj benitoite\DXInit.obj benitoite\main.obj benitoite\meshasm.obj benitoite\misc.obj benitoite\resources.obj benitoite\SimpleEdgeBreaker.obj benitoite\texturegen2.obj
-buzzie		/SUBSYSTEM:WINDOWS buzzie\common.obj buzzie\intro.obj buzzie\liquid.obj buzzie\pow.obj
+als		/SUBSYSTEM:WINDOWS als\main.obj als\midi.obj als\miniglsl.obj /RANGE:opengl32
+amalgam		/SUBSYSTEM:WINDOWS /ENTRY:entry amalgam\main.obj /TRANSFORM:CALLS /RANGE:opengl32
+benitoite	/SUBSYSTEM:CONSOLE /ENTRY:tinyentry benitoite\comcall.obj benitoite\data.obj benitoite\DXInit.obj benitoite\main.obj benitoite\meshasm.obj benitoite\misc.obj benitoite\resources.obj benitoite\SimpleEdgeBreaker.obj benitoite\texturegen2.obj /TRANSFORM:CALLS /RANGE:d3dx9_43
+buzzie		/SUBSYSTEM:WINDOWS buzzie\common.obj buzzie\intro.obj buzzie\liquid.obj buzzie\pow.obj /TRANSFORM:CALLS /RANGE:opengl32
 diffuse		/SUBSYSTEM:WINDOWS diffusioncurves\comcall.obj diffusioncurves\draw.obj diffusioncurves\DXinit.obj diffusioncurves\effect.obj diffusioncurves\Main.obj diffusioncurves\picture.obj
 fallty		/SUBSYSTEM:WINDOWS fallty\main.obj fallty\kzgwave.obj fallty\module.obj fallty\miniglsl.obj
 galv		/SUBSYSTEM:CONSOLE /ENTRY:tinyentry galv\comcall.obj galv\DXinit.obj galv\intro.obj galv\intro_asm.obj galv\font_asm.obj galv\texturegen2.obj galv\shader.obj galv\resources.obj galv\text.obj galv\beatdata.obj galv\timing.obj
 kk		/SUBSYSTEM:WINDOWS kk\intro4k.obj
-ktrix		/SUBSYSTEM:WINDOWS /ENTRY:main ktrix\intro.obj
-mich		/SUBSYSTEM:CONSOLE /ENTRY:main mich\logo.obj mich\main.obj mich\meshgenerator.obj mich\song.obj
-micropolis	/SUBSYSTEM:WINDOWS micropolis\startup.obj micropolis\render.obj micropolis\render-asm.obj micropolis\sound.obj micropolis\sound-asm.obj
-mollusk		/SUBSYSTEM:CONSOLE /ENTRY:main mollusk\song.obj mollusk\bp4k.obj
+ktrix		/SUBSYSTEM:WINDOWS /ENTRY:main ktrix\intro.obj /TRANSFORM:CALLS /RANGE:opengl32
+mich		/SUBSYSTEM:CONSOLE /ENTRY:main mich\logo.obj mich\main.obj mich\meshgenerator.obj mich\song.obj /TRANSFORM:CALLS
+micropolis	/SUBSYSTEM:WINDOWS micropolis\startup.obj micropolis\render.obj micropolis\render-asm.obj micropolis\sound.obj micropolis\sound-asm.obj /TRANSFORM:CALLS /RANGE:opengl32
+mollusk		/SUBSYSTEM:CONSOLE /ENTRY:main mollusk\song.obj mollusk\bp4k.obj /TRANSFORM:CALLS /RANGE:opengl32
 nevada		/SUBSYSTEM:WINDOWS nevada\miniglsl.obj nevada\music.obj nevada\spheretracing.obj nevada\synth.obj
 nexus8		/SUBSYSTEM:WINDOWS /ENTRY:AsmEntryPoint nexus8\asm_main.obj nexus8\font.obj nexus8\main.obj nexus8\naturalmotion.obj nexus8\oidos.obj nexus8\pictures.obj nexus8\random.obj nexus8\rendering.obj nexus8\ShaderCompiler.obj nexus8\syncdata.obj
-nvl		/SUBSYSTEM:CONSOLE NVL_objects\comcall.obj NVL_objects\main.obj NVL_objects\startup.obj NVL_objects\DXInit.obj NVL_objects\startupcommon.obj
-objz		/SUBSYSTEM:CONSOLE /ENTRY:main objz\asm4k.obj objz\bass.asm.obj objz\bumpshader.obj objz\geom.obj objz\scene.obj objz\texgen.obj
+nvl		/SUBSYSTEM:CONSOLE NVL_objects\comcall.obj NVL_objects\main.obj NVL_objects\startup.obj NVL_objects\DXInit.obj NVL_objects\startupcommon.obj /TRANSFORM:CALLS /RANGE:d3dx9_43
+objz		/SUBSYSTEM:CONSOLE /ENTRY:main objz\asm4k.obj objz\bass.asm.obj objz\bumpshader.obj objz\geom.obj objz\scene.obj objz\texgen.obj /TRANSFORM:CALLS
 ootd		/SUBSYSTEM:WINDOWS /ENTRY:AsmEntryPoint ootd\asm_main.obj ootd\main.obj ootd\oidos.obj ootd\random.obj ootd\Rendering.obj ootd\ShaderCompiler.obj ootd\syncdata.obj
 parsec		/SUBSYSTEM:CONSOLE parsec\intro.obj
-pepper		/SUBSYSTEM:WINDOWS /ENTRY:AsmEntryPoint pepper\asm_main.obj pepper\compile.obj pepper\data.obj pepper\generator.obj pepper\main.obj pepper\oidos.obj pepper\pictures.obj pepper\random.obj
-ptnz		/SUBSYSTEM:WINDOWS /ENTRY:entry ptnz\main.obj
-rambo		/SUBSYSTEM:WINDOWS /ENTRY:start rambo\main.obj rambo\vmath.obj rambo\synth.obj
-seedling	/SUBSYSTEM:WINDOWS /ENTRY:start seedling\comcall.obj seedling\compile.obj seedling\data.obj seedling\DXinit.obj seedling\interpret.obj seedling\random.obj seedling\render_asm.obj seedling\synth.obj
-solskool	/SUBSYSTEM:WINDOWS solskool\comcall.obj solskool\data.obj solskool\DXinit.obj solskool\interpret.obj solskool\random.obj solskool\render_asm.obj solskool\synth.obj
-twinkling	/SUBSYSTEM:WINDOWS /ENTRY:start twinkling\comcall.obj twinkling\data.obj twinkling\DXinit.obj twinkling\interpret.obj twinkling\random.obj twinkling\render_asm.obj twinkling\synth.obj
-twisting	/SUBSYSTEM:WINDOWS /ENTRY:start twisting\clinkster.obj twisting\comcall.obj twisting\compile.obj twisting\data.obj twisting\DXinit.obj twisting\render_asm.obj
+pepper		/SUBSYSTEM:WINDOWS /ENTRY:AsmEntryPoint pepper\asm_main.obj pepper\compile.obj pepper\data.obj pepper\generator.obj pepper\main.obj pepper\oidos.obj pepper\pictures.obj pepper\random.obj /TRANSFORM:CALLS
+ptnz		/SUBSYSTEM:WINDOWS /ENTRY:entry ptnz\main.obj /TRANSFORM:CALLS /RANGE:opengl32
+rambo		/SUBSYSTEM:WINDOWS /ENTRY:start rambo\main.obj rambo\vmath.obj rambo\synth.obj /TRANSFORM:CALLS
+rick		/SUBSYSTEM:WINDOWS rick\data.obj rick\entity.obj rick\render.obj rick\rick.obj rick\rickiki.obj rick\sound.obj rick\sounddata.obj rick\startup.obj rick\submap.obj rick\tinyym2149.obj
+seedling	/SUBSYSTEM:WINDOWS /ENTRY:start seedling\comcall.obj seedling\compile.obj seedling\data.obj seedling\DXinit.obj seedling\interpret.obj seedling\random.obj seedling\render_asm.obj seedling\synth.obj /TRANSFORM:CALLS
+sinuous		/SUBSYSTEM:WINDOWS /ENTRY:entry sinuous\startup.obj sinuous\source_asm.obj /TINYHEADER /TINYIMPORT
+solskool	/SUBSYSTEM:WINDOWS solskool\comcall.obj solskool\data.obj solskool\DXinit.obj solskool\interpret.obj solskool\random.obj solskool\render_asm.obj solskool\synth.obj /TRANSFORM:CALLS
+traceless	/SUBSYSTEM:WINDOWS /ENTRY:entry traceless\intro.obj /REPLACEDLL:d3dx9_43=d3dx9_24 /TINYHEADER /TINYIMPORT
+twinkling	/SUBSYSTEM:WINDOWS /ENTRY:start twinkling\comcall.obj twinkling\data.obj twinkling\DXinit.obj twinkling\interpret.obj twinkling\random.obj twinkling\render_asm.obj twinkling\synth.obj /TRANSFORM:CALLS
+twisting	/SUBSYSTEM:WINDOWS /ENTRY:start twisting\clinkster.obj twisting\comcall.obj twisting\compile.obj twisting\data.obj twisting\DXinit.obj twisting\render_asm.obj /TRANSFORM:CALLS
