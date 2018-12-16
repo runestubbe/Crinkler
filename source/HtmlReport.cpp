@@ -227,9 +227,11 @@ static const char* htmlFooter =
 						"<p><a href='http://crinkler.net'>http://www.crinkler.net</a></p>"
 						"</body></html>";
 
-const int NUM_COLUMNS = 16;
-const int HEX_WIDTH = 38;
-const int OPCODE_WIDTH = 12;
+const int CODE_BYTE_COLUMNS = 15;
+const int DATA_BYTE_COLUMNS = 32;
+const int CODE_HEX_WIDTH = 32;
+const int DATA_HEX_WIDTH = 75;
+const int OPCODE_WIDTH = 16;
 const int LABEL_COLOR = 0x808080;
 
 static map<string, string> identmap;
@@ -293,10 +295,14 @@ static int toAscii(int c) {
 	return (c > 32 && c <= 126 || c >= 160) ? c : '.';
 }
 
-static void printRow(FILE *out, Hunk& hunk, const int *sizefill, int index, int n, bool ascii, bool spacing) {
-	for(int x = 0; x < NUM_COLUMNS; x++) {
-		if (spacing && x > 0 && (x & 3) == 0)
-		{
+static void printRow(FILE *out, Hunk& hunk, const int *sizefill, int index, int n, int hex_columns, int hex_width, bool ascii, bool spacing) {
+	for(int x = 0; x < hex_columns; x++) {
+		if (spacing && x > 0 && (x & 3) == 0) {
+			// Spacing between blocks of 4
+			fprintf(out, "<td>&nbsp;</td>");
+		}
+		if (spacing && x == 16) {
+			// Extra space after first 16
 			fprintf(out, "<td>&nbsp;</td>");
 		}
 
@@ -326,7 +332,7 @@ static void printRow(FILE *out, Hunk& hunk, const int *sizefill, int index, int 
 		}
 	}
 	if (!ascii) {
-		for (int x = NUM_COLUMNS * 2 + (spacing ? 3 : 0); x < HEX_WIDTH; x++) {
+		for (int x = hex_columns * 2 + (spacing ? 8 : 0); x < hex_width; x++) {
 			fprintf(out, "<td>&nbsp;</td>");
 		}
 	}
@@ -608,7 +614,7 @@ static void htmlReportRecursive(CompressionReportRecord* csr, FILE* out, Hunk& h
 						
 						//hexdump
 						fprintf(out, "<td nowrap colspan=4 class='hexdump'><table class='data'><tr>");
-						printRow(out, hunk, sizefill, (int)insts[i].offset - CRINKLER_CODEBASE, insts[i].size, false, false);
+						printRow(out, hunk, sizefill, (int)insts[i].offset - CRINKLER_CODEBASE, insts[i].size, CODE_BYTE_COLUMNS, CODE_HEX_WIDTH, false, false);
 
 						//disassembly
 						// Make hex digits uppercase
@@ -651,8 +657,8 @@ static void htmlReportRecursive(CompressionReportRecord* csr, FILE* out, Hunk& h
 						while(idx < csr->pos+size) {
 							if(relocs.find(idx) == relocs.end()) {
 								count++;
-								if(count == NUM_COLUMNS) {
-									rowLengths.push_back(NUM_COLUMNS);
+								if(count == DATA_BYTE_COLUMNS) {
+									rowLengths.push_back(DATA_BYTE_COLUMNS);
 									count = 0;
 								}
 								idx++;
@@ -675,7 +681,7 @@ static void htmlReportRecursive(CompressionReportRecord* csr, FILE* out, Hunk& h
 
 						//hexdump
 						fprintf(out, "<td nowrap colspan=4 class='hexdump'><table class='data'><tr>");
-						printRow(out, hunk, sizefill, idx, *it, false, true);
+						printRow(out, hunk, sizefill, idx, *it, DATA_BYTE_COLUMNS, DATA_HEX_WIDTH, false, true);
 
 						map<int, Symbol*>::iterator jt = relocs.find(idx);
 						if(jt != relocs.end()) {
@@ -684,10 +690,10 @@ static void htmlReportRecursive(CompressionReportRecord* csr, FILE* out, Hunk& h
 							int value = *((int*)&untransformedHunk.getPtr()[idx]);
 							string label = generateLabel(jt->second, value, symbols);
 							fprintf(out, "<td title='%.2f bytes' style='color: #%.6X;' colspan='%d'>%s</td>",
-								size / (float)(BITPREC*8), sizeToColor(size/4), NUM_COLUMNS, label.c_str());
+								size / (float)(BITPREC*8), sizeToColor(size/4), DATA_BYTE_COLUMNS, label.c_str());
 						} else {
 							//write ascii
-							printRow(out, hunk, sizefill, idx, *it, true, false);
+							printRow(out, hunk, sizefill, idx, *it, DATA_BYTE_COLUMNS, DATA_HEX_WIDTH, true, false);
 						}
 						fprintf(out, "</tr></table></td></tr>");
 
