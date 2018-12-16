@@ -19,7 +19,8 @@ LIBS = [
     'msvcrt_old.lib',
     'opengl32.lib',
     'user32.lib',
-    'winmm.lib'
+    'winmm.lib',
+    'xinput.lib'
 ]
 
 #'/ORDERTRIES:10000', 
