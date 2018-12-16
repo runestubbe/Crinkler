@@ -115,10 +115,10 @@ CompressionState::CompressionState(const unsigned char* data, int size, int base
 	memcpy(data2, context, MAX_CONTEXT_LENGTH);
 	memcpy(data2+MAX_CONTEXT_LENGTH, data, size);
 
-	assert(baseprob >= 4);
+	assert(baseprob >= 9);
 	//m_logScale = pow(pow(2.0, -126.0) / baseprob, 1.0 / 16.0);
 	//(*(int*)&m_logScale)++;
-	m_logScale = 1.0f / 256.0f;	// baseprob * logScale^16 >= FLT_MIN
+	m_logScale = 1.0f / 2048.0f;	// baseprob * logScale^16 >= FLT_MIN
 
 	//apply models
 #if USE_OPENMP
