@@ -22,4 +22,7 @@ parsec		/SUBSYSTEM:CONSOLE parsec\intro.obj
 pepper		/SUBSYSTEM:WINDOWS /ENTRY:AsmEntryPoint pepper\asm_main.obj pepper\compile.obj pepper\data.obj pepper\generator.obj pepper\main.obj pepper\oidos.obj pepper\pictures.obj pepper\random.obj
 ptnz		/SUBSYSTEM:WINDOWS /ENTRY:entry ptnz\main.obj
 rambo		/SUBSYSTEM:WINDOWS /ENTRY:start rambo\main.obj rambo\vmath.obj rambo\synth.obj
+seedling	/SUBSYSTEM:WINDOWS /ENTRY:start seedling\comcall.obj seedling\compile.obj seedling\data.obj seedling\DXinit.obj seedling\interpret.obj seedling\random.obj seedling\render_asm.obj seedling\synth.obj
 solskool	/SUBSYSTEM:WINDOWS solskool\comcall.obj solskool\data.obj solskool\DXinit.obj solskool\interpret.obj solskool\random.obj solskool\render_asm.obj solskool\synth.obj
+twinkling	/SUBSYSTEM:WINDOWS /ENTRY:start twinkling\comcall.obj twinkling\data.obj twinkling\DXinit.obj twinkling\interpret.obj twinkling\random.obj twinkling\render_asm.obj twinkling\synth.obj
+twisting	/SUBSYSTEM:WINDOWS /ENTRY:start twisting\clinkster.obj twisting\comcall.obj twisting\compile.obj twisting\data.obj twisting\DXinit.obj twisting\render_asm.obj
