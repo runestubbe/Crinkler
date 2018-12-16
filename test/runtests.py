@@ -37,10 +37,9 @@ testlistfile = open(testlist, 'r')
 tests = testlistfile.readlines()
 testlistfile.close()
 
-if len(sys.argv) > 3:
-    logfilename = sys.argv[3]
-else:
-    logfilename = "testlog.txt"
+chosen = sys.argv[3:]
+
+logfilename = "testlog.txt"
 logfile = open(logfilename, "w")
 
 if len(sys.argv) > 4:
@@ -53,6 +52,8 @@ print "Name\t\t Size\t Time"
 for test in tests:
     argi = test.rindex('\t')
     name = test[0:argi].strip()
+    if len(chosen) > 0 and name not in chosen:
+        continue
     args = test[argi+1:].strip().split(' ')
     exefile = name+exefile_postfix+".exe"
     t0 = time.time()
