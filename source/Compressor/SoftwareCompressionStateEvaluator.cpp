@@ -195,10 +195,14 @@ long long SoftwareCompressionStateEvaluator::evaluate(const ModelList& ml) {
 	for(int i = 0; i < MAX_MODELS; i++) {
 		if(newWeights[i] != m_weights[i]) {
 			long long diffsize = changeWeight(i, newWeights[i] - m_weights[i]);
+			if(m_weights[i] == 0)
+				m_compressedSize += 8 * BITPREC_TABLE;
+			else if(newWeights[i] == 0)
+				m_compressedSize -= 8 * BITPREC_TABLE;
 			m_weights[i] = newWeights[i];
 			m_compressedSize += diffsize;
 		}
 	
 	}
-	return m_compressedSize;
+	return m_compressedSize;	// compressed size including model cost
 }

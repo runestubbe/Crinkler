@@ -346,7 +346,6 @@ int Crinkler::estimateModels(unsigned char* data, int datasize, int splittingPoi
 		modellist1 = ApproximateModels4k(data, splittingPoint, CRINKLER_BASEPROB, m_saturate != 0, &new_size1, &m_progressBar, m_compressionType, contexts[0]);
 		m_progressBar.endTask();
 
-		new_size1 += modellist1.nmodels * 8 * BITPREC;
 		if(new_size1 < size1)
 		{
 			size1 = new_size1;
@@ -362,7 +361,6 @@ int Crinkler::estimateModels(unsigned char* data, int datasize, int splittingPoi
 		modellist2 = ApproximateModels4k(data + splittingPoint, datasize - splittingPoint, CRINKLER_BASEPROB, m_saturate != 0, &new_size2, &m_progressBar, m_compressionType, contexts[1]);
 		m_progressBar.endTask();
 
-		new_size2 += modellist2.nmodels * 8 * BITPREC;
 		if(new_size2 < size2)
 		{
 			size2 = new_size2;
