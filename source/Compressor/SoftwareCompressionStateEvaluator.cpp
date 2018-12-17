@@ -38,7 +38,10 @@ bool SoftwareCompressionStateEvaluator::init(ModelPredictions* models, int lengt
 		for(int j = 0; j < NUM_PACKAGE_VECTORS; j++)
 		{
 			m_packages[i].prob[j][0] = _mm_set1_ps(baseprob * logScale);
-			m_packages[i].prob[j][1] = _mm_set1_ps(baseprob * 2 * logScale);
+			if(i * PACKAGE_SIZE + j * 4 < length)
+				m_packages[i].prob[j][1] = _mm_set1_ps(baseprob * 2 * logScale);
+			else
+				m_packages[i].prob[j][1] = _mm_set1_ps(baseprob * logScale);	// right / total = 1.0
 		}
 		m_packageSizes[i] = std::min(length - i * PACKAGE_SIZE, PACKAGE_SIZE) * (BITPREC_TABLE << EXTRA_BITS);
 	}
