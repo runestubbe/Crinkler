@@ -129,27 +129,35 @@ void CompressionStream::CompressFromHashBits(const HashBits& hashbits, int basep
 		unsigned int probs[2] = { (unsigned int)baseprob, (unsigned int)baseprob };
 		for (int m = 0; m < nmodels; m++) {
 			uint32_t h = hashbits.hashes[hashpos++];
-			// hash = h % hashsize
-			unsigned int f = (uint32_t)(((uint64_t)h * rcp_hashsize) >> rcp_shift);
-			unsigned int hash = h - f * hashsize;
+			unsigned int hash = h - uint32_t(((uint64_t)h * rcp_hashsize) >> rcp_shift) * hashsize;
 
 			unsigned int tinyHash = hash & (tinyhashsize - 1);
 			TinyHashEntry *he = &hashtable[tinyHash];
-			while (he->hash != hash && he->used == 1) {
-				tinyHash++;
-				if (tinyHash >= tinyhashsize)
-					tinyHash = 0;
-				he = &hashtable[tinyHash];
+
+			while(true)
+			{
+				if(he->used == 0) {
+					he->hash = hash;
+					he->used = 1;
+					hashEntries[m] = he;
+					break;
+				} else if(he->hash == hash) {
+					hashEntries[m] = he;
+
+					int fac = hashbits.weights[m];
+					unsigned int shift = (1 - (((he->prob[0] + 255)&(he->prob[1] + 255)) >> 8)) * 2 + fac;
+					probs[0] += ((unsigned int)he->prob[0] << shift);
+					probs[1] += ((unsigned int)he->prob[1] << shift);
+					break;
+				} else {
+					tinyHash++;
+					if(tinyHash >= tinyhashsize)
+						tinyHash = 0;
+					he = &hashtable[tinyHash];
+				}
 			}
-
-			he->hash = hash;
-			he->used = 1;
-			hashEntries[m] = he;
-
-			int fac = hashbits.weights[m];
-			unsigned int shift = (1 - (((he->prob[0] + 255)&(he->prob[1] + 255)) >> 8)) * 2 + fac;
-			probs[0] += ((unsigned int)he->prob[0] << shift);
-			probs[1] += ((unsigned int)he->prob[1] << shift);
+			
+			
 		}
 
 		// Encode bit
@@ -262,11 +270,20 @@ int CompressionStream::EvaluateSize(const unsigned char* d, int size, const Mode
 		pos_threshold += size;
 	}
 
+#if 0
+	double totalsizef = 0.0;
+	for(int pos = 0; pos < size; pos++) {
+		int bit = (data[pos] >> inverted_bitpos) & 1;
+		totalsizef += log2(sums[pos * 2] + sums[pos * 2 + 1]) - log2(sums[pos * 2 + bit]);
+	}
+	uint64_t totalsize = totalsizef * BITPREC_TABLE;
+#else
 	uint64_t totalsize = 0;
 	for(int pos = 0; pos < size; pos++) {
 		int bit = (data[pos] >> inverted_bitpos) & 1;
 		totalsize += AritSize2(sums[pos * 2 + bit], sums[pos * 2 + !bit]);
 	}
+#endif
 	
 	delete[] hash_positions;
 	delete[] hash_counter_states;
