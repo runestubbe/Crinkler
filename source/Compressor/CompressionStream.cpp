@@ -100,8 +100,8 @@ HashBits ComputeHashBits(const unsigned char* d, int size, unsigned char* contex
 }
 
 void CompressionStream::CompressFromHashBits(const HashBits& hashbits, int baseprob, int hashsize) {
-	int length = hashbits.hashes.size();
-	int nmodels = hashbits.weights.size();
+	int length = (int)hashbits.hashes.size();
+	int nmodels = (int)hashbits.weights.size();
 	int bitlength = length / nmodels;
 	assert(bitlength * nmodels == length);
 
@@ -236,7 +236,7 @@ int CompressionStream::EvaluateSize(const unsigned char* d, int size, const Mode
 
 		next_tinyhash = Hash(next_masked_contextdata) & tinyhashmask;
 		
-		for(size_t pos = 0; pos < size; pos++) {
+		for(int pos = 0; pos < size; pos++) {
 			int bit = (data[pos] >> inverted_bitpos) & 1;
 
 			__m128i masked_contextdata = next_masked_contextdata;
