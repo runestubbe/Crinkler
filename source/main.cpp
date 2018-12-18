@@ -212,7 +212,7 @@ int main(int argc, char* argv[]) {
 	
 	//cmdline parameters
 	CmdParamInt hashsizeArg("HASHSIZE", "number of megabytes for hashing", "size in mb", PARAM_SHOW_CONSTRAINTS,
-							1, 2000, 200);
+							1, 1000, 500);
 	CmdParamInt hashtriesArg("HASHTRIES", "number of hashing tries", "number of hashing tries", 0,
 							0, 10000, 100);
 	CmdParamInt hunktriesArg("ORDERTRIES", "", "number of section reordering tries", 0,
@@ -244,7 +244,7 @@ int main(int argc, char* argv[]) {
 	CmdParamFlags largeAddressAwareArg("LARGEADDRESSAWARE", "allow addresses beyond 2gb", PARAM_ALLOW_NO_ARGUMENT_DEFAULT | PARAM_FORBID_MULTIPLE_DEFINITIONS, 1, "NO", 0, NULL);
 	CmdParamFlags priorityArg("PRIORITY", "select priority", PARAM_FORBID_MULTIPLE_DEFINITIONS, BELOW_NORMAL_PRIORITY_CLASS, 
 						"IDLE", IDLE_PRIORITY_CLASS, "BELOWNORMAL", BELOW_NORMAL_PRIORITY_CLASS, "NORMAL", NORMAL_PRIORITY_CLASS, NULL);
-	CmdParamFlags compmodeArg("COMPMODE", "compression mode", PARAM_FORBID_MULTIPLE_DEFINITIONS, COMPRESSION_FAST,
+	CmdParamFlags compmodeArg("COMPMODE", "compression mode", PARAM_FORBID_MULTIPLE_DEFINITIONS, COMPRESSION_SLOW,
 						"INSTANT", COMPRESSION_INSTANT, 
 						"FAST", COMPRESSION_FAST, 
 						"SLOW", COMPRESSION_SLOW,
