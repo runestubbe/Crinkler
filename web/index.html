@@ -17,9 +17,31 @@ most widely used tool for compressing 4k intros.<p>
 <b>Crinkler</b> is being developed by Rune L. H. Stubbe (Mentor/TBC)
 and Aske Simon Christensen (Blueberry/Loonies).
 
+<h2>Download</h2>
+Crinkler is free (as in beer).
+Download the newest version of Crinkler (2.1) <a href="crinkler21.zip">here</a>.
+
 <h2>History</h2>
 
 <ul>
+
+ <li>18.12.18: Version 2.1 released with massive speed optimizations.<br>
+  Crinkler executable built for both 32 bit and 64 bit.<br>
+  New, slightly different model estimation. 8-12x speedup.<br>
+  Optimized section reordering. About 3-4x speedup.<br>
+  Optimized and multi-threaded hash size optimization.<br>
+  New /COMPMODE:VERYSLOW option for a few extra bytes.<br>
+  Changed default compression mode to SLOW.<br>
+  Changed default HASHSIZE to 500 and HASHTRIES to 100.<br>
+  /REUSE option: Use models and ordering from last run.<br>
+  /REUSEMODE:STABLE to quickly iterate when making changes.<br>
+  /REUSEMODE:IMPROVE to improve upon previous compression.<br>
+  Print output file size in report.<br>
+  More compact bits-per-byte color legend in report.<br>
+  Choose configuration instead of hiding/showing in report.<br>
+  32 column hex view and other adjustments in report.<br>
+  Avoid crash if an existing file could not be opened.<br>
+  Updated internal function list to Windows version 1809 (Windows 10 October Update 2018).<p></li>
 
  <li>28.03.18: Version 2.0a released, fixing a number of bugs:<br>
   Fixed Crinkler crash on some "broken" lib files in recent Windows SDK versions, and in forwards from ole32.dll.<br>
@@ -185,10 +207,6 @@ and Aske Simon Christensen (Blueberry/Loonies).
  <li>21.07.05: Version 0.1 released.</li>
 </li>
 </ul>
-
-<h2>Download</h2>
-Crinkler is free (as in beer).
-Download the newest version of Crinkler (2.0a) <a href="crinkler20a.zip">here</a>.
 
 <h2>Support</h2>
 
