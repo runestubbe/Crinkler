@@ -1,0 +1,32 @@
+body {
+  font-family: Garamond, Times New Roman, serif;
+}
+
+#container {
+  width: 700px;
+  margin: 0px auto;
+}
+
+h1 {
+  color: #a52a00;
+  width: 80%;
+  border-bottom: 1px dashed #c26f53;
+  font-variant: small-caps;
+  letter-spacing: 5px;
+  text-align: center;
+  margin: 30px auto;
+}
+
+h2 {
+  color: #a52a00;
+  width: 100%;
+  border-bottom: 1px solid #c26f53;
+  font-variant: small-caps;
+  letter-spacing: 2px;
+}
+
+a {
+  color: #c26f53;
+  text-decoration: none;
+  border-bottom: 1px dotted #a52a00;
+}

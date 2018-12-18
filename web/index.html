@@ -1,0 +1,218 @@
+<html>
+<head>
+<title>The Crinkler executable file compressor</title>
+<link rel="stylesheet" type="text/css" href="style.css" />
+<!-- Stylesheet design by Gargaj -->
+</head>
+<body>
+
+<div id="container">
+<h1>Crinkler</h1>
+<h2>Introduction</h2>
+<b>Crinkler</b> is an executable file compressor (or rather, a
+compressing linker) for Windows specifically targeted towards
+executables with a size of just a few kilobytes. As of 2018, it is the
+most widely used tool for compressing 4k intros.<p>
+
+<b>Crinkler</b> is being developed by Rune L. H. Stubbe (Mentor/TBC)
+and Aske Simon Christensen (Blueberry/Loonies).
+
+<h2>History</h2>
+
+<ul>
+
+ <li>28.03.18: Version 2.0a released, fixing a number of bugs:<br>
+  Fixed Crinkler crash on some "broken" lib files in recent Windows SDK versions, and in forwards from ole32.dll.<br>
+  Corrected horizontal alignment issue in the HTML report.<br>
+  Support forwarded RVA imports with /TINYIMPORT.<br>
+  Fixed spurious import of MessageBox with /TINYIMPORT.<br>
+  Print compatibility warning when using /TINYIMPORT.<br>
+  Updated internal function list to Windows version 1803 (Spring Creators Update 2018).<br>
+  Extended description in the manual of /TINYIMPORT.<br>
+  Updated download link for the lib file for msvcrt.dll (old one had stopped working).<p></li>
+
+ <li>28.07.15: Version 2.0 released, now with special 1k features!<br>
+  /TINYHEADER option: smaller decompressor for 1k intros (much slower decompression and with slightly worse compression ratio).<br>
+  /TINYIMPORT option: smaller import code for 1k intros (somewhat less robust to future DLL changes).<br>
+  /EXPORT option to export code and data symbols. Can be used to request the high-performance GPU on a dual GPU system.<br>
+  /SATURATE option to saturate context counters. Better for very redundant data.<br>
+  /FALLBACKDLL option for when a DLL is not available.<br>
+  /UNALIGNCODE option to set alignment of all code to 1.<br>
+  Support for /REPLACEDLL during recompression.<br>
+  New, collision-free hashing for estimation and reordering.
+  Gives consistent sizes between model estimation and reordering and on average slightly better compression, though with some variation.<br>
+  Header size reduced by 2 bytes.<br>
+  Print previous size of output file.<br>
+  Accept version specifier after /SUBSYSTEM value (Visual Studio XP compatibility mode).<br>
+  Switched from the Intel compiler and OpenMP to the VS 2013 compiler and the MS concurrency API.<p></li>
+
+ <li>19.01.13: Version 1.4 released.<br>
+  Output EXE files now have an empty export table pointer,
+  fending off hooks which dig into the export table of every
+  lauched executable. This solves the crash problems seen
+  with some recent NVIDIA drivers.<br>
+  New zero-section header layout, better use of header space
+  and optimizations to the decompression and import code, together
+  saving typically around 30-50 bytes.<br>
+  Forwarded RVA imports are supported by forwarding the import
+  during linking.<br>
+  Dynamic C++ initializers are supported.<br>
+  Support for producing Large Address Aware executables.<br>
+  Crinkler is itself Large Address Aware, thus being able to
+  handle larger inputs than before.<br>
+  Crinkler reports all unresolved symbols, rather than stopping
+  after the first one.<br>
+  For each unresolved symbol reported, the object file referencing
+  the symbol is indicated.<br>
+  When there is a reference to a label at the start of a section,
+  the report will show the reference to the label rather than the
+  section.<br>
+  Compressed sizes are printed with decimals for more accurate
+  size assessment.<br>
+  The names of loaded files are printed on separate lines to better
+  show the progress when some files take long to load.<br>
+  /RECOMPRESS overwrites input file by default.<br>
+  Some updates to the license: less restictive distribution terms,
+  more restrictive usage terms.<br>
+  Updated installation description in the manual to describe
+  integration into Visual Studio 2010 or newer.<br>
+  New section in the manual about the compatibility strategy of
+  Crinkler.<p></li>
+
+ <li>05.03.11: Version 1.3 released.<br>
+  Fixed long-standing crash bug on some multi-core AMD systems.<br>
+  Header size reduced by 21 bytes, thanks to optimizations suggested
+  by &#x0158;r&#x0159;ola.<br>
+  Slightly improved model hash function.<br>
+  /OVERRIDEALIGNMENTS option to specify label alignments.<br>
+  No limit on the number of calls in call transform.<br>
+  Import code and entry point movable by section reordering.<br>
+  Fixed bug in handling of files with absolute path.<br>
+  Fixed labels in report sometimes showing up in the wrong section.<br>
+  Crinkler writes .dmp files with execution state information in case of a crash.<p></li>
+
+ <li>05.09.09: Version 1.2 released.<br>
+  Decompression header and import code reworked to make output
+  executables Windows 7 compatible.<br>
+  Due to incompatibilities between the loading mechanisms of Windows 7
+  and Windows 2000 (and general Windows 2000 weirdness), Windows 2000
+  compatibility is lost.<br>
+  New header is 16 bytes smaller.<br>
+  Non-range import code is (usually) slightly smaller.<br>
+  Slightly improved section ordering estimation.<br>
+  /RECOMPRESS option to recompress Crinkler-compressed
+  executables, optionally with different parameters.<br>
+  /FIX removed, as it is subsumed by /RECOMPRESS.<p></li>
+
+ <li>14.01.09: Version 1.1a released.<br>
+  Fixed /TRUNCATEFLOATS crashing in some cases.<br>
+  Improved section ordering estimation of /ORDERTRIES when call transform is used.<br>
+  Sometimes identically named sections from different object files were misplaced in the HTML report.<br>
+  Various improvements to the HTML report.<br>
+  The /FIX option can input and output to the same file.<br>
+  Helpful error messages when Crinkler detects that an unsupported
+  feature of the Visual Studio compiler is used.<br>
+  Prefer a custom entry point to a standard library one.<br>
+  New section in the manual about how to use the standard C runtime
+  libraries with Crinkler.<p></li>
+
+ <li>12.01.08: Version 1.1 released.<br>
+  Support for weak externals (virtual C++ destructors).<br>
+  Output EXE files are now compatible with Data Execution Prevention.<br>
+  /REPORT option to get an HTML compression report showing detailed
+  compression ratios for every byte of code or data.<br>
+  /TRUNCATEFLOATS option to truncate float constants to a specified
+  number of bits.<br>
+  /SAFEIMPORT is now default, disabled with /UNSAFEIMPORT.<br>
+  Slightly smaller import code overhead if range importing is not used.<br>
+  Fixed some crash problems with compressing very small files.<br>
+  /VERBOSE:FUNCTIONS removed, as it is subsumed by /REPORT.<br>
+  Remaining /VERBOSE options renamed to /PRINT to avoid conflict with
+  the /VERBOSE options of the Visual Studio linker.<br>
+  Maximum number of ORDERTRIES increased to 100000, for those who
+  really have lots of patience.<p></li>
+
+ <li>07.01.07: Version 1.0a released.<br>
+  New /VERBOSE:FUNCTIONS options to sort the functions.<br>
+  Various verbose output fixes.<br>
+  Various crash fixes.<br>
+  A fix to the /FIX Crinkler version recognizer.<p></li>
+
+ <li>27.12.06: Version 1.0 released with lots of new features!<br>
+  Output EXE files are now Windows Vista compatible.<br>
+  Compression tweak for greatly improved compression ratio.<br>
+  Much faster compression.<br>
+  Automatically takes advantage of multiple processors.<br>
+  Improved Visual Studio 2005 integration.<br>
+  /COMPMODE:INSTANT option for very quick compression.<br>
+  /ORDERTRIES option to try out different section orderings.<br>
+  /SAFEIMPORT option to insert a check for nonexisting DLLs.<br>
+  /PROGRESSGUI option for a graphical progress bar.<br>
+  /REPLACEDLL option to replace one DLL with another.<br>
+  /FIX option to fix compatibility problems of older versions.<p></li>
+
+ <li>09.02.06: Version 0.4a released:<br>
+  Fixed linker crash problem with blank member entries
+  in some library files (such as glut32).<br>
+  The /PRIORITY option was not mentioned in the
+  commandline usage help.<p></li>
+
+ <li>18.12.05: Version 0.4 released:<br>
+  Changed header and import code to make output EXE files
+  compatible with 64-bit versions of Windows.<br>
+  Fixed a bug in the ordinal range import mechanism.<br>
+  Added a switch to control the process priority.<br>
+  Added a warning for range import of an unused DLL.<br>
+  Some more header squeezing.<p></li>
+
+ <li>31.10.05: Version 0.3 released:<br>
+  Output EXE files are now Windows 2000 compatible.<br>
+  Added a number of verbose options to output useful
+  information about the program being compressed.<br>
+  Added an option for transforming function calls to
+  use absolute offsets to improve compression.<br>
+  Fixed a bug in the linker regarding identically named
+  sections.<br>
+  Fixed a potential crash bug in the linker.<br>
+  Various small tweaks and optimizations.<p></li>
+
+ <li>23.07.05: Version 0.2 released:<br>
+  Fixed bug in the decompressor.<br>
+  Changed the behaviour of the /CRINKLER option.<br>
+  Added timing to the progress bars.<br>
+  Some updates to the manual and usage description.<p></li>
+
+ <li>21.07.05: Version 0.1 released.</li>
+</li>
+</ul>
+
+<h2>Download</h2>
+Crinkler is free (as in beer).
+Download the newest version of Crinkler (2.0a) <a href="crinkler20a.zip">here</a>.
+
+<h2>Support</h2>
+
+You can help us make Crinkler a better piece of software. We are
+currently very interested in:
+
+<ul>
+ <li><b>Feedback</b>: Any problems, comments or suggestions? Tell us
+ what you think about Crinkler in the <b><a
+ href="http://www.pouet.net/prod.php?which=18158">Pouet.net
+ forum</a></b>.</li>
+
+ <li><b>Test data</b>: Send us the object files of your uncompressed
+ 4k intros (preferrably a release version). This will help us a lot in
+ testing the program. See the manual for contact information.
+ </li>
+
+ <li><b>Bug reports</b>: If Crinkler does not work with your intro or
+ in your system, tell us about it and (if possible) include the object
+ files and/or code you tried to compress.
+ </li>
+
+</ul>
+
+</div>
+</body>
+</html>
