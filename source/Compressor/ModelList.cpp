@@ -23,6 +23,7 @@ ModelList::ModelList() :
 
 ModelList::ModelList(const ModelList& ml) {
 	this->nmodels = ml.nmodels;
+	this->size = ml.size;
 	if(nmodels > 0)
 		memcpy(m_models, ml.m_models, nmodels*sizeof(Model));
 }
@@ -33,6 +34,7 @@ ModelList::ModelList(const unsigned char* models, int weightmask) {
 
 ModelList& ModelList::operator=(const ModelList& ml) {
 	this->nmodels = ml.nmodels;
+	this->size = ml.size;
 	if(nmodels > 0)
 		memcpy(m_models, ml.m_models, nmodels*sizeof(Model));
 	return *this;

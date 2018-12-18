@@ -666,7 +666,7 @@ void Crinkler::recompress(const char* input_filename, const char* output_filenam
 	printf("Original Large address aware: %s\n", large_address_aware ? "YES" : "NO");
 	if(!is_tiny_header)
 	{
-		printf("Original Compression mode: %s\n", compmode == COMPRESSION_INSTANT ? "INSTANT" : "FAST/SLOW");
+		printf("Original Compression mode: %s\n", compmode == COMPRESSION_INSTANT ? "INSTANT" : version < 21 ? "FAST/SLOW" : "FAST/SLOW/VERYSLOW");
 		printf("Original Saturate counters: %s\n", saturate ? "YES" : "NO");
 		printf("Original Hash size: %d\n", hashtable_size);
 	}

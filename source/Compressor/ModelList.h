@@ -17,6 +17,7 @@ class ModelList {
 	Model	m_models[MAX_MODELS];
 public:
 	int		nmodels;
+	int		size;
 
 	ModelList();
 	ModelList(const unsigned char* models, int weightmask);

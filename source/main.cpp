@@ -247,7 +247,8 @@ int main(int argc, char* argv[]) {
 	CmdParamFlags compmodeArg("COMPMODE", "compression mode", PARAM_FORBID_MULTIPLE_DEFINITIONS, COMPRESSION_FAST,
 						"INSTANT", COMPRESSION_INSTANT, 
 						"FAST", COMPRESSION_FAST, 
-						"SLOW", COMPRESSION_SLOW, NULL);
+						"SLOW", COMPRESSION_SLOW,
+						"VERYSLOW", COMPRESSION_VERYSLOW, NULL);
 	CmdParamFlags printArg("PRINT", "print", 0, 0, 
 							"LABELS", PRINT_LABELS, "IMPORTS", PRINT_IMPORTS,
 							"MODELS", PRINT_MODELS, 

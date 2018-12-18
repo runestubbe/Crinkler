@@ -38,6 +38,8 @@ const char *compTypeName(CompressionType ct)
 			return "FAST";
 		case COMPRESSION_SLOW:
 			return "SLOW";
+		case COMPRESSION_VERYSLOW:
+			return "VERYSLOW";
 	}
 	return "UNKNOWN";
 }
@@ -119,7 +121,7 @@ unsigned int optimizeWeights(CompressionState& cs, ModelList& models) {
 	return bestsize;
 }
 
-unsigned int tryWeights(CompressionState& cs, ModelList& models, int bestsize, CompressionType compressionType) {
+unsigned int tryWeights(CompressionState& cs, ModelList& models, CompressionType compressionType) {
 	unsigned int size;
 	switch (compressionType) {
 	case COMPRESSION_FAST:
@@ -151,85 +153,96 @@ ModelList InstantModels() {
 }
 
 ModelList ApproximateModels4k(const unsigned char* data, int datasize, int baseprob, bool saturate, int* compsize, ProgressBar* progressBar, CompressionType compressionType, char* context) {
-	unsigned char masks[256];
-	int m;
-	int mask;
-	unsigned int size, bestsize;
-	int maski;
+	int width = compressionType == COMPRESSION_VERYSLOW ? 3 : 1;
+	const int ELITE_FLAG = INT_MIN;
 
-	ModelList models;
+	vector<ModelList> modelsets(width * 2);
 	SoftwareCompressionStateEvaluator evaluator;
 
 	CompressionState cs(data, datasize, baseprob, saturate, &evaluator, context);
 
-	for (m = 0 ; m <= 255 ; m++) {
-		mask = m;
+	unsigned char masks[256];
+	for (int m = 0 ; m <= 255 ; m++) {
+		int mask = m;
 		mask = ((mask&0x0f)<<4)|((mask&0xf0)>>4);
 		mask = ((mask&0x33)<<2)|((mask&0xcc)>>2);
 		mask = ((mask&0x55)<<1)|((mask&0xaa)>>1);
 		masks[m] = (unsigned char)mask;
 	}
 
-	bestsize = cs.getCompressedSize();
+	modelsets[0].size = cs.getCompressedSize() | ELITE_FLAG;
+	for (int s = 1; s < width; s++) {
+		modelsets[s].size = INT_MAX;
+	}
 
-	for (maski = 0 ; maski <= 255 ; maski++) {
-		int used = 0;
-		mask = masks[maski];
+	for (int maski = 0 ; maski <= 255 ; maski++) {
+		int mask = masks[maski];
 
-		for (m = 0 ; m < models.nmodels ; m++) {
-			if (models[m].mask == mask) {
-				used = 1;
-			}
-		}
+		for (int s = 0; s < width; s++) {
+			ModelList& models = modelsets[s];
+			ModelList& new_models = modelsets[width + s];
 
-		if (!used && models.nmodels < MAX_N_MODELS) {
-			models[models.nmodels].mask = (unsigned char)mask;
-			models[models.nmodels].weight = 0;
-			models.nmodels++;
+			new_models.size = INT_MAX;
+			if (models.size == INT_MAX) continue;
 
-			size = tryWeights(cs, models, bestsize, compressionType);
-
-			if (size < bestsize) {
-				bestsize = size;
-
-				// Try remove
-				for (m = models.nmodels-2 ; m >= 0 ; m--) {
-					Model rmod = models[m];
-					models.nmodels -= 1;
-					models[m] = models[models.nmodels];
-					size = tryWeights(cs, models, bestsize, compressionType);
-					if (size < bestsize) {
-						bestsize = size;
-					} else {
-						models[m] = rmod;
-						models.nmodels++;
-					}
+			bool used = false;
+			for (int m = 0 ; m < models.nmodels ; m++) {
+				if (models[m].mask == mask) {
+					used = true;
 				}
-			} else {
-				// Try replace
-				models.nmodels--;
-				if (compressionType == COMPRESSION_VERYSLOW) {
-					for (m = models.nmodels-1 ; m >= 0 ; m--) {
-						Model rmod = models[m];
-						models[m] = models[models.nmodels];
-						size = tryWeights(cs, models, bestsize, compressionType);
+			}
+
+			if (!used && models.nmodels < MAX_N_MODELS) {
+				new_models = models;
+				new_models[models.nmodels].mask = (unsigned char)mask;
+				new_models[models.nmodels].weight = 0;
+				new_models.nmodels++;
+
+				int old_size = models.size & ~ELITE_FLAG;
+				int new_size = tryWeights(cs, new_models, compressionType);
+
+				if (new_size < old_size || compressionType == COMPRESSION_VERYSLOW) {
+					// Try remove
+					int bestsize = new_size;
+					for (int m = new_models.nmodels-2 ; m >= 0 ; m--) {
+						Model rmod = new_models[m];
+						new_models.nmodels -= 1;
+						new_models[m] = new_models[new_models.nmodels];
+						int size = tryWeights(cs, new_models, compressionType);
 						if (size < bestsize) {
 							bestsize = size;
-							break;
 						} else {
-							models[m] = rmod;
+							new_models[m] = rmod;
+							new_models.nmodels++;
 						}
 					}
+
+					new_models.size = bestsize;
+					if ((models.size & ELITE_FLAG) != 0 && new_size < old_size) {
+						models.size &= ~ELITE_FLAG;
+						new_models.size |= ELITE_FLAG;
+					}
+				} else {
+					new_models.size = INT_MAX;
 				}
 			}
 		}
 
-		
+		stable_sort(modelsets.begin(), modelsets.end(), [](const ModelList& a, const ModelList& b) {
+			return a.size < b.size;
+		});
+
 		if(progressBar)
 			progressBar->update(maski+1, 256);
 	}
 
-	size = optimizeWeights(cs, models);
+	assert((modelsets[0].size & ELITE_FLAG) != 0);
+	modelsets[0].size &= ~ELITE_FLAG;
+	stable_sort(modelsets.begin(), modelsets.end(), [](const ModelList& a, const ModelList& b) {
+		return a.size < b.size;
+	});
+	ModelList models = modelsets[0];
+	int size = optimizeWeights(cs, models);
 	if(compsize)
 		*compsize = size;
 
