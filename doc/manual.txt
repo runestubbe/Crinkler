@@ -25,6 +25,7 @@ VERSION HISTORY
                 Choose configuration instead of hiding/showing in report.
                 32 column hex view and other adjustments in report.
                 Avoid crash if an existing file could not be opened.
+                Updated internal function list to Windows version 1809.
 
 28.03.18: 2.0a: Fixed Crinkler crash on recent Windows SDK versions.
                 Fixed Crinkler crash on forwards from ole32.dll.
