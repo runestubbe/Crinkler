@@ -453,14 +453,18 @@ Linker/Command Line/Additional Options:
 /COMPMODE:INSTANT
 /COMPMODE:FAST
 /COMPMODE:SLOW
+/COMPMODE:VERYSLOW
 
-    Choose between three different compression modes. The FAST mode
-    usually compresses in a couple of seconds, while the SLOW one can
-    take up to a few minutes to complete. The slow one usually
-    compresses about 10-40 bytes better on a 4k executable. Use
-    INSTANT if you just want to check that your program works in
-    compressed form and don't care about the size. The default
-    compression mode is FAST.
+    Choose between four different algorithms for the model estimation.
+    The FAST compression mode performs a very quick estimation, whereas
+    the SLOW mode takes up to some tens of seconds for a typical 4k,
+    but also compresses significantly better. VERYSLOW is about 5-10x
+    slower than SLOW and typically a few bytes better. INSTANT skips
+    model estimation entirely and just uses a fixed set of models and
+    weights. It also skips section reordering and hash table size
+    optimization. Use INSTANT if you just want to check that your
+    program works in compressed form and don't care about the size.
+    The default compression mode is SLOW.
 
 /SATURATE
 
