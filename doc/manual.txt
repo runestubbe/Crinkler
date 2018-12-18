@@ -4,12 +4,28 @@ CRINKLER - Compressing linker for Windows specialized for 4k intros
 Aske Simon Christensen "Blueberry/Loonies"
 Rune L. H. Stubbe "Mentor/TBC"
 
-Version 2.0a (March 28, 2018)
+Version 2.1 (December 18, 2018)
 
 
 
 VERSION HISTORY
 ---------------
+18.12.18: 2.1:  Crinkler executable built for both 32 bit and 64 bit.
+                New, slightly different model estimation. 8-12x speedup.
+                Optimized section reordering. About 3-4x speedup.
+                Optimized and multi-threaded hash size optimization.
+                New /COMPMODE:VERYSLOW option for a few extra bytes.
+                Changed default compression mode to SLOW.
+                Changed default HASHSIZE to 500 and HASHTRIES to 100.
+                /REUSE option: Use models and ordering from last run.
+                /REUSEMODE:STABLE to quickly iterate when making changes.
+                /REUSEMODE:IMPROVE to improve upon previous compression.
+                Print output file size in report.
+                More compact bits-per-byte color legend in report.
+                Choose configuration instead of hiding/showing in report.
+                32 column hex view and other adjustments in report.
+                Avoid crash if an existing file could not be opened.
+
 28.03.18: 2.0a: Fixed Crinkler crash on recent Windows SDK versions.
                 Fixed Crinkler crash on forwards from ole32.dll.
                 Corrected horizontal alignment issue in HTML report.
@@ -533,6 +549,11 @@ Linker/Command Line/Additional Options:
     Specify the number of section reordering iterations that the
     linker will try out in search for the ordering that gives the best
     compression ratio. The default is not to do any reordering.
+    Crinkler starts from a heuristic ordering (the one used when
+    initially estimating models) and incrementally makes small, random
+    changes to the ordering to see if it can find one that compresses
+    better.
+
     Specifying this option drastically increases the compression time,
     since Crinkler has to calculate the compressed size anew on every
     reordering. Usually, the size does not improve noticeably after a
@@ -559,7 +580,9 @@ Linker/Command Line/Additional Options:
     quickly after the first time with a similar compression ratio.
 
     With IMPROVE, only the section ordering from the file is reused,
-    and a normal compression procedure is performed. The file is
+    and a normal compression procedure is performed. If section
+    reordering is enabled, it starts from the ordering in the reuse
+    file and tries to optimize the ordering based on that. The file is
     written back only if the final file size is smaller than what
     the parameters in the reuse file would have given (which is not
     necessarily the size of the existing file, depending on what
@@ -1090,9 +1113,10 @@ gives some advice on these.
 
 - When you perform detailed size comparisons, always use the SLOW
   compression mode with plenty of ORDERTRIES and compare the
-  "Reestimated ideal compressed total size" values. The INSTANT and
-  FAST modes are only intended for use during testing and to give a
-  rough estimate of the compressed size. Also note that the
+  "Ideal compressed total size" values. The INSTANT and FAST modes
+  are only intended for use during testing and to give a rough estimate
+  of the compressed size. Use the /REUSE option when making small
+  changes to achieve stable size comparison. Also note that the
   compression is tuned for the 4k size target, so any size comparisons
   you perform on smaller files might turn out to behave differently
   when you get nearer to 4k.
