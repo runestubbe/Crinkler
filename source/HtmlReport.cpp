@@ -193,7 +193,7 @@ static const char* htmlHeader1 =
 							"font-weight:bold;"
 						"}"
 						".c1{width:7em;text-align:left;white-space:nowrap;}"
-						".c2{width:40em;text-align:right;white-space:nowrap;}"
+						".c2{width:45em;text-align:right;white-space:nowrap;}"
 						".c3{width:7em;text-align:right;white-space:nowrap;}"
 						".c4{width:7em;text-align:right;white-space:nowrap;}"
 						".c5{width:7em;text-align:right;white-space:nowrap;}"
