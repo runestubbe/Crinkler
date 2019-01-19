@@ -4,12 +4,15 @@ CRINKLER - Compressing linker for Windows specialized for 4k intros
 Aske Simon Christensen "Blueberry/Loonies"
 Rune L. H. Stubbe "Mentor/TBC"
 
-Version 2.1 (December 18, 2018)
+Version 2.1a (January 19, 2019)
 
 
 
 VERSION HISTORY
 ---------------
+19.01.19: 2.1a: Fixed width of report to make room for the 32 hex columns.
+                /REUSEMODE:WRITE to write the reuse file without reading it.
+
 18.12.18: 2.1:  Crinkler executable built for both 32 bit and 64 bit.
                 New, slightly different model estimation. 8-12x speedup.
                 Optimized section reordering. About 3-4x speedup.
@@ -567,6 +570,7 @@ Linker/Command Line/Additional Options:
 /REUSE:[reuse parameter file name]
 /REUSEMODE:STABLE
 /REUSEMODE:IMPROVE
+/REUSEMODE:WRITE
 /REUSEMODE:OFF
 
     After compression, write information about the selected models,
@@ -600,6 +604,12 @@ Linker/Command Line/Additional Options:
     For both modes, it can be useful to edit the reuse file by hand
     to try out parameters manually or to nudge Crinkler in some
     direction.
+
+    With WRITE, the reuse file is not read, but is still written
+    after compression, overwriting the file if it exists. This can be
+    conveniently used when reuse is not desired, such that it can be
+    switched on at any time (by changing the reuse mode to STABLE or
+    IMPROVE) without needing another compression run.
 
     With OFF, it is as if no reuse file is specified. This is simply
     a way to disable the option without removing the file from the
