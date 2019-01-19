@@ -1231,7 +1231,7 @@ void Crinkler::link(const char* filename) {
 	Reuse *reuse = nullptr;
 	int reuse_filesize = 0;
 	ReuseType reuseType = m_useTinyHeader ? REUSE_OFF : m_reuseType;
-	if (reuseType != REUSE_OFF) {
+	if (reuseType != REUSE_OFF && reuseType != REUSE_WRITE) {
 		reuse = loadReuseFile(m_reuseFilename.c_str());
 		if (reuse != nullptr) {
 			m_modellist1 = *reuse->getCodeModels();

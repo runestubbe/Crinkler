@@ -9,13 +9,15 @@
 #include "ExplicitHunkSorter.h"
 
 enum ReuseType {
-	REUSE_OFF, REUSE_IMPROVE, REUSE_STABLE
+	REUSE_OFF, REUSE_WRITE, REUSE_IMPROVE, REUSE_STABLE
 };
 
 static const char *reuseTypeName(ReuseType mode) {
 	switch (mode) {
 	case REUSE_OFF:
 		return "OFF";
+	case REUSE_WRITE:
+		return "WRITE";
 	case REUSE_IMPROVE:
 		return "IMPROVE";
 	case REUSE_STABLE:
