@@ -12,7 +12,6 @@ global	_BaseProbPtr1
 global  _BoostFactorPtr
 global	_DepackEndPositionPtr
 global	_VirtualSizeHighBytePtr	
-global	_SpareNopPtr
 global	_CharacteristicsPtr
 global	_LinkerVersionPtr
 
@@ -92,7 +91,7 @@ AritDecodeLoop2:
 	add	eax, eax			;shift interval							;2
 AritDecode:
 	;23
-	test eax,eax		;msb of interval != 0						;2
+	test eax, eax		;msb of interval != 0						;2
 	jns	short AritDecodeLoop	;loop while msb of interval == 0	;2
 	jmp short _AritDecode2
 
@@ -126,18 +125,14 @@ _SubsystemTypePtr:
 	;db "HASH"			;Loader flags	/ Pointer to relocs
 DepackInit:
 	;20
-	
+
 	push	ebx		; ebx=[fs:30h]			;53
-	mov		edi, _UnpackedData				;BF 00 00 41 00
-	push	byte 1							;6A 01
-	pop		eax								;58
-_SpareNopPtr:
-	nop										;90
-	push	byte 0							;6A 00
-	pop		esi								;5E
-	push	edi								;57
-	push	byte 0							;6A 00
-	pop		ebp								;5D
+	mov		edi, _UnpackedData				;BF 00 00* 42 00
+	push 	byte 1
+	pop 	eax
+	xor		esi, esi
+	and		ebp, esi
+	push 	edi
 
 	;; edi = dst ptr
 	;; esi = data
@@ -149,22 +144,22 @@ _SpareNopPtr:
 
 _DepackEntry:
 	push	byte 8
-	mov		ecx, 0
-	;dd 0				;Number of RVAs and Sizes	/ Pointer to linenumbers (must be 0)
-;Data directories
 	pop		ecx			;1		59
 _DontInc:
-	push byte 0			;2		6a ??
+	push 	byte 0		;2		6a ??
 BaseProbPtrP0:
+
+	cmp		eax, strict dword 0
+	;dd 0				;Number of RVAs and Sizes	/ Pointer to linenumbers (must be 0)
+;Data directories
 	push byte 0			;2		6a ??
 BaseProbPtrP1:
-	
 	mov edx, _ModelMask	;5		ba ?? ?? ?? ??
-	add al, 0			;2		04 00
-
 	mov bl, 31			;2
 model_loop:
 	pusha				;1
+	add al, 0			;2		04 00
+
 	;clear eax, edx
 	xor eax, eax		;2
 	cdq 		;edx := 0	;1
@@ -200,12 +195,11 @@ _no_update:
 	mov cl, byte 0	;boost factor
 BoostFactorPtrP:
 	mov esi, esp
-	mov ebp, dword 0		;b0-b3 must be 0
 	.add_loop:
-		add dword [esi+9*4], edx	;4
-		test eax, eax
+		add dword [esi+9*4], edx	;3
+		cmp eax, strict dword 0		;b0-b3 must be 0
 		jz .loop
-		add dword [esi+8*4], eax	;4
+		add dword [esi+8*4], eax	;3
 		test edx, edx
 	.loop:
 		loope .add_loop			;2		;loop BOOST_FACTOR times, if c0*c1 = 0
@@ -237,8 +231,7 @@ _AritDecode3:
 one:
 	rcl byte [edi], 1		;rcl byte [edi], byte 1					;2
 
-	dec ecx					;1
-	jne short _DontInc		;2
+	loop  _DontInc			;2
 	inc edi					;1
 	jmp short _DepackEntry	;2
 	
