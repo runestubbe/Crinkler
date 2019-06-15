@@ -8,8 +8,8 @@
 
 class CmdParamFlags : public CmdParam {
 	std::map<std::string, int>		m_flagMap;
-	int								m_value;
 public:
+	int								m_value;
 	CmdParamFlags(const char* paramName, const char* description, int flags, int defaultValue, const char* flagName, int flagValue, ...);
 
 	int parse(const char* str, char* errorMsg, int buffsize);

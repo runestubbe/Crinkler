@@ -418,6 +418,12 @@ int main(int argc, char* argv[]) {
 		Log::error("", "Export stripping can only be performed during recompression.");
 	}
 
+	if (transformArg.getValue() != 0 && tinyHeader.getValue())
+	{
+		Log::warning("", "Transforms are not supported with /TINYHEADER.");
+		transformArg.m_value = 0;
+	}
+
 	//set Crinkler options
 	crinkler.setUseTinyHeader(tinyHeader.getValue());
 	crinkler.setUseTinyImport(tinyImport.getValue());

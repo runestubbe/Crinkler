@@ -400,13 +400,15 @@ void Crinkler::setHeaderConstants(Hunk* header, Hunk* phase1, int hashsize, int 
 
 	if (use1kHeader)
 	{
-		int virtualSize = align(phase1->getVirtualSize() + 65536 * 2, 24);	//TODO: does this make sense?
+		int virtualSizeHighByteOffset = header->findSymbol("_VirtualSizeHighBytePtr")->value;
+		int lowBytes = *(int*)(header->getPtr() + virtualSizeHighByteOffset - 3) & 0xFFFFFF;
+		int virtualSize = phase1->getVirtualSize() + 65536 * 2;
 		
 		*(header->getPtr() + header->findSymbol("_BaseProbPtr0")->value) = baseprob0;
 		*(header->getPtr() + header->findSymbol("_BaseProbPtr1")->value) = baseprob1;
 		*(header->getPtr() + header->findSymbol("_BoostFactorPtr")->value) = boostfactor;
 		*(unsigned short*)(header->getPtr() + header->findSymbol("_DepackEndPositionPtr")->value) = phase1->getRawSize() + CRINKLER_CODEBASE;
-		*(header->getPtr() + header->findSymbol("_VirtualSizeHighBytePtr")->value) = virtualSize >> 24;
+		*(header->getPtr() + virtualSizeHighByteOffset) = (virtualSize - lowBytes + 0xFFFFFF) >> 24;
 	}
 	else
 	{
@@ -545,12 +547,25 @@ void Crinkler::recompress(const char* input_filename, const char* output_filenam
 				rawsize_start = i + 3;
 			}
 
-			if(	indata[i] == 0xB9 && indata[i + 1] == 0x00 && indata[i + 2] == 0x00 && indata[i + 3] == 0x00 && indata[i + 4] == 0x00 &&
-				indata[i + 5] == 0x59 && indata[i + 6] == 0x6a)
+			if(version == 21)
 			{
-				m_modellist1k.baseprob0 = indata[i + 7];
-				m_modellist1k.baseprob1 = indata[i + 9];
-				m_modellist1k.modelmask = *(unsigned int*)&indata[i + 11];
+				if(indata[i] == 0xB9 && indata[i + 1] == 0x00 && indata[i + 2] == 0x00 && indata[i + 3] == 0x00 && indata[i + 4] == 0x00 &&
+					indata[i + 5] == 0x59 && indata[i + 6] == 0x6a)
+				{
+					m_modellist1k.baseprob0 = indata[i + 7];
+					m_modellist1k.baseprob1 = indata[i + 9];
+					m_modellist1k.modelmask = *(unsigned int*)&indata[i + 11];
+				}
+			}
+			else
+			{
+				if(indata[i] == 0x6a && indata[i + 2] == 0x3d && indata[i + 3] == 0x00 && indata[i + 4] == 0x00 && indata[i + 5] == 0x00 &&
+					indata[i + 6] == 0x00 && indata[i + 7] == 0x6a )
+				{
+					m_modellist1k.baseprob0 = indata[i + 1];
+					m_modellist1k.baseprob1 = indata[i + 8];
+					m_modellist1k.modelmask = *(unsigned int*)&indata[i + 10];
+				}
 			}
 
 			if(indata[i] == 0x7F && indata[i + 2] == 0xB1 && indata[i + 4] == 0x89 && indata[i + 5] == 0xE6)
@@ -933,7 +948,7 @@ void Crinkler::recompress(const char* input_filename, const char* output_filenam
 	int* sizefill = new int[maxsize];
 
 	unsigned char* data = new unsigned char[maxsize];
-	int best_hashsize;
+	int best_hashsize = 0;
 	int size;
 	if(is_tiny_header)
 	{
