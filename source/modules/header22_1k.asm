@@ -130,8 +130,8 @@ DepackInit:
 	mov		edi, _UnpackedData				;BF 00 00* 42 00
 	push 	byte 1
 	pop 	eax
-	xor		esi, esi
-	and		ebp, esi
+	xor		ebp, ebp
+	add		esi, esi
 	push 	edi
 
 	;; edi = dst ptr
