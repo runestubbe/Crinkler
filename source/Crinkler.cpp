@@ -547,7 +547,7 @@ void Crinkler::recompress(const char* input_filename, const char* output_filenam
 				rawsize_start = i + 3;
 			}
 
-			if(version == 21)
+			if(version <= 21)
 			{
 				if(indata[i] == 0xB9 && indata[i + 1] == 0x00 && indata[i + 2] == 0x00 && indata[i + 3] == 0x00 && indata[i + 4] == 0x00 &&
 					indata[i + 5] == 0x59 && indata[i + 6] == 0x6a)
