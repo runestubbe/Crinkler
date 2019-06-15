@@ -301,5 +301,8 @@
     <None Include="modules\calltrans.asm">
       <Filter>modules</Filter>
     </None>
+    <None Include="modules\header22_1k.asm">
+      <Filter>modules</Filter>
+    </None>
   </ItemGroup>
 </Project>

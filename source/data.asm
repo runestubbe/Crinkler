@@ -18,7 +18,7 @@ _ %+ %1 %+ _end:
 INCBIN header11Obj, "header11.obj"
 INCBIN headerObj, "header20.obj"
 INCBIN headerCompatibilityObj, "header20_compatibility.obj"
-INCBIN header1KObj, "header20_1k.obj"
+INCBIN header1KObj, "header22_1k.obj"
 
 INCBIN importObj, "import20.obj"
 INCBIN importRangeObj, "import20-range.obj"
