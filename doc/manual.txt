@@ -4,12 +4,15 @@ CRINKLER - Compressing linker for Windows specialized for 4k intros
 Aske Simon Christensen "Blueberry/Loonies"
 Rune L. H. Stubbe "Mentor/TBC"
 
-Version 2.1a (January 19, 2019)
+Version 2.2 (June 15, 2019)
 
 
 
 VERSION HISTORY
 ---------------
+15.06.19: 2.2:  /TINYHEADER decompression code is 6 bytes smaller.
+                Fixed increased memory size of recompressed /TINYHEADER intros.
+
 19.01.19: 2.1a: Fixed width of report to make room for the 32 hex columns.
                 /REUSEMODE:WRITE to write the reuse file without reading it.
 
@@ -942,6 +945,7 @@ remaining options work as follows:
 /COMPMODE:INSTANT
 /COMPMODE:FAST
 /COMPMODE:SLOW
+/COMPMODE:VERYSLOW
 
     If this option is specified, the compression models will be
     reestimated using the specified compression mode. If the option is
@@ -1219,9 +1223,9 @@ NeKoFu, n3Xus, Moerder, merry, RCL, zoom, vampire7, Key-Real,
 quiller, Seven, and all the ones we have forgotten. Also thanks to
 Dwarf, Polygon7 and Gargaj for suggestions for our web design.
 
-Big thanks to Rrrola for his valuable suggestions for optimizing the
-decompression code, and to qkumba for his guidance on the zero-section
-header and for tracking down the NVIDIA driver issue.
+Big thanks to Rrrola and TomCat for their valuable suggestions for
+optimizing the decompression code, and to qkumba for his guidance on
+the zero-section header and for tracking down the NVIDIA driver issue.
 
 Our special thanks to the many people who have demonstrated the
 usefulness of Crinkler by using it for their own productions.
