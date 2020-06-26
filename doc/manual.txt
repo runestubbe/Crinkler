@@ -11,7 +11,7 @@ Version 2.2 (June 15, 2019)
 VERSION HISTORY
 ---------------
 15.06.19: 2.2:  /TINYHEADER decompression code is 6 bytes smaller.
-                Fixed increased memory size of recompressed /TINYHEADER intros.
+                Fixed memory size increase of recompressed /TINYHEADER intros.
 
 19.01.19: 2.1a: Fixed width of report to make room for the 32 hex columns.
                 /REUSEMODE:WRITE to write the reuse file without reading it.
