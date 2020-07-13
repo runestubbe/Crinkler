@@ -5,64 +5,72 @@
 #include "HunkList.h"
 #include "CoffObjectLoader.h"
 #include "Hunk.h"
+#include "misc.h"
 #include "NameMangling.h"
 #include "Symbol.h"
 
 using namespace std;
 
 bool CoffLibraryLoader::Clicks(const char* data, int size) const {
-	const char* ptr = data;
-
-	if(size < 8+16+60+16+(size&1))
+	if (size < 8 + 16 + 60 + 16 + (size & 1)) {
 		return false;
+	}
 
 	// Check signature
-	if(memcmp("!<arch>\n", ptr, 8*sizeof(char))) {
+	if (memcmp("!<arch>\n", data, 8)) {
 		return false;
 	}
-	ptr += 8;
 
-	// Check 1st linker member
-	if(memcmp(ptr, "/               ", 16))
+	// Check first linker member
+	const char* ptr = data + 8;
+	if (memcmp(ptr, "/               ", 16)) {
 		return false;
-
-	{	// Skip member
-		int memberSize = atoi(&ptr[48]);
-		ptr += 60 + memberSize;
-		if(memberSize & 1)
-			ptr++;
 	}
-
-	// Check 2nd linker member
-	if(memcmp(ptr, "/               ", 16))
-		return false;
 
 	return true;
 }
 
 HunkList* CoffLibraryLoader::Load(const char* data, int size, const char* module) {
-	// Assume that all initial headers are fine (as it is checked by click)
+	// Assume that the header and first linker member are fine (as it is checked by click)
 	
 	HunkList* hunklist = new HunkList;
-	const char* ptr = data+8;
-	{	// Skip member
-		int memberSize = atoi(&ptr[48]);
-		ptr += 120 + memberSize;
-		if(memberSize & 1)
-			ptr++;
+	const char* ptr = data + 8;
+	// Skip first linker member
+	int memberSize = atoi(&ptr[48]);
+	const char *next = ptr + 60 + memberSize;
+	next += memberSize & 1;
+
+	int numberOfSymbols;
+	int numberOfMembers;
+	const int* offsets;
+	unsigned short* indices;
+	if (memcmp(next, "/               ", 16)) {
+		//only first linker member present
+		ptr += 60;
+
+		numberOfSymbols = ReadBigEndian((const unsigned char*)ptr);
+		ptr += sizeof(int);
+		numberOfMembers = numberOfSymbols;
+
+		offsets = ((int*)ptr);
+		ptr += numberOfMembers * sizeof(int);
+
+		indices = nullptr;
+	} else {
+		// Second linker member
+		ptr = next + 60;
+
+		numberOfMembers = *((int*)ptr);
+		ptr += sizeof(int);
+
+		offsets = ((int*)ptr);
+		ptr += numberOfMembers * sizeof(int);
+		numberOfSymbols = *((int*)ptr);
+		ptr += sizeof(int);
+
+		indices = (unsigned short*)ptr;
+		ptr += numberOfSymbols * sizeof(unsigned short);
 	}
-
-	// Second linker member
-	int numberOfMembers = *((unsigned int*)ptr);
-	ptr += sizeof(int);
-
-	unsigned int* offsets = ((unsigned int*)ptr);
-	ptr += (numberOfMembers)*sizeof(int);
-	int numberOfSymbols = *((unsigned int*)ptr);
-	ptr += sizeof(unsigned int);
-
-	unsigned short* indices = (unsigned short*)ptr;
-	ptr += numberOfSymbols * sizeof(unsigned short);
 
 	// Make symbol names table
 	vector<const char*> symbolNames(numberOfSymbols);
@@ -72,11 +80,14 @@ HunkList* CoffLibraryLoader::Load(const char* data, int size, const char* module
 	}
 
 	// Add COFF
+	int prev_offset = 0;
 	for(int i = 0; i < numberOfMembers; i++) {
 		char memberModuleName[256];
 		sprintf_s(memberModuleName, 256, "%s|%d", module, i);
-		if (offsets[i] == 0) continue;
-		ptr = data + offsets[i];
+		int offset = indices ? offsets[i] : ReadBigEndian((const unsigned char*)&offsets[i]);
+		if (offset == 0 || offset == prev_offset) continue;
+		prev_offset = offset;
+		ptr = data + offset;
 		ptr += 60;	// Skip member header
 
 		// COFF
@@ -90,9 +101,10 @@ HunkList* CoffLibraryLoader::Load(const char* data, int size, const char* module
 
 	// Add imports
 	for(int i = 0; i < numberOfSymbols; i++) {
-		int idx = indices[i] - 1;
-		if (offsets[idx] == 0) continue;
-		ptr = data + offsets[idx];
+		int idx = indices ? indices[i] - 1 : i;
+		int offset = indices ? offsets[idx] : ReadBigEndian((const unsigned char*)&offsets[idx]);
+		if (offset == 0) continue;
+		ptr = data + offset;
 		ptr += 60;
 
 		if(*(int*)ptr == 0xFFFF0000) {	// Import

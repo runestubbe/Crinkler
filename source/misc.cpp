@@ -28,3 +28,7 @@ int NumberOfModelsInWeightMask(unsigned int mask) {
 	} while(mask);
 	return n;
 }
+
+int ReadBigEndian(const unsigned char* data) {
+	return (data[0] << 24) | (data[1] << 16) | (data[2] << 8) | data[3];
+}

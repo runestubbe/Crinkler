@@ -9,4 +9,6 @@ unsigned long long RoundInt64(unsigned long long v, int bits);
 
 int NumberOfModelsInWeightMask(unsigned int mask);
 
+int ReadBigEndian(const unsigned char* data);
+
 #endif
