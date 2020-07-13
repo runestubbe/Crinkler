@@ -46,7 +46,7 @@ int Compress(unsigned char* compressed, int* sizefill, int maxsize, bool saturat
 	const unsigned char* data, int rawsize, int splittingPoint,
 	const ModelList& models1, const ModelList& models2, int baseprob, int hashsize);
 
-int CompressFromHashBits(unsigned char* compressed, int* sizefill, int maxsize, bool saturate,
+int CompressFromHashBits(unsigned char* compressed, int* sizefill, TinyHashEntry* hashtable1, TinyHashEntry* hashtable2, int maxsize, bool saturate,
 	const HashBits& hashbits1, const HashBits& hashbits2, int baseprob, int hashsize);
 
 int Compress1K(unsigned char* data, int size, unsigned char* compressed, int compressed_size, int boost_factor, int b0, int b1, unsigned int modelmask, int* sizefill, int* internal_size);

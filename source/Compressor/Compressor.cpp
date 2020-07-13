@@ -446,15 +446,17 @@ int Compress(unsigned char* compressed, int* sizefill, int maxsize, bool saturat
 	memset(context, 0, sizeof(context));
 	HashBits hashbits1 = ComputeHashBits(data, splittingPoint, context, models1, true, false);
 	HashBits hashbits2 = ComputeHashBits(data + splittingPoint, rawsize - splittingPoint, context, models2, false, true);
-	return CompressFromHashBits(compressed, sizefill, maxsize, saturate, hashbits1, hashbits2, baseprob, hashsize);
+	std::vector<TinyHashEntry> hashtable1(hashbits1.tinyhashsize);
+	std::vector<TinyHashEntry> hashtable2(hashbits2.tinyhashsize);
+	return CompressFromHashBits(compressed, sizefill, hashtable1.data(), hashtable2.data(), maxsize, saturate, hashbits1, hashbits2, baseprob, hashsize);
 }
 
-int CompressFromHashBits(unsigned char* compressed, int* sizefill, int maxsize, bool saturate,
+int CompressFromHashBits(unsigned char* compressed, int* sizefill, TinyHashEntry* hashtable1, TinyHashEntry* hashtable2, int maxsize, bool saturate,
 	const HashBits& hashbits1, const HashBits& hashbits2, int baseprob, int hashsize)
 {
 	CompressionStream cs(compressed, sizefill, maxsize, saturate);
-	cs.CompressFromHashBits(hashbits1, baseprob, hashsize);
-	cs.CompressFromHashBits(hashbits2, baseprob, hashsize);
+	cs.CompressFromHashBits(hashbits1, hashtable1, baseprob, hashsize);
+	cs.CompressFromHashBits(hashbits2, hashtable2, baseprob, hashsize);
 	return cs.Close();
 }
 

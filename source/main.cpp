@@ -214,7 +214,7 @@ int main(int argc, char* argv[]) {
 	CmdParamInt hashsizeArg("HASHSIZE", "number of megabytes for hashing", "size in mb", PARAM_SHOW_CONSTRAINTS,
 							1, 1000, 500);
 	CmdParamInt hashtriesArg("HASHTRIES", "number of hashing tries", "number of hashing tries", 0,
-							0, 10000, 100);
+							0, 100000, 100);
 	CmdParamInt hunktriesArg("ORDERTRIES", "", "number of section reordering tries", 0,
 							0, 100000, 0);
 	CmdParamInt truncateFloatsArg("TRUNCATEFLOATS", "truncates floats", "bits", PARAM_ALLOW_NO_ARGUMENT_DEFAULT,

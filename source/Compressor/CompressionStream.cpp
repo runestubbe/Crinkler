@@ -31,12 +31,6 @@ static int nextPowerOf2(int v) {
 	return v+1;
 }
 
-struct TinyHashEntry {
-	unsigned int hash;
-	unsigned char prob[2];
-	unsigned char used;
-};
-
 HashBits ComputeHashBits(const unsigned char* d, int size, unsigned char* context, const ModelList& models, bool first, bool finish) {
 	int bitlength = first + size * 8;
 	int length = bitlength * models.nmodels;
@@ -44,6 +38,8 @@ HashBits ComputeHashBits(const unsigned char* d, int size, unsigned char* contex
 	out.hashes.reserve(length);
 	out.bits.reserve(bitlength);
 	out.weights.resize(models.nmodels);
+
+	out.tinyhashsize = nextPowerOf2(length);
 
 	unsigned char* databuf = new unsigned char[size + MAX_CONTEXT_LENGTH];
 	unsigned char* data = databuf + MAX_CONTEXT_LENGTH;
@@ -99,7 +95,7 @@ HashBits ComputeHashBits(const unsigned char* d, int size, unsigned char* contex
 	return out;
 }
 
-void CompressionStream::CompressFromHashBits(const HashBits& hashbits, int baseprob, int hashsize) {
+void CompressionStream::CompressFromHashBits(const HashBits& hashbits, TinyHashEntry* hashtable, int baseprob, int hashsize) {
 	int length = (int)hashbits.hashes.size();
 	int nmodels = (int)hashbits.weights.size();
 	int bitlength = length / nmodels;
@@ -112,8 +108,7 @@ void CompressionStream::CompressFromHashBits(const HashBits& hashbits, int basep
 	uint32_t rcp_hashsize = (((1ull << (hashshift + 31)) + hashsize - 1) / hashsize);
 	uint32_t rcp_shift = hashshift - 1u + 32u;
 
-	unsigned int tinyhashsize = nextPowerOf2(length);
-	TinyHashEntry* hashtable = new TinyHashEntry[tinyhashsize];
+	unsigned int tinyhashsize = hashbits.tinyhashsize;
 	memset(hashtable, 0, tinyhashsize * sizeof(TinyHashEntry));
 	TinyHashEntry* hashEntries[MAX_N_MODELS];
 
@@ -172,8 +167,6 @@ void CompressionStream::CompressFromHashBits(const HashBits& hashbits, int basep
 	if (m_sizefillptr) {
 		*m_sizefillptr = AritCodePos(&m_aritstate) / (BITPREC_TABLE / BITPREC);
 	}
-
-	delete[] hashtable;
 }
 
 __forceinline uint32_t Hash(__m128i& masked_contextdata)

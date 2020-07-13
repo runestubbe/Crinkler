@@ -281,7 +281,7 @@ HunkList* ImportHandler::createImportHunks(HunkList* hunklist, Hunk*& hashHunk, 
 	importList->addSymbol(new Symbol("_ImportList", 0, SYMBOL_IS_RELOCATEABLE, importList));
 	importList->addSymbol(new Symbol(".bss", 0, SYMBOL_IS_RELOCATEABLE|SYMBOL_IS_SECTION, importList, "crinkler import"));
 
-	hashHunk = new Hunk("HashHunk", (char*)&hashes[0], 0, 0, int(hashes.size()*sizeof(unsigned int)), int(hashes.size()*sizeof(unsigned int)));
+	hashHunk = new Hunk("HashHunk", (char*)hashes.data(), 0, 0, int(hashes.size()*sizeof(unsigned int)), int(hashes.size()*sizeof(unsigned int)));
 	
 	//create new hunklist
 	HunkList* newHunks = new HunkList;

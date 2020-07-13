@@ -282,12 +282,12 @@ int Crinkler::optimizeHashsize(unsigned char* data, int datasize, int hashsize, 
 	int* sizes = new int[tries];
 
 	int progress = 0;
-	concurrency::combinable<vector<unsigned char>> buffers([maxsize]() {
-		return vector<unsigned char>(maxsize, 0);
-	});
+	concurrency::combinable<vector<unsigned char>> buffers([maxsize]() { return vector<unsigned char>(maxsize, 0); });
+	concurrency::combinable<vector<TinyHashEntry>> hashtable1([&hashbits1]() { return vector<TinyHashEntry>(hashbits1.tinyhashsize); });
+	concurrency::combinable<vector<TinyHashEntry>> hashtable2([&hashbits2]() { return vector<TinyHashEntry>(hashbits2.tinyhashsize); });
 	concurrency::critical_section cs;
 	concurrency::parallel_for(0, tries, [&](int i) {
-		sizes[i] = CompressFromHashBits(buffers.local().data(), nullptr, maxsize, m_saturate != 0,
+		sizes[i] = CompressFromHashBits(buffers.local().data(), nullptr, hashtable1.local().data(), hashtable2.local().data(), maxsize, m_saturate != 0,
 			hashbits1, hashbits2, CRINKLER_BASEPROB, hashsizes[i]);
 
 		Concurrency::critical_section::scoped_lock l(cs);
