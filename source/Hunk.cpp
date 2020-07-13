@@ -180,11 +180,23 @@ void Hunk::Relocate(int imageBase) {
 					break;
 			}
 		} else {
+			string location = relocation.objectname;
+			auto symbolMap = GetOffsetToSymbolMap();
+			for (int offset = relocation.offset; offset >= 0; offset--) {
+				if (symbolMap.count(offset)) {
+					Symbol* symbol = symbolMap[offset];
+					if (!(symbol->flags & SYMBOL_IS_LOCAL)) {
+						location += ":";
+						location += symbol->name;
+						break;
+					}
+				}
+			}
 			const char* helpMessage = HelpMessage(relocation.symbolname.c_str());
-			if(helpMessage) {
-				Log::NonfatalError(relocation.objectname.c_str(), "Cannot find symbol '%s'.\n * HINT: %s", relocation.symbolname.c_str(), helpMessage);
+			if (helpMessage) {
+				Log::NonfatalError(location.c_str(), "Cannot find symbol '%s'", relocation.symbolname.c_str());
 			} else {
-				Log::NonfatalError(relocation.objectname.c_str(), "Cannot find symbol '%s'", relocation.symbolname.c_str());
+				Log::NonfatalError(location.c_str(), "Cannot find symbol '%s'.\n * HINT: %s", relocation.symbolname.c_str(), helpMessage);
 			}
 			error = true;
 		}

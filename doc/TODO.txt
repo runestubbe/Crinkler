@@ -42,7 +42,6 @@ Linker:
 	combine identical read-only symbols
 	Remove 128k limit on compressed size (Adjustable CodeBase)
 	merge crt header initializer labels?
-	Include function name in unresolved ref error message
 	Don't crash on big input files
 	Pad code section to page size
 
