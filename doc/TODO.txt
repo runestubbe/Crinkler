@@ -32,7 +32,6 @@ Output/UI:
 
 Linker:
 	Lib files from rustc?
-	DLLs from Wine - give warning
 	Test for name containing crinkler instead of exact
 	Load obj files before lib files
 	Implicit linking to msvcrt.dll
