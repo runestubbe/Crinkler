@@ -308,6 +308,12 @@ int Crinkler::optimizeHashsize(unsigned char* data, int datasize, int hashsize, 
 	return best_hashsize;
 }
 
+static void progressUpdateCallback(void* userData, int n, int max)
+{
+	ProgressBar* progressBar = (ProgressBar*)userData;
+	progressBar->update(n, max);
+}
+
 int Crinkler::estimateModels(unsigned char* data, int datasize, int splittingPoint, bool reestimate, bool use1kMode, int target_size1, int target_size2)
 {
 	bool verbose = (m_printFlags & PRINT_MODELS) != 0;
@@ -317,7 +323,7 @@ int Crinkler::estimateModels(unsigned char* data, int datasize, int splittingPoi
 		m_progressBar.beginTask(reestimate ? "Reestimating models" : "Estimating models");
 		int size = target_size1;
 		int new_size;
-		ModelList1k new_modellist1k = ApproximateModels1k(data, datasize, &new_size, &m_progressBar);
+		ModelList1k new_modellist1k = ApproximateModels1k(data, datasize, &new_size, progressUpdateCallback, &m_progressBar);
 		if(new_size < size)
 		{
 			size = new_size;
@@ -343,7 +349,7 @@ int Crinkler::estimateModels(unsigned char* data, int datasize, int splittingPoi
 
 		int new_size1, new_size2;
 		m_progressBar.beginTask(reestimate ? "Reestimating models for code" : "Estimating models for code");
-		modellist1 = ApproximateModels4k(data, splittingPoint, CRINKLER_BASEPROB, m_saturate != 0, &new_size1, &m_progressBar, m_compressionType, contexts[0]);
+		modellist1 = ApproximateModels4k(data, splittingPoint, CRINKLER_BASEPROB, m_saturate != 0, &new_size1, m_compressionType, contexts[0], progressUpdateCallback, &m_progressBar);
 		m_progressBar.endTask();
 
 		if(new_size1 < size1)
@@ -358,7 +364,7 @@ int Crinkler::estimateModels(unsigned char* data, int datasize, int splittingPoi
 		printf("Estimated compressed size of code: %.2f\n", size1 / (float)(BITPREC * 8));
 
 		m_progressBar.beginTask(reestimate ? "Reestimating models for data" : "Estimating models for data");
-		modellist2 = ApproximateModels4k(data + splittingPoint, datasize - splittingPoint, CRINKLER_BASEPROB, m_saturate != 0, &new_size2, &m_progressBar, m_compressionType, contexts[1]);
+		modellist2 = ApproximateModels4k(data + splittingPoint, datasize - splittingPoint, CRINKLER_BASEPROB, m_saturate != 0, &new_size2, m_compressionType, contexts[1], progressUpdateCallback, &m_progressBar);
 		m_progressBar.endTask();
 
 		if(new_size2 < size2)

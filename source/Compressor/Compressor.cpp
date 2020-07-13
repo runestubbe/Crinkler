@@ -149,7 +149,7 @@ ModelList InstantModels() {
 	return models;
 }
 
-ModelList ApproximateModels4k(const unsigned char* data, int datasize, int baseprob, bool saturate, int* compsize, ProgressBar* progressBar, CompressionType compressionType, char* context) {
+ModelList ApproximateModels4k(const unsigned char* data, int datasize, int baseprob, bool saturate, int* compsize, CompressionType compressionType, char* context, ProgressCallback* progressCallback, void* progressUserData) {
 	int width = compressionType == COMPRESSION_VERYSLOW ? 3 : 1;
 	const int ELITE_FLAG = INT_MIN;
 
@@ -229,8 +229,8 @@ ModelList ApproximateModels4k(const unsigned char* data, int datasize, int basep
 			return a.size < b.size;
 		});
 
-		if(progressBar)
-			progressBar->update(maski+1, 256);
+		if(progressCallback)
+			progressCallback(progressUserData, maski+1, 256);
 	}
 
 	assert((modelsets[0].size & ELITE_FLAG) != 0);
@@ -396,7 +396,6 @@ static int reverse_byte(int x)
 	x = (((x & 0xcc) >> 2) | ((x & 0x33) << 2));
 	x = (((x & 0xf0) >> 4) | ((x & 0x0f) << 4));
 	return x;
-
 }
 
 int EvaluateSize(const unsigned char* data, int rawsize, int splittingPoint,
@@ -704,7 +703,7 @@ int evaluate1K(unsigned char* data, int size, int* modeldata, int* out_b0, int* 
 	return (min_totalsize / (BITPREC_TABLE / BITPREC));
 }
 
-ModelList1k ApproximateModels1k(const unsigned char* org_data, int datasize, int* compsize, ProgressBar* progressBar)
+ModelList1k ApproximateModels1k(const unsigned char* org_data, int datasize, int* compsize, ProgressCallback* progressCallback, void* progressUserData)
 {
 	unsigned char* data = new unsigned char[datasize + 16];
 	memset(data, 0, 16);
@@ -776,15 +775,16 @@ ModelList1k ApproximateModels1k(const unsigned char* org_data, int datasize, int
 		});
 		num_models--;
 
-		if (best_flip == -1)
+		if (progressCallback)
 		{
-			progressBar->update(1, 1);
-			break;
-		}
+			if (best_flip == -1)
+			{
+				if (progressCallback)
+					progressCallback(progressUserData, 1, 1);
+				break;
+			}
 
-		if (progressBar)
-		{
-			progressBar->update(tries + 1, max_models);
+			progressCallback(progressUserData, tries + 1, max_models);
 		}
 	}
 

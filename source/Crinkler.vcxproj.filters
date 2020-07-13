@@ -68,9 +68,6 @@
     <ClCompile Include="MiniDump.cpp">
       <Filter>Utility</Filter>
     </ClCompile>
-    <ClCompile Include="misc.cpp">
-      <Filter>Utility</Filter>
-    </ClCompile>
     <ClCompile Include="NameMangling.cpp">
       <Filter>Utility</Filter>
     </ClCompile>
@@ -143,6 +140,9 @@
     <ClCompile Include="LTCGLoader.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Misc.cpp">
+      <Filter>Utility</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Crinkler.h">
@@ -182,9 +182,6 @@
       <Filter>Utility</Filter>
     </ClInclude>
     <ClInclude Include="MiniDump.h">
-      <Filter>Utility</Filter>
-    </ClInclude>
-    <ClInclude Include="misc.h">
       <Filter>Utility</Filter>
     </ClInclude>
     <ClInclude Include="NameMangling.h">
@@ -258,6 +255,9 @@
     </ClInclude>
     <ClInclude Include="ExplicitHunkSorter.h">
       <Filter>HunkSorters</Filter>
+    </ClInclude>
+    <ClInclude Include="Misc.h">
+      <Filter>Utility</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

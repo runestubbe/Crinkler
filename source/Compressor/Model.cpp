@@ -1,6 +1,6 @@
 #include "model.h"
 
-unsigned int __stdcall ModelHashStart(unsigned int mask, int hashmul)
+unsigned int ModelHashStart(unsigned int mask, int hashmul)
 {
 	unsigned char dl = mask;
 	unsigned int hash = mask;
@@ -16,13 +16,13 @@ unsigned int __stdcall ModelHashStart(unsigned int mask, int hashmul)
 	return hash;
 }
 
-unsigned int __stdcall ModelHash(const byte *data, int bitpos, unsigned int mask, int hashmul)
+unsigned int ModelHash(const unsigned char* data, int bitpos, unsigned int mask, int hashmul)
 {
 	unsigned char dl = mask;
-	const byte* ptr = data + (bitpos >> 3);
+	const unsigned char* ptr = data + (bitpos >> 3);
 	
 	unsigned int hash = mask;
-	byte current_byte = (0x100 | *ptr) >> ((~bitpos & 7) + 1);
+	unsigned char current_byte = (0x100 | *ptr) >> ((~bitpos & 7) + 1);
 	hash ^= current_byte;
 	hash *= hashmul;
 	hash = (hash & 0xFFFFFF00) | ((hash + current_byte) & 0xFF);

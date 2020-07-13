@@ -16,12 +16,13 @@ struct AritState {
   unsigned int interval_min;
 };
 
-extern "C" {
-	void __cdecl AritCodeInit(struct AritState *state, void *dest_ptr);
-	void __cdecl AritCode(struct AritState *state, unsigned int zero_prob, unsigned int one_prob, int bit);
-	unsigned int __cdecl AritCodePos(struct AritState *state);
-	int __cdecl AritCodeEnd(struct AritState *state);
+void			AritCodeInit(struct AritState *state, void *dest_ptr);
+void			AritCode(struct AritState *state, unsigned int zero_prob, unsigned int one_prob, int bit);
+unsigned int	AritCodePos(struct AritState *state);
+int __cdecl		AritCodeEnd(struct AritState *state);
 
+extern "C"
+{
 	extern int LogTable[];
 }
 

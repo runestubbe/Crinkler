@@ -1,5 +1,4 @@
 #include "misc.h"
-#include <cmath>
 
 int align(int v, int alignmentBits) {
 	int mask = (1<<alignmentBits)-1;

@@ -2,30 +2,28 @@
 #ifndef _COMPRESSOR_H_
 #define _COMPRESSOR_H_
 
-const int MAX_INPUT_SIZE = 128000;
-const int MAX_CONTEXT_LENGTH = 8;
-const int LOG2_NUM_PACKAGE_VECTORS = 4;
-const int NUM_PACKAGE_VECTORS = 1 << LOG2_NUM_PACKAGE_VECTORS;
+static const int MAX_INPUT_SIZE = 128000;
+static const int MAX_CONTEXT_LENGTH = 8;
+static const int LOG2_NUM_PACKAGE_VECTORS = 4;
+static const int NUM_PACKAGE_VECTORS = 1 << LOG2_NUM_PACKAGE_VECTORS;
 
-const int PACKAGE_SIZE = NUM_PACKAGE_VECTORS * 4;
+static const int PACKAGE_SIZE = NUM_PACKAGE_VECTORS * 4;
 
 enum CompressionType {COMPRESSION_INSTANT, COMPRESSION_FAST, COMPRESSION_SLOW, COMPRESSION_VERYSLOW};
 
-
 #include "aritcode.h"
 #include "CompressionStream.h"
-#include "ProgressBar.h"
 #include "ModelList.h"
 
 class CompressedData {
-	char* m_data;
-	int m_size;
+	char*	m_data;
+	int		m_size;
 public:
 	CompressedData(char* data, int size) :
 		m_data(data), m_size(size)
 	{
-		;
 	}
+
 	~CompressedData() {
 		delete[] m_data;
 	}
@@ -34,8 +32,9 @@ public:
 };
 
 //Approximates the models for a given data chunk
-ModelList1k ApproximateModels1k(const unsigned char* data, int datasize, int* compsize, ProgressBar* progressBar);
-ModelList ApproximateModels4k(const unsigned char* data, int datasize, int baseprob, bool saturate, int* compsize, ProgressBar* progressBar, CompressionType compressionType, char* context);
+typedef void (ProgressCallback)(void* userData, int value, int max);
+ModelList1k ApproximateModels1k(const unsigned char* data, int datasize, int* compsize, ProgressCallback* progressCallback, void* progressUserData);
+ModelList ApproximateModels4k(const unsigned char* data, int datasize, int baseprob, bool saturate, int* compsize, CompressionType compressionType, char* context, ProgressCallback* progressCallback, void* progressUserData);
 ModelList InstantModels();
 
 int EvaluateSize(const unsigned char* data, int rawsize, int splittingPoint,

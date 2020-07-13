@@ -4,7 +4,7 @@
 
 #include <windows.h>
 #include <string>
-#include "Compressor/ProgressBar.h"
+#include "ProgressBar.h"
 
 class WindowProgressBar : public ProgressBar{
 	HANDLE m_thread;

@@ -2,7 +2,7 @@
 #ifndef _COMPOSITE_PROGRESS_BAR_H_
 #define _COMPOSITE_PROGRESS_BAR_H_
 
-#include "Compressor/ProgressBar.h"
+#include "ProgressBar.h"
 #include <vector>
 
 class CompositeProgressBar : public ProgressBar {

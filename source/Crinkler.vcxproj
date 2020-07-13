@@ -252,7 +252,7 @@
     <ClCompile Include="Log.cpp" />
     <ClCompile Include="MemoryFile.cpp" />
     <ClCompile Include="MiniDump.cpp" />
-    <ClCompile Include="misc.cpp" />
+    <ClCompile Include="Misc.cpp" />
     <ClCompile Include="NameMangling.cpp" />
     <ClCompile Include="StringMisc.cpp" />
     <ClCompile Include="CmdLineInterface\CmdLineInterface.cpp" />
@@ -292,7 +292,7 @@
     <ClInclude Include="Log.h" />
     <ClInclude Include="MemoryFile.h" />
     <ClInclude Include="MiniDump.h" />
-    <ClInclude Include="misc.h" />
+    <ClInclude Include="Misc.h" />
     <ClInclude Include="NameMangling.h" />
     <ClInclude Include="StringMisc.h" />
     <ClInclude Include="CmdLineInterface\CmdLineInterface.h" />

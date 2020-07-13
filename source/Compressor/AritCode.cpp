@@ -2,7 +2,7 @@
 
 #include <cstdint>
 
-void __cdecl AritCodeInit(struct AritState *state, void *dest_ptr)
+void AritCodeInit(struct AritState *state, void *dest_ptr)
 {
 	state->dest_ptr = dest_ptr;
 	state->dest_bit = -1;
@@ -10,7 +10,7 @@ void __cdecl AritCodeInit(struct AritState *state, void *dest_ptr)
 	state->interval_min = 0;
 }
 
-unsigned int __cdecl AritCodePos(struct AritState *state)
+unsigned int AritCodePos(struct AritState *state)
 {
 	unsigned int right_prob = (state->interval_size >> 3);
 	return (state->dest_bit << 12) + AritSize2(right_prob, 0x20000000 - right_prob) + 1;
@@ -31,7 +31,7 @@ __forceinline void PutBit(unsigned char* dest_ptr, int dest_bit)
 	} while(v & msk);
 }
 
-void __cdecl AritCode(struct AritState *state, unsigned int zero_prob, unsigned int one_prob, int bit)
+void AritCode(struct AritState *state, unsigned int zero_prob, unsigned int one_prob, int bit)
 {
 	unsigned char* dest_ptr = (unsigned char*)state->dest_ptr; 
 	unsigned int dest_bit = state->dest_bit;
@@ -70,7 +70,7 @@ void __cdecl AritCode(struct AritState *state, unsigned int zero_prob, unsigned 
 	state->interval_size = interval_size;
 }
 
-int __cdecl AritCodeEnd(struct AritState *state)
+int AritCodeEnd(struct AritState *state)
 {
 	unsigned char* dest_ptr = (unsigned char*)state->dest_ptr;
 	unsigned int dest_bit = state->dest_bit;

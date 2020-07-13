@@ -2,7 +2,7 @@
 #ifndef _CONSOLE_PROGRESS_BAR_H_
 #define _CONSOLE_PROGRESS_BAR_H_
 
-#include "Compressor/ProgressBar.h"
+#include "ProgressBar.h"
 
 class ConsoleProgressBar : public ProgressBar {
 	int m_pos;

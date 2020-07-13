@@ -178,9 +178,8 @@
     <ClInclude Include="CompressionStream.h" />
     <ClInclude Include="Compressor.h" />
     <ClInclude Include="CounterState.h" />
-    <ClInclude Include="model.h" />
+    <ClInclude Include="Model.h" />
     <ClInclude Include="ModelList.h" />
-    <ClInclude Include="ProgressBar.h" />
     <ClInclude Include="CompressionStateEvaluator.h" />
   </ItemGroup>
   <ItemGroup>
