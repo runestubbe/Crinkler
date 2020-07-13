@@ -4,6 +4,7 @@
 #include "Crinkler.h"
 
 #include <set>
+#include <algorithm>
 
 Export::Export(const std::string name, const std::string symbol)
 	: m_name(std::move(name)), m_symbol(std::move(symbol)), m_value(0)
@@ -158,14 +159,14 @@ std::set<Export> stripExports(Hunk* phase1, int exports_rva) {
 	short* ordinals = (short*)&data[ordinals_offset];
 
 	// Collect exports
-	vector<pair<char*, int>> export_offsets;
+	std::vector<std::pair<char*, int>> export_offsets;
 	for (int i = 0; i < n_exports; i++) {
 		int address_offset = addresses[ordinals[i]] + rva_to_offset;
 		int name_offset = name_pointers[i] + rva_to_offset;
 		char* name = (char*)&data[name_offset];
 		export_offsets.emplace_back(name, address_offset);
 	}
-	std::stable_sort(export_offsets.begin(), export_offsets.end(), [](const pair<char*, int>& a, const pair<char*, int>& b) {
+	std::stable_sort(export_offsets.begin(), export_offsets.end(), [](const std::pair<char*, int>& a, const std::pair<char*, int>& b) {
 		return a.second < b.second;
 	});
 

@@ -2,15 +2,12 @@
 #ifndef _ARITCODE_H_
 #define _ARITCODE_H_
 
-const int BITPREC = 256;
-const int BITPREC_TABLE_BITS = 12;
-const int BITPREC_TABLE = 1 << BITPREC_TABLE_BITS;
-
 #include <cassert>
-#include <cstdlib>
-#include <algorithm>
+#include <intrin.h>
 
-using namespace std;
+static const int BITPREC = 256;
+static const int BITPREC_TABLE_BITS = 12;
+static const int BITPREC_TABLE = 1 << BITPREC_TABLE_BITS;
 
 struct AritState {
   void *dest_ptr;
@@ -25,12 +22,7 @@ extern "C" {
 	unsigned int __cdecl AritCodePos(struct AritState *state);
 	int __cdecl AritCodeEnd(struct AritState *state);
 
-	void __cdecl AritDecodeInit(struct AritState *state, void *dest_ptr);
-	int __cdecl AritDecode(struct AritState *state, int zero_prob, int one_prob);
-
-	unsigned int __cdecl AritSize(int right_prob, int wrong_prob);
 	extern int LogTable[];
-	void __cdecl breakpoint();
 }
 
 inline int AritSize2(int right_prob, int wrong_prob) {
@@ -44,11 +36,9 @@ inline int AritSize2(int right_prob, int wrong_prob) {
 	}
 	_BitScanReverse((unsigned long*)&right_len, right_prob);
 	_BitScanReverse((unsigned long*)&total_len, total_prob);
-	right_len = max(right_len - 12, 0);
-	total_len = max(total_len - 12, 0);
+	right_len = right_len > 12 ? (right_len - 12) : 0;
+	total_len = total_len > 12 ? (total_len - 12) : 0;
 	return LogTable[total_prob >> total_len] - LogTable[right_prob >> right_len] + ((total_len - right_len) << 12);
 }
-
-
 
 #endif

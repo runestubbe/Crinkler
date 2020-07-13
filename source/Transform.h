@@ -20,4 +20,10 @@ public:
 	void disable() { m_enabled = false; }
 };
 
+class IdentityTransform : public Transform {
+public:
+	Hunk* getDetransformer() { return nullptr; }
+	bool transform(Hunk* hunk, int splittingPoint, bool verbose) { return true; }
+};
+
 #endif

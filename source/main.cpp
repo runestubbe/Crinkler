@@ -15,7 +15,6 @@
 #include "Log.h"
 #include "StringMisc.h"
 #include "CallTransform.h"
-#include "IdentityTransform.h"
 #include "Fix.h"
 #include "Reuse.h"
 #include "MemoryFile.h"

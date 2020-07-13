@@ -51,7 +51,6 @@ bool CoffObjectLoader::clicks(const char* data, int size) {
 }
 
 HunkList* CoffObjectLoader::load(const char* data, int size, const char* module) {
-	//TODO: insert sanity checks
 	const char* ptr = data;
 
 	//header
@@ -112,7 +111,7 @@ HunkList* CoffObjectLoader::load(const char* data, int size, const char* module)
 			}
 			r.offset = relocs[j].VirtualAddress;
 			switch(relocs[j].Type) {
-				case IMAGE_REL_I386_DIR32NB:	//TODO: what is this?
+				case IMAGE_REL_I386_DIR32NB:
 				case IMAGE_REL_I386_DIR32:
 					r.type = RELOCTYPE_ABS32;
 					break;

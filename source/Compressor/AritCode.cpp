@@ -1,5 +1,7 @@
 #include "aritcode.h"
 
+#include <cstdint>
+
 void __cdecl AritCodeInit(struct AritState *state, void *dest_ptr)
 {
 	state->dest_ptr = dest_ptr;

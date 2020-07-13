@@ -8,8 +8,8 @@
 #include "aritcode.h"
 #include "model.h"
 
-const unsigned int MAX_N_MODELS = 21;
-const unsigned int MAX_MODEL_WEIGHT = 9;
+static const unsigned int MAX_N_MODELS = 21;
+static const unsigned int MAX_MODEL_WEIGHT = 9;
 
 static const int NUM_1K_MODELS = 33;	//31 is implicitly always enabled. 30 to -1 are optional
 static const int MIN_1K_BASEPROB = 4;
@@ -20,10 +20,9 @@ static const int MIN_1K_BOOST_FACTOR = 4;
 static const int MAX_1K_BOOST_FACTOR = 10;
 static const int NUM_1K_BOOST_FACTORS = MAX_1K_BOOST_FACTOR - MIN_1K_BOOST_FACTOR + 1;
 
-BOOL APIENTRY DllMain( HANDLE, 
-                       DWORD, 
-                       LPVOID
-					 )
+
+
+BOOL APIENTRY DllMain( HANDLE, DWORD, LPVOID )
 {
     return TRUE;
 }
@@ -156,7 +155,7 @@ ModelList ApproximateModels4k(const unsigned char* data, int datasize, int basep
 	int width = compressionType == COMPRESSION_VERYSLOW ? 3 : 1;
 	const int ELITE_FLAG = INT_MIN;
 
-	vector<ModelList> modelsets(width * 2);
+	std::vector<ModelList> modelsets(width * 2);
 	SoftwareCompressionStateEvaluator evaluator;
 
 	CompressionState cs(data, datasize, baseprob, saturate, &evaluator, context);
@@ -620,133 +619,6 @@ int Compress1K(unsigned char* org_data, int datasize, unsigned char* compressed,
 	return (AritCodeEnd(&as) + 7) / 8;
 }
 
-
-#if 0
-int evaluate1K(unsigned char* data, int datasize, int* modeldata, int* out_b0, int* out_b1, int* out_boost_factor, unsigned int modelmask)
-{
-	int bitlength = datasize * 8;
-	
-	auto evaluate = [&](int b0, int b1, int* best_boost)
-	{
-		int totalsizes[NUM_1K_BOOST_FACTORS] = {};
-		for(int i = 0; i < bitlength; i++)
-		{
-			int bitpos = (i & 7);
-			int bytepos = i >> 3;
-			int mask = 0xFF00 >> bitpos;
-			int bit = ((data[bytepos] << bitpos) & 0x80) == 0x80;
-
-			int n[2][2] = {};	//boost_n0, boost_n1, no_boost_n0, no_boost_n1
-
-			unsigned int mmask = modelmask;
-
-			int model = 31;
-
-			{
-			lala:
-				int model_idx = model + 1;
-				int c[2] = { modeldata[(bitlength*model_idx + i) * 2], modeldata[(bitlength*model_idx + i) * 2 + 1] };
-				int boost = (c[0] == 0 || c[1] == 0);
-				n[boost][0] += c[0];
-				n[boost][1] += c[1];
-
-			skip:
-				bool handle = (((unsigned int)mmask) & 0x80000000) != 0;
-				if(mmask == 0)
-					goto end;
-				mmask <<= 1;
-
-				model--;
-				if(handle)
-					goto lala;
-				else
-					goto skip;
-			end:
-				;
-			}
-
-			for(int boost_idx = 0; boost_idx < NUM_1K_BOOST_FACTORS; boost_idx++)
-			{
-				int boost_factor = boost_idx + MIN_1K_BOOST_FACTOR;
-				int total_n0 = n[0][0] + n[1][0] * boost_factor;
-				int total_n1 = n[0][1] + n[1][1] * boost_factor;
-				{
-					int n0, n1;
-					if(bit)
-					{
-						n0 = total_n0 + b0; n1 = total_n1 + b1;
-					}
-					else
-					{
-						n0 = total_n0 + b1; n1 = total_n1 + b0;
-					}
-					totalsizes[boost_idx] += AritSize2(n0, n1);
-				}
-			}
-		}
-
-		int min_totalsize = INT_MAX;
-		for(int boost_idx = 0; boost_idx < NUM_1K_BOOST_FACTORS; boost_idx++)
-		{
-			if(totalsizes[boost_idx] < min_totalsize)
-			{
-				*best_boost = boost_idx + MIN_1K_BOOST_FACTOR;
-				min_totalsize = totalsizes[boost_idx];
-			}
-		}
-		return min_totalsize;
-	};
-
-
-
-
-	int best_size = INT_MAX;
-	int best_b0;
-	int best_b1;
-	int best_boost;
-	//for(int b0 = MIN_1K_BASEPROB; b0 <= MAX_1K_BASEPROB; b0++)
-	int b0 = MIN_1K_BASEPROB;
-	{
-		//for(int b1 = MIN_1K_BASEPROB; b1 <= MAX_1K_BASEPROB; b1++)
-		int b1 = MIN_1K_BASEPROB;
-		{
-			int boost;
-			int size = evaluate(b0, b1, &boost);
-			if(size < best_size)
-			{
-				best_size = size;
-				best_b0=b0;
-				best_b1=b1;
-				best_boost = boost;
-			}
-		}
-	}
-
-
-	*out_b0 = best_b0;
-	*out_b1 = best_b1;
-	*out_boost_factor = best_boost;
-
-	/*
-	bool run_again;
-	do
-	{
-		run_again = false;
-
-		// optimize b0
-
-
-		// optimize b1
-
-
-
-	
-	} while(run_again);
-	*/
-
-	return (best_size / (BITPREC_TABLE / BITPREC));
-}
-#else
 int evaluate1K(unsigned char* data, int size, int* modeldata, int* out_b0, int* out_b1, int* out_boost_factor, unsigned int modelmask)
 {
 	int bitlength = size * 8;
@@ -833,7 +705,6 @@ int evaluate1K(unsigned char* data, int size, int* modeldata, int* out_b0, int* 
 
 	return (min_totalsize / (BITPREC_TABLE / BITPREC));
 }
-#endif
 
 ModelList1k ApproximateModels1k(const unsigned char* org_data, int datasize, int* compsize, ProgressBar* progressBar)
 {

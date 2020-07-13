@@ -108,6 +108,7 @@
       <WarningLevel>Level3</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <DisableSpecificWarnings>4530; 4091</DisableSpecificWarnings>
+      <AdditionalOptions>/MP %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <AdditionalDependencies>comctl32.lib;Dbghelp.lib;../external/distorm/x86/distorm.lib;%(AdditionalDependencies)</AdditionalDependencies>
@@ -132,6 +133,7 @@
       <WarningLevel>Level3</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <DisableSpecificWarnings>4530; 4091</DisableSpecificWarnings>
+      <AdditionalOptions>/MP %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <AdditionalDependencies>comctl32.lib;Dbghelp.lib;../external/distorm/x64/distorm.lib;%(AdditionalDependencies)</AdditionalDependencies>
@@ -267,7 +269,6 @@
     <ClCompile Include="EmpiricalHunkSorter.cpp" />
     <ClCompile Include="HeuristicHunkSorter.cpp" />
     <ClCompile Include="CallTransform.cpp" />
-    <ClCompile Include="IdentityTransform.cpp" />
     <ClCompile Include="Transform.cpp" />
     <ClCompile Include="CompositeProgressBar.cpp" />
     <ClCompile Include="ConsoleProgressBar.cpp" />
@@ -308,7 +309,6 @@
     <ClInclude Include="EmpiricalHunkSorter.h" />
     <ClInclude Include="HeuristicHunkSorter.h" />
     <ClInclude Include="CallTransform.h" />
-    <ClInclude Include="IdentityTransform.h" />
     <ClInclude Include="Transform.h" />
     <ClInclude Include="CompositeProgressBar.h" />
     <ClInclude Include="ConsoleProgressBar.h" />

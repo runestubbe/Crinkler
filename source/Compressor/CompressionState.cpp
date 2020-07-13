@@ -7,7 +7,6 @@
 #include "model.h"
 #include "compressor.h"
 
-
 struct HashEntry {
 	unsigned char mask;
 	unsigned char bitnum;

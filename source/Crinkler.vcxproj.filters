@@ -122,9 +122,6 @@
     <ClCompile Include="CallTransform.cpp">
       <Filter>Transforms</Filter>
     </ClCompile>
-    <ClCompile Include="IdentityTransform.cpp">
-      <Filter>Transforms</Filter>
-    </ClCompile>
     <ClCompile Include="Transform.cpp">
       <Filter>Transforms</Filter>
     </ClCompile>
@@ -236,9 +233,6 @@
       <Filter>HunkSorters</Filter>
     </ClInclude>
     <ClInclude Include="CallTransform.h">
-      <Filter>Transforms</Filter>
-    </ClInclude>
-    <ClInclude Include="IdentityTransform.h">
       <Filter>Transforms</Filter>
     </ClInclude>
     <ClInclude Include="Transform.h">

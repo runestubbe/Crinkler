@@ -475,7 +475,7 @@ static bool findCollisionFreeHash(vector<string>& dll_names, const vector<Hunk*>
 	concurrency::critical_section cs;
 	for(int num_bits = MAX_BITS; num_bits >= 1; num_bits--)
 	{
-		concurrency::parallel_for(0, 256, [&](int high_byte)	//TODO: don't start from 0
+		concurrency::parallel_for(0, 256, [&](int high_byte)
 		{
 			{
 				Concurrency::critical_section::scoped_lock l(cs);

@@ -263,20 +263,11 @@ int CompressionStream::EvaluateSize(const unsigned char* d, int size, const Mode
 		pos_threshold += size;
 	}
 
-#if 0
-	double totalsizef = 0.0;
-	for(int pos = 0; pos < size; pos++) {
-		int bit = (data[pos] >> inverted_bitpos) & 1;
-		totalsizef += log2(sums[pos * 2] + sums[pos * 2 + 1]) - log2(sums[pos * 2 + bit]);
-	}
-	uint64_t totalsize = totalsizef * BITPREC_TABLE;
-#else
 	uint64_t totalsize = 0;
 	for(int pos = 0; pos < size; pos++) {
 		int bit = (data[pos] >> inverted_bitpos) & 1;
 		totalsize += AritSize2(sums[pos * 2 + bit], sums[pos * 2 + !bit]);
 	}
-#endif
 	
 	delete[] hash_positions;
 	delete[] hash_counter_states;
