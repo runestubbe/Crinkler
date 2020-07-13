@@ -2,11 +2,11 @@
 #ifndef _MULTI_LOADER_H_
 #define _MULTI_LOADER_H_
 
-#include <list>
+#include <vector>
 #include "HunkLoader.h"
 
 class MultiLoader : public HunkLoader {
-	std::list<HunkLoader*>	m_loaders;
+	std::vector<HunkLoader*>	m_loaders;
 public:
 	MultiLoader();
 	~MultiLoader();

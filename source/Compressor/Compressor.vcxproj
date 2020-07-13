@@ -173,7 +173,7 @@
     <ClCompile Include="CompressionStateEvaluator.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="aritcode.h" />
+    <ClInclude Include="AritCode.h" />
     <ClInclude Include="CompressionState.h" />
     <ClInclude Include="CompressionStream.h" />
     <ClInclude Include="Compressor.h" />

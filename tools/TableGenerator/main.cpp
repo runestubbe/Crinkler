@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include <vector>
 
-struct counter_state
+struct CounterState
 {
 	uint16_t boosted_counters[2];
 	uint16_t next_state[2];
@@ -10,7 +10,7 @@ struct counter_state
 
 int counter_to_state[256][256];
 
-static int CounterVisit(std::vector<counter_state>& states, unsigned char c0, unsigned char c1, int next_bit, bool saturate)
+static int CounterVisit(std::vector<CounterState>& states, unsigned char c0, unsigned char c1, int next_bit, bool saturate)
 {
 	if(next_bit == 0)
 	{
@@ -31,7 +31,7 @@ static int CounterVisit(std::vector<counter_state>& states, unsigned char c0, un
 	int state_idx = states.size();
 	counter_to_state[c1][c0] = state_idx;
 	
-	counter_state s;
+	CounterState s;
 	s.boosted_counters[0] = c0 << boost;
 	s.boosted_counters[1] = c1 << boost;
 	states.push_back(s);
@@ -40,7 +40,7 @@ static int CounterVisit(std::vector<counter_state>& states, unsigned char c0, un
 	return state_idx;
 }
 
-static void GenerateCounterStates(std::vector<counter_state>& states, bool saturate)
+static void GenerateCounterStates(std::vector<CounterState>& states, bool saturate)
 {
 	states.reserve(2048);
 	for(int i = 0; i < 256; i++)
@@ -51,11 +51,11 @@ static void GenerateCounterStates(std::vector<counter_state>& states, bool satur
 	counter_to_state[1][0] = 1;
 
 
-	counter_state s0;
+	CounterState s0;
 	s0.boosted_counters[0] = 1 << 2;
 	s0.boosted_counters[1] = 0;
 	states.push_back(s0);
-	counter_state s1;
+	CounterState s1;
 	s1.boosted_counters[0] = 0;
 	s1.boosted_counters[1] = 1 << 2;
 	states.push_back(s1);
@@ -66,11 +66,11 @@ static void GenerateCounterStates(std::vector<counter_state>& states, bool satur
 	states[1].next_state[1] = CounterVisit(states, 0, 1, 1, saturate);
 }
 
-static void PrintCounters(const char* name, std::vector<counter_state>& states)
+static void PrintCounters(const char* name, std::vector<CounterState>& states)
 {
 	int n = states.size();
 	int column = 4;
-	printf("counter_state %s[%d] = {", name, states.size());
+	printf("CounterState %s[%d] = {", name, states.size());
 	for (int i = 0; i < n; i++) {
 		if (i % column == 0)
 			printf("\n    ");
@@ -81,11 +81,11 @@ static void PrintCounters(const char* name, std::vector<counter_state>& states)
 
 int main(int argc, const char* argv[])
 {
-	std::vector<counter_state> unsaturated_counter_states;
+	std::vector<CounterState> unsaturated_counter_states;
 	GenerateCounterStates(unsaturated_counter_states, false);
 	PrintCounters("unsaturated_counter_states", unsaturated_counter_states);
 	printf("\n");
-	std::vector<counter_state> saturated_counter_states;
+	std::vector<CounterState> saturated_counter_states;
 	GenerateCounterStates(saturated_counter_states, true);
 	PrintCounters("saturated_counter_states", saturated_counter_states);
 	return 0;

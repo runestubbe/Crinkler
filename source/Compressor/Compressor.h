@@ -15,22 +15,6 @@ enum CompressionType {COMPRESSION_INSTANT, COMPRESSION_FAST, COMPRESSION_SLOW, C
 #include "CompressionStream.h"
 #include "ModelList.h"
 
-class CompressedData {
-	char*	m_data;
-	int		m_size;
-public:
-	CompressedData(char* data, int size) :
-		m_data(data), m_size(size)
-	{
-	}
-
-	~CompressedData() {
-		delete[] m_data;
-	}
-	const char* getPtr() const { return m_data; };
-	int getSize() const { return m_size; };
-};
-
 //Approximates the models for a given data chunk
 typedef void (ProgressCallback)(void* userData, int value, int max);
 ModelList1k ApproximateModels1k(const unsigned char* data, int datasize, int* compsize, ProgressCallback* progressCallback, void* progressUserData);

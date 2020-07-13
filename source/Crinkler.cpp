@@ -2,10 +2,8 @@
 #include "Compressor/Compressor.h"
 #include "Fix.h"
 
-#include <list>
 #include <set>
 #include <ctime>
-#include <fstream>
 #include <ppl.h>
 
 #include "HunkList.h"
@@ -136,7 +134,7 @@ Symbol*	Crinkler::findEntryPoint() {
 void Crinkler::removeUnreferencedHunks(Hunk* base)
 {
 	//check dependencies and remove unused hunks
-	list<Hunk*> startHunks;
+	vector<Hunk*> startHunks;
 	startHunks.push_back(base);
 
 	//keep hold of exported symbols
@@ -1078,7 +1076,7 @@ Hunk* Crinkler::createDynamicInitializerHunk()
 		if(endsWith(hunk->getName(), "CRT$XCU"))
 		{
 			int num_relocations = hunk->getNumRelocations();
-			relocation* relocations = hunk->getRelocations();
+			Relocation* relocations = hunk->getRelocations();
 			for(int i = 0; i < num_relocations; i++)
 			{
 				symbols.push_back(m_hunkPool.findSymbol(relocations[i].symbolname.c_str()));
@@ -1101,7 +1099,7 @@ Hunk* Crinkler::createDynamicInitializerHunk()
 			*ptr++ = 0x00;
 			*ptr++ = 0x00;
 			
-			relocation r;
+			Relocation r;
 			r.offset = i*5+1;
 			r.symbolname = symbols[i]->name;
 			r.type = RELOCTYPE_REL32;

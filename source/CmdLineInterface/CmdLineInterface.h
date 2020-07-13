@@ -8,16 +8,16 @@
 #include "CmdParamFlags.h"
 #include "CmdParamMultiAssign.h"
 
-#include <list>
+#include <vector>
 #include <string>
 
 const int CMDI_PARSE_FILES = 0x01;
 
 class CmdLineInterface {
-	std::list<CmdParam*>	m_params;
-	std::list<std::string>	m_tokens;
-	std::string				m_title;
-	int						m_flags;
+	std::vector<CmdParam*>		m_params;
+	std::vector<std::string>	m_tokens;
+	std::string					m_title;
+	int							m_flags;
 
 	void addTokens(const char* str);
 public:

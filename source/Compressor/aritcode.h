@@ -10,10 +10,10 @@ static const int BITPREC_TABLE_BITS = 12;
 static const int BITPREC_TABLE = 1 << BITPREC_TABLE_BITS;
 
 struct AritState {
-  void *dest_ptr;
-  unsigned int dest_bit;
-  unsigned int interval_size;
-  unsigned int interval_min;
+  void*			dest_ptr;
+  unsigned int	dest_bit;
+  unsigned int	interval_size;
+  unsigned int	interval_min;
 };
 
 void			AritCodeInit(struct AritState *state, void *dest_ptr);

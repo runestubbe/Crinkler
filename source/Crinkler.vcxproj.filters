@@ -261,11 +261,6 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <Text Include="CmdLineInterface\CmdLineInterface manual.txt">
-      <Filter>Utility\CmdLineInterface</Filter>
-    </Text>
-  </ItemGroup>
-  <ItemGroup>
     <ResourceCompile Include="Crinkler.rc" />
   </ItemGroup>
   <ItemGroup>

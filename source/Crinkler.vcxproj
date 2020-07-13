@@ -315,9 +315,6 @@
     <ClInclude Include="WindowProgressBar.h" />
   </ItemGroup>
   <ItemGroup>
-    <Text Include="CmdLineInterface\CmdLineInterface manual.txt" />
-  </ItemGroup>
-  <ItemGroup>
     <CustomBuild Include="data.asm">
       <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Assembling data..</Message>
       <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Assembling data..</Message>

@@ -3,7 +3,6 @@
 #define _HUNK_H_
 
 #include <string>
-#include <list>
 #include <map>
 #include <vector>
 
@@ -74,7 +73,7 @@ struct CompressionReportRecord {
 	}
 };
 
-struct relocation {
+struct Relocation {
 	std::string		symbolname;
 	int				offset;
 	RelocationType	type;
@@ -89,7 +88,7 @@ class Hunk {
 	int				m_virtualsize;
 
 	std::vector<char>	m_data;
-	std::vector<relocation> m_relocations;
+	std::vector<Relocation> m_relocations;
 	std::map<std::string, Symbol*> m_symbols;
 	Symbol* m_continuation;
 	std::string m_name;
@@ -104,9 +103,9 @@ public:
 	Hunk(const char* name, const char* data, unsigned int flags, int alignmentBits, int rawsize, int virtualsize);
 	~Hunk();
 
-	void addRelocation(relocation r);
+	void addRelocation(Relocation r);
 	int getNumRelocations() const { return (int)m_relocations.size(); }
-	relocation* getRelocations() { return &m_relocations[0]; }
+	Relocation* getRelocations() { return &m_relocations[0]; }
 	void addSymbol(Symbol* s);
 	void setContinuation(Symbol *s);
 	Symbol* getContinuation() const;

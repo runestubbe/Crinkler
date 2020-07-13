@@ -96,7 +96,7 @@ HunkList* CoffObjectLoader::load(const char* data, int size, const char* module)
 		const IMAGE_RELOCATION* relocs = (const IMAGE_RELOCATION*) (data + sectionHeaders[i].PointerToRelocations);
 		int nRelocs = sectionHeaders[i].PointerToRelocations ? sectionHeaders[i].NumberOfRelocations : 0;
 		for(int j = 0; j < nRelocs; j++) {
-			relocation r;
+			Relocation r;
 			int symbolIndex = relocs[j].SymbolTableIndex;
 			const IMAGE_SYMBOL* symbol = &symbolTable[symbolIndex];
 			string symbolName = getSymbolName(symbol, stringTable);

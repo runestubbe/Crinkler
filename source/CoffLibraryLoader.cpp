@@ -132,7 +132,7 @@ HunkList* CoffLibraryLoader::load(const char* data, int size, const char* module
 				hunklist->addHunkBack(stubHunk);
 				stubHunk->addSymbol(new Symbol(symbolNames[i], 0, SYMBOL_IS_RELOCATEABLE, stubHunk));
 				
-				relocation r;
+				Relocation r;
 				if(strlen(symbolNames[i]) >= 6 && memcmp("__imp_", symbolNames[i], 6) == 0) {
 					r.symbolname = symbolNames[i];
 				} else {

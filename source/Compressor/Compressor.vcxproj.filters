@@ -40,9 +40,6 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="aritcode.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="CompressionState.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -62,6 +59,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Model.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="AritCode.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

@@ -11,7 +11,7 @@ struct HashEntry {
 	unsigned char mask;
 	unsigned char bitnum;
 	Weights w;
-	const unsigned char *datapos;
+	const unsigned char* datapos;
 };
 
 static int previousPrime(int n) {

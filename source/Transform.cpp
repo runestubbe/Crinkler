@@ -41,12 +41,5 @@ bool Transform::linkAndTransform(HunkList* hunklist, Symbol *entry_label, int ba
 	hunklist->removeHunk(detrans);
 	delete detrans;
 
-	if (m_enabled)
-	{
-		return transform(transformedHunk, sp, verbose);
-	}
-	else
-	{
-		return false;
-	}
+	return m_enabled ? transform(transformedHunk, sp, verbose) : false;
 }

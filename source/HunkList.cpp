@@ -147,8 +147,8 @@ Hunk* HunkList::toHunk(const char* name, int baseAddress, int* splittingPoint) c
 		}
 
 		//copy relocations
-		for(vector<relocation>::const_iterator jt = h->m_relocations.begin(); jt != h->m_relocations.end(); jt++) {
-			relocation r = *jt;
+		for(vector<Relocation>::const_iterator jt = h->m_relocations.begin(); jt != h->m_relocations.end(); jt++) {
+			Relocation r = *jt;
 			r.offset += address;
 			newHunk->addRelocation(r);
 		}
@@ -160,7 +160,7 @@ Hunk* HunkList::toHunk(const char* name, int baseAddress, int* splittingPoint) c
 		if (needsContinuationJump(it)) {
 			unsigned char jumpCode[5] = {0xE9, 0x00, 0x00, 0x00, 0x00};
 			memcpy(&newHunk->getPtr()[address+h->getRawSize()], jumpCode, 5);
-			relocation r = {h->getContinuation()->name.c_str(), address+h->getRawSize()+1, RELOCTYPE_REL32};
+			Relocation r = {h->getContinuation()->name.c_str(), address+h->getRawSize()+1, RELOCTYPE_REL32};
 			newHunk->addRelocation(r);
 			address += h->getRawSize()+5;
 		} else {
@@ -220,11 +220,11 @@ Symbol* HunkList::findSymbol(const char* name) const {
 	return res;
 }
 
-void HunkList::removeUnreferencedHunks(list<Hunk*> startHunks) {
+void HunkList::removeUnreferencedHunks(vector<Hunk*> startHunks) {
 	stack<Hunk*> stak;
-	for(list<Hunk*>::iterator it = startHunks.begin(); it != startHunks.end(); it++) {
-		(*it)->m_numReferences++;
-		stak.push(*it);
+	for(Hunk* hunk : startHunks) {
+		hunk->m_numReferences++;
+		stak.push(hunk);
 	}
 
 	//mark reachable hunks
@@ -232,7 +232,7 @@ void HunkList::removeUnreferencedHunks(list<Hunk*> startHunks) {
 		Hunk* h = stak.top();
 		stak.pop();
 
-		for(vector<relocation>::iterator it = h->m_relocations.begin(); it != h->m_relocations.end(); it++) {
+		for(vector<Relocation>::iterator it = h->m_relocations.begin(); it != h->m_relocations.end(); it++) {
 			Symbol* s = findSymbol(it->symbolname.c_str());
 			
 			if(s) {

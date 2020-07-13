@@ -239,7 +239,7 @@ static int num_divs[4];
 static int num_sections;
 
 
-struct scol {
+struct SizeColor {
 	float size;
 	const char *text;
 	unsigned color;
@@ -278,7 +278,7 @@ static string toIdent(string str) {
 
 static int sizeToColor(int size) {
 	float bsize = size / (float)BITPREC;
-	for (int i = 0 ; i < sizeof(sizecols)/sizeof(scol) ; i++) {
+	for (int i = 0 ; i < sizeof(sizecols)/sizeof(SizeColor) ; i++) {
 		if (bsize < sizecols[i].size) {
 			return sizecols[i].color;
 		}
@@ -493,7 +493,7 @@ static void htmlReportRecursive(CompressionReportRecord* csr, FILE* out, Hunk& h
 		fprintf(out, "<p><b>Output file size: %d</b></p>", filesize);
 
 		fprintf(out, "<p><table><tr><td rowspan='2'><b>Bits per byte:</b></td><td>&nbsp;&nbsp;</td>");
-		int ncols = sizeof(sizecols) / sizeof(scol);
+		int ncols = sizeof(sizecols) / sizeof(SizeColor);
 		for (int i = 0; i < ncols; i++) {
 			fprintf(out, "<td bgcolor='#%.6X' colspan='2' title='", sizecols[i].color);
 			if (i == 0) {

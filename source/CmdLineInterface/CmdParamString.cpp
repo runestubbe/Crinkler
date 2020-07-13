@@ -28,6 +28,6 @@ bool CmdParamString::hasNext() const {
 	return m_it != m_strings.end();
 }
 
-std::list<std::string> CmdParamString::getList() {
+std::vector<std::string> CmdParamString::getList() {
 	return m_strings;
 }

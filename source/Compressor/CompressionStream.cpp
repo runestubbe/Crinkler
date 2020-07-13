@@ -1,7 +1,6 @@
 #include "CompressionStream.h"
 #include "Compressor.h"
 #include <memory>
-#include <ctime>
 #include <cstdio>
 #include <vector>
 #include <xmmintrin.h>
@@ -199,7 +198,7 @@ int CompressionStream::EvaluateSize(const unsigned char* d, int size, const Mode
 		sums[i*2] = baseprob;
 		sums[i*2+1] = baseprob;
 	}
-	counter_state* counter_states_ptr = m_saturate ? saturated_counter_states : unsaturated_counter_states;
+	CounterState* counter_states_ptr = m_saturate ? saturated_counter_states : unsaturated_counter_states;
 
 	//clear hashtable
 	memset(hash_positions, -1, tinyhashsize * sizeof(hash_positions[0]));
@@ -249,7 +248,7 @@ int CompressionStream::EvaluateSize(const unsigned char* d, int size, const Mode
 				
 				if(_mm_movemask_epi8(_mm_cmpeq_epi8(_mm_and_si128(_mm_loadu_si128((__m128i *)&data[candidate_pos - MAX_CONTEXT_LENGTH]), mask), masked_contextdata)) == 0xFFFF)
 				{
-					counter_state& state = counter_states_ptr[hash_counter_states[tinyhash]];
+					CounterState& state = counter_states_ptr[hash_counter_states[tinyhash]];
 					__m128i vsum = _mm_loadl_epi64((__m128i*)&sums[pos * 2]);
 					vsum = _mm_add_epi32(vsum, _mm_sll_epi32(_mm_unpacklo_epi16(_mm_loadl_epi64((__m128i*)state.boosted_counters), vzero), vweight));
 					_mm_storel_epi64((__m128i*)&sums[pos * 2], vsum);

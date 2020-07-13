@@ -13,24 +13,22 @@ MultiLoader::MultiLoader() {
 
 MultiLoader::~MultiLoader() {
 	//free loaders
-	for(list<HunkLoader*>::iterator it = m_loaders.begin(); it != m_loaders.end(); it++)
-		delete *it;
+	for(HunkLoader* loader : m_loaders)
+		delete loader;
 }
 
 bool MultiLoader::clicks(const char* data, int size) {
-	for(list<HunkLoader*>::iterator it = m_loaders.begin(); it != m_loaders.end(); it++) {
-		HunkLoader* hl = *it;
-		if(hl->clicks(data, size))
+	for(HunkLoader* loader : m_loaders) {
+		if(loader->clicks(data, size))
 			return true;
 	}
 	return false;
 }
 
 HunkList* MultiLoader::load(const char* data, int size, const char* module) {
-	for(list<HunkLoader*>::iterator it = m_loaders.begin(); it != m_loaders.end(); it++) {
-		HunkLoader* hl = *it;
-		if(hl->clicks(data, size))
-			return hl->load(data, size, module);
+	for(HunkLoader* loader : m_loaders) {
+		if(loader->clicks(data, size))
+			return loader->load(data, size, module);
 	}
 	
 	return NULL;

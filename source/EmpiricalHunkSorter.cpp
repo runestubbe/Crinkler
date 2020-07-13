@@ -5,7 +5,7 @@
 #include "HunkList.h"
 #include "Hunk.h"
 #include "Compressor/CompressionStream.h"
-#include "Compressor/ProgressBar.h"
+#include "ProgressBar.h"
 #include "Crinkler.h"
 
 using namespace std;

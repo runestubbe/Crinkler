@@ -3,8 +3,6 @@
 #include "ModelList.h"
 #include "Compressor.h"
 
-using namespace std;
-
 static int parity(int n) {
 	int p = 0;
 	for (int i = 0 ; i < 8 ; i++) {

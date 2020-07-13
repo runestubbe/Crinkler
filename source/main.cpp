@@ -1,7 +1,6 @@
 #include <windows.h>
 #include <cstdio>
-#include <iostream>
-#include <list>
+#include <vector>
 #include <set>
 #include <string>
 #include <direct.h>

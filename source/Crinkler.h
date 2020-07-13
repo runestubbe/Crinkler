@@ -21,21 +21,21 @@
 
 class HunkLoader;
 
-const int CRINKLER_IMAGEBASE = 0x400000;
-const int CRINKLER_SECTIONSIZE = 0x10000;
-const int CRINKLER_SECTIONBASE = CRINKLER_IMAGEBASE+CRINKLER_SECTIONSIZE;
-const int CRINKLER_CODEBASE = CRINKLER_IMAGEBASE+2*CRINKLER_SECTIONSIZE;
-const int CRINKLER_BASEPROB = 10;
+static const int CRINKLER_IMAGEBASE =	0x400000;
+static const int CRINKLER_SECTIONSIZE = 0x10000;
+static const int CRINKLER_SECTIONBASE = CRINKLER_IMAGEBASE+CRINKLER_SECTIONSIZE;
+static const int CRINKLER_CODEBASE =	CRINKLER_IMAGEBASE+2*CRINKLER_SECTIONSIZE;
+static const int CRINKLER_BASEPROB =	10;
 
 enum SubsystemType {SUBSYSTEM_CONSOLE, SUBSYSTEM_WINDOWS};
 
-const int PRINT_LABELS =			1;
-const int PRINT_IMPORTS =			2;
-const int PRINT_MODELS =			4;
+static const int PRINT_LABELS =		1;
+static const int PRINT_IMPORTS =	2;
+static const int PRINT_MODELS =		4;
 
 #define CRINKLER_TITLE "Crinkler 2.2 (" __DATE__ ") (c) 2005-2019 Aske Simon Christensen & Rune Stubbe"
 #define CRINKLER_WITH_VERSION "Crinkler 2.2"
-const int CRINKLER_LINKER_VERSION = 0x3232;
+static const int CRINKLER_LINKER_VERSION = 0x3232;
 
 class Crinkler {
 	MultiLoader				m_hunkLoader;
@@ -104,11 +104,8 @@ public:
 	void load(const char* data, int size, const char* module);
 	void recompress(const char* input_filename, const char* output_filename);
 	
-
 	void link(const char* filename);
 
-
-	
 	void setUnalignCode(bool unalign)						{ m_unalignCode = unalign; }
 	void addRangeDll(const char* dllname)					{ m_rangeDlls.push_back(dllname); }
 	void addReplaceDll(const char* dll1, const char* dll2)	{ m_replaceDlls.insert(make_pair(toLower(dll1), toLower(dll2))); }

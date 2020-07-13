@@ -3,7 +3,6 @@
 #define _HUNK_LIST_H_
 
 #include <vector>
-#include <list>
 
 class Hunk;
 class Symbol;
@@ -27,7 +26,7 @@ public:
 
 	Symbol* findSymbol(const char* name) const;
 	Symbol* findUndecoratedSymbol(const char* name) const;
-	void removeUnreferencedHunks(std::list<Hunk*> startHunks);
+	void removeUnreferencedHunks(std::vector<Hunk*> startHunks);
 
 	bool needsContinuationJump(std::vector<Hunk*>::const_iterator &it) const;
 

@@ -2,7 +2,6 @@
 #include <vector>
 #include <algorithm>
 #include <cassert>
-#include <iostream>
 #include "StringMisc.h"
 #include "misc.h"
 
@@ -72,7 +71,7 @@ void Hunk::addSymbol(Symbol* s) {
 	}
 }
 
-void Hunk::addRelocation(relocation r) {
+void Hunk::addRelocation(Relocation r) {
 	assert(r.offset >= 0);
 	assert(r.offset <= getRawSize()-4);
 	m_relocations.push_back(r);
@@ -168,8 +167,8 @@ static string HelpMessage(const char* name) {
 
 void Hunk::relocate(int imageBase) {
 	bool error = false;
-	for(vector<relocation>::const_iterator it = m_relocations.begin(); it != m_relocations.end(); it++) {
-		relocation r = *it;
+	for(vector<Relocation>::const_iterator it = m_relocations.begin(); it != m_relocations.end(); it++) {
+		Relocation r = *it;
 
 		//find symbol
 		Symbol* s = findSymbol(r.symbolname.c_str());
@@ -260,7 +259,7 @@ void Hunk::setAlignmentOffset(int alignmentOffset) {
 
 void Hunk::trim() {
 	int farestReloc = 0;
-	for(vector<relocation>::const_iterator it = m_relocations.begin(); it != m_relocations.end(); it++) {
+	for(vector<Relocation>::const_iterator it = m_relocations.begin(); it != m_relocations.end(); it++) {
 		int relocSize = 4;
 		farestReloc = max(it->offset+relocSize, farestReloc);
 	}
@@ -289,7 +288,7 @@ void Hunk::insert(int offset, const unsigned char* data, int size) {
 	for (map<string, Symbol*>::iterator it = m_symbols.begin(); it != m_symbols.end(); it++) {
 		if (it->second->flags & SYMBOL_IS_RELOCATEABLE && it->second->value >= offset) it->second->value += size;
 	}
-	for (vector<relocation>::iterator it = m_relocations.begin(); it != m_relocations.end(); it++) {
+	for (vector<Relocation>::iterator it = m_relocations.begin(); it != m_relocations.end(); it++) {
 		if (it->offset >= offset) it->offset += size;
 	}
 }
@@ -397,7 +396,7 @@ void Hunk::setImportDll(const char* dll) {
 map<int, Symbol*> Hunk::getOffsetToRelocationMap() {
 	map<int, Symbol*> offsetmap;
 	map<int, Symbol*> symbolmap = getOffsetToSymbolMap();
-	for(vector<relocation>::iterator it = m_relocations.begin(); it != m_relocations.end(); it++) {
+	for(vector<Relocation>::iterator it = m_relocations.begin(); it != m_relocations.end(); it++) {
 		Symbol* s = findSymbol(it->symbolname.c_str());
 		if(s && s->secondaryName.size() > 0)
 			s = findSymbol(s->secondaryName.c_str());

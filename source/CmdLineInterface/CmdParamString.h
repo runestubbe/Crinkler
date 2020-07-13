@@ -3,11 +3,11 @@
 #define _CMD_PARAM_STRING_H_
 
 #include "CmdParam.h"
-#include <list>
+#include <vector>
 
 class CmdParamString : public CmdParam {
-	std::list<std::string> m_strings;
-	std::list<std::string>::const_iterator m_it;
+	std::vector<std::string> m_strings;
+	std::vector<std::string>::const_iterator m_it;
 public:
 	CmdParamString(const char* paramName, const char* description, const char* argumentDesciption, int flags, const char* defaultValue);
 
@@ -17,7 +17,7 @@ public:
 	void setDefault(const char* str) { m_strings.clear(); m_strings.push_back(str); m_it = m_strings.begin();}
 	void next();
 	bool hasNext() const;
-	std::list<std::string> getList();
+	std::vector<std::string> getList();
 };
 
 #endif
