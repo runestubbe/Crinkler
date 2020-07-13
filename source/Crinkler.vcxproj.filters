@@ -53,9 +53,6 @@
     <ClCompile Include="ImportHandler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="LTCGLoader.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -142,6 +139,9 @@
     </ClCompile>
     <ClCompile Include="ExplicitHunkSorter.cpp">
       <Filter>HunkSorters</Filter>
+    </ClCompile>
+    <ClCompile Include="LTCGLoader.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

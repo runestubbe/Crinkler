@@ -952,13 +952,6 @@ void Crinkler::recompress(const char* input_filename, const char* output_filenam
 	int size;
 	if(is_tiny_header)
 	{
-		if(false)
-		{
-			initProgressBar();
-			estimateModels((unsigned char*)phase1->getPtr(), phase1->getRawSize(), splittingPoint, false, true, INT_MAX, INT_MAX);
-			deinitProgressBar();
-		}
-		
 		size = Compress1K((unsigned char*)phase1->getPtr(), phase1->getRawSize(), data, maxsize, m_modellist1k.boost, m_modellist1k.baseprob0, m_modellist1k.baseprob1, m_modellist1k.modelmask, sizefill, nullptr);
 		printf("Real compressed total size: %d\n", size);
 	}

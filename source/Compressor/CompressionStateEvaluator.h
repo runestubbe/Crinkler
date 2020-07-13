@@ -33,10 +33,27 @@ struct ModelPredictions {
 };
 
 class CompressionStateEvaluator {
+	int						m_weights[256];
+	ModelPredictions* m_models;
+
+	int						m_length;
+	int						m_numPackages;
+	Package* m_packages;
+	unsigned int* m_packageSizes;
+
+	long long				m_compressedSize;
+	int						m_baseprob;
+	float					m_logScale;
+
+	long long changeWeight(int modelIndex, int diffw);
+	int fastlog(int x);
+	int AritSize_Test(int right_prob, int wrong_prob);
 public:
-	virtual ~CompressionStateEvaluator() {};
-	virtual bool init(ModelPredictions* models, int length, int baseprob, float logScale) = 0;
-	virtual long long evaluate(const ModelList& models) = 0;
+	CompressionStateEvaluator();
+	~CompressionStateEvaluator();
+
+	bool init(ModelPredictions* models, int length, int baseprob, float logScale);
+	long long evaluate(const ModelList& models);
 };
 
 #endif

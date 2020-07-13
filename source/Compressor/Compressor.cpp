@@ -3,7 +3,7 @@
 #include <ppl.h>
 #include "Compressor.h"
 #include "CompressionState.h"
-#include "SoftwareCompressionStateEvaluator.h"
+#include "CompressionStateEvaluator.h"
 #include "ModelList.h"
 #include "aritcode.h"
 #include "model.h"
@@ -19,8 +19,6 @@ static const int NUM_1K_BASEPROBS = MAX_1K_BASEPROB - MIN_1K_BASEPROB + 1;
 static const int MIN_1K_BOOST_FACTOR = 4;
 static const int MAX_1K_BOOST_FACTOR = 10;
 static const int NUM_1K_BOOST_FACTORS = MAX_1K_BOOST_FACTOR - MIN_1K_BOOST_FACTOR + 1;
-
-
 
 BOOL APIENTRY DllMain( HANDLE, DWORD, LPVOID )
 {
@@ -156,7 +154,7 @@ ModelList ApproximateModels4k(const unsigned char* data, int datasize, int basep
 	const int ELITE_FLAG = INT_MIN;
 
 	std::vector<ModelList> modelsets(width * 2);
-	SoftwareCompressionStateEvaluator evaluator;
+	CompressionStateEvaluator evaluator;
 
 	CompressionState cs(data, datasize, baseprob, saturate, &evaluator, context);
 
