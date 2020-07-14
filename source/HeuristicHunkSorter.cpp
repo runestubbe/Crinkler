@@ -77,6 +77,6 @@ void HeuristicHunkSorter::sortHunkList(HunkList* hunklist) {
 	if (initializer_hunk) hunklist->addHunkBack(initializer_hunk);
 	hunklist->addHunkBack(entry_hunk);
 
-	// Copy back hunks to hunklist
+	// Copy hunks back to hunklist
 	for(Hunk *hunk : hunks) hunklist->addHunkBack(hunk);
 }

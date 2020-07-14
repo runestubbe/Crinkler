@@ -24,7 +24,7 @@ _header:
 _LinkerVersionPtr:
 	dw 0
 
-	;coff header
+	; COFF header
 	db 'PE', 0, 0		;PE signature
 	dw 014Ch			;Machine, 386+
 	dw 0h				;Number of sections

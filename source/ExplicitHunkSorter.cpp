@@ -55,7 +55,7 @@ void ExplicitHunkSorter::sortHunkList(HunkList* hunklist, Reuse *reuse) {
 	}
 	assert(hunk_by_id.empty());
 
-	// Copy back hunks to hunklist
+	// Copy hunks back to hunklist
 	hunklist->clear();
 	for (Hunk *hunk : code_hunks) hunklist->addHunkBack(hunk);
 	for (Hunk *hunk : data_hunks) hunklist->addHunkBack(hunk);

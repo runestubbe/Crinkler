@@ -47,7 +47,7 @@ DepackInit:
     jmp  short DepackInit2  ;2
 
 	
-;coff header
+; COFF header
 db 'P', 'E', 0, 0	;PE signature
 dw 014Ch			;Machine, 386+
 dw 0h				;Number of sections

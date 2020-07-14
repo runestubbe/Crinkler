@@ -22,7 +22,7 @@ string CmdParam::toString() const {
 	} else {
 		sprintf_s(param, sizeof(param), "%s", m_parameterName.c_str());
 	}
-	sprintf_s(buff, sizeof(buff), "/%-24s%s", param, ""/*m_description.c_str()*/);
+	sprintf_s(buff, sizeof(buff), "/%-24s%s", param, "");
 	return string(buff);
 }
 
