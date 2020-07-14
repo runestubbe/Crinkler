@@ -204,7 +204,7 @@ int main(int argc, char* argv[]) {
 		GetFullPathName(tmp, sizeof(crinklerCanonicalName), crinklerCanonicalName, NULL);
 	}
 
-	// EnableMiniDumps();
+	EnableMiniDumps();
 
 	string crinklerFilename = stripPath(crinklerCanonicalName);
 	

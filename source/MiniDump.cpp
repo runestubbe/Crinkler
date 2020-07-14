@@ -4,8 +4,12 @@
 #include <Dbghelp.h>
 #include <cstdio>
 
+static CRITICAL_SECTION criticalSection;
+
 LONG WINAPI ExitWithDump(struct _EXCEPTION_POINTERS* exceptionInfo)
 {
+	EnterCriticalSection(&criticalSection);
+
 	int dump_index = 0;
 
 	HANDLE file_mini = NULL;
@@ -38,5 +42,6 @@ LONG WINAPI ExitWithDump(struct _EXCEPTION_POINTERS* exceptionInfo)
 }
 
 void EnableMiniDumps() {
+	InitializeCriticalSection(&criticalSection);
 	SetUnhandledExceptionFilter(ExitWithDump);
 }

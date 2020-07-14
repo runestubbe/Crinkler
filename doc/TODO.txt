@@ -27,8 +27,6 @@ Output/UI:
 	button in progressgui to skip phase
 	Target size option
 	Parameter combination validity
-	Disable dumps
-	only write one dump if multiple threads crash
 	Icon
 	ProgressGUI crashes if you have DisplayFusion installed
 
