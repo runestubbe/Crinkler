@@ -42,18 +42,3 @@ int CmdParamMultiAssign::Parse(const char* str, char* errorMsg, int buffsize) {
 	m_it = m_strings.begin();
 	return PARSE_OK;
 }
-
-void CmdParamMultiAssign::Next() {
-	m_it++;
-}
-
-bool CmdParamMultiAssign::HasNext() const {
-	return m_it != m_strings.end();
-}
-
-const char* CmdParamMultiAssign::GetValue1() {
-	return HasNext() ? m_it->first.c_str() : NULL;
-}
-const char* CmdParamMultiAssign::GetValue2() {
-	return HasNext() ? m_it->second.c_str() : NULL;
-}

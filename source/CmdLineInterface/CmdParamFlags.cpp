@@ -43,12 +43,3 @@ int CmdParamFlags::Parse(const char* str, char* errorMsg, int buffsize) {
 
 	return PARSE_OK;
 }
-
-int CmdParamFlags::GetValue() {
-	return m_value;
-}
-
-int CmdParamFlags::GetValueIfPresent(int fallback) {
-	return GetNumMatches() > 0 ? GetValue() : fallback;
-}
-

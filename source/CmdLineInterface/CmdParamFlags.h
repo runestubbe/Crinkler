@@ -14,9 +14,9 @@ public:
 
 	int		Parse(const char* str, char* errorMsg, int buffsize);
 
-	int		GetValue();
-	int		GetValueIfPresent(int fallback);
-	void	SetDefault(int flag) { m_value = flag; }
+	int		GetValue() const						{ return m_value; }
+	int		GetValueIfPresent(int fallback)	const	{ return GetNumMatches() > 0 ? GetValue() : fallback; }
+	void	SetDefault(int flag)					{ m_value = flag; }
 };
 
 #endif

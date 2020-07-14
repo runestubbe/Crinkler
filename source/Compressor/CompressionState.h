@@ -19,7 +19,7 @@ public:
 	
 	int SetModels(const ModelList& models);
 
-	int GetCompressedSize() const;
-	int GetSize() const;
+	int GetCompressedSize() const	{ return (int)(m_compressedsize / (BITPREC_TABLE / BITPREC)); }
+	int GetSize() const				{ return m_size;}
 };
 #endif

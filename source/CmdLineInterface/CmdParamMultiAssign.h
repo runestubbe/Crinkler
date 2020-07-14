@@ -13,10 +13,10 @@ public:
 
 	int			Parse(const char* str, char* errorMsg, int buffsize);
 
-	const char* GetValue1();
-	const char* GetValue2();
-	void		Next();
-	bool		HasNext() const;
+	const char* GetValue1() const	{ return HasNext() ? m_it->first.c_str() : NULL; }
+	const char* GetValue2() const	{ return HasNext() ? m_it->second.c_str() : NULL; }
+	void		Next()				{ m_it++; }
+	bool		HasNext() const		{ return m_it != m_strings.end(); }
 };
 
 #endif

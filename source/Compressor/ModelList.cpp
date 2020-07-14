@@ -133,7 +133,6 @@ CompressionType ModelList::DetectCompressionType() const {
 	return COMPRESSION_SLOW;
 }
 
-
 void ModelList1k::Print() const
 {
 	printf("Models: %08X   Boost: %d  BaseProb: (%d, %d)\n", modelmask, boost, baseprob0, baseprob1);

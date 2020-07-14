@@ -30,16 +30,6 @@ MemoryFile::~MemoryFile() {
 	delete[] m_data;
 }
 
-
-char* MemoryFile::GetPtr() const {
-	return m_data;
-}
-
-
-int MemoryFile::GetSize() const {
-	return m_size;
-}
-
 bool MemoryFile::Write(const char *filename) const {
 	FILE *file;
 	fopen_s(&file, filename, "wb");

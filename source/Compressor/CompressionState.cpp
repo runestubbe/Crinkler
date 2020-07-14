@@ -142,16 +142,7 @@ CompressionState::~CompressionState() {
 	}
 }
 
-
 int CompressionState::SetModels(const ModelList& models) {
 	m_compressedsize = m_stateEvaluator->Evaluate(models);
 	return (int) (m_compressedsize / (BITPREC_TABLE / BITPREC));
-}
-
-int CompressionState::GetCompressedSize() const {
-	return (int) (m_compressedsize / (BITPREC_TABLE / BITPREC));
-}
-
-int CompressionState::GetSize() const {
-	return m_size;
 }

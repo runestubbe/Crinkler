@@ -31,12 +31,11 @@ public:
 	virtual int			Parse(const char* str, char* errorMsg, int buffsize) = 0;
 	virtual std::string ToString() const;
 
-	const char*			GetArgumentDescription() const;
-	const char*			GetParameterName() const;
-	const char*			GetDescription() const;
-	int					GetFlags() const;
-
-	int					GetNumMatches() const;
+	const char*			GetArgumentDescription() const	{ return m_argumentDesc.c_str(); }
+	const char*			GetParameterName() const		{ return m_parameterName.c_str(); }
+	const char*			GetDescription() const			{ return m_description.c_str(); }
+	int					GetFlags() const				{ return m_flags; }
+	int					GetNumMatches() const			{ return m_numMatches; }
 };
 
 #endif

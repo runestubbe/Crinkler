@@ -14,10 +14,9 @@
 
 using namespace std;
 
-struct Weights;
-
 const int MAX_N_MODELS = 32;
 
+struct Weights;
 void UpdateWeights(Weights *w, int bit, bool saturate);
 
 static int NextPowerOf2(int v) {
@@ -284,9 +283,6 @@ m_data(data), m_sizefill(sizefill), m_sizefillptr(sizefill), m_maxsize(maxsize),
 		memset(m_data, 0, m_maxsize);
 		AritCodeInit(&m_aritstate, m_data);
 	}
-}
-
-CompressionStream::~CompressionStream() {
 }
 
 int CompressionStream::Close(void) {

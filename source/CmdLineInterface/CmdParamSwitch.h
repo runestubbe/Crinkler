@@ -10,7 +10,8 @@ public:
 	CmdParamSwitch(const char* paramName, const char* description, int flags);
 	
 	int		Parse(const char* str, char* errorMsg, int buffsize);
-	bool	GetValue() const;
+
+	bool	GetValue() const { return m_value; }
 };
 
 #endif

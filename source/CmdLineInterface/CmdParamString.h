@@ -11,13 +11,12 @@ class CmdParamString : public CmdParam {
 public:
 	CmdParamString(const char* paramName, const char* description, const char* argumentDesciption, int flags, const char* defaultValue);
 
-	int							Parse(const char* str, char* errorMsg, int buffsize);
+	int								Parse(const char* str, char* errorMsg, int buffsize);
 
-	const char*					GetValue();
-	void						SetDefault(const char* str) { m_strings.clear(); m_strings.push_back(str); m_it = m_strings.begin();}
-	void						Next();
-	bool						HasNext() const;
-	std::vector<std::string>	GetList();
+	const char*						GetValue() const			{ return HasNext() ? m_it->c_str() : NULL; }
+	void							SetDefault(const char* str) { m_strings.clear(); m_strings.push_back(str); m_it = m_strings.begin();}
+	void							Next()						{ m_it++; }
+	bool							HasNext() const				{ return m_it != m_strings.end(); }
 };
 
 #endif

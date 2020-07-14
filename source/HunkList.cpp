@@ -55,10 +55,6 @@ void HunkList::Clear() {
 	m_hunks.clear();
 }
 
-int HunkList::GetNumHunks() const {
-	return (int)m_hunks.size();
-}
-
 void HunkList::Append(HunkList* hunklist) {
 	for(Hunk* hunk : hunklist->m_hunks) {
 		m_hunks.push_back(new Hunk(*hunk));
@@ -76,7 +72,6 @@ bool HunkList::NeedsContinuationJump(vector<Hunk*>::const_iterator &it) const {
 	}
 	return false;
 }
-
 
 Hunk* HunkList::ToHunk(const char* name, int baseAddress, int* splittingPoint) const {
 	// Calculate raw size
@@ -164,7 +159,6 @@ Hunk* HunkList::ToHunk(const char* name, int baseAddress, int* splittingPoint) c
 
 	return newHunk;
 }
-
 
 Symbol* HunkList::FindUndecoratedSymbol(const char* name) const {
 	// Weak libs (0) < weak (1) < libs (2) < normal (3)

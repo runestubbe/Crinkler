@@ -12,7 +12,6 @@
 
 using namespace std;
 
-
 // Sort symbols by address, then by type (section < global < local) and finally by name
 static bool SymbolComparator(Symbol* first, Symbol* second) {
 	if(first->value != second->value) {
@@ -105,18 +104,6 @@ void Hunk::AddRelocation(Relocation r) {
 	m_relocations.push_back(r);
 }
 
-void Hunk::SetContinuation(Symbol* s) {
-	m_continuation = s;
-}
-
-Symbol* Hunk::GetContinuation() const {
-	return m_continuation;
-}
-
-const char* Hunk::GetName() const {
-	return m_name.c_str();
-}
-
 void Hunk::PrintSymbols() const {
 	
 	// Extract relocatable symbols
@@ -132,11 +119,6 @@ void Hunk::PrintSymbols() const {
 	for(Symbol* symbol : symbols) {
 		printf("%8x: %s\n", symbol->value, symbol->name.c_str());
 	}
-}
-
-
-unsigned int Hunk::GetFlags() const {
-	return m_flags;
 }
 
 Symbol* Hunk::FindUndecoratedSymbol(const char* name) const {
@@ -215,45 +197,6 @@ void Hunk::Relocate(int imageBase) {
 	}
 }
 
-int Hunk::GetAlignmentBits() const {
-	return m_alignmentBits;
-}
-
-int Hunk::GetAlignmentOffset() const {
-	return m_alignmentOffset;
-}
-
-char* Hunk::GetPtr() {
-	if(!m_data.empty())
-		return &m_data[0];
-	else
-		return NULL;
-}
-
-int Hunk::GetRawSize() const {
-	return (int)m_data.size();
-}
-
-int Hunk::GetVirtualSize() const {
-	return m_virtualsize;
-}
-
-int Hunk::GetNumReferences() const {
-	return m_numReferences;
-}
-
-const char* Hunk::GetImportName() const {
-	return m_importName.c_str();
-}
-
-const char* Hunk::GetImportDll() const {
-	return m_importDll.c_str();
-}
-
-void Hunk::SetVirtualSize(int size) {
-	m_virtualsize = size;
-}
-
 void Hunk::SetRawSize(int size) {
 	m_data.resize(size);
 }
@@ -261,10 +204,6 @@ void Hunk::SetRawSize(int size) {
 void Hunk::SetAlignmentBits(int alignmentBits) {
 	m_alignmentBits = alignmentBits;
 	m_flags |= HUNK_IS_ALIGNED;
-}
-
-void Hunk::SetAlignmentOffset(int alignmentOffset) {
-	m_alignmentOffset = alignmentOffset;
 }
 
 void Hunk::Trim() {
@@ -380,11 +319,6 @@ CompressionReportRecord* Hunk::GetCompressionSummary(int* sizefill, int splittin
 
 	root->CalculateSize(m_virtualsize, sizefill[GetRawSize()]);
 	return root;
-}
-
-
-void Hunk::SetImportDll(const char* dll) {
-	m_importDll = dll;
 }
 
 map<int, Symbol*> Hunk::GetOffsetToRelocationMap() {

@@ -11,10 +11,6 @@ CmdParamInt::CmdParamInt(const char* parameterName, const char* description, con
 	 m_value = defaultValue;
 }
 
-std::string CmdParamInt::ToString() const {
-	return CmdParam::ToString();
-}
-
 int CmdParamInt::Parse(const char* str, char* errorMsg, int buffsize) {
 	int v;
 	char c;
@@ -31,12 +27,4 @@ int CmdParamInt::Parse(const char* str, char* errorMsg, int buffsize) {
 	}
 	sprintf_s(errorMsg, buffsize, "expected integer argument");
 	return PARSE_INVALID;
-}
-
-int CmdParamInt::GetValue() const {
-	return m_value;
-}
-
-bool CmdParamInt::Valid() {
-	return true;
 }

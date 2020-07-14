@@ -15,19 +15,3 @@ int CmdParamString::Parse(const char* str, char* errorMsg, int buffsize) {
 	m_it = m_strings.begin();
 	return PARSE_OK;
 }
-
-const char* CmdParamString::GetValue() {
-	return HasNext() ? m_it->c_str() : NULL;
-}
-
-void CmdParamString::Next() {
-	m_it++;
-}
-
-bool CmdParamString::HasNext() const {
-	return m_it != m_strings.end();
-}
-
-std::vector<std::string> CmdParamString::GetList() {
-	return m_strings;
-}

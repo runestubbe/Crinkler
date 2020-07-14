@@ -8,7 +8,3 @@ int CmdParamSwitch::Parse(const char* str, char* errorMsg, int buffsize) {
 	m_value = true;
 	return PARSE_OK;
 }
-
-bool CmdParamSwitch::GetValue() const {
-	return m_value;
-}

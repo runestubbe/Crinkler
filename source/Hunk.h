@@ -103,43 +103,42 @@ public:
 	Hunk(const char* name, const char* data, unsigned int flags, int alignmentBits, int rawsize, int virtualsize);
 	~Hunk();
 
-	void AddRelocation(Relocation r);
-	int GetNumRelocations() const { return (int)m_relocations.size(); }
-	Relocation* GetRelocations() { return &m_relocations[0]; }
-	void AddSymbol(Symbol* s);
-	void SetContinuation(Symbol *s);
-	Symbol* GetContinuation() const;
-	Symbol* FindUndecoratedSymbol(const char* name) const;
-	Symbol* FindSymbol(const char* name) const;
-	Symbol* FindSymbolWithWeak(const char* name) const;
-	void PrintSymbols() const;
-	void Relocate(int imageBase);
-	void SetVirtualSize(int size);
-	void SetRawSize(int size);
-	void SetAlignmentBits(int alignmentBits);
-	void SetAlignmentOffset(int alignmentOffset);
-	void Trim();
-	void RoundFloats(int defaultBits);
-	void OverrideAlignment(int defaultBits);
-	void AppendZeroes(int num);
-	void Insert(int offset, const unsigned char* data, int length);
+	void		AddRelocation(Relocation r);
+	int			GetNumRelocations() const						{ return (int)m_relocations.size(); }
+	Relocation* GetRelocations()								{ return &m_relocations[0]; }
+	void		AddSymbol(Symbol* s);
+	void		SetContinuation(Symbol* s)						{ m_continuation = s; }
+	Symbol*		GetContinuation() const							{ return m_continuation; }
+	Symbol*		FindUndecoratedSymbol(const char* name) const;
+	Symbol*		FindSymbol(const char* name) const;
+	void		PrintSymbols() const;
+	void		Relocate(int imageBase);
+	void		SetVirtualSize(int size)						{ m_virtualsize = size; }
+	void		SetRawSize(int size);
+	void		SetAlignmentBits(int alignmentBits);
+	void		SetAlignmentOffset(int alignmentOffset)			{ m_alignmentOffset = alignmentOffset; }
+	void		Trim();
+	void		RoundFloats(int defaultBits);
+	void		OverrideAlignment(int defaultBits);
+	void		AppendZeroes(int num);
+	void		Insert(int offset, const unsigned char* data, int length);
 
-	void MarkHunkAsLibrary();
+	void		MarkHunkAsLibrary();
 
 	CompressionReportRecord* GetCompressionSummary(int* sizefill, int splittingPoint);
 
 
-	int GetAlignmentBits() const;
-	int GetAlignmentOffset() const;
-	unsigned int GetFlags() const;
-	const char* GetName() const;
-	char* GetPtr();
-	int GetRawSize() const;
-	int GetVirtualSize() const;
-	int GetNumReferences() const;
-	const char* GetImportName() const;
-	const char* GetImportDll() const;
-	void SetImportDll(const char* dll);
+	int				GetAlignmentBits() const		{ return m_alignmentBits; }
+	int				GetAlignmentOffset() const		{ return m_alignmentOffset; }
+	unsigned int	GetFlags() const				{ return m_flags; }
+	const char*		GetName() const					{ return m_name.c_str(); }
+	char*			GetPtr()						{ return m_data.data(); }
+	int				GetRawSize() const				{ return (int)m_data.size(); }
+	int				GetVirtualSize() const			{ return m_virtualsize; }
+	int				GetNumReferences() const		{ return m_numReferences; }
+	const char*		GetImportName() const			{ return m_importName.c_str(); }
+	const char*		GetImportDll() const			{ return m_importDll.c_str(); }
+	void			SetImportDll(const char* dll)	{ m_importDll = dll; }
 	std::map<int, Symbol*> GetOffsetToRelocationMap();
 	std::map<int, Symbol*> GetOffsetToSymbolMap();
 	const std::string& GetID();

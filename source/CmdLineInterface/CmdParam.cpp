@@ -26,22 +26,3 @@ string CmdParam::ToString() const {
 	return string(buff);
 }
 
-const char* CmdParam::GetParameterName() const {
-	return m_parameterName.c_str();
-}
-
-const char* CmdParam::GetDescription() const {
-	return m_description.c_str();
-}
-
-int CmdParam::GetFlags() const {
-	return m_flags;
-}
-
-int CmdParam::GetNumMatches() const {
-	return m_numMatches;
-}
-
-const char* CmdParam::GetArgumentDescription() const {
-	return m_argumentDesc.c_str();
-}

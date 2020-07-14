@@ -19,7 +19,7 @@ public:
 	void	AddHunkFront(Hunk* hunk);
 	Hunk*	RemoveHunk(Hunk* hunk);
 	void	Append(HunkList* hunklist);
-	int		GetNumHunks() const;
+	int		GetNumHunks() const { return (int)m_hunks.size(); }
 	Hunk*	ToHunk(const char* name, int base_address = 0, int* splittingPoint = NULL) const;
 	void	InsertHunk(int index, Hunk* hunk);
 

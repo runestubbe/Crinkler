@@ -67,41 +67,6 @@ static void PermuteHunklist(HunkList* hunklist, int strength) {
 	}
 }
 
-static void RandomPermute(HunkList* hunklist) {
-	bool done = false;
-
-	int sections[3];
-	int nHunks = hunklist->GetNumHunks();
-	int codeHunks = 0;
-	int dataHunks = 0;
-	int uninitHunks = 0;
-
-	// Count different types of hunks
-	{
-		codeHunks = 0;
-		while(codeHunks < nHunks && (*hunklist)[codeHunks]->GetFlags() & HUNK_IS_CODE)
-			codeHunks++;
-		dataHunks = codeHunks;
-		while(dataHunks < nHunks && (*hunklist)[dataHunks]->GetRawSize() > 0)
-			dataHunks++;
-		uninitHunks = nHunks - dataHunks;
-		dataHunks -= codeHunks;
-		sections[0] = codeHunks;
-		sections[1] = dataHunks;
-		sections[2] = uninitHunks;
-	}
-
-	int idx = 0;
-	for(int j = 0; j < 3; j++) {
-		for(int i = 0; i < sections[j]; i++) {
-			int swapidx = rand() % (sections[j]-i);
-			swap((*hunklist)[idx+i], (*hunklist)[idx+swapidx]);
-		}
-		idx += sections[j];
-	}
-}
-
-
 EmpiricalHunkSorter::EmpiricalHunkSorter() {
 }
 
@@ -115,7 +80,6 @@ int EmpiricalHunkSorter::TryHunkCombination(HunkList* hunklist, Transform& trans
 	Hunk* phase1;
 	Symbol* import = hunklist->FindSymbol("_Import");
 	transform.LinkAndTransform(hunklist, import, CRINKLER_CODEBASE, phase1, NULL, &splittingPoint, false);
-
 
 	int totalsize = 0;
 	if (use1KMode)

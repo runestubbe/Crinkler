@@ -29,8 +29,7 @@ class CompressionStream {
 	bool			m_saturate;
 public:
 	CompressionStream(unsigned char* data, int* sizefill, int maxsize, bool saturate);
-	~CompressionStream();
-
+	
 	void	CompressFromHashBits(const HashBits& hashbits, TinyHashEntry* hashtable, int baseprob, int hashsize);
 	int		EvaluateSize(const unsigned char* data, int size, const ModelList& models, int baseprob, char* context, int bitpos);
 	int		Close();

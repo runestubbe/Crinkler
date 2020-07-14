@@ -13,12 +13,10 @@ public:
 	CmdParamInt(const char* parameterName, const char* description, const char* argumentDescription, int flags,
 				int minimumValue, int maximumValue, int defaultValue);
 
-	int			GetValue() const;
-	void		SetDefault(int v) { m_defaultValue = v; m_value = v; }
+	int			GetValue() const	{ return m_value; }
+	void		SetDefault(int v)	{ m_defaultValue = v; m_value = v; }
 
 	int			Parse(const char* str, char* errorMsg, int buffsize);
-	std::string ToString() const;
-	bool		Valid();
 };
 
 #endif
