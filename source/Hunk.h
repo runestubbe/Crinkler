@@ -47,22 +47,22 @@ struct CompressionReportRecord {
 			delete record;
 	}
 
-	void calculateSize(int size, int compressedSize) {
+	void CalculateSize(int size, int compressedSize) {
 		this->size = size;
 		this->compressedSize = compressedSize;
 		int nchildren = (int)children.size()-1;
 		for(int i = 0; i < nchildren; i++) {
 			int nextCompressedSize = (children[i+1]->compressedPos >= 0) ? children[i+1]->compressedPos : (compressedPos + compressedSize);
-			children[i]->calculateSize(children[i+1]->pos - children[i]->pos, nextCompressedSize - children[i]->compressedPos);
+			children[i]->CalculateSize(children[i+1]->pos - children[i]->pos, nextCompressedSize - children[i]->compressedPos);
 		}
 		if(!children.empty()) {
 			CompressionReportRecord* child = children.back();
-			child->calculateSize(pos + size - child->pos, compressedPos + compressedSize - child->compressedPos);
+			child->CalculateSize(pos + size - child->pos, compressedPos + compressedSize - child->compressedPos);
 		}
 	}
 
 	// Returns the level of the record. Level 0: section. Level 1: old section. Level 2: public symbol. Level 3: private symbol.
-	int getLevel() {
+	int GetLevel() {
 		if(type & RECORD_SECTION)
 			return 0;
 		if(type & RECORD_OLD_SECTION)
@@ -103,47 +103,46 @@ public:
 	Hunk(const char* name, const char* data, unsigned int flags, int alignmentBits, int rawsize, int virtualsize);
 	~Hunk();
 
-	void addRelocation(Relocation r);
-	int getNumRelocations() const { return (int)m_relocations.size(); }
-	Relocation* getRelocations() { return &m_relocations[0]; }
-	void addSymbol(Symbol* s);
-	void setContinuation(Symbol *s);
-	Symbol* getContinuation() const;
-	Symbol* findUndecoratedSymbol(const char* name) const;
-	Symbol* findSymbol(const char* name) const;
-	Symbol* findSymbolWithWeak(const char* name) const;
-	void printSymbols() const;
-	void relocate(int imageBase);
-	void setVirtualSize(int size);
-	void setRawSize(int size);
-	void setAlignmentBits(int alignmentBits);
-	void setAlignmentOffset(int alignmentOffset);
-	void trim();
-	void chop(int size);
-	void roundFloats(int defaultBits);
-	void overrideAlignment(int defaultBits);
-	void appendZeroes(int num);
-	void insert(int offset, const unsigned char* data, int length);
+	void AddRelocation(Relocation r);
+	int GetNumRelocations() const { return (int)m_relocations.size(); }
+	Relocation* GetRelocations() { return &m_relocations[0]; }
+	void AddSymbol(Symbol* s);
+	void SetContinuation(Symbol *s);
+	Symbol* GetContinuation() const;
+	Symbol* FindUndecoratedSymbol(const char* name) const;
+	Symbol* FindSymbol(const char* name) const;
+	Symbol* FindSymbolWithWeak(const char* name) const;
+	void PrintSymbols() const;
+	void Relocate(int imageBase);
+	void SetVirtualSize(int size);
+	void SetRawSize(int size);
+	void SetAlignmentBits(int alignmentBits);
+	void SetAlignmentOffset(int alignmentOffset);
+	void Trim();
+	void RoundFloats(int defaultBits);
+	void OverrideAlignment(int defaultBits);
+	void AppendZeroes(int num);
+	void Insert(int offset, const unsigned char* data, int length);
 
-	void markHunkAsLibrary();
+	void MarkHunkAsLibrary();
 
-	CompressionReportRecord* getCompressionSummary(int* sizefill, int splittingPoint);
+	CompressionReportRecord* GetCompressionSummary(int* sizefill, int splittingPoint);
 
 
-	int getAlignmentBits() const;
-	int getAlignmentOffset() const;
-	unsigned int getFlags() const;
-	const char* getName() const;
-	char* getPtr();
-	int getRawSize() const;
-	int getVirtualSize() const;
-	int getNumReferences() const;
-	const char* getImportName() const;
-	const char* getImportDll() const;
-	void setImportDll(const char* dll);
-	std::map<int, Symbol*> getOffsetToRelocationMap();
-	std::map<int, Symbol*> getOffsetToSymbolMap();
-	const std::string& getID();
+	int GetAlignmentBits() const;
+	int GetAlignmentOffset() const;
+	unsigned int GetFlags() const;
+	const char* GetName() const;
+	char* GetPtr();
+	int GetRawSize() const;
+	int GetVirtualSize() const;
+	int GetNumReferences() const;
+	const char* GetImportName() const;
+	const char* GetImportDll() const;
+	void SetImportDll(const char* dll);
+	std::map<int, Symbol*> GetOffsetToRelocationMap();
+	std::map<int, Symbol*> GetOffsetToSymbolMap();
+	const std::string& GetID();
 };
 
 #endif

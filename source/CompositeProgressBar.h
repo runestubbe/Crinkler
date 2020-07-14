@@ -8,15 +8,15 @@
 class CompositeProgressBar : public ProgressBar {
 	std::vector<ProgressBar*> m_progressBars;
 public:
-	void init();
-	void deinit();
+	void Init();
+	void Deinit();
 
-	void beginTask(const char* name);
-	void endTask();
-	void update(int n, int max);
+	void BeginTask(const char* name);
+	void EndTask();
+	void Update(int n, int max);
 
-	void addProgressBar(ProgressBar* progressBar);
-	void clearProgressBars() { m_progressBars.clear(); };
+	void AddProgressBar(ProgressBar* progressBar);
+	void ClearProgressBars() { m_progressBars.clear(); };
 };
 
 #endif

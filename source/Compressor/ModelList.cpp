@@ -3,7 +3,7 @@
 #include "ModelList.h"
 #include "Compressor.h"
 
-static int parity(int n) {
+static int Parity(int n) {
 	int p = 0;
 	for (int i = 0 ; i < 8 ; i++) {
 		p ^= (n >> i) & 1;
@@ -27,7 +27,7 @@ ModelList::ModelList(const ModelList& ml) {
 }
 
 ModelList::ModelList(const unsigned char* models, int weightmask) {
-	setFromModelsAndMask(models, weightmask);
+	SetFromModelsAndMask(models, weightmask);
 }
 
 ModelList& ModelList::operator=(const ModelList& ml) {
@@ -48,11 +48,11 @@ const Model& ModelList::operator[] (unsigned idx) const {
 	return m_models[idx];
 }
 
-void ModelList::addModel(Model model) {
+void ModelList::AddModel(Model model) {
 	m_models[nmodels++] = model;
 }
 
-void ModelList::print(FILE *f) const {
+void ModelList::Print(FILE *f) const {
 	for(int m = 0 ; m < nmodels; m++) {
 		fprintf(f, "%s%02X:%d", m == 0 ? "" : " ", m_models[m].mask, m_models[m].weight);
 	}
@@ -60,7 +60,7 @@ void ModelList::print(FILE *f) const {
 }
 
 // Copy a sorted model list to masks and return the corresponding weight mask
-unsigned int ModelList::getMaskList(unsigned char* masks, bool terminate) const {
+unsigned int ModelList::GetMaskList(unsigned char* masks, bool terminate) const {
 	unsigned int weightmask = 0;
 	int nmodels = this->nmodels;
 	int biti = 31;
@@ -83,10 +83,10 @@ unsigned int ModelList::getMaskList(unsigned char* masks, bool terminate) const 
 		biti--;
 	}
 
-	return weightmask & (-2 + (int(terminate) ^ parity(weightmask)));
+	return weightmask & (-2 + (int(terminate) ^ Parity(weightmask)));
 }
 
-void ModelList::setFromModelsAndMask(const unsigned char* models, int weightmask) {
+void ModelList::SetFromModelsAndMask(const unsigned char* models, int weightmask) {
 	nmodels = 0;
 	int weight = 0;
 	do {
@@ -104,7 +104,7 @@ void ModelList::setFromModelsAndMask(const unsigned char* models, int weightmask
 	} while(weightmask);
 }
 
-CompressionType ModelList::detectCompressionType() const {
+CompressionType ModelList::DetectCompressionType() const {
 	// This code does not work, as FAST mode has a single
 	// weight optimization at the end.
 	ModelList instant = InstantModels();
@@ -134,7 +134,7 @@ CompressionType ModelList::detectCompressionType() const {
 }
 
 
-void ModelList1k::print() const
+void ModelList1k::Print() const
 {
 	printf("Models: %08X   Boost: %d  BaseProb: (%d, %d)\n", modelmask, boost, baseprob0, baseprob1);
 }

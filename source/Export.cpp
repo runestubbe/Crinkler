@@ -14,7 +14,7 @@ Export::Export(const std::string name, int value)
 	: m_name(std::move(name)), m_symbol(""), m_value(value)
 {}
 
-Export parseExport(const std::string& name, const std::string& value) {
+Export ParseExport(const std::string& name, const std::string& value) {
 	if (value.empty()) {
 		return Export(name, name);
 	}
@@ -40,15 +40,15 @@ Export parseExport(const std::string& name, const std::string& value) {
 }
 
 // Exports must be sorted by name
-Hunk* createExportTable(const std::set<Export>& exports) {
+Hunk* CreateExportTable(const std::set<Export>& exports) {
 	// Collect export values and sum name lengths
 	std::map<int, int> values;
 	int total_name_length = 0;
 	for (const Export& e : exports) {
-		if (e.hasValue()) {
-			values[e.getValue()] = 0;
+		if (e.HasValue()) {
+			values[e.GetValue()] = 0;
 		}
-		total_name_length += (int)e.getName().length() + 1;
+		total_name_length += (int)e.GetName().length() + 1;
 	}
 
 	// Space for hunk
@@ -98,7 +98,7 @@ Hunk* createExportTable(const std::set<Export>& exports) {
 	// Put names
 	char* names = (char*)ordinals;
 	for (const Export& e : exports) {
-		const char* name = e.getName().c_str();
+		const char* name = e.GetName().c_str();
 		strcpy(names, name);
 		names += strlen(name) + 1;
 	}
@@ -109,43 +109,43 @@ Hunk* createExportTable(const std::set<Export>& exports) {
 	std::string object_name = "EXPORT";
 
 	// Add labels
-	hunk->addSymbol(new Symbol("exports", 0, SYMBOL_IS_RELOCATEABLE | SYMBOL_IS_SECTION, hunk, object_name.c_str()));
+	hunk->AddSymbol(new Symbol("exports", 0, SYMBOL_IS_RELOCATEABLE | SYMBOL_IS_SECTION, hunk, object_name.c_str()));
 	for (const Export& e : exports) {
-		if (e.hasValue()) {
-			hunk->addSymbol(new Symbol(e.getName().c_str(), values[e.getValue()] * 4, SYMBOL_IS_RELOCATEABLE, hunk));
+		if (e.HasValue()) {
+			hunk->AddSymbol(new Symbol(e.GetName().c_str(), values[e.GetValue()] * 4, SYMBOL_IS_RELOCATEABLE, hunk));
 		}
 	}
-	hunk->addSymbol(new Symbol("_ExportTable", table_offset, SYMBOL_IS_RELOCATEABLE, hunk));
-	hunk->addSymbol(new Symbol("_ExportAddresses", addresses_offset, SYMBOL_IS_RELOCATEABLE, hunk));
-	hunk->addSymbol(new Symbol("_ExportNames", name_pointers_offset, SYMBOL_IS_RELOCATEABLE, hunk));
-	hunk->addSymbol(new Symbol("_ExportOrdinals", ordinals_offset, SYMBOL_IS_RELOCATEABLE, hunk));
+	hunk->AddSymbol(new Symbol("_ExportTable", table_offset, SYMBOL_IS_RELOCATEABLE, hunk));
+	hunk->AddSymbol(new Symbol("_ExportAddresses", addresses_offset, SYMBOL_IS_RELOCATEABLE, hunk));
+	hunk->AddSymbol(new Symbol("_ExportNames", name_pointers_offset, SYMBOL_IS_RELOCATEABLE, hunk));
+	hunk->AddSymbol(new Symbol("_ExportOrdinals", ordinals_offset, SYMBOL_IS_RELOCATEABLE, hunk));
 	int name_offset = names_offset;
 	for (const Export& e : exports) {
-		std::string name_label = "_ExportName_" + e.getName();
-		hunk->addSymbol(new Symbol(name_label.c_str(), name_offset, SYMBOL_IS_RELOCATEABLE, hunk));
-		name_offset += (int)e.getName().length() + 1;
+		std::string name_label = "_ExportName_" + e.GetName();
+		hunk->AddSymbol(new Symbol(name_label.c_str(), name_offset, SYMBOL_IS_RELOCATEABLE, hunk));
+		name_offset += (int)e.GetName().length() + 1;
 	}
 
 	// Add relocations
-	hunk->addRelocation({ "_ExportAddresses", table_offset + 28, RELOCTYPE_ABS32, object_name });
-	hunk->addRelocation({ "_ExportNames", table_offset + 32, RELOCTYPE_ABS32, object_name });
-	hunk->addRelocation({ "_ExportOrdinals", table_offset + 36, RELOCTYPE_ABS32, object_name });
+	hunk->AddRelocation({ "_ExportAddresses", table_offset + 28, RELOCTYPE_ABS32, object_name });
+	hunk->AddRelocation({ "_ExportNames", table_offset + 32, RELOCTYPE_ABS32, object_name });
+	hunk->AddRelocation({ "_ExportOrdinals", table_offset + 36, RELOCTYPE_ABS32, object_name });
 	int i = 0;
 	for (const Export& e : exports) {
-		const std::string& export_label = e.hasValue() ? e.getName() : e.getSymbol();
-		hunk->addRelocation({ export_label, addresses_offset + i * 4, RELOCTYPE_ABS32, object_name });
-		std::string name_label = "_ExportName_" + e.getName();
-		hunk->addRelocation({ name_label, name_pointers_offset + i * 4, RELOCTYPE_ABS32, object_name });
+		const std::string& export_label = e.HasValue() ? e.GetName() : e.GetSymbol();
+		hunk->AddRelocation({ export_label, addresses_offset + i * 4, RELOCTYPE_ABS32, object_name });
+		std::string name_label = "_ExportName_" + e.GetName();
+		hunk->AddRelocation({ name_label, name_pointers_offset + i * 4, RELOCTYPE_ABS32, object_name });
 		i++;
 	}
 
 	return hunk;
 }
 
-std::set<Export> stripExports(Hunk* phase1, int exports_rva) {
+std::set<Export> StripExports(Hunk* phase1, int exports_rva) {
 	const int rva_to_offset = CRINKLER_IMAGEBASE - CRINKLER_CODEBASE;
-	phase1->appendZeroes(1); // To make sure names are terminated
-	char* data = phase1->getPtr();
+	phase1->AppendZeroes(1); // To make sure names are terminated
+	char* data = phase1->GetPtr();
 
 	// Locate tables
 	int table_offset = exports_rva + rva_to_offset;
@@ -185,26 +185,26 @@ std::set<Export> stripExports(Hunk* phase1, int exports_rva) {
 	for (auto& export_offset : export_offsets) {
 		char* name = export_offset.first;
 		int offset = export_offset.second;
-		phase1->addSymbol(new Symbol(name, offset, SYMBOL_IS_RELOCATEABLE, phase1, "EXPORT"));
+		phase1->AddSymbol(new Symbol(name, offset, SYMBOL_IS_RELOCATEABLE, phase1, "EXPORT"));
 		exports.insert(Export(name, name));
 	}
 
 	// Truncate hunk
-	phase1->setRawSize(export_hunk_offset);
+	phase1->SetRawSize(export_hunk_offset);
 
 	return exports;
 }
 
-void printExports(const std::set<Export>& exports) {
+void PrintExports(const std::set<Export>& exports) {
 	for (const Export& e : exports) {
-		if (e.hasValue()) {
-			printf("  %s = 0x%08X\n", e.getName().c_str(), e.getValue());
+		if (e.HasValue()) {
+			printf("  %s = 0x%08X\n", e.GetName().c_str(), e.GetValue());
 		}
-		else if (e.getSymbol() == e.getName()) {
-			printf("  %s\n", e.getName().c_str());
+		else if (e.GetSymbol() == e.GetName()) {
+			printf("  %s\n", e.GetName().c_str());
 		}
 		else {
-			printf("  %s -> %s\n", e.getName().c_str(), e.getSymbol().c_str());
+			printf("  %s -> %s\n", e.GetName().c_str(), e.GetSymbol().c_str());
 		}
 	}
 }

@@ -6,16 +6,17 @@
 #include <string>
 #include "ProgressBar.h"
 
-class WindowProgressBar : public ProgressBar{
-	HANDLE m_thread;
-	int m_maxValue;
-	int m_stime;
+class WindowProgressBar : public ProgressBar {
+	HANDLE		m_thread;
+	int			m_maxValue;
+	int			m_stime;
 	std::string m_name;
 public:
-	void init();
-	void beginTask(const char* name);
-	void endTask();
-	void update(int n, int max);
+	void Init();
+
+	void BeginTask(const char* name);
+	void EndTask();
+	void Update(int n, int max);
 };
 
 #endif

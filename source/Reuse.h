@@ -12,7 +12,7 @@ enum ReuseType {
 	REUSE_OFF, REUSE_WRITE, REUSE_IMPROVE, REUSE_STABLE
 };
 
-static const char *reuseTypeName(ReuseType mode) {
+static const char *ReuseTypeName(ReuseType mode) {
 	switch (mode) {
 	case REUSE_OFF:
 		return "OFF";
@@ -36,18 +36,18 @@ class Reuse {
 
 	int m_hashsize;
 
-	friend Reuse* loadReuseFile(const char *filename);
-	friend void ExplicitHunkSorter::sortHunkList(HunkList* hunklist, Reuse *reuse);
+	friend Reuse* LoadReuseFile(const char *filename);
+	friend void ExplicitHunkSorter::SortHunkList(HunkList* hunklist, Reuse *reuse);
 
 public:
 	Reuse();
 	Reuse(const ModelList& code_models, const ModelList& data_models, const HunkList& hl, int hashsize);
 
-	void save(const char *filename) const;
+	const ModelList*	GetCodeModels() const { return m_code_models; }
+	const ModelList*	GetDataModels() const { return m_data_models; }
+	int					GetHashSize() const { return m_hashsize; }
 
-	const ModelList *getCodeModels() const { return m_code_models; }
-	const ModelList *getDataModels() const { return m_data_models; }
-	int getHashSize() const { return m_hashsize; }
+	void				Save(const char* filename) const;
 };
 
-Reuse* loadReuseFile(const char *filename);
+Reuse* LoadReuseFile(const char *filename);

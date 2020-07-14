@@ -4,7 +4,7 @@
 struct CompressionReportRecord;
 class Hunk;
 class Crinkler;
-void htmlReport(CompressionReportRecord* csr, const char* filename, Hunk& hunk, Hunk& untransformedHunk, const int* sizefill,
+void HtmlReport(CompressionReportRecord* csr, const char* filename, Hunk& hunk, Hunk& untransformedHunk, const int* sizefill,
 	const char *exefilename, int filesize, Crinkler *crinkler);
 
 #endif

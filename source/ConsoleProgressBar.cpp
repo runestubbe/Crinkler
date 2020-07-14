@@ -8,7 +8,7 @@ using namespace std;
 
 const int PROGRESS_BAR_WIDTH = 60;
 
-void ConsoleProgressBar::beginTask(const char* name) {
+void ConsoleProgressBar::BeginTask(const char* name) {
 	printf("\n|-- %s ", name);
 	for(int i = 0; i < (int)(PROGRESS_BAR_WIDTH-6-strlen(name)); i++)
 		printf("-");
@@ -18,11 +18,11 @@ void ConsoleProgressBar::beginTask(const char* name) {
 	m_stime = clock();
 }
 
-void ConsoleProgressBar::endTask() {
+void ConsoleProgressBar::EndTask() {
 	
 }
 
-void ConsoleProgressBar::update(int n, int max) {
+void ConsoleProgressBar::Update(int n, int max) {
 	while((n*PROGRESS_BAR_WIDTH) / max > m_pos) {
 		printf(".");
 		m_pos++;

@@ -34,6 +34,6 @@ int CompressFromHashBits(unsigned char* compressed, int* sizefill, TinyHashEntry
 
 int Compress1K(unsigned char* data, int size, unsigned char* compressed, int compressed_size, int boost_factor, int b0, int b1, unsigned int modelmask, int* sizefill, int* internal_size);
 
-const char *compTypeName(CompressionType ct);
+const char *CompressionTypeName(CompressionType ct);
 
 #endif

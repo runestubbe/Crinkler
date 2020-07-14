@@ -15,29 +15,28 @@ public:
 	Hunk*& operator[] (unsigned idx);
 	Hunk* const & operator[] (unsigned idx) const;
 
-	void addHunkBack(Hunk* hunk);
-	void addHunkFront(Hunk* hunk);
-	Hunk* removeHunk(Hunk* hunk);
-	void append(HunkList* hunklist);
-	void setHunk(int index, Hunk* h);
-	int getNumHunks() const;
-	Hunk* toHunk(const char* name, int base_address = 0, int* splittingPoint = NULL) const;
-	void insertHunk(int index, Hunk* hunk);
+	void	AddHunkBack(Hunk* hunk);
+	void	AddHunkFront(Hunk* hunk);
+	Hunk*	RemoveHunk(Hunk* hunk);
+	void	Append(HunkList* hunklist);
+	int		GetNumHunks() const;
+	Hunk*	ToHunk(const char* name, int base_address = 0, int* splittingPoint = NULL) const;
+	void	InsertHunk(int index, Hunk* hunk);
 
-	Symbol* findSymbol(const char* name) const;
-	Symbol* findUndecoratedSymbol(const char* name) const;
-	void removeUnreferencedHunks(std::vector<Hunk*> startHunks);
+	Symbol* FindSymbol(const char* name) const;
+	Symbol* FindUndecoratedSymbol(const char* name) const;
+	void	RemoveUnreferencedHunks(std::vector<Hunk*> startHunks);
 
-	bool needsContinuationJump(std::vector<Hunk*>::const_iterator &it) const;
+	bool	NeedsContinuationJump(std::vector<Hunk*>::const_iterator &it) const;
 
-	void removeImportHunks();
-	void clear();
+	void	RemoveImportHunks();
+	void	Clear();
 
-	void markHunksAsLibrary();
+	void	MarkHunksAsLibrary();
 
-	void trim();
-	void printHunks();
-	void roundFloats(int defaultBits);
+	void	Trim();
+	void	PrintHunks();
+	void	RoundFloats(int defaultBits);
 };
 
 #endif

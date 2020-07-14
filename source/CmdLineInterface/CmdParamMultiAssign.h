@@ -11,12 +11,12 @@ class CmdParamMultiAssign : public CmdParam {
 public:
 	CmdParamMultiAssign(const char* paramName, const char* description, const char* argumentDesciption, int flags);
 
-	int parse(const char* str, char* errorMsg, int buffsize);
+	int			Parse(const char* str, char* errorMsg, int buffsize);
 
-	const char* getValue1();
-	const char* getValue2();
-	void next();
-	bool hasNext() const;
+	const char* GetValue1();
+	const char* GetValue2();
+	void		Next();
+	bool		HasNext() const;
 };
 
 #endif

@@ -5,15 +5,15 @@
 #include "Symbol.h"
 #include "Crinkler.h"
 
-bool Transform::linkAndTransform(HunkList* hunklist, Symbol *entry_label, int baseAddress, Hunk* &transformedHunk, Hunk** untransformedHunk, int* splittingPoint, bool verbose)
+bool Transform::LinkAndTransform(HunkList* hunklist, Symbol *entry_label, int baseAddress, Hunk* &transformedHunk, Hunk** untransformedHunk, int* splittingPoint, bool verbose)
 {
 	Hunk* detrans = nullptr;
 	if (m_enabled)
 	{
-		detrans = getDetransformer();
+		detrans = GetDetransformer();
 		if(detrans)
 		{
-			detrans->setVirtualSize(detrans->getRawSize());
+			detrans->SetVirtualSize(detrans->GetRawSize());
 		}
 	}
 
@@ -21,12 +21,12 @@ bool Transform::linkAndTransform(HunkList* hunklist, Symbol *entry_label, int ba
 	{
 		detrans = new Hunk("Stub", NULL, HUNK_IS_CODE, 0, 0, 0);
 	}
-	hunklist->addHunkFront(detrans);
-	detrans->setContinuation(entry_label);
+	hunklist->AddHunkFront(detrans);
+	detrans->SetContinuation(entry_label);
 
 	int sp;
-	transformedHunk = hunklist->toHunk("linked", baseAddress, &sp);
-	transformedHunk->relocate(baseAddress);
+	transformedHunk = hunklist->ToHunk("linked", baseAddress, &sp);
+	transformedHunk->Relocate(baseAddress);
 
 	if (splittingPoint)
 	{
@@ -38,8 +38,8 @@ bool Transform::linkAndTransform(HunkList* hunklist, Symbol *entry_label, int ba
 		*untransformedHunk = new Hunk(*transformedHunk);
 	}
 
-	hunklist->removeHunk(detrans);
+	hunklist->RemoveHunk(detrans);
 	delete detrans;
 
-	return m_enabled ? transform(transformedHunk, sp, verbose) : false;
+	return m_enabled ? DoTransform(transformedHunk, sp, verbose) : false;
 }

@@ -3,25 +3,25 @@
 
 using namespace std;
 
-string toUpper(const string& s) {
+string ToUpper(const string& s) {
 	string d(s);
 	transform(d.begin(), d.end(), d.begin(), (int(*)(int))toupper);
 	return d;
 }
 
-string toLower(const string& s) {
+string ToLower(const string& s) {
 	string d(s);
 	transform(d.begin(), d.end(), d.begin(), (int(*)(int))tolower);
 	return d;
 }
 
-std::string stripPath(const std::string& s) {
+std::string StripPath(const std::string& s) {
 	int idx = (int)s.size()-1;
 	while(idx >= 0 && s[idx] != ':' && s[idx] != '/' && s[idx] != '\\') idx--;
 	return s.substr(idx+1, s.size() - (idx+1));
 }
 
-string toHtml(char c) {
+string ToHtml(char c) {
 	char buff[16];
 	if((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') 
 		|| (c == '_'))
@@ -31,15 +31,15 @@ string toHtml(char c) {
 	return string((char*)buff);
 }
 
-std::string escapeHtml(const std::string& s) {
+std::string EscapeHtml(const std::string& s) {
 	string d;
 	for(char c : s) {
-		d += toHtml(c);
+		d += ToHtml(c);
 	}
 	return d;
 }
 
-bool endsWith(const char* str, const char* ending) {
+bool EndsWith(const char* str, const char* ending) {
 	int slen = (int)strlen(str);
 	int elen = (int)strlen(ending);
 	if(slen < elen)
@@ -47,7 +47,7 @@ bool endsWith(const char* str, const char* ending) {
 	return memcmp(str+slen-elen, ending, elen) == 0;
 }
 
-bool startsWith(const char* str, const char* start) {
+bool StartsWith(const char* str, const char* start) {
 	while(true) {
 		if(*start == '\0')
 			return true;
@@ -58,7 +58,7 @@ bool startsWith(const char* str, const char* start) {
 	}
 }
 
-std::vector<std::string> intoLines(const char *data, int length) {
+std::vector<std::string> IntoLines(const char *data, int length) {
 	std::vector<std::string> lines;
 	int start = 0;
 	for (int i = 0; i <= length; i++) {

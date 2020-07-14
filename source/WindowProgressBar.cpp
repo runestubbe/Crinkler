@@ -9,7 +9,7 @@ volatile HWND g_WndDlg;
 volatile HWND g_WndProgress;
 volatile HWND g_WndElapsedTime;
 
-void centerWindow(HWND childHwnd, HWND parentHwnd) {
+static void CenterWindow(HWND childHwnd, HWND parentHwnd) {
 	RECT dialogRect, parentRect, workAreaRect;
 
 	GetWindowRect(childHwnd, &dialogRect);
@@ -58,7 +58,7 @@ LRESULT CALLBACK DlgProc(HWND hWndDlg, UINT Msg, WPARAM wParam, LPARAM lParam)
 		g_WndDlg = hWndDlg;
 
 		//center window
-		centerWindow(hWndDlg, GetDesktopWindow());
+		CenterWindow(hWndDlg, GetDesktopWindow());
 		return TRUE;
 
 	case WM_COMMAND:
@@ -85,7 +85,7 @@ DWORD WINAPI ThreadProc( LPVOID lpParam ) {
 	return 0;
 }
 
-void WindowProgressBar::init() {
+void WindowProgressBar::Init() {
 	INITCOMMONCONTROLSEX cc = {
 		sizeof(INITCOMMONCONTROLSEX),
 		ICC_PROGRESS_CLASS
@@ -111,19 +111,19 @@ void WindowProgressBar::init() {
 	SendMessage(g_WndProgress, PBM_SETRANGE, 0, MAKELPARAM(0, m_maxValue));
 }
 
-void WindowProgressBar::beginTask(const char* name) {
+void WindowProgressBar::BeginTask(const char* name) {
 	SetWindowText(g_WndDlg, name);
 	m_stime = clock();
 	m_name = name;
-	update(0, 256);
+	Update(0, 256);
 	return;
 }
 
-void WindowProgressBar::endTask() {
+void WindowProgressBar::EndTask() {
 
 }
 
-void WindowProgressBar::update(int n, int max) {
+void WindowProgressBar::Update(int n, int max) {
 	char buff[128];
 	//update title
 	sprintf_s(buff,sizeof(buff), "%d%% - %s", (100*n)/max, m_name.c_str());

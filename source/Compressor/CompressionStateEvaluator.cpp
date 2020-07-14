@@ -24,7 +24,7 @@ CompressionStateEvaluator::~CompressionStateEvaluator() {
 	delete[] m_packageSizes;
 }
 
-bool CompressionStateEvaluator::init(ModelPredictions* models, int length, int baseprob, float logScale)
+bool CompressionStateEvaluator::Init(ModelPredictions* models, int length, int baseprob, float logScale)
 {
 	m_length = length;
 	m_models = models;
@@ -50,7 +50,7 @@ bool CompressionStateEvaluator::init(ModelPredictions* models, int length, int b
 	return true;
 }
 
-long long CompressionStateEvaluator::changeWeight(int modelIndex, int diffw) {
+long long CompressionStateEvaluator::ChangeWeight(int modelIndex, int diffw) {
 	concurrency::combinable<long long> diffsize;
 
 	int numPackages = m_models[modelIndex].numPackages;
@@ -182,7 +182,7 @@ long long CompressionStateEvaluator::changeWeight(int modelIndex, int diffw) {
 	return diffsize.combine(std::plus<long long>());
 }
 
-long long CompressionStateEvaluator::evaluate(const ModelList& ml) {
+long long CompressionStateEvaluator::Evaluate(const ModelList& ml) {
 	int newWeights[MAX_MODELS];
 	memset(newWeights, 0, sizeof(newWeights));
 	for(int i = 0; i < ml.nmodels; i++) {
@@ -191,7 +191,7 @@ long long CompressionStateEvaluator::evaluate(const ModelList& ml) {
 
 	for(int i = 0; i < MAX_MODELS; i++) {
 		if(newWeights[i] != m_weights[i]) {
-			long long diffsize = changeWeight(i, newWeights[i] - m_weights[i]);
+			long long diffsize = ChangeWeight(i, newWeights[i] - m_weights[i]);
 			if(m_weights[i] == 0)
 				m_compressedSize += 8 * BITPREC_TABLE;
 			else if(newWeights[i] == 0)

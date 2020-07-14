@@ -10,20 +10,21 @@ class Transform {
 public:
 	Transform() : m_enabled(true) {};
 	virtual ~Transform() {};
-	virtual Hunk* getDetransformer() = 0;
-	virtual bool transform(Hunk* hunk, int splittingPoint, bool verbose) = 0;
 
-	//links and transforms a hunklist. provides both a transformed and non-transformed linked version.
-	//returns true if the transform succeeds
-	bool linkAndTransform(HunkList* hunklist, Symbol *entry_label, int baseAddress, Hunk* &transformedHunk, Hunk** untransformedHunk, int* splittingPoint, bool verbose);
+	virtual Hunk*	GetDetransformer() = 0;
+	virtual bool	DoTransform(Hunk* hunk, int splittingPoint, bool verbose) = 0;
 
-	void disable() { m_enabled = false; }
+	// Links and transforms a hunklist. Provides both a transformed and non-transformed linked version.
+	// Returns true if the transform succeeds
+	bool			LinkAndTransform(HunkList* hunklist, Symbol *entry_label, int baseAddress, Hunk* &transformedHunk, Hunk** untransformedHunk, int* splittingPoint, bool verbose);
+
+	void			Disable() { m_enabled = false; }
 };
 
 class IdentityTransform : public Transform {
 public:
-	Hunk* getDetransformer() { return nullptr; }
-	bool transform(Hunk* hunk, int splittingPoint, bool verbose) { return true; }
+	Hunk*	GetDetransformer() { return nullptr; }
+	bool	DoTransform(Hunk* hunk, int splittingPoint, bool verbose) { return true; }
 };
 
 #endif

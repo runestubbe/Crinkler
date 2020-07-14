@@ -23,7 +23,7 @@
 
 using namespace std;
 
-static bool fileExists(const char* filename) {
+static bool FileExists(const char* filename) {
 	FILE* file;
 	fopen_s(&file, filename, "r");
 	if(file != NULL) {
@@ -33,7 +33,7 @@ static bool fileExists(const char* filename) {
 	return false;
 }
 
-static void findFileInPathInner(vector<string> &res, std::string path, const char* filename)
+static void FindFileInPathInner(vector<string> &res, std::string path, const char* filename)
 {
 	if(path[path.size() - 1] != '\\' && path[path.size() - 1] != '/')
 		path += "\\";
@@ -42,19 +42,19 @@ static void findFileInPathInner(vector<string> &res, std::string path, const cha
 	char canonicalName[1024];
 	GetFullPathName(path.c_str(), sizeof(canonicalName), canonicalName, NULL);
 
-	if(fileExists(canonicalName)) {
-		res.push_back(toUpper(canonicalName));
+	if(FileExists(canonicalName)) {
+		res.push_back(ToUpper(canonicalName));
 	}
 }
 
 // Returns a list of found files in uppercase
-static vector<string> findFileInPath(const char* filename, const char* path_string, bool isDll) {
+static vector<string> FindFileInPath(const char* filename, const char* path_string, bool isDll) {
 	vector<string> res;
 	string str = path_string;
 
 	char canonicalName[1024];
-	if(GetFullPathName(filename, sizeof(canonicalName), canonicalName, NULL) && fileExists(canonicalName)) {
-		res.push_back(toUpper(canonicalName));
+	if(GetFullPathName(filename, sizeof(canonicalName), canonicalName, NULL) && FileExists(canonicalName)) {
+		res.push_back(ToUpper(canonicalName));
 	}
 
 	string delimiters = ";";
@@ -64,7 +64,7 @@ static vector<string> findFileInPath(const char* filename, const char* path_stri
 	while(string::npos != pos || string::npos != lastPos)
 	{
 		// Found a token, add it to the vector.
-		string path = toUpper(str.substr(lastPos, pos - lastPos));
+		string path = ToUpper(str.substr(lastPos, pos - lastPos));
 
 		if(isDll)
 		{
@@ -72,9 +72,9 @@ static vector<string> findFileInPath(const char* filename, const char* path_stri
 			size_t index = path64.find("SYSTEM32");
 			if(index != string::npos)
 				path64.replace(index, 8, "SYSWOW64");
-			findFileInPathInner(res, path64, filename);
+			FindFileInPathInner(res, path64, filename);
 		}
-		findFileInPathInner(res, path, filename);
+		FindFileInPathInner(res, path, filename);
 		
 		lastPos = str.find_first_not_of(delimiters, pos);
 		pos = str.find_first_of(delimiters, lastPos);
@@ -83,7 +83,7 @@ static vector<string> findFileInPath(const char* filename, const char* path_stri
 	return res;
 }
 
-static string getEnv(const char* varname) {
+static string GetEnv(const char* varname) {
 	char* buff = NULL;
 	size_t len = 0;
 	if(_dupenv_s(&buff, &len, varname)) {
@@ -99,30 +99,30 @@ static string getEnv(const char* varname) {
 	}
 }
 
-std::map<string, MemoryFile*> dllFileMap;
+static std::map<string, MemoryFile*> dllFileMap;
 const char *LoadDLL(const char *name) {
-	string strName = toUpper(name);
-	if(!endsWith(strName.c_str(), ".DLL"))
+	string strName = ToUpper(name);
+	if(!EndsWith(strName.c_str(), ".DLL"))
 		strName += ".DLL";
 
 	auto it = dllFileMap.find(strName);
 	if(it != dllFileMap.end())
-		return it->second->getPtr();
+		return it->second->GetPtr();
 	
-	vector<string> filepaths = findFileInPath(strName.c_str(), getEnv("PATH").c_str(), true);
+	vector<string> filepaths = FindFileInPath(strName.c_str(), GetEnv("PATH").c_str(), true);
 	if(filepaths.empty())
 	{
-		Log::error("", "Cannot find DLL '%s'", strName.c_str());
+		Log::Error("", "Cannot find DLL '%s'", strName.c_str());
 		return NULL;
 	}
 
 	MemoryFile* mf = new MemoryFile(filepaths[0].c_str());
 	dllFileMap[strName] = mf;
-	return mf->getPtr();
+	return mf->GetPtr();
 }
 
 
-static bool runExecutable(const char* filename) {
+static bool RunExecutable(const char* filename) {
 	char args[MAX_PATH];
 	strcpy_s(args, GetCommandLine());
 
@@ -155,24 +155,24 @@ static bool runExecutable(const char* filename) {
 	return true;
 }
 
-static void parseExports(CmdParamMultiAssign& arg, Crinkler& crinkler) {
-	while (arg.hasNext()) {
-		Export e = parseExport(arg.getValue1(), arg.getValue2());
-		crinkler.addExport(std::move(e));
-		arg.next();
+static void ParseExports(CmdParamMultiAssign& arg, Crinkler& crinkler) {
+	while (arg.HasNext()) {
+		Export e = ParseExport(arg.GetValue1(), arg.GetValue2());
+		crinkler.AddExport(std::move(e));
+		arg.Next();
 	}
 }
 
-static void runOriginalLinker(const char* linkerName) {
-	vector<string> res = findFileInPath(linkerName, getEnv("PATH").c_str(), false);
+static void RunOriginalLinker(const char* linkerName) {
+	vector<string> res = FindFileInPath(linkerName, GetEnv("PATH").c_str(), false);
 	const char* needle = "Crinkler";
 	const int needleLength = (int)strlen(needle);
 
 	for(const string& str : res) {
 		MemoryFile mf(str.c_str());
 		bool isCrinkler = false;
-		for(int i = 0; i < mf.getSize()-needleLength; i++) {
-			if(memcmp(mf.getPtr()+i, needle, needleLength) == 0) {
+		for(int i = 0; i < mf.GetSize()-needleLength; i++) {
+			if(memcmp(mf.GetPtr()+i, needle, needleLength) == 0) {
 				isCrinkler = true;
 				break;
 			}
@@ -182,14 +182,14 @@ static void runOriginalLinker(const char* linkerName) {
 			// Run linker
 			printf("Launching default linker at '%s'\n\n", str.c_str());
 			fflush(stdout);
-			if(!runExecutable(str.c_str()))
-				Log::error("", "Failed to launch default linker, errorcode: %X", GetLastError());
+			if(!RunExecutable(str.c_str()))
+				Log::Error("", "Failed to launch default linker, errorcode: %X", GetLastError());
 			return;
 		}
 	}
 
 	// Linker not found
-	Log::error("", "Cannot find default linker '%s' in path", linkerName);
+	Log::Error("", "Cannot find default linker '%s' in path", linkerName);
 }
 
 const int TRANSFORM_CALLS = 0x01;
@@ -206,7 +206,7 @@ int main(int argc, char* argv[]) {
 
 	EnableMiniDumps();
 
-	string crinklerFilename = stripPath(crinklerCanonicalName);
+	string crinklerFilename = StripPath(crinklerCanonicalName);
 	
 	// Command line parameters
 	CmdParamInt hashsizeArg("HASHSIZE", "number of megabytes for hashing", "size in mb", PARAM_SHOW_CONSTRAINTS,
@@ -265,7 +265,7 @@ int main(int argc, char* argv[]) {
 	CmdParamString filesArg("FILES", "list of filenames", "", PARAM_HIDE_IN_PARAM_LIST, 0);
 	CmdLineInterface cmdline(CRINKLER_TITLE, CMDI_PARSE_FILES);
 
-	cmdline.addParams(&crinklerFlag, &hashsizeArg, &hashtriesArg, &hunktriesArg, &entryArg, &outArg, &summaryArg, &reuseFileArg, &reuseArg, &unsafeImportArg,
+	cmdline.AddParams(&crinklerFlag, &hashsizeArg, &hashtriesArg, &hunktriesArg, &entryArg, &outArg, &summaryArg, &reuseFileArg, &reuseArg, &unsafeImportArg,
 						&subsystemArg, &largeAddressAwareArg, &truncateFloatsArg, &overrideAlignmentsArg, &unalignCodeArg, &compmodeArg, &saturateArg, &printArg, &transformArg, &libpathArg, 
 						&rangeImportArg, &replaceDllArg, &fallbackDllArg, &exportArg, &stripExportsArg, &noInitializersArg, &filesArg, &priorityArg, &showProgressArg, &recompressFlag,
 						&tinyHeader, &tinyImport,
@@ -273,225 +273,225 @@ int main(int argc, char* argv[]) {
 	
 
 	// Print syntax?
-	if(!cmdline.setCmdParameters(argc, argv) || argc == 1) {
-		cmdline.printSyntax();
+	if(!cmdline.SetCmdParameters(argc, argv) || argc == 1) {
+		cmdline.PrintSyntax();
 		return 0;
 	}
 
-	cmdline.printHeader();
+	cmdline.PrintHeader();
 	fflush(stdout);
 
 	// Run default linker or Crinkler?
-	if(!cmdline.removeToken("/CRINKLER") && toUpper(crinklerFilename).compare("CRINKLER.EXE") != 0) {
-		runOriginalLinker(crinklerFilename.c_str());
+	if(!cmdline.RemoveToken("/CRINKLER") && ToUpper(crinklerFilename).compare("CRINKLER.EXE") != 0) {
+		RunOriginalLinker(crinklerFilename.c_str());
 		return 0;
 	}
 
 	// Set priority
-	SetPriorityClass(GetCurrentProcess(), priorityArg.getValue());
+	SetPriorityClass(GetCurrentProcess(), priorityArg.GetValue());
 
 	Crinkler crinkler;
 
 	// Recompress
-	if(cmdline.removeToken("/RECOMPRESS")) {
+	if(cmdline.RemoveToken("/RECOMPRESS")) {
 		CmdLineInterface cmdline2(CRINKLER_TITLE, CMDI_PARSE_FILES);
-		outArg.setDefault("*dummy*");
-		hashsizeArg.setDefault(-1);
-		subsystemArg.setDefault(-1);
-		compmodeArg.setDefault(-1);
+		outArg.SetDefault("*dummy*");
+		hashsizeArg.SetDefault(-1);
+		subsystemArg.SetDefault(-1);
+		compmodeArg.SetDefault(-1);
 
-		cmdline2.addParams(&crinklerFlag, &recompressFlag, &outArg, &hashsizeArg, &hashtriesArg, &subsystemArg, &largeAddressAwareArg, &compmodeArg, &saturateArg, &replaceDllArg, &summaryArg, &exportArg, &stripExportsArg, &priorityArg, &showProgressArg, &filesArg, NULL);
-		cmdline2.setCmdParameters(argc, argv);
-		if(cmdline2.parse()) {
-			crinkler.setHashsize(hashsizeArg.getValue());
-			crinkler.setSubsystem((SubsystemType)subsystemArg.getValue());
-			crinkler.setLargeAddressAware(largeAddressAwareArg.getValueIfPresent(-1));
-			crinkler.setCompressionType((CompressionType)compmodeArg.getValue());
-			crinkler.setSaturate(saturateArg.getValueIfPresent(-1));
-			crinkler.setHashtries(hashtriesArg.getValue());
-			crinkler.showProgressBar(showProgressArg.getValue());
-			crinkler.setSummary(summaryArg.getValue());
-			parseExports(exportArg, crinkler);
-			crinkler.setStripExports(stripExportsArg.getValue());
+		cmdline2.AddParams(&crinklerFlag, &recompressFlag, &outArg, &hashsizeArg, &hashtriesArg, &subsystemArg, &largeAddressAwareArg, &compmodeArg, &saturateArg, &replaceDllArg, &summaryArg, &exportArg, &stripExportsArg, &priorityArg, &showProgressArg, &filesArg, NULL);
+		cmdline2.SetCmdParameters(argc, argv);
+		if(cmdline2.Parse()) {
+			crinkler.SetHashsize(hashsizeArg.GetValue());
+			crinkler.SetSubsystem((SubsystemType)subsystemArg.GetValue());
+			crinkler.SetLargeAddressAware(largeAddressAwareArg.GetValueIfPresent(-1));
+			crinkler.SetCompressionType((CompressionType)compmodeArg.GetValue());
+			crinkler.SetSaturate(saturateArg.GetValueIfPresent(-1));
+			crinkler.SetHashtries(hashtriesArg.GetValue());
+			crinkler.ShowProgressBar(showProgressArg.GetValue());
+			crinkler.SetSummary(summaryArg.GetValue());
+			ParseExports(exportArg, crinkler);
+			crinkler.SetStripExports(stripExportsArg.GetValue());
 
 			IdentityTransform identTransform;
-			crinkler.setTransform(&identTransform);
+			crinkler.SetTransform(&identTransform);
 
-			const char* infilename = filesArg.getValue();
-			filesArg.next();
-			if(infilename == NULL || filesArg.hasNext()) {
-				printf("%s\n", filesArg.getValue());
-				Log::error("", "Crinkler recompression takes exactly one file argument");
+			const char* infilename = filesArg.GetValue();
+			filesArg.Next();
+			if(infilename == NULL || filesArg.HasNext()) {
+				printf("%s\n", filesArg.GetValue());
+				Log::Error("", "Crinkler recompression takes exactly one file argument");
 				return 1;
 			}
 
-			const char* outfilename = outArg.getValue();
+			const char* outfilename = outArg.GetValue();
 			if (strcmp(outfilename, "*dummy*") == 0) {
 				outfilename = infilename;
 			}
 
 			printf("Source: %s\n", infilename);
 			printf("Target: %s\n", outfilename);
-			if(subsystemArg.getValue() == -1) {
+			if(subsystemArg.GetValue() == -1) {
 				printf("Subsystem type: Inherited from original\n");
 			} else {
-				printf("Subsystem type: %s\n", subsystemArg.getValue() == SUBSYSTEM_CONSOLE ? "CONSOLE" : "WINDOWS");
+				printf("Subsystem type: %s\n", subsystemArg.GetValue() == SUBSYSTEM_CONSOLE ? "CONSOLE" : "WINDOWS");
 			}
-			if(largeAddressAwareArg.getNumMatches() == 0) {
+			if(largeAddressAwareArg.GetNumMatches() == 0) {
 				printf("Large address aware: Inherited from original\n");
 			} else {
-				printf("Large address aware: %s\n", largeAddressAwareArg.getValue() ? "YES" : "NO");
+				printf("Large address aware: %s\n", largeAddressAwareArg.GetValue() ? "YES" : "NO");
 			}
-			if(compmodeArg.getValue() == -1) {
+			if(compmodeArg.GetValue() == -1) {
 				printf("Compression mode: Models inherited from original\n");
 			} else {
-				printf("Compression mode: %s\n", compTypeName((CompressionType)compmodeArg.getValue()));
+				printf("Compression mode: %s\n", CompressionTypeName((CompressionType)compmodeArg.GetValue()));
 			}
-			if (saturateArg.getNumMatches() == 0) {
+			if (saturateArg.GetNumMatches() == 0) {
 				printf("Saturate counters: Inherited from original\n");
 			} else {
-				printf("Saturate counters: %s\n", saturateArg.getValue() ? "YES" : "NO");
+				printf("Saturate counters: %s\n", saturateArg.GetValue() ? "YES" : "NO");
 			}
-			if (hashsizeArg.getValue() == -1) {
+			if (hashsizeArg.GetValue() == -1) {
 				printf("Hash size: Inherited from original\n");
 			} else {
-				printf("Hash size: %d MB\n", hashsizeArg.getValue());
-				printf("Hash tries: %d\n", hashtriesArg.getValue());
+				printf("Hash size: %d MB\n", hashsizeArg.GetValue());
+				printf("Hash tries: %d\n", hashtriesArg.GetValue());
 			}
-			printf("Report: %s\n", strlen(summaryArg.getValue()) > 0 ? summaryArg.getValue() : "NONE");
+			printf("Report: %s\n", strlen(summaryArg.GetValue()) > 0 ? summaryArg.GetValue() : "NONE");
 
 			// Replace DLL
 			{
 				printf("Replace DLLs: ");
-				if (!replaceDllArg.hasNext())
+				if (!replaceDllArg.HasNext())
 					printf("NONE");
 
 				bool legal = true;
 				bool first = true;
-				while (replaceDllArg.hasNext()) {
+				while (replaceDllArg.HasNext()) {
 					if (!first) printf(", ");
-					printf("%s -> %s", replaceDllArg.getValue1(), replaceDllArg.getValue2());
+					printf("%s -> %s", replaceDllArg.GetValue1(), replaceDllArg.GetValue2());
 
-					if (strlen(replaceDllArg.getValue1()) != strlen(replaceDllArg.getValue2()))
+					if (strlen(replaceDllArg.GetValue1()) != strlen(replaceDllArg.GetValue2()))
 						legal = false;
-					crinkler.addReplaceDll(replaceDllArg.getValue1(), replaceDllArg.getValue2());
-					replaceDllArg.next();
+					crinkler.AddReplaceDll(replaceDllArg.GetValue1(), replaceDllArg.GetValue2());
+					replaceDllArg.Next();
 					first = false;
 				}
 				printf("\n");
 				if (!legal) {
-					Log::error("", "In recompression, a DLL can only be replaced by one with the same length.");
+					Log::Error("", "In recompression, a DLL can only be replaced by one with the same length.");
 				}
 			}
 
 			printf("Exports: ");
-			if (exportArg.getNumMatches() == 0) {
-				if (stripExportsArg.getValue()) {
+			if (exportArg.GetNumMatches() == 0) {
+				if (stripExportsArg.GetValue()) {
 					printf("Strip away\n");
 				} else {
 					printf("Keep from original\n");
 				}
 			} else {
-				if (stripExportsArg.getValue()) {
+				if (stripExportsArg.GetValue()) {
 					printf("Strip and replace by:\n");
 				} else {
 					printf("Keep and supplement by:\n");
 				}
-				printExports(crinkler.getExports());
+				PrintExports(crinkler.GetExports());
 			}
 			printf("\n");
 
-			crinkler.recompress(infilename, outfilename);
+			crinkler.Recompress(infilename, outfilename);
 			return 0;
 		}
 
 		return 1;
 	}
 
-	if(!cmdline.parse()) {
+	if(!cmdline.Parse()) {
 		return 1;
 	}
 
-	if (stripExportsArg.getValue()) {
-		Log::error("", "Export stripping can only be performed during recompression.");
+	if (stripExportsArg.GetValue()) {
+		Log::Error("", "Export stripping can only be performed during recompression.");
 	}
 
-	if (transformArg.getValue() != 0 && tinyHeader.getValue())
+	if (transformArg.GetValue() != 0 && tinyHeader.GetValue())
 	{
-		Log::warning("", "Transforms are not supported with /TINYHEADER.");
+		Log::Warning("", "Transforms are not supported with /TINYHEADER.");
 		transformArg.m_value = 0;
 	}
 
 	// Set Crinkler options
-	crinkler.setUseTinyHeader(tinyHeader.getValue());
-	crinkler.setUseTinyImport(tinyImport.getValue());
-	crinkler.setImportingType(!unsafeImportArg.getValue());
-	crinkler.setEntry(entryArg.getValue());
-	crinkler.setHashsize(hashsizeArg.getValue());
-	crinkler.setSubsystem((SubsystemType)subsystemArg.getValue());
-	crinkler.setLargeAddressAware(largeAddressAwareArg.getValueIfPresent(0));
-	crinkler.setCompressionType((CompressionType)compmodeArg.getValue());
-	crinkler.setHashtries(hashtriesArg.getValue());
-	crinkler.setHunktries(hunktriesArg.getValue());
-	crinkler.setSaturate(saturateArg.getValueIfPresent(0));
-	crinkler.setPrintFlags(printArg.getValue());
-	crinkler.showProgressBar(showProgressArg.getValue());
-	crinkler.setTruncateFloats(truncateFloatsArg.getNumMatches() > 0);
-	crinkler.setTruncateBits(truncateFloatsArg.getValue());
-	crinkler.setOverrideAlignments(overrideAlignmentsArg.getNumMatches() > 0);
-	crinkler.setUnalignCode(unalignCodeArg.getValue());
-	crinkler.setAlignmentBits(overrideAlignmentsArg.getValue());
-	crinkler.setRunInitializers(!noInitializersArg.getValue());
-	crinkler.setSummary(summaryArg.getValue());
-	if (reuseFileArg.getNumMatches() > 0) {
-		crinkler.setReuse((ReuseType)reuseArg.getValue(), reuseFileArg.getValue());
+	crinkler.SetUseTinyHeader(tinyHeader.GetValue());
+	crinkler.SetUseTinyImport(tinyImport.GetValue());
+	crinkler.SetImportingType(!unsafeImportArg.GetValue());
+	crinkler.SetEntry(entryArg.GetValue());
+	crinkler.SetHashsize(hashsizeArg.GetValue());
+	crinkler.SetSubsystem((SubsystemType)subsystemArg.GetValue());
+	crinkler.SetLargeAddressAware(largeAddressAwareArg.GetValueIfPresent(0));
+	crinkler.SetCompressionType((CompressionType)compmodeArg.GetValue());
+	crinkler.SetHashtries(hashtriesArg.GetValue());
+	crinkler.SetHunktries(hunktriesArg.GetValue());
+	crinkler.SetSaturate(saturateArg.GetValueIfPresent(0));
+	crinkler.SetPrintFlags(printArg.GetValue());
+	crinkler.ShowProgressBar(showProgressArg.GetValue());
+	crinkler.SetTruncateFloats(truncateFloatsArg.GetNumMatches() > 0);
+	crinkler.SetTruncateBits(truncateFloatsArg.GetValue());
+	crinkler.SetOverrideAlignments(overrideAlignmentsArg.GetNumMatches() > 0);
+	crinkler.SetUnalignCode(unalignCodeArg.GetValue());
+	crinkler.SetAlignmentBits(overrideAlignmentsArg.GetValue());
+	crinkler.SetRunInitializers(!noInitializersArg.GetValue());
+	crinkler.SetSummary(summaryArg.GetValue());
+	if (reuseFileArg.GetNumMatches() > 0) {
+		crinkler.SetReuse((ReuseType)reuseArg.GetValue(), reuseFileArg.GetValue());
 	}
-	parseExports(exportArg, crinkler);
+	ParseExports(exportArg, crinkler);
 
 
 	// Transforms
 	IdentityTransform identTransform;
 	CallTransform callTransform;
-	if(transformArg.getValue() & TRANSFORM_CALLS)
-		crinkler.setTransform(&callTransform);
+	if(transformArg.GetValue() & TRANSFORM_CALLS)
+		crinkler.SetTransform(&callTransform);
 	else
-		crinkler.setTransform(&identTransform);
+		crinkler.SetTransform(&identTransform);
 
 
 	// Print some info
-	printf("Target: %s\n", outArg.getValue());
-	printf("Tiny compressor: %s\n", tinyHeader.getValue() ? "YES" : "NO");
-	printf("Tiny import: %s\n", tinyImport.getValue() ? "YES" : "NO");
-	printf("Subsystem type: %s\n", subsystemArg.getValue() == SUBSYSTEM_CONSOLE ? "CONSOLE" : "WINDOWS");
-	printf("Large address aware: %s\n", largeAddressAwareArg.getValueIfPresent(0) ? "YES" : "NO");
-	printf("Compression mode: %s\n", compTypeName((CompressionType)compmodeArg.getValue()));
-	printf("Saturate counters: %s\n", saturateArg.getValueIfPresent(0) ? "YES" : "NO");
-	printf("Hash size: %d MB\n", hashsizeArg.getValue());
-	printf("Hash tries: %d\n", hashtriesArg.getValue());
-	printf("Order tries: %d\n", hunktriesArg.getValue());
-	if (reuseFileArg.getNumMatches() > 0) {
-		printf("Reuse mode: %s\n", reuseTypeName((ReuseType)reuseArg.getValue()));
-		printf("Reuse file: %s\n", reuseFileArg.getValue());
+	printf("Target: %s\n", outArg.GetValue());
+	printf("Tiny compressor: %s\n", tinyHeader.GetValue() ? "YES" : "NO");
+	printf("Tiny import: %s\n", tinyImport.GetValue() ? "YES" : "NO");
+	printf("Subsystem type: %s\n", subsystemArg.GetValue() == SUBSYSTEM_CONSOLE ? "CONSOLE" : "WINDOWS");
+	printf("Large address aware: %s\n", largeAddressAwareArg.GetValueIfPresent(0) ? "YES" : "NO");
+	printf("Compression mode: %s\n", CompressionTypeName((CompressionType)compmodeArg.GetValue()));
+	printf("Saturate counters: %s\n", saturateArg.GetValueIfPresent(0) ? "YES" : "NO");
+	printf("Hash size: %d MB\n", hashsizeArg.GetValue());
+	printf("Hash tries: %d\n", hashtriesArg.GetValue());
+	printf("Order tries: %d\n", hunktriesArg.GetValue());
+	if (reuseFileArg.GetNumMatches() > 0) {
+		printf("Reuse mode: %s\n", ReuseTypeName((ReuseType)reuseArg.GetValue()));
+		printf("Reuse file: %s\n", reuseFileArg.GetValue());
 	}
 	else {
 		printf("Reuse mode: OFF (no file specified)\n");
 	}
-	printf("Report: %s\n", strlen(summaryArg.getValue()) > 0 ? summaryArg.getValue() : "NONE");
-	printf("Transforms: %s\n", (transformArg.getValue() & TRANSFORM_CALLS) ? "CALLS" : "NONE");
+	printf("Report: %s\n", strlen(summaryArg.GetValue()) > 0 ? summaryArg.GetValue() : "NONE");
+	printf("Transforms: %s\n", (transformArg.GetValue() & TRANSFORM_CALLS) ? "CALLS" : "NONE");
 
 	// Replace DLL
 	{
 		printf("Replace DLLs: ");
-		if(!replaceDllArg.hasNext())
+		if(!replaceDllArg.HasNext())
 			printf("NONE");
 		
 		bool first = true;
-		while(replaceDllArg.hasNext()) {
+		while(replaceDllArg.HasNext()) {
 			if (!first) printf(", ");
-			printf("%s -> %s", replaceDllArg.getValue1(), replaceDllArg.getValue2());
+			printf("%s -> %s", replaceDllArg.GetValue1(), replaceDllArg.GetValue2());
 			
-			crinkler.addReplaceDll(replaceDllArg.getValue1(), replaceDllArg.getValue2());
-			replaceDllArg.next();
+			crinkler.AddReplaceDll(replaceDllArg.GetValue1(), replaceDllArg.GetValue2());
+			replaceDllArg.Next();
 			first = false;
 		}
 		printf("\n");
@@ -500,16 +500,16 @@ int main(int argc, char* argv[]) {
 	// Fallback DLL
 	{
 		printf("Fallback DLLs: ");
-		if (!fallbackDllArg.hasNext())
+		if (!fallbackDllArg.HasNext())
 			printf("NONE");
 
 		bool first = true;
-		while (fallbackDllArg.hasNext()) {
+		while (fallbackDllArg.HasNext()) {
 			if (!first) printf(", ");
-			printf("%s -> %s", fallbackDllArg.getValue1(), fallbackDllArg.getValue2());
+			printf("%s -> %s", fallbackDllArg.GetValue1(), fallbackDllArg.GetValue2());
 
-			crinkler.addFallbackDll(fallbackDllArg.getValue1(), fallbackDllArg.getValue2());
-			fallbackDllArg.next();
+			crinkler.AddFallbackDll(fallbackDllArg.GetValue1(), fallbackDllArg.GetValue2());
+			fallbackDllArg.Next();
 			first = false;
 		}
 		printf("\n");
@@ -518,16 +518,16 @@ int main(int argc, char* argv[]) {
 	// Range
 	{
 		printf("Range DLLs: ");
-		if(!rangeImportArg.hasNext())
+		if(!rangeImportArg.HasNext())
 			printf("NONE");
 
 		bool first = true;
-		while(rangeImportArg.hasNext()) {
+		while(rangeImportArg.HasNext()) {
 			if (!first) printf(", ");
-			printf("%s", rangeImportArg.getValue());
+			printf("%s", rangeImportArg.GetValue());
 
-			crinkler.addRangeDll(rangeImportArg.getValue());
-			rangeImportArg.next();
+			crinkler.AddRangeDll(rangeImportArg.GetValue());
+			rangeImportArg.Next();
 			first = false;
 		}
 		printf("\n");
@@ -536,13 +536,13 @@ int main(int argc, char* argv[]) {
 	// Exports
 	{
 		printf("Exports:");
-		auto exports = crinkler.getExports();
+		auto exports = crinkler.GetExports();
 		if (exports.empty()) {
 			printf(" NONE\n");
 		}
 		else {
 			printf("\n");
-			printExports(exports);
+			PrintExports(exports);
 		}
 	}
 	printf("\n");
@@ -553,28 +553,28 @@ int main(int argc, char* argv[]) {
 	drive[0] = (char) (_getdrive()+'A'-1);
 	lib += string(drive) + ";";
 	
-	while(libpathArg.hasNext()) {
-		lib += libpathArg.getValue();
+	while(libpathArg.HasNext()) {
+		lib += libpathArg.GetValue();
 		lib += ";";
-		libpathArg.next();
+		libpathArg.Next();
 	}
-	lib += ";" + getEnv("LIB");
-	lib += ";" + getEnv("PATH");
+	lib += ";" + GetEnv("LIB");
+	lib += ";" + GetEnv("PATH");
 	
 	// Load files
 	{
-		while(filesArg.hasNext()) {
-			const char* filename = filesArg.getValue();
-			filesArg.next();
-			vector<string> res = findFileInPath(filename, lib.c_str(), false);
+		while(filesArg.HasNext()) {
+			const char* filename = filesArg.GetValue();
+			filesArg.Next();
+			vector<string> res = FindFileInPath(filename, lib.c_str(), false);
 			if(res.size() == 0) {
-				Log::error(filename, "Cannot open file");
+				Log::Error(filename, "Cannot open file");
 				return -1;
 			} else {
 				printf("Loading %s...\n", filename);
 				fflush(stdout);
 				string filepath = *res.begin();
-				crinkler.load(filepath.c_str());
+				crinkler.Load(filepath.c_str());
 			}
 		}
 		printf("\n");
@@ -582,7 +582,7 @@ int main(int argc, char* argv[]) {
 
 	printf("Linking...\n\n");
 	fflush(stdout);
-	crinkler.link(outArg.getValue());
+	crinkler.Link(outArg.GetValue());
 
 	int time2 = GetTickCount();
 	int time = (time2-time1+500)/1000;

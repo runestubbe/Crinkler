@@ -14,19 +14,18 @@ public:
 	Export(const std::string name, const std::string symbol);
 	Export(const std::string name, int value);
 
-	const std::string& getName() const { return m_name; }
-	const std::string& getSymbol() const { return m_symbol; }
-	int getValue() const { return m_value; }
-
-	bool hasValue() const { return m_symbol.empty(); }
-
 	bool operator<(const Export& e) const { return m_name < e.m_name; }
+
+	const std::string&	GetName() const { return m_name; }
+	const std::string&	GetSymbol() const { return m_symbol; }
+	int					GetValue() const { return m_value; }
+	bool				HasValue() const { return m_symbol.empty(); }
 };
 
-Export parseExport(const std::string& name, const std::string& value);
+Export ParseExport(const std::string& name, const std::string& value);
 
-Hunk* createExportTable(const std::set<Export>& exports);
+Hunk* CreateExportTable(const std::set<Export>& exports);
 
-std::set<Export> stripExports(Hunk* phase1, int exports_rva);
+std::set<Export> StripExports(Hunk* phase1, int exports_rva);
 
-void printExports(const std::set<Export>& exports);
+void PrintExports(const std::set<Export>& exports);

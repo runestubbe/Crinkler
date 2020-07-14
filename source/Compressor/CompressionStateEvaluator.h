@@ -46,13 +46,13 @@ class CompressionStateEvaluator {
 	int					m_baseprob;
 	float				m_logScale;
 
-	long long			changeWeight(int modelIndex, int diffw);
+	long long			ChangeWeight(int modelIndex, int diffw);
 public:
 	CompressionStateEvaluator();
 	~CompressionStateEvaluator();
 
-	bool		init(ModelPredictions* models, int length, int baseprob, float logScale);
-	long long	evaluate(const ModelList& models);
+	bool		Init(ModelPredictions* models, int length, int baseprob, float logScale);
+	long long	Evaluate(const ModelList& models);
 };
 
 #endif

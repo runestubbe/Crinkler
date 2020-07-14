@@ -14,7 +14,7 @@ CmdLineInterface::CmdLineInterface(const char* title, int flags) {
 CmdLineInterface::~CmdLineInterface() {
 }
 
-void CmdLineInterface::addTokens(const char* str) {
+void CmdLineInterface::AddTokens(const char* str) {
 	int len = (int)strlen(str)+1;
 	char* tmp = new char[len];
 	char* ptr = tmp;
@@ -52,9 +52,9 @@ void CmdLineInterface::addTokens(const char* str) {
 	delete[] tmp;
 }
 
-bool CmdLineInterface::removeToken(const char* str) {
+bool CmdLineInterface::RemoveToken(const char* str) {
 	for(auto it = m_tokens.begin(); it != m_tokens.end(); it++) {
-		if(toUpper(*it).compare(str) == 0) {
+		if(ToUpper(*it).compare(str) == 0) {
 			m_tokens.erase(it);
 			return true;
 		}
@@ -62,7 +62,7 @@ bool CmdLineInterface::removeToken(const char* str) {
 	return false;
 }
 
-bool CmdLineInterface::setCmdParameters(int argc, char* argv[]) {
+bool CmdLineInterface::SetCmdParameters(int argc, char* argv[]) {
 	m_tokens.clear();
 
 	while(--argc) {
@@ -72,25 +72,25 @@ bool CmdLineInterface::setCmdParameters(int argc, char* argv[]) {
 			MemoryFile mf(arg);
 
 			// Add tokens from file
-			if(mf.getSize() >= 2 && (*(unsigned short*) mf.getPtr()) == 0xFEFF) {	// UNICODE
-				char* tmp = new char[mf.getSize()+2];
-				WideCharToMultiByte(CP_ACP, 0, (LPCWSTR)(mf.getPtr()+2), -1, tmp, mf.getSize()+2, NULL, NULL);
-				addTokens(tmp);
+			if(mf.GetSize() >= 2 && (*(unsigned short*) mf.GetPtr()) == 0xFEFF) {	// UNICODE
+				char* tmp = new char[mf.GetSize()+2];
+				WideCharToMultiByte(CP_ACP, 0, (LPCWSTR)(mf.GetPtr()+2), -1, tmp, mf.GetSize()+2, NULL, NULL);
+				AddTokens(tmp);
 				delete[] tmp;
 			} else {	// ASCII
-				addTokens(mf.getPtr());
+				AddTokens(mf.GetPtr());
 			}
 		} else {
 			// Command line parser removes all "'s
 			char token[1024];
 			sprintf_s(token, sizeof(token), "\"%s\"", arg);
-			addTokens(token);
+			AddTokens(token);
 		}
 	}
 	return true;
 }
 
-bool CmdLineInterface::parse() {
+bool CmdLineInterface::Parse() {
 	for (string token : m_tokens) {
 		char errorMsg[1024];
 
@@ -98,7 +98,7 @@ bool CmdLineInterface::parse() {
 		for(CmdParam* param : m_params) {
 			bool hasArgument = false;
 			string argument = token;
-			if(param->getFlags() & PARAM_IS_SWITCH) {
+			if(param->GetFlags() & PARAM_IS_SWITCH) {
 				if(token[0] == '/') {
 					string::size_type split_index = token.find(":", 0);
 					argument = "";
@@ -111,7 +111,7 @@ bool CmdLineInterface::parse() {
 						argument = token.substr(split_index+1, token.size()-split_index-1);
 					}
 					string swi = token.substr(1, split_index-1);
-					if(toUpper(swi).compare(toUpper(param->getParameterName())) != 0) {	// Case-insensitive argument matching
+					if(ToUpper(swi).compare(ToUpper(param->GetParameterName())) != 0) {	// Case-insensitive argument matching
 						continue;	// Wrong parameter
 					}
 
@@ -121,12 +121,12 @@ bool CmdLineInterface::parse() {
 					}
 
 					// Check for the correct number of arguments (0 or 1)
-					if((param->getFlags() & PARAM_TAKES_ARGUMENT) &&
-						!(param->getFlags() & PARAM_ALLOW_NO_ARGUMENT_DEFAULT) && !hasArgument) {
+					if((param->GetFlags() & PARAM_TAKES_ARGUMENT) &&
+						!(param->GetFlags() & PARAM_ALLOW_NO_ARGUMENT_DEFAULT) && !hasArgument) {
 						fprintf(stderr, "error: error parsing token: '%s'\n  parameter needs argument\n", token.c_str());
 						return false;
 					}
-					if(!(param->getFlags() & PARAM_TAKES_ARGUMENT) && hasArgument) {
+					if(!(param->GetFlags() & PARAM_TAKES_ARGUMENT) && hasArgument) {
 						fprintf(stderr, "error: error parsing token: '%s'\n  parameter doesn't take any arguments\n", token.c_str());
 						return false;
 					}
@@ -139,11 +139,11 @@ bool CmdLineInterface::parse() {
 			
 			// Parse argument and handle potential errors
 			int hr = PARSE_OK;
-			if(!(param->getFlags() & PARAM_ALLOW_NO_ARGUMENT_DEFAULT) || hasArgument) {
-				hr = param->parse(argument.c_str(), errorMsg, sizeof(errorMsg));	// Skip parsing of argument, if it is allowed
+			if(!(param->GetFlags() & PARAM_ALLOW_NO_ARGUMENT_DEFAULT) || hasArgument) {
+				hr = param->Parse(argument.c_str(), errorMsg, sizeof(errorMsg));	// Skip parsing of argument, if it is allowed
 			}
 			if(hr == PARSE_OK) {
-				if(param->m_numMatches && (param->getFlags() & PARAM_FORBID_MULTIPLE_DEFINITIONS)) {
+				if(param->m_numMatches && (param->GetFlags() & PARAM_FORBID_MULTIPLE_DEFINITIONS)) {
 					fprintf(stderr, "error: parameter cannot be defined more than once '%s'\n", token.c_str());
 					return false;
 				}
@@ -163,7 +163,7 @@ bool CmdLineInterface::parse() {
 	return true;
 }
 
-void CmdLineInterface::addParams(CmdParam* param, ...) {
+void CmdLineInterface::AddParams(CmdParam* param, ...) {
 	va_list ap;
 	va_start(ap, param);
 
@@ -174,16 +174,16 @@ void CmdLineInterface::addParams(CmdParam* param, ...) {
 	va_end(ap);
 }
 
-void CmdLineInterface::printHeader() {
+void CmdLineInterface::PrintHeader() {
 	printf("%s\n\n", m_title.c_str());
 }
 
-void CmdLineInterface::printSyntax() {
-	printHeader();
+void CmdLineInterface::PrintSyntax() {
+	PrintHeader();
 	printf("   options:\n\n");
 
 	for(CmdParam* param : m_params) {
-		if(! (param->getFlags() & PARAM_HIDE_IN_PARAM_LIST))
-			printf("      %s\n", param->toString().c_str());
+		if(! (param->GetFlags() & PARAM_HIDE_IN_PARAM_LIST))
+			printf("      %s\n", param->ToString().c_str());
 	}
 }

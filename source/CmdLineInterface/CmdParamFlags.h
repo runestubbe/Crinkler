@@ -12,11 +12,11 @@ public:
 	int								m_value;
 	CmdParamFlags(const char* paramName, const char* description, int flags, int defaultValue, const char* flagName, int flagValue, ...);
 
-	int parse(const char* str, char* errorMsg, int buffsize);
+	int		Parse(const char* str, char* errorMsg, int buffsize);
 
-	int getValue();
-	int getValueIfPresent(int fallback);
-	void setDefault(int flag) { m_value = flag; }
+	int		GetValue();
+	int		GetValueIfPresent(int fallback);
+	void	SetDefault(int flag) { m_value = flag; }
 };
 
 #endif

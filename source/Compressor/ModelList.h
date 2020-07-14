@@ -23,15 +23,16 @@ public:
 	ModelList();
 	ModelList(const unsigned char* models, int weightmask);
 	ModelList(const ModelList& ml);
-	ModelList& ModelList::operator=(const ModelList& ml);
-	Model& operator[] (unsigned idx);
-	const Model& operator[] (unsigned idx) const;
-	void addModel(Model model);
+	
+	ModelList&		operator=(const ModelList& ml);
+	Model&			operator[] (unsigned idx);
+	const Model&	operator[] (unsigned idx) const;
 
-	void setFromModelsAndMask(const unsigned char* models, int weightmask);
-	void print(FILE *f) const;
-	unsigned int getMaskList(unsigned char* masks, bool terminate) const;
-	CompressionType detectCompressionType() const;
+	void			AddModel(Model model);
+	void			SetFromModelsAndMask(const unsigned char* models, int weightmask);
+	void			Print(FILE *f) const;
+	unsigned int	GetMaskList(unsigned char* masks, bool terminate) const;
+	CompressionType DetectCompressionType() const;
 };
 
 class ModelList1k
@@ -42,7 +43,7 @@ public:
 	unsigned int baseprob0;
 	unsigned int baseprob1;
 
-	void print() const;
+	void Print() const;
 };
 
 #endif

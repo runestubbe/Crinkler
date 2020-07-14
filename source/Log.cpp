@@ -4,7 +4,7 @@
 #include <windows.h>
 #include "Log.h"
 
-void Log::warning(const char* from, const char* msg, ...) {
+void Log::Warning(const char* from, const char* msg, ...) {
 	va_list args; 
 	va_start(args, msg);
 	char buff[4096];
@@ -13,7 +13,7 @@ void Log::warning(const char* from, const char* msg, ...) {
 	printf("\n%s: warning LNK: %s\n", from, buff);
 }
 
-void Log::error(const char* from, const char* msg, ...) {
+void Log::Error(const char* from, const char* msg, ...) {
 	va_list args; 
 	va_start(args, msg);
 	char buff[4096];
@@ -24,7 +24,7 @@ void Log::error(const char* from, const char* msg, ...) {
 	exit(-1);
 }
 
-void Log::nonfatalError(const char* from, const char* msg, ...) {
+void Log::NonfatalError(const char* from, const char* msg, ...) {
 	va_list args; 
 	va_start(args, msg);
 	char buff[4096];

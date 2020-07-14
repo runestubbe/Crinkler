@@ -18,7 +18,7 @@ MemoryFile::MemoryFile(const char* filename, bool abort_if_failed) {
 		m_size = filesize;
 	} else {
 		if (abort_if_failed) {
-			Log::error("", "Cannot open file '%s'\n", filename);
+			Log::Error("", "Cannot open file '%s'\n", filename);
 		}
 		m_data = NULL;
 		m_size = 0;
@@ -31,16 +31,16 @@ MemoryFile::~MemoryFile() {
 }
 
 
-char* MemoryFile::getPtr() const {
+char* MemoryFile::GetPtr() const {
 	return m_data;
 }
 
 
-int MemoryFile::getSize() const {
+int MemoryFile::GetSize() const {
 	return m_size;
 }
 
-bool MemoryFile::write(const char *filename) const {
+bool MemoryFile::Write(const char *filename) const {
 	FILE *file;
 	fopen_s(&file, filename, "wb");
 	if (!file) return false;

@@ -7,9 +7,10 @@ class Hunk;
 class CallTransform : public Transform {
 	bool disabled;
 public:
-	Hunk* getDetransformer();
-	int getFlags();
-	bool transform(Hunk* hunk, int splittingPoint, bool verbose);
+	Hunk* GetDetransformer();
+	bool DoTransform(Hunk* hunk, int splittingPoint, bool verbose);
+
+	int GetFlags();
 };
 
 #endif

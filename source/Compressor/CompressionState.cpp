@@ -14,7 +14,7 @@ struct HashEntry {
 	const unsigned char* datapos;
 };
 
-static int previousPrime(int n) {
+static int PreviousPrime(int n) {
 in:
 	n = (n-2)|1;
 	for (int i = 3 ; i*i < n ; i += 2) {
@@ -23,7 +23,7 @@ in:
 	return n;
 }
 
-static HashEntry *findEntry(HashEntry *table, unsigned int hashsize, unsigned char mask, const unsigned char *data, int bitpos) {
+static HashEntry *FindEntry(HashEntry *table, unsigned int hashsize, unsigned char mask, const unsigned char *data, int bitpos) {
 	const unsigned char *datapos = &data[bitpos/8];
 	unsigned char bitnum = (unsigned char)(bitpos & 7);
 	for (unsigned int hash = ModelHash(data, bitpos, mask, HASH_MULTIPLIER) ;; hash = hash+1) {
@@ -48,13 +48,13 @@ static HashEntry *findEntry(HashEntry *table, unsigned int hashsize, unsigned ch
 	}
 }
 
-void updateWeights(Weights *w, int bit, bool saturate) {
+void UpdateWeights(Weights *w, int bit, bool saturate) {
 	if (!saturate || w->prob[bit] < 255) w->prob[bit] += 1;
 	if (w->prob[!bit] > 1) w->prob[!bit] >>= 1;
 }
 
-ModelPredictions CompressionState::applyModel(const unsigned char* data, int bitlength, unsigned char mask) {
-	int hashsize = previousPrime(bitlength*2);
+ModelPredictions CompressionState::ApplyModel(const unsigned char* data, int bitlength, unsigned char mask) {
+	int hashsize = PreviousPrime(bitlength*2);
 	
 	int maxPackages = (bitlength + PACKAGE_SIZE - 1) / PACKAGE_SIZE;
 	int numPackages = 0;
@@ -76,14 +76,14 @@ ModelPredictions CompressionState::applyModel(const unsigned char* data, int bit
 			if(bitpos_base + bitpos_offset < bitlength)
 			{
 				int bit = GetBit(data, bitpos_base + bitpos_offset);
-				HashEntry *e = findEntry(hashtable, hashsize, mask, data, bitpos_base + bitpos_offset);
+				HashEntry *e = FindEntry(hashtable, hashsize, mask, data, bitpos_base + bitpos_offset);
 				int boost = (e->w.prob[0] == 0 || e->w.prob[1] == 0) ? 2 : 0;
 				if(e->w.prob[0] || e->w.prob[1])
 					package_needs_commit = true;
 
 				p_right = (float)(e->w.prob[bit] << boost);
 				p_total = (float)((e->w.prob[0] + e->w.prob[1]) << boost);
-				updateWeights(&e->w, bit, m_saturate);
+				UpdateWeights(&e->w, bit, m_saturate);
 			}
 
 			assert((*(int*)&p_right & 0xFFFF) == 0);
@@ -121,17 +121,17 @@ CompressionState::CompressionState(const unsigned char* data, int size, int base
 #if USE_OPENMP
 	#pragma omp parallel for
 	for(int mask = 0; mask <= 0xff; mask++) {
-		m_models[mask] = applyModel(data2+8, m_size, (unsigned char)mask);
+		m_models[mask] = ApplyModel(data2+8, m_size, (unsigned char)mask);
 	}
 #else
 	concurrency::parallel_for(0, 0x100, [&](int mask)
 	{
-		m_models[mask] = applyModel(data2+8, m_size, (unsigned char)mask);
+		m_models[mask] = ApplyModel(data2+8, m_size, (unsigned char)mask);
 	});
 #endif
 	delete[] data2;
 
-	m_stateEvaluator->init(m_models, size*8, baseprob, m_logScale);
+	m_stateEvaluator->Init(m_models, size*8, baseprob, m_logScale);
 	m_compressedsize = BITPREC_TABLE*(long long)m_size;
 }
 
@@ -143,15 +143,15 @@ CompressionState::~CompressionState() {
 }
 
 
-int CompressionState::setModels(const ModelList& models) {
-	m_compressedsize = m_stateEvaluator->evaluate(models);
+int CompressionState::SetModels(const ModelList& models) {
+	m_compressedsize = m_stateEvaluator->Evaluate(models);
 	return (int) (m_compressedsize / (BITPREC_TABLE / BITPREC));
 }
 
-int CompressionState::getCompressedSize() const {
+int CompressionState::GetCompressedSize() const {
 	return (int) (m_compressedsize / (BITPREC_TABLE / BITPREC));
 }
 
-int CompressionState::getSize() const {
+int CompressionState::GetSize() const {
 	return m_size;
 }

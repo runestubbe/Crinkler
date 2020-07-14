@@ -9,11 +9,11 @@ CmdParamMultiAssign::CmdParamMultiAssign(const char* paramName, const char* desc
 	m_it = m_strings.begin();
 }
 
-int CmdParamMultiAssign::parse(const char* str, char* errorMsg, int buffsize) {
+int CmdParamMultiAssign::Parse(const char* str, char* errorMsg, int buffsize) {
 	string s = str;
 	string::size_type pos = s.find('=');
 	if(pos == string::npos) {
-		if (getFlags() & PARAM_ALLOW_MISSING_VALUE) {
+		if (GetFlags() & PARAM_ALLOW_MISSING_VALUE) {
 			if (s.size() == 0) {
 				sprintf_s(errorMsg, buffsize, "identifier must be non empty");
 				return PARSE_INVALID;
@@ -43,17 +43,17 @@ int CmdParamMultiAssign::parse(const char* str, char* errorMsg, int buffsize) {
 	return PARSE_OK;
 }
 
-void CmdParamMultiAssign::next() {
+void CmdParamMultiAssign::Next() {
 	m_it++;
 }
 
-bool CmdParamMultiAssign::hasNext() const {
+bool CmdParamMultiAssign::HasNext() const {
 	return m_it != m_strings.end();
 }
 
-const char* CmdParamMultiAssign::getValue1() {
-	return hasNext() ? m_it->first.c_str() : NULL;
+const char* CmdParamMultiAssign::GetValue1() {
+	return HasNext() ? m_it->first.c_str() : NULL;
 }
-const char* CmdParamMultiAssign::getValue2() {
-	return hasNext() ? m_it->second.c_str() : NULL;
+const char* CmdParamMultiAssign::GetValue2() {
+	return HasNext() ? m_it->second.c_str() : NULL;
 }

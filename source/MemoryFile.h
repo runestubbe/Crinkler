@@ -8,9 +8,9 @@ public:
 	MemoryFile(const char* filename, bool abort_if_failed = true);
 	~MemoryFile();
 
-	int getSize() const;
-	char* getPtr() const;
-	bool write(const char *filename) const;
+	int		GetSize() const;
+	char*	GetPtr() const;
+	bool	Write(const char *filename) const;
 };
 
 #endif

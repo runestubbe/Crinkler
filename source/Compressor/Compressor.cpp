@@ -25,8 +25,25 @@ BOOL APIENTRY DllMain( HANDLE, DWORD, LPVOID )
     return TRUE;
 }
 
+static int NextPowerOf2(int v) {
+	v--;
+	v |= v >> 1;
+	v |= v >> 2;
+	v |= v >> 4;
+	v |= v >> 8;
+	v |= v >> 16;
+	return v + 1;
+}
 
-const char *compTypeName(CompressionType ct)
+static int ReverseByte(int x)
+{
+	x = (((x & 0xaa) >> 1) | ((x & 0x55) << 1));
+	x = (((x & 0xcc) >> 2) | ((x & 0x33) << 2));
+	x = (((x & 0xf0) >> 4) | ((x & 0x0f) << 4));
+	return x;
+}
+
+const char *CompressionTypeName(CompressionType ct)
 {
 	switch(ct) {
 		case COMPRESSION_INSTANT:
@@ -41,15 +58,7 @@ const char *compTypeName(CompressionType ct)
 	return "UNKNOWN";
 }
 
-
-unsigned char swapBitsInByte(unsigned char m) {
-	m = (unsigned char) (((m&0x0f)<<4)|((m&0xf0)>>4));
-	m = (unsigned char) (((m&0x33)<<2)|((m&0xcc)>>2));
-	m = (unsigned char) (((m&0x55)<<1)|((m&0xaa)>>1));
-	return m;
-}
-
-unsigned int approximateWeights(CompressionState& cs, ModelList& models) {
+unsigned int ApproximateWeights(CompressionState& cs, ModelList& models) {
 	for (int i = 0 ; i < models.nmodels ; i++) {
 		unsigned char w = 0;
 		for (int b = 0 ; b < 8 ; b++) {
@@ -59,16 +68,16 @@ unsigned int approximateWeights(CompressionState& cs, ModelList& models) {
 		}
 		models[i].weight = w;
 	}
-	return cs.setModels(models);
+	return cs.SetModels(models);
 }
 
-unsigned int optimizeWeights(CompressionState& cs, ModelList& models) {
+unsigned int OptimizeWeights(CompressionState& cs, ModelList& models) {
 	ModelList newmodels(models);
 	int index = models.nmodels-1;
 	int dir = 1;
 	int lastindex = index;
 	unsigned int size;
-	unsigned int bestsize = approximateWeights(cs, models);
+	unsigned int bestsize = ApproximateWeights(cs, models);
 	
 	if(models.nmodels == 0)	// Nothing to optimize, leave and prevent a crash
 		return bestsize;
@@ -93,7 +102,7 @@ unsigned int optimizeWeights(CompressionState& cs, ModelList& models) {
 			}
 		}
 		if (!skip) {
-			size = cs.setModels(newmodels);
+			size = cs.SetModels(newmodels);
 		}
 		if (!skip && size < bestsize) {
 			bestsize = size;
@@ -118,15 +127,15 @@ unsigned int optimizeWeights(CompressionState& cs, ModelList& models) {
 	return bestsize;
 }
 
-unsigned int tryWeights(CompressionState& cs, ModelList& models, CompressionType compressionType) {
+unsigned int TryWeights(CompressionState& cs, ModelList& models, CompressionType compressionType) {
 	unsigned int size;
 	switch (compressionType) {
 	case COMPRESSION_FAST:
-		size = approximateWeights(cs, models);
+		size = ApproximateWeights(cs, models);
 		break;
 	case COMPRESSION_SLOW:
 	case COMPRESSION_VERYSLOW:
-		size = optimizeWeights(cs, models);
+		size = OptimizeWeights(cs, models);
 		break;
 	}
 	return size;
@@ -167,7 +176,7 @@ ModelList ApproximateModels4k(const unsigned char* data, int datasize, int basep
 		masks[m] = (unsigned char)mask;
 	}
 
-	modelsets[0].size = cs.getCompressedSize() | ELITE_FLAG;
+	modelsets[0].size = cs.GetCompressedSize() | ELITE_FLAG;
 	for (int s = 1; s < width; s++) {
 		modelsets[s].size = INT_MAX;
 	}
@@ -196,7 +205,7 @@ ModelList ApproximateModels4k(const unsigned char* data, int datasize, int basep
 				new_models.nmodels++;
 
 				int old_size = models.size & ~ELITE_FLAG;
-				int new_size = tryWeights(cs, new_models, compressionType);
+				int new_size = TryWeights(cs, new_models, compressionType);
 
 				if (new_size < old_size || compressionType == COMPRESSION_VERYSLOW) {
 					// Try remove
@@ -205,7 +214,7 @@ ModelList ApproximateModels4k(const unsigned char* data, int datasize, int basep
 						Model rmod = new_models[m];
 						new_models.nmodels -= 1;
 						new_models[m] = new_models[new_models.nmodels];
-						int size = tryWeights(cs, new_models, compressionType);
+						int size = TryWeights(cs, new_models, compressionType);
 						if (size < bestsize) {
 							bestsize = size;
 						} else {
@@ -225,7 +234,7 @@ ModelList ApproximateModels4k(const unsigned char* data, int datasize, int basep
 			}
 		}
 
-		stable_sort(modelsets.begin(), modelsets.end(), [](const ModelList& a, const ModelList& b) {
+		std::stable_sort(modelsets.begin(), modelsets.end(), [](const ModelList& a, const ModelList& b) {
 			return a.size < b.size;
 		});
 
@@ -235,11 +244,11 @@ ModelList ApproximateModels4k(const unsigned char* data, int datasize, int basep
 
 	assert((modelsets[0].size & ELITE_FLAG) != 0);
 	modelsets[0].size &= ~ELITE_FLAG;
-	stable_sort(modelsets.begin(), modelsets.end(), [](const ModelList& a, const ModelList& b) {
+	std::stable_sort(modelsets.begin(), modelsets.end(), [](const ModelList& a, const ModelList& b) {
 		return a.size < b.size;
 	});
 	ModelList models = modelsets[0];
-	int size = optimizeWeights(cs, models);
+	int size = OptimizeWeights(cs, models);
 	if(compsize)
 		*compsize = size;
 
@@ -380,24 +389,6 @@ static int* GenerateModelData1k(const unsigned char* org_data, int datasize)
 	return modeldata;
 }
 
-static int nextPowerOf2(int v) {
-	v--;
-	v |= v >> 1;
-	v |= v >> 2;
-	v |= v >> 4;
-	v |= v >> 8;
-	v |= v >> 16;
-	return v + 1;
-}
-
-static int reverse_byte(int x)
-{
-	x = (((x & 0xaa) >> 1) | ((x & 0x55) << 1));
-	x = (((x & 0xcc) >> 2) | ((x & 0x33) << 2));
-	x = (((x & 0xf0) >> 4) | ((x & 0x0f) << 4));
-	return x;
-}
-
 int EvaluateSize(const unsigned char* data, int rawsize, int splittingPoint,
 	const ModelList& models1, const ModelList& models2, int baseprob, bool saturate,
 	int* out_size1, int* out_size2)
@@ -477,7 +468,7 @@ int Compress1K(unsigned char* org_data, int datasize, unsigned char* compressed,
 	SEncodeEntry* encode_entries = new SEncodeEntry[8 * datasize];
 	memset(encode_entries, 0, 8 * datasize * sizeof(SEncodeEntry));
 
-	const int hash_table_size = nextPowerOf2(datasize * 2);
+	const int hash_table_size = NextPowerOf2(datasize * 2);
 
 	SHashEntry1* hash_table_data = new SHashEntry1[hash_table_size * 8];
 	
@@ -496,7 +487,7 @@ int Compress1K(unsigned char* org_data, int datasize, unsigned char* compressed,
 			memset(hash_table1, 0, hash_table_size * sizeof(SHashEntry1));
 		
 			int model = (unsigned char)(model_idx - 1);
-			int rev_model = reverse_byte(model) << 8;
+			int rev_model = ReverseByte(model) << 8;
 
 			__m128i mulmask;
 			{
@@ -615,7 +606,7 @@ int Compress1K(unsigned char* org_data, int datasize, unsigned char* compressed,
 	return (AritCodeEnd(&as) + 7) / 8;
 }
 
-int evaluate1K(unsigned char* data, int size, int* modeldata, int* out_b0, int* out_b1, int* out_boost_factor, unsigned int modelmask)
+int Evaluate1K(unsigned char* data, int size, int* modeldata, int* out_b0, int* out_b1, int* out_boost_factor, unsigned int modelmask)
 {
 	int bitlength = size * 8;
 	int totalsizes[NUM_1K_BOOST_FACTORS][NUM_1K_BASEPROBS][NUM_1K_BASEPROBS] = {};
@@ -756,7 +747,7 @@ ModelList1k ApproximateModels1k(const unsigned char* org_data, int datasize, int
 				int boost_factor;
 				int testsize;
 				int b0, b1;
-				testsize = evaluate1K(data, datasize, modeldata, &b0, &b1, &boost_factor, modelmask);
+				testsize = Evaluate1K(data, datasize, modeldata, &b0, &b1, &boost_factor, modelmask);
 
 				Concurrency::critical_section::scoped_lock l(cs);
 				if (testsize < best_size)

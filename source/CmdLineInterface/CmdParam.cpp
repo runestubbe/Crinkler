@@ -11,7 +11,7 @@ CmdParam::CmdParam(const char* parameterName, const char* description, const cha
 	m_numMatches = 0;
 }
 
-string CmdParam::toString() const {
+string CmdParam::ToString() const {
 	char buff[1024];
 	char param[1024];
 	if(m_flags & PARAM_TAKES_ARGUMENT) {
@@ -26,22 +26,22 @@ string CmdParam::toString() const {
 	return string(buff);
 }
 
-const char* CmdParam::getParameterName() const {
+const char* CmdParam::GetParameterName() const {
 	return m_parameterName.c_str();
 }
 
-const char* CmdParam::getDescription() const {
+const char* CmdParam::GetDescription() const {
 	return m_description.c_str();
 }
 
-int CmdParam::getFlags() const {
+int CmdParam::GetFlags() const {
 	return m_flags;
 }
 
-int CmdParam::getNumMatches() const {
+int CmdParam::GetNumMatches() const {
 	return m_numMatches;
 }
 
-const char* CmdParam::getArgumentDescription() const {
+const char* CmdParam::GetArgumentDescription() const {
 	return m_argumentDesc.c_str();
 }

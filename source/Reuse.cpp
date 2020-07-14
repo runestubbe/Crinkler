@@ -15,18 +15,28 @@ enum State {
 #define BSS_HUNKS_TAG "# Uninitialized sections"
 #define HASHSIZE_TAG "# Hash table size"
 
+static ModelList *ParseModelList(const char *line) {
+	ModelList *ml = new ModelList();
+	int mask, weight, n;
+	while (sscanf(line, " %x:%d%n", &mask, &weight, &n) == 2) {
+		ml->AddModel(Model{ (unsigned char)weight, (unsigned char)mask });
+		line += n;
+	}
+	return ml;
+}
+
 Reuse::Reuse() : m_code_models(nullptr), m_data_models(nullptr), m_hashsize(0) {}
 
 Reuse::Reuse(const ModelList& code_models, const ModelList& data_models, const HunkList& hl, int hashsize) {
 	m_code_models = new ModelList(code_models);
 	m_data_models = new ModelList(data_models);
-	for (int h = 0; h < hl.getNumHunks(); h++) {
+	for (int h = 0; h < hl.GetNumHunks(); h++) {
 		Hunk *hunk = hl[h];
-		const std::string& id = hunk->getID();
-		if (hunk->getRawSize() == 0) {
+		const std::string& id = hunk->GetID();
+		if (hunk->GetRawSize() == 0) {
 			m_bss_hunk_ids.push_back(id);
 		}
-		else if (hunk->getFlags() & HUNK_IS_CODE) {
+		else if (hunk->GetFlags() & HUNK_IS_CODE) {
 			m_code_hunk_ids.push_back(id);
 		}
 		else {
@@ -36,22 +46,12 @@ Reuse::Reuse(const ModelList& code_models, const ModelList& data_models, const H
 	m_hashsize = hashsize;
 }
 
-ModelList *parseModelList(const char *line) {
-	ModelList *ml = new ModelList();
-	int mask, weight, n;
-	while (sscanf(line, " %x:%d%n", &mask, &weight, &n) == 2) {
-		ml->addModel(Model{ (unsigned char)weight, (unsigned char)mask });
-		line += n;
-	}
-	return ml;
-}
-
-Reuse* loadReuseFile(const char *filename) {
+Reuse* LoadReuseFile(const char *filename) {
 	MemoryFile mf(filename, false);
-	if (mf.getPtr() == nullptr) return nullptr;
+	if (mf.GetPtr() == nullptr) return nullptr;
 	Reuse *reuse = new Reuse();
 	State state = INITIAL;
-	for (auto line : intoLines(mf.getPtr(), mf.getSize())) {
+	for (auto line : IntoLines(mf.GetPtr(), mf.GetSize())) {
 		if (line.empty()) continue;
 		if (line == CODE_MODELS_TAG) {
 			state = CODE_MODELS;
@@ -72,14 +72,14 @@ Reuse* loadReuseFile(const char *filename) {
 			state = HASHSIZE;
 		}
 		else if (line[0] == '#') {
-			Log::warning(filename, "Unknown reuse file tag: %s", line.c_str());
+			Log::Warning(filename, "Unknown reuse file tag: %s", line.c_str());
 		}
 		else switch (state) {
 		case CODE_MODELS:
-			reuse->m_code_models = parseModelList(line.c_str());
+			reuse->m_code_models = ParseModelList(line.c_str());
 			break;
 		case DATA_MODELS:
-			reuse->m_data_models = parseModelList(line.c_str());
+			reuse->m_data_models = ParseModelList(line.c_str());
 			break;
 		case CODE_HUNKS:
 			reuse->m_code_hunk_ids.push_back(line);
@@ -98,12 +98,12 @@ Reuse* loadReuseFile(const char *filename) {
 	return reuse;
 }
 
-void Reuse::save(const char *filename) const {
+void Reuse::Save(const char *filename) const {
 	FILE* f = fopen(filename, "w");
 	fprintf(f, "\n%s\n", CODE_MODELS_TAG);
-	m_code_models->print(f);
+	m_code_models->Print(f);
 	fprintf(f, "\n%s\n", DATA_MODELS_TAG);
-	m_data_models->print(f);
+	m_data_models->Print(f);
 	fprintf(f, "\n%s\n", CODE_HUNKS_TAG);
 	for (auto id : m_code_hunk_ids) {
 		fprintf(f, "%s\n", id.c_str());

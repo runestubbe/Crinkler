@@ -19,18 +19,18 @@ class CmdLineInterface {
 	std::string					m_title;
 	int							m_flags;
 
-	void addTokens(const char* str);
+	void AddTokens(const char* str);
 public:
 	CmdLineInterface(const char* title, int flags);
 	~CmdLineInterface();
 
-	void addParams(CmdParam* param, ...);
-	void printSyntax();
-	void printHeader();
+	void AddParams(CmdParam* param, ...);
+	void PrintSyntax();
+	void PrintHeader();
 
-	bool setCmdParameters(int argc, char* argv[]);
-	bool removeToken(const char* str);
-	bool parse();
+	bool SetCmdParameters(int argc, char* argv[]);
+	bool RemoveToken(const char* str);
+	bool Parse();
 };
 
 #endif

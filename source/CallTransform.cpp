@@ -6,16 +6,16 @@
 #include "Symbol.h"
 #include "Log.h"
 
-Hunk* CallTransform::getDetransformer() {
+Hunk* CallTransform::GetDetransformer() {
 	CoffObjectLoader loader;
-	HunkList* hl = loader.load(calltransObj, int(calltransObj_end - calltransObj), "call detransform");
-	Hunk* h = hl->toHunk("call detransformer");
+	HunkList* hl = loader.Load(calltransObj, int(calltransObj_end - calltransObj), "call detransform");
+	Hunk* h = hl->ToHunk("call detransformer");
 	delete hl;
 	return h;
 }
 
-bool CallTransform::transform(Hunk* hunk, int splittingPoint, bool verbose) {
-	unsigned char* data = (unsigned char*)hunk->getPtr();
+bool CallTransform::DoTransform(Hunk* hunk, int splittingPoint, bool verbose) {
+	unsigned char* data = (unsigned char*)hunk->GetPtr();
 	int size = splittingPoint;
 
 	int num = 0;
@@ -30,18 +30,18 @@ bool CallTransform::transform(Hunk* hunk, int splittingPoint, bool verbose) {
 		}
 	}
 	if (num > 0) {
-		*(int *)(hunk->getPtr() + hunk->findSymbol("_CallTrans")->value+2) = num;
+		*(int *)(hunk->GetPtr() + hunk->FindSymbol("_CallTrans")->value+2) = num;
 		if(verbose)
 			printf("\nCalls transformed: %d\n", num);
 		return true;
 	} else {
-		int start = hunk->findSymbol("_CallTrans")->value;
-		int size = hunk->findSymbol("_CallTransSize")->value;
-		memset(hunk->getPtr()+start, 0x90, size);
+		int start = hunk->FindSymbol("_CallTrans")->value;
+		int size = hunk->FindSymbol("_CallTransSize")->value;
+		memset(hunk->GetPtr()+start, 0x90, size);
 		if (verbose)
-			Log::warning("", "No calls - call transformation not applied");
+			Log::Warning("", "No calls - call transformation not applied");
 		// Do not run call trans next time
-		disable();
+		Disable();
 		return false;
 	}
 }

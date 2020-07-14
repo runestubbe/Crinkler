@@ -5,7 +5,7 @@
 class HunkList;
 class HeuristicHunkSorter {
 public:
-	static void sortHunkList(HunkList* hunklist);
+	static void SortHunkList(HunkList* hunklist);
 };
 
 #endif

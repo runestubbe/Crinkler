@@ -8,26 +8,26 @@ CmdParam(paramName, description, argumentDesciption, flags | PARAM_TAKES_ARGUMEN
 	m_it = m_strings.begin();
 }
 
-int CmdParamString::parse(const char* str, char* errorMsg, int buffsize) {
-	if(getFlags() & PARAM_FORBID_MULTIPLE_DEFINITIONS)
+int CmdParamString::Parse(const char* str, char* errorMsg, int buffsize) {
+	if(GetFlags() & PARAM_FORBID_MULTIPLE_DEFINITIONS)
 		m_strings.clear();
 	m_strings.push_back(str);
 	m_it = m_strings.begin();
 	return PARSE_OK;
 }
 
-const char* CmdParamString::getValue() {
-	return hasNext() ? m_it->c_str() : NULL;
+const char* CmdParamString::GetValue() {
+	return HasNext() ? m_it->c_str() : NULL;
 }
 
-void CmdParamString::next() {
+void CmdParamString::Next() {
 	m_it++;
 }
 
-bool CmdParamString::hasNext() const {
+bool CmdParamString::HasNext() const {
 	return m_it != m_strings.end();
 }
 
-std::vector<std::string> CmdParamString::getList() {
+std::vector<std::string> CmdParamString::GetList() {
 	return m_strings;
 }

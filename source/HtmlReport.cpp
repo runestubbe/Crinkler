@@ -258,7 +258,7 @@ struct SizeColor {
 
 // Converts a string to an unique identifier consisting of only ['A'-Z']
 
-static string toIdent(string str) {
+static string ToIdent(string str) {
 	static char buff[16] = {'A', 0};
 	if(identmap[str] != "") {
 		return identmap[str];
@@ -276,7 +276,7 @@ static string toIdent(string str) {
 	return ident;
 }
 
-static int sizeToColor(int size) {
+static int SizeToColor(int size) {
 	float bsize = size / (float)BITPREC;
 	for (int i = 0 ; i < sizeof(sizecols)/sizeof(SizeColor) ; i++) {
 		if (bsize < sizecols[i].size) {
@@ -286,16 +286,16 @@ static int sizeToColor(int size) {
 	return 0xff0000;
 }
 
-static int instructionSize(_DecodedInst *inst, const int *sizefill) {
+static int InstructionSize(_DecodedInst *inst, const int *sizefill) {
 	int idx = (int)inst->offset - CRINKLER_CODEBASE;
 	return sizefill[idx + inst->size] - sizefill[idx];
 }
 
-static int toAscii(int c) {
+static int ToAscii(int c) {
 	return (c > 32 && c <= 126 || c >= 160) ? c : '.';
 }
 
-static void printRow(FILE *out, Hunk& hunk, const int *sizefill, int index, int n, int hex_columns, int hex_width, bool ascii, bool spacing) {
+static void PrintRow(FILE *out, Hunk& hunk, const int *sizefill, int index, int n, int hex_columns, int hex_width, bool ascii, bool spacing) {
 	for(int x = 0; x < hex_columns; x++) {
 		if (spacing && x > 0 && (x & 3) == 0) {
 			// Spacing between blocks of 4
@@ -310,18 +310,18 @@ static void printRow(FILE *out, Hunk& hunk, const int *sizefill, int index, int 
 			unsigned char c = 0;
 			int size = 0;
 			int idx = index + x;
-			if (idx < hunk.getRawSize()) {
+			if (idx < hunk.GetRawSize()) {
 				size = sizefill[idx + 1] - sizefill[idx];
-				c = hunk.getPtr()[idx++];
+				c = hunk.GetPtr()[idx++];
 			}
 
 			if (ascii) {
 				fprintf(out, "<td title='%.2f bits' style='color: #%.6X;'>"
-					"&#x%.2X;</td>", size / (float)BITPREC, sizeToColor(size), toAscii(c));
+					"&#x%.2X;</td>", size / (float)BITPREC, SizeToColor(size), ToAscii(c));
 			}
 			else {
 				fprintf(out, "<td title='%.2f bits' style='color: #%.6X;'>"
-					"%.2X</td>", size / (float)BITPREC, sizeToColor(size), c);
+					"%.2X</td>", size / (float)BITPREC, SizeToColor(size), c);
 			}
 		} else {
 			if (ascii) {
@@ -348,7 +348,7 @@ static Symbol* getRelocationSymbol(_DecodedInst& inst, int offset, map<int, Symb
 	return it != relocs.end() ? it->second : NULL;
 }
 
-static std::string generateLabel(Symbol* symbol, int value, map<int, Symbol*>& symbols) {
+static std::string GenerateLabel(Symbol* symbol, int value, map<int, Symbol*>& symbols) {
 	char buff[1024];
 	int offset = 0;
 	if(symbol->flags & SYMBOL_IS_RELOCATEABLE) {
@@ -363,8 +363,8 @@ static std::string generateLabel(Symbol* symbol, int value, map<int, Symbol*>& s
 			}
 		}
 	}
-	string name = stripCrinklerSymbolPrefix(symbol->name.c_str());
-	string ident = toIdent(symbol->name);
+	string name = StripCrinklerSymbolPrefix(symbol->name.c_str());
+	string ident = ToIdent(symbol->name);
 	name = "<a href='#" + ident + "' onclick='recursiveExpand(\"" + ident + "\")'>" + name + "</a>";	// Add link
 	if(offset > 0)
 		sprintf_s(buff, sizeof(buff), "%s+0x%X", name.c_str(), offset);
@@ -376,7 +376,7 @@ static std::string generateLabel(Symbol* symbol, int value, map<int, Symbol*>& s
 }
 
 // Finds a hexnumber, removes it from the string and returns its position. Value is set to the value of the number
-static void extractNumber(string& str, string::size_type begin, int& value, string::size_type& startpos, string::size_type& endpos) {
+static void ExtractNumber(string& str, string::size_type begin, int& value, string::size_type& startpos, string::size_type& endpos) {
 	startpos = str.find("0x", begin);
 	if(startpos == string::npos)
 		return;
@@ -391,17 +391,17 @@ static void extractNumber(string& str, string::size_type begin, int& value, stri
 	sscanf_s(&str.c_str()[startpos], "%X", &value);
 }
 
-static string calculateInstructionOperands(_DecodedInst& inst, Hunk& hunk, map<int, Symbol*>& relocs, map<int, Symbol*> symbols) {
+static string CalculateInstructionOperands(_DecodedInst& inst, Hunk& hunk, map<int, Symbol*>& relocs, map<int, Symbol*> symbols) {
 	string operands = (char*)inst.operands.p;
 
 	// Find number operands in textual assembly
 	int number1_value = 0;
 	string::size_type number1_startpos = string::npos, number1_endpos = string::npos;			// Immediate or displace
-	extractNumber(operands, 0, number1_value, number1_startpos, number1_endpos);
+	ExtractNumber(operands, 0, number1_value, number1_startpos, number1_endpos);
 	int number2_value = 0;
 	string::size_type number2_startpos = string::npos, number2_endpos = string::npos;			// Displace
 	if(number1_startpos != string::npos) {
-		extractNumber(operands, number1_startpos+1, number2_value, number2_startpos, number2_endpos);
+		ExtractNumber(operands, number1_startpos+1, number2_value, number2_startpos, number2_endpos);
 		if(number2_startpos != string::npos && operands[number1_endpos] == ']') {
 			swap(number1_startpos, number2_startpos);
 			swap(number1_endpos, number2_endpos);
@@ -427,7 +427,7 @@ static string calculateInstructionOperands(_DecodedInst& inst, Hunk& hunk, map<i
 
 		int delta = 0;	// The amount label2 will need to be displaced
 		if(reloc_symbol1) {
-			string label = generateLabel(reloc_symbol1, number1_value, symbols);
+			string label = GenerateLabel(reloc_symbol1, number1_value, symbols);
 			delta = int(label.size() - (number1_endpos-number1_startpos));
 			operands.erase(number1_startpos, number1_endpos-number1_startpos);
 			operands.insert(number1_startpos, label);
@@ -435,7 +435,7 @@ static string calculateInstructionOperands(_DecodedInst& inst, Hunk& hunk, map<i
 		if(reloc_symbol2) {
 			if(number2_startpos < number1_startpos)
 				delta = 0;
-			string label = generateLabel(reloc_symbol2, number2_value, symbols);
+			string label = GenerateLabel(reloc_symbol2, number2_value, symbols);
 			operands.erase(number2_startpos+delta, number2_endpos-number2_startpos);
 			operands.insert(number2_startpos+delta, label);
 		}
@@ -446,33 +446,22 @@ static string calculateInstructionOperands(_DecodedInst& inst, Hunk& hunk, map<i
 	if(sscanf_s(operands.c_str(), "%X", &value)) {
 		map<int, Symbol*>::iterator it = symbols.find(value-CRINKLER_CODEBASE);
 		if(it != symbols.end()) {
-			operands = generateLabel(it->second, value, symbols);
+			operands = GenerateLabel(it->second, value, symbols);
 		}
 	}
 
 	return operands;
 }
 
-string hashname(const char* name) {
-	static map<string, int> namemap;
-	static int counter = 1;
-	if(namemap[name] == 0) {
-		namemap[name] = counter++;
-	}
-	char buff[128];
-	sprintf_s(buff, sizeof(buff), "v%d", namemap[name]);
-	return buff;
-}
-
 // Sorts pair<string, int> by greater<int> and then by name
-bool opcodeComparator(const pair<string, int>& a, const pair<string, int>& b) {
+static bool OpcodeComparator(const pair<string, int>& a, const pair<string, int>& b) {
 	if(a.second != b.second)
 		return a.second > b.second;
 	else
 		return a.first < b.first;
 }
 
-static void htmlReportRecursive(CompressionReportRecord* csr, FILE* out, Hunk& hunk, Hunk& untransformedHunk, const int* sizefill, bool iscode, map<int, Symbol*>& relocs, map<int, Symbol*>& symbols, map<string, int>& opcodeCounters,
+static void HtmlReportRecursive(CompressionReportRecord* csr, FILE* out, Hunk& hunk, Hunk& untransformedHunk, const int* sizefill, bool iscode, map<int, Symbol*>& relocs, map<int, Symbol*>& symbols, map<string, int>& opcodeCounters,
 		const char *exefilename, int filesize, Crinkler *crinkler) {
 	string divstr;
 	// Handle enter node events
@@ -486,7 +475,7 @@ static void htmlReportRecursive(CompressionReportRecord* csr, FILE* out, Hunk& h
 
 		// Print option string
 		fprintf(out, "<p><b>Options:");
-		crinkler->printOptions(out);
+		crinkler->PrintOptions(out);
 		fprintf(out, "</b></p>");
 
 		// Print file size
@@ -521,7 +510,7 @@ static void htmlReportRecursive(CompressionReportRecord* csr, FILE* out, Hunk& h
 		string css_class;
 		string script;
 		char div_prefix = 0;
-		int level = csr->getLevel();
+		int level = csr->GetLevel();
 		switch(level) {
 			case 0:	// Section
 				label = csr->name;
@@ -529,17 +518,17 @@ static void htmlReportRecursive(CompressionReportRecord* csr, FILE* out, Hunk& h
 				div_prefix = 's';
 				break;
 			case 1:	// Old section
-				label = stripPath(csr->miscString) + ":" + stripCrinklerSymbolPrefix(csr->name.c_str());
+				label = StripPath(csr->miscString) + ":" + StripCrinklerSymbolPrefix(csr->name.c_str());
 				css_class = "oldsection_symbol_row";
 				div_prefix  = 'o';
 				break;
 			case 2:	// Public symbol
-				label = stripCrinklerSymbolPrefix(csr->name.c_str());
+				label = StripCrinklerSymbolPrefix(csr->name.c_str());
 				css_class = "public_symbol_row";
 				div_prefix = 'p';
 				break;
 			case 3:	// Private symbol
-				label = stripCrinklerSymbolPrefix(csr->name.c_str());
+				label = StripCrinklerSymbolPrefix(csr->name.c_str());
 				css_class = "private_symbol_row";
 				break;
 		}
@@ -560,7 +549,7 @@ static void htmlReportRecursive(CompressionReportRecord* csr, FILE* out, Hunk& h
 
 		// Make the label an anchor
 		if(!(csr->type & RECORD_DUMMY)) {	// Don't put anchors on dummy records
-			label = "<a id='" + toIdent(csr->name) + "'>" + label + "</a>";
+			label = "<a id='" + ToIdent(csr->name) + "'>" + label + "</a>";
 		}
 		
 		fprintf(out,"<th nowrap class='c1'>%s%.8X&nbsp;</th>"
@@ -606,7 +595,7 @@ static void htmlReportRecursive(CompressionReportRecord* csr, FILE* out, Hunk& h
 					if (instspace < 15) instspace = 15;
 					_DecodedInst *insts = (_DecodedInst *)malloc(instspace * sizeof(_DecodedInst));
 					unsigned int numinsts;
-					distorm_decode64(CRINKLER_CODEBASE + csr->pos, (unsigned char*)&untransformedHunk.getPtr()[csr->pos], size, Decode32Bits, insts, instspace, &numinsts);
+					distorm_decode64(CRINKLER_CODEBASE + csr->pos, (unsigned char*)&untransformedHunk.GetPtr()[csr->pos], size, Decode32Bits, insts, instspace, &numinsts);
 					for(int i = 0; i < (int)numinsts; i++) {
 						fprintf(out, "<tr>");
 						// Address
@@ -614,23 +603,23 @@ static void htmlReportRecursive(CompressionReportRecord* csr, FILE* out, Hunk& h
 						
 						// Hex dump
 						fprintf(out, "<td nowrap colspan=4 class='hexdump'><table class='data'><tr>");
-						printRow(out, hunk, sizefill, (int)insts[i].offset - CRINKLER_CODEBASE, insts[i].size, CODE_BYTE_COLUMNS, CODE_HEX_WIDTH, false, false);
+						PrintRow(out, hunk, sizefill, (int)insts[i].offset - CRINKLER_CODEBASE, insts[i].size, CODE_BYTE_COLUMNS, CODE_HEX_WIDTH, false, false);
 
 						// Disassembly
 						// Make hex digits uppercase
 						for (unsigned char *cp = insts[i].operands.p ; *cp != 0 ; cp++) {
 							if (*cp >= 'a' && *cp <= 'f') *cp += 'A'-'a';
 						}
-						int size = instructionSize(&insts[i], sizefill);
+						int size = InstructionSize(&insts[i], sizefill);
 
 						fprintf(out, "<td nowrap title='%.2f bytes' style='color: #%.6X;'>%s",
-							size / (float)(BITPREC*8), sizeToColor(size/insts[i].size), insts[i].mnemonic.p);
+							size / (float)(BITPREC*8), SizeToColor(size/insts[i].size), insts[i].mnemonic.p);
 						for (int j = 0 ; j < OPCODE_WIDTH-(int)insts[i].mnemonic.length ; j++) {
 							fprintf(out, "&nbsp;");
 						}
 
 						{
-							string ops = calculateInstructionOperands(insts[i], untransformedHunk, relocs, symbols);
+							string ops = CalculateInstructionOperands(insts[i], untransformedHunk, relocs, symbols);
 							const char *optext = ops.c_str();
 							bool comma = false;
 							while (*optext)
@@ -681,19 +670,19 @@ static void htmlReportRecursive(CompressionReportRecord* csr, FILE* out, Hunk& h
 
 						// Hex dump
 						fprintf(out, "<td nowrap colspan=4 class='hexdump'><table class='data'><tr>");
-						printRow(out, hunk, sizefill, idx, rowLength, DATA_BYTE_COLUMNS, DATA_HEX_WIDTH, false, true);
+						PrintRow(out, hunk, sizefill, idx, rowLength, DATA_BYTE_COLUMNS, DATA_HEX_WIDTH, false, true);
 
 						map<int, Symbol*>::iterator jt = relocs.find(idx);
 						if(jt != relocs.end()) {
 							// Write label
 							int size = sizefill[idx+4]-sizefill[idx];
-							int value = *((int*)&untransformedHunk.getPtr()[idx]);
-							string label = generateLabel(jt->second, value, symbols);
+							int value = *((int*)&untransformedHunk.GetPtr()[idx]);
+							string label = GenerateLabel(jt->second, value, symbols);
 							fprintf(out, "<td title='%.2f bytes' style='color: #%.6X;' colspan='%d'>%s</td>",
-								size / (float)(BITPREC*8), sizeToColor(size/4), DATA_BYTE_COLUMNS, label.c_str());
+								size / (float)(BITPREC*8), SizeToColor(size/4), DATA_BYTE_COLUMNS, label.c_str());
 						} else {
 							// Write ascii
-							printRow(out, hunk, sizefill, idx, rowLength, DATA_BYTE_COLUMNS, DATA_HEX_WIDTH, true, false);
+							PrintRow(out, hunk, sizefill, idx, rowLength, DATA_BYTE_COLUMNS, DATA_HEX_WIDTH, true, false);
 						}
 						fprintf(out, "</tr></table></td></tr>");
 
@@ -705,7 +694,7 @@ static void htmlReportRecursive(CompressionReportRecord* csr, FILE* out, Hunk& h
 	}
 
 	for(CompressionReportRecord* record : csr->children)
-		htmlReportRecursive(record, out, hunk, untransformedHunk, sizefill, iscode, relocs, symbols, opcodeCounters,
+		HtmlReportRecursive(record, out, hunk, untransformedHunk, sizefill, iscode, relocs, symbols, opcodeCounters,
 			exefilename, filesize, crinkler);
 
 	// Handle leave node event
@@ -716,21 +705,21 @@ static void htmlReportRecursive(CompressionReportRecord* csr, FILE* out, Hunk& h
 	}
 }
 
-void htmlReport(CompressionReportRecord* csr, const char* filename, Hunk& hunk, Hunk& untransformedHunk, const int* sizefill,
+void HtmlReport(CompressionReportRecord* csr, const char* filename, Hunk& hunk, Hunk& untransformedHunk, const int* sizefill,
 		const char *exefilename, int filesize, Crinkler *crinkler) {
 	identmap.clear();
 	num_divs[0] = num_divs[1] = num_divs[2] = num_divs[3] = 0;
 	num_sections = 0;
 	
-	map<int, Symbol*> relocs = hunk.getOffsetToRelocationMap();
-	map<int, Symbol*> symbols = hunk.getOffsetToSymbolMap();
+	map<int, Symbol*> relocs = hunk.GetOffsetToRelocationMap();
+	map<int, Symbol*> symbols = hunk.GetOffsetToSymbolMap();
 	FILE* out;
 	map<string, int> opcodeCounters;
 	if(fopen_s(&out, filename, "wb")) {
-		Log::error(filename, "Cannot open file for writing");
+		Log::Error(filename, "Cannot open file for writing");
 		return;
 	}
-	htmlReportRecursive(csr, out, hunk, untransformedHunk, sizefill, false, relocs, symbols, opcodeCounters,
+	HtmlReportRecursive(csr, out, hunk, untransformedHunk, sizefill, false, relocs, symbols, opcodeCounters,
 		exefilename, filesize, crinkler);
 
 	fclose(out);

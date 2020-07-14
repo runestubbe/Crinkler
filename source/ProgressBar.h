@@ -5,12 +5,13 @@
 class ProgressBar {
 public:
 	virtual ~ProgressBar() {};
-	virtual void init() {};
-	virtual void deinit() {};
+	
+	virtual void Init() {};
+	virtual void Deinit() {};
 
-	virtual void beginTask(const char* name) = 0;
-	virtual void endTask() = 0;
-	virtual void update(int n, int max) = 0;
+	virtual void BeginTask(const char* name) = 0;
+	virtual void EndTask() = 0;
+	virtual void Update(int n, int max) = 0;
 };
 
 #endif

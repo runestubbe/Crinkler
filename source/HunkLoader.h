@@ -7,11 +7,9 @@ class HunkLoader {
 public:
 	virtual ~HunkLoader() {};
 
-	virtual bool clicks(const char* data, int size) = 0;
-	bool clicksFromFile(const char* filename);
-
-	virtual HunkList* load(const char* data, int size, const char* module) = 0;
-	HunkList* loadFromFile(const char* filename);
+	virtual bool		Clicks(const char* data, int size) const = 0;
+	virtual HunkList*	Load(const char* data, int size, const char* module) = 0;
+	HunkList*			LoadFromFile(const char* filename);
 };
 
 #endif

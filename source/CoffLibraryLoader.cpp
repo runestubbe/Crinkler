@@ -10,7 +10,7 @@
 
 using namespace std;
 
-bool CoffLibraryLoader::clicks(const char* data, int size) {
+bool CoffLibraryLoader::Clicks(const char* data, int size) const {
 	const char* ptr = data;
 
 	if(size < 8+16+60+16+(size&1))
@@ -40,7 +40,7 @@ bool CoffLibraryLoader::clicks(const char* data, int size) {
 	return true;
 }
 
-HunkList* CoffLibraryLoader::load(const char* data, int size, const char* module) {
+HunkList* CoffLibraryLoader::Load(const char* data, int size, const char* module) {
 	// Assume that all initial headers are fine (as it is checked by click)
 	
 	HunkList* hunklist = new HunkList;
@@ -82,8 +82,8 @@ HunkList* CoffLibraryLoader::load(const char* data, int size, const char* module
 		// COFF
 		if(*(int*)ptr != 0xFFFF0000) {
 			CoffObjectLoader coffLoader;
-			HunkList* hl = coffLoader.load(ptr, 0, memberModuleName);
-			hunklist->append(hl);
+			HunkList* hl = coffLoader.Load(ptr, 0, memberModuleName);
+			hunklist->Append(hl);
 			delete hl;
 		}
 	}
@@ -106,13 +106,13 @@ HunkList* CoffLibraryLoader::load(const char* data, int size, const char* module
 
 			switch(nameType) {
 				case IMPORT_OBJECT_NAME_NO_PREFIX:
-					importName = stripSymbolPrefix(importName.c_str());
+					importName = StripSymbolPrefix(importName.c_str());
 					break;
 				case IMPORT_OBJECT_NAME:
 					break;
 				case IMPORT_OBJECT_NAME_UNDECORATE:
 				default:
-					importName = undecorateSymbolName(importName.c_str());
+					importName = UndecorateSymbolName(importName.c_str());
 					break;
 			}
 
@@ -123,15 +123,15 @@ HunkList* CoffLibraryLoader::load(const char* data, int size, const char* module
 				for(int j = 0; importDLL[j] && importDLL[j] != '.'; j++)
 					dllName[j] = (char)tolower(importDLL[j]);
 
-				hunklist->addHunkBack(new Hunk(symbolNames[i], importName.c_str(), dllName));
+				hunklist->AddHunkBack(new Hunk(symbolNames[i], importName.c_str(), dllName));
 			} else {	// A call stub
 				unsigned char stubData[6] = {0xFF, 0x25, 0x00, 0x00, 0x00, 0x00};
 				char hunkName[512];
 				sprintf_s(hunkName, 512, "stub_for_%s", symbolNames[i]);
 				
 				Hunk* stubHunk = new Hunk(hunkName, (char*)stubData, HUNK_IS_CODE, 1, 6, 6);
-				hunklist->addHunkBack(stubHunk);
-				stubHunk->addSymbol(new Symbol(symbolNames[i], 0, SYMBOL_IS_RELOCATEABLE, stubHunk));
+				hunklist->AddHunkBack(stubHunk);
+				stubHunk->AddSymbol(new Symbol(symbolNames[i], 0, SYMBOL_IS_RELOCATEABLE, stubHunk));
 				
 				Relocation r;
 				if(strlen(symbolNames[i]) >= 6 && memcmp("__imp_", symbolNames[i], 6) == 0) {
@@ -142,12 +142,12 @@ HunkList* CoffLibraryLoader::load(const char* data, int size, const char* module
 				
 				r.offset = 2;
 				r.type = RELOCTYPE_ABS32;
-				stubHunk->addRelocation(r);
+				stubHunk->AddRelocation(r);
 			}
 		}
 	}
 
-	hunklist->markHunksAsLibrary();
+	hunklist->MarkHunksAsLibrary();
 
 	return hunklist;
 }

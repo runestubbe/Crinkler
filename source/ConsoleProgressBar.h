@@ -8,9 +8,9 @@ class ConsoleProgressBar : public ProgressBar {
 	int m_pos;
 	int m_stime;
 public:
-	void beginTask(const char* name);
-	void endTask();
-	void update(int n, int max);
+	void BeginTask(const char* name);
+	void EndTask();
+	void Update(int n, int max);
 };
 
 #endif

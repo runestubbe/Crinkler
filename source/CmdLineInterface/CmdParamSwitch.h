@@ -9,8 +9,8 @@ class CmdParamSwitch : public CmdParam {
 public:
 	CmdParamSwitch(const char* paramName, const char* description, int flags);
 	
-	int parse(const char* str, char* errorMsg, int buffsize);
-	bool getValue() const;
+	int		Parse(const char* str, char* errorMsg, int buffsize);
+	bool	GetValue() const;
 };
 
 #endif

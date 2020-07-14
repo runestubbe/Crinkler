@@ -28,15 +28,15 @@ public:
 	CmdParam(const char* argumentName, const char* description, const char* argumentDescription, int flags);
 	virtual ~CmdParam() {};
 
-	virtual int parse(const char* str, char* errorMsg, int buffsize) = 0;
-	virtual std::string toString() const;
+	virtual int			Parse(const char* str, char* errorMsg, int buffsize) = 0;
+	virtual std::string ToString() const;
 
-	const char* getArgumentDescription() const;
-	const char* getParameterName() const;
-	const char* getDescription() const;
-	int getFlags() const;
+	const char*			GetArgumentDescription() const;
+	const char*			GetParameterName() const;
+	const char*			GetDescription() const;
+	int					GetFlags() const;
 
-	int getNumMatches() const;
+	int					GetNumMatches() const;
 };
 
 #endif

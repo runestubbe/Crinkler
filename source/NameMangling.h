@@ -4,14 +4,14 @@
 
 #include <string>
 
-//strips a symbolname of its ?@_ prefix
-std::string stripSymbolPrefix(const char* str);
+// Strips a symbolname of its ?@_ prefix
+std::string StripSymbolPrefix(const char* str);
 
-//strips a symbolname of its crinkler prefixes
-std::string stripCrinklerSymbolPrefix(const char* str);
+// Strips a symbolname of its Crinkler prefixes
+std::string StripCrinklerSymbolPrefix(const char* str);
 
-//undecorates a symbolname
-//strips both normal- and crinkler-prefixes and any '@'-suffix
-std::string undecorateSymbolName(const char* str);
+// Undecorates a symbolname
+// Strips both normal- and Crinkler-prefixes and any '@'-suffix
+std::string UndecorateSymbolName(const char* str);
 
 #endif

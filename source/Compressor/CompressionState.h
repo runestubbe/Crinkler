@@ -12,14 +12,14 @@ class CompressionState {
 	CompressionStateEvaluator*	m_stateEvaluator;
 	float						m_logScale;
 
-	ModelPredictions	applyModel(const unsigned char* data, int bitlength, unsigned char mask);
+	ModelPredictions			ApplyModel(const unsigned char* data, int bitlength, unsigned char mask);
 public:
 	CompressionState(const unsigned char* data, int size, int baseprob, bool saturate, CompressionStateEvaluator* evaluator, char* context);
 	~CompressionState();
 	
-	int setModels(const ModelList& models);
+	int SetModels(const ModelList& models);
 
-	int getCompressedSize() const;
-	int getSize() const;
+	int GetCompressedSize() const;
+	int GetSize() const;
 };
 #endif

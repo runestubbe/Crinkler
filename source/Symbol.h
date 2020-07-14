@@ -14,17 +14,17 @@ class Symbol {
 public:
 	Symbol(const char* name, int value, unsigned int flags, Hunk* hunk, const char* miscString=0);
 	std::string		name;
-	std::string		secondaryName;	//if this is != "" the symbol is a reference to the symbol with the name secondaryName.
-	std::string		miscString;		//for holding extra textual information about the symbol e.g. a section name.
+	std::string		secondaryName;	// If this is != "" the symbol is a reference to the symbol with the name secondaryName.
+	std::string		miscString;		// For holding extra textual information about the symbol e.g. a section name.
 	int				value;
 	unsigned int	flags;
 	Hunk*			hunk;
 	int				size;
-	int				hunk_offset;	//for compression report
+	int				hunk_offset;	// For compression report
 	bool			fromLibrary;
 
-	//unmangles the vc decorations
-	std::string getUndecoratedName();
+	// Demangle the VC decorations
+	std::string GetUndecoratedName() const;
 };
 
 #endif

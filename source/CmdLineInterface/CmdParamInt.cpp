@@ -11,11 +11,11 @@ CmdParamInt::CmdParamInt(const char* parameterName, const char* description, con
 	 m_value = defaultValue;
 }
 
-std::string CmdParamInt::toString() const {
-	return CmdParam::toString();
+std::string CmdParamInt::ToString() const {
+	return CmdParam::ToString();
 }
 
-int CmdParamInt::parse(const char* str, char* errorMsg, int buffsize) {
+int CmdParamInt::Parse(const char* str, char* errorMsg, int buffsize) {
 	int v;
 	char c;
 	
@@ -33,10 +33,10 @@ int CmdParamInt::parse(const char* str, char* errorMsg, int buffsize) {
 	return PARSE_INVALID;
 }
 
-int CmdParamInt::getValue() const {
+int CmdParamInt::GetValue() const {
 	return m_value;
 }
 
-bool CmdParamInt::valid() {
+bool CmdParamInt::Valid() {
 	return true;
 }

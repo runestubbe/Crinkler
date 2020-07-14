@@ -7,12 +7,12 @@
 
 typedef std::pair<std::string, std::string> StringPair;
 
-std::string toUpper(const std::string& s);
-std::string toLower(const std::string& s);
-std::string stripPath(const std::string& s);
-std::string escapeHtml(const std::string& s);
-bool startsWith(const char* str, const char* start);
-bool endsWith(const char* str, const char* ending);
+std::string ToUpper(const std::string& s);
+std::string ToLower(const std::string& s);
+std::string StripPath(const std::string& s);
+std::string EscapeHtml(const std::string& s);
+bool StartsWith(const char* str, const char* start);
+bool EndsWith(const char* str, const char* ending);
 
-std::vector<std::string> intoLines(const char *data, int length);
+std::vector<std::string> IntoLines(const char *data, int length);
 #endif

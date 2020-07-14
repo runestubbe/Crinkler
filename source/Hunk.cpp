@@ -12,6 +12,34 @@
 
 using namespace std;
 
+
+// Sort symbols by address, then by type (section < global < local) and finally by name
+static bool SymbolComparator(Symbol* first, Symbol* second) {
+	if(first->value != second->value) {
+		return first->value < second->value;
+	} else if(first->hunk_offset != second->hunk_offset) {
+		return first->hunk_offset < second->hunk_offset;
+	} else {
+		if((first->flags & SYMBOL_IS_SECTION) != (second->flags & SYMBOL_IS_SECTION))
+			return (first->flags & SYMBOL_IS_SECTION) != 0;
+		if((first->flags & SYMBOL_IS_LOCAL) != (second->flags & SYMBOL_IS_LOCAL))
+			return (first->flags & SYMBOL_IS_LOCAL) == 0;
+		return first->name < second->name;
+	}
+}
+
+static int GetType(int level) {
+	switch(level) {
+		case 0:
+			return RECORD_SECTION;
+		case 1:
+			return RECORD_OLD_SECTION;
+		case 2:
+			return RECORD_PUBLIC;
+	}
+	return 0;
+}
+
 Hunk::Hunk(const Hunk& h) : 
 	m_alignmentBits(h.m_alignmentBits), m_flags(h.m_flags), m_data(h.m_data),
 	m_virtualsize(h.m_virtualsize), m_relocations(h.m_relocations), m_name(h.m_name),
@@ -33,7 +61,7 @@ Hunk::Hunk(const char* symbolName, const char* importName, const char* importDll
 	m_importDll(importDll), m_numReferences(0),
 	m_alignmentOffset(0), m_continuation(NULL)
 {
-	addSymbol(new Symbol(symbolName, 0, SYMBOL_IS_RELOCATEABLE, this));
+	AddSymbol(new Symbol(symbolName, 0, SYMBOL_IS_RELOCATEABLE, this));
 }
 
 
@@ -55,7 +83,7 @@ Hunk::~Hunk() {
 	}
 }
 
-void Hunk::addSymbol(Symbol* s) {
+void Hunk::AddSymbol(Symbol* s) {
 	map<string, Symbol*>::iterator it = m_symbols.find(s->name.c_str());
 	if(it == m_symbols.end()) {
 		m_symbols.insert(make_pair(s->name, s));
@@ -71,40 +99,25 @@ void Hunk::addSymbol(Symbol* s) {
 	}
 }
 
-void Hunk::addRelocation(Relocation r) {
+void Hunk::AddRelocation(Relocation r) {
 	assert(r.offset >= 0);
-	assert(r.offset <= getRawSize()-4);
+	assert(r.offset <= GetRawSize()-4);
 	m_relocations.push_back(r);
 }
 
-void Hunk::setContinuation(Symbol* s) {
+void Hunk::SetContinuation(Symbol* s) {
 	m_continuation = s;
 }
 
-Symbol* Hunk::getContinuation() const {
+Symbol* Hunk::GetContinuation() const {
 	return m_continuation;
 }
 
-const char* Hunk::getName() const {
+const char* Hunk::GetName() const {
 	return m_name.c_str();
 }
 
-// Sort symbols by address, then by type (section < global < local) and finally by name
-static bool symbolComparator(Symbol* first, Symbol* second) {
-	if(first->value != second->value) {
-		return first->value < second->value;
-	} else if(first->hunk_offset != second->hunk_offset) {
-		return first->hunk_offset < second->hunk_offset;
-	} else {
-		if((first->flags & SYMBOL_IS_SECTION) != (second->flags & SYMBOL_IS_SECTION))
-			return (first->flags & SYMBOL_IS_SECTION) != 0;
-		if((first->flags & SYMBOL_IS_LOCAL) != (second->flags & SYMBOL_IS_LOCAL))
-			return (first->flags & SYMBOL_IS_LOCAL) == 0;
-		return first->name < second->name;
-	}
-}
-
-void Hunk::printSymbols() const {
+void Hunk::PrintSymbols() const {
 	
 	// Extract relocatable symbols
 	vector<Symbol*> symbols;
@@ -114,7 +127,7 @@ void Hunk::printSymbols() const {
 	}
 
 	// Sort symbol by value
-	sort(symbols.begin(), symbols.end(), symbolComparator);
+	sort(symbols.begin(), symbols.end(), SymbolComparator);
 
 	for(Symbol* symbol : symbols) {
 		printf("%8x: %s\n", symbol->value, symbol->name.c_str());
@@ -122,20 +135,20 @@ void Hunk::printSymbols() const {
 }
 
 
-unsigned int Hunk::getFlags() const {
+unsigned int Hunk::GetFlags() const {
 	return m_flags;
 }
 
-Symbol* Hunk::findUndecoratedSymbol(const char* name) const {
+Symbol* Hunk::FindUndecoratedSymbol(const char* name) const {
 	for(const auto& p : m_symbols) {
 		Symbol* s = p.second;
-		if(undecorateSymbolName(s->name.c_str()).compare(name) == 0)
+		if(UndecorateSymbolName(s->name.c_str()).compare(name) == 0)
 			return s;
 	}
 	return NULL;
 }
 
-Symbol* Hunk::findSymbol(const char* name) const {
+Symbol* Hunk::FindSymbol(const char* name) const {
 	map<string, Symbol*>::const_iterator it = m_symbols.find(name);
 	if(it != m_symbols.end())
 		return it->second;
@@ -144,33 +157,33 @@ Symbol* Hunk::findSymbol(const char* name) const {
 }
 
 // Generate a help message based on the symbol name
-static string HelpMessage(const char* name) {
-	if(startsWith(name, "__RTC_")) {
+static const char* HelpMessage(const char* name) {
+	if(StartsWith(name, "__RTC_")) {
 		return "Disable 'Basic Runtime Checks' in the compiler options.";
-	} else if(startsWith(name, "__security_cookie")) {
+	} else if(StartsWith(name, "__security_cookie")) {
 		return "Disable 'Buffer Security Check' in the compiler options.";
-	} else if(startsWith(name, "_crt_debugger_hook") || startsWith(name, "___ImageBase")) {
+	} else if(StartsWith(name, "_crt_debugger_hook") || StartsWith(name, "___ImageBase")) {
 		return "Define your own entry point.";
-	} else if(startsWith(name, "__ftol")) {
+	} else if(StartsWith(name, "__ftol")) {
 		return "Suppress _ftol calls with the /QIfist compiler option (warning: changes rounding mode of float-to-int conversions).";
-	} else if(startsWith(name, "__Cxx")) {
+	} else if(StartsWith(name, "__Cxx")) {
 		return "Don't use exceptions.";
-	} else if(startsWith(name, "__imp_??1exception@std@")) {
+	} else if(StartsWith(name, "__imp_??1exception@std@")) {
 		return "Don't use STL.";
-	} else if(startsWith(name, "__alloca") || startsWith(name, "__chkstk")) {
+	} else if(StartsWith(name, "__alloca") || StartsWith(name, "__chkstk")) {
 		return "Avoid declaring large arrays or structs inside functions. Use global variables instead.";
 	}
 
-	return "";
+	return nullptr;
 }
 
-void Hunk::relocate(int imageBase) {
+void Hunk::Relocate(int imageBase) {
 	bool error = false;
 	for(const Relocation& relocation : m_relocations) {
 		// Find symbol
-		Symbol* s = findSymbol(relocation.symbolname.c_str());
+		Symbol* s = FindSymbol(relocation.symbolname.c_str());
 		if(s && s->secondaryName.size() > 0)
-			s = findSymbol(s->secondaryName.c_str());
+			s = FindSymbol(s->secondaryName.c_str());
 		if(s != NULL) {
 			// Perform relocation
 			int* word = (int*)&m_data[relocation.offset];
@@ -185,11 +198,11 @@ void Hunk::relocate(int imageBase) {
 					break;
 			}
 		} else {
-			string help = HelpMessage(relocation.symbolname.c_str());
-			if(help.empty()) {
-				Log::nonfatalError(relocation.objectname.c_str(), "Cannot find symbol '%s'", relocation.symbolname.c_str());
+			const char* helpMessage = HelpMessage(relocation.symbolname.c_str());
+			if(helpMessage) {
+				Log::NonfatalError(relocation.objectname.c_str(), "Cannot find symbol '%s'.\n * HINT: %s", relocation.symbolname.c_str(), helpMessage);
 			} else {
-				Log::nonfatalError(relocation.objectname.c_str(), "Cannot find symbol '%s'.\n * HINT: %s", relocation.symbolname.c_str(), help.c_str());
+				Log::NonfatalError(relocation.objectname.c_str(), "Cannot find symbol '%s'", relocation.symbolname.c_str());
 			}
 			error = true;
 		}
@@ -202,59 +215,59 @@ void Hunk::relocate(int imageBase) {
 	}
 }
 
-int Hunk::getAlignmentBits() const {
+int Hunk::GetAlignmentBits() const {
 	return m_alignmentBits;
 }
 
-int Hunk::getAlignmentOffset() const {
+int Hunk::GetAlignmentOffset() const {
 	return m_alignmentOffset;
 }
 
-char* Hunk::getPtr() {
+char* Hunk::GetPtr() {
 	if(!m_data.empty())
 		return &m_data[0];
 	else
 		return NULL;
 }
 
-int Hunk::getRawSize() const {
+int Hunk::GetRawSize() const {
 	return (int)m_data.size();
 }
 
-int Hunk::getVirtualSize() const {
+int Hunk::GetVirtualSize() const {
 	return m_virtualsize;
 }
 
-int Hunk::getNumReferences() const {
+int Hunk::GetNumReferences() const {
 	return m_numReferences;
 }
 
-const char* Hunk::getImportName() const {
+const char* Hunk::GetImportName() const {
 	return m_importName.c_str();
 }
 
-const char* Hunk::getImportDll() const {
+const char* Hunk::GetImportDll() const {
 	return m_importDll.c_str();
 }
 
-void Hunk::setVirtualSize(int size) {
+void Hunk::SetVirtualSize(int size) {
 	m_virtualsize = size;
 }
 
-void Hunk::setRawSize(int size) {
+void Hunk::SetRawSize(int size) {
 	m_data.resize(size);
 }
 
-void Hunk::setAlignmentBits(int alignmentBits) {
+void Hunk::SetAlignmentBits(int alignmentBits) {
 	m_alignmentBits = alignmentBits;
 	m_flags |= HUNK_IS_ALIGNED;
 }
 
-void Hunk::setAlignmentOffset(int alignmentOffset) {
+void Hunk::SetAlignmentOffset(int alignmentOffset) {
 	m_alignmentOffset = alignmentOffset;
 }
 
-void Hunk::trim() {
+void Hunk::Trim() {
 	int farestReloc = 0;
 	for(const Relocation& relocation : m_relocations) {
 		int relocSize = 4;
@@ -265,17 +278,12 @@ void Hunk::trim() {
 		m_data.pop_back();
 }
 
-void Hunk::appendZeroes(int num) {
+void Hunk::AppendZeroes(int num) {
 	while(num--)
 		m_data.push_back(0);
 }
 
-// Chop off x bytes from the initialized data
-void Hunk::chop(int size) {
-	m_data.erase((m_data.end()-size), m_data.end());
-}
-
-void Hunk::insert(int offset, const unsigned char* data, int size) {
+void Hunk::Insert(int offset, const unsigned char* data, int size) {
 	m_data.resize(m_data.size() + size);
 	memmove(&m_data[offset + size], &m_data[offset], m_data.size() - (offset + size));
 	memcpy(&m_data[offset], data, size);
@@ -290,19 +298,8 @@ void Hunk::insert(int offset, const unsigned char* data, int size) {
 	}
 }
 
-static int getType(int level) {
-	switch(level) {
-		case 0:
-			return RECORD_SECTION;
-		case 1:
-			return RECORD_OLD_SECTION;
-		case 2:
-			return RECORD_PUBLIC;
-	}
-	return 0;
-}
 
-CompressionReportRecord* Hunk::getCompressionSummary(int* sizefill, int splittingPoint) {
+CompressionReportRecord* Hunk::GetCompressionSummary(int* sizefill, int splittingPoint) {
 	vector<Symbol*> symbols;
 	// Extract relocatable symbols
 	for(const auto& p : m_symbols) {
@@ -311,12 +308,12 @@ CompressionReportRecord* Hunk::getCompressionSummary(int* sizefill, int splittin
 	}
 
 	// Sort symbols
-	sort(symbols.begin(), symbols.end(), symbolComparator);
+	sort(symbols.begin(), symbols.end(), SymbolComparator);
 
 	CompressionReportRecord* root = new CompressionReportRecord("root", RECORD_ROOT, 0, 0);
 	CompressionReportRecord* codeSection = new CompressionReportRecord("Code sections", RECORD_SECTION|RECORD_CODE, 0, 0);
 	CompressionReportRecord* dataSection = new CompressionReportRecord("Data sections", RECORD_SECTION, splittingPoint, sizefill[splittingPoint]);
-	CompressionReportRecord* uninitSection = new CompressionReportRecord("Uninitialized sections", RECORD_SECTION, getRawSize(), -1);
+	CompressionReportRecord* uninitSection = new CompressionReportRecord("Uninitialized sections", RECORD_SECTION, GetRawSize(), -1);
 	root->children.push_back(codeSection);
 	root->children.push_back(dataSection);
 	root->children.push_back(uninitSection);
@@ -324,7 +321,7 @@ CompressionReportRecord* Hunk::getCompressionSummary(int* sizefill, int splittin
 	for(vector<Symbol*>::iterator it = symbols.begin(); it != symbols.end(); it++) {
 		Symbol* sym = *it;
 		CompressionReportRecord* c = new CompressionReportRecord(sym->name.c_str(), 
-			0, sym->value, (sym->value < getRawSize()) ? sizefill[sym->value] : -1);
+			0, sym->value, (sym->value < GetRawSize()) ? sizefill[sym->value] : -1);
 
 		// Copy misc string
 		c->miscString = sym->miscString;
@@ -341,19 +338,19 @@ CompressionReportRecord* Hunk::getCompressionSummary(int* sizefill, int splittin
 		CompressionReportRecord* r;	// Parent section
 		if(sym->value < splittingPoint) {
 			r = codeSection;
-		} else if(sym->value < getRawSize()) {
+		} else if(sym->value < GetRawSize()) {
 			r = dataSection;
 		} else {
 			r = uninitSection;
 		}
 
 		// Find where to place the record
-		while(r->getLevel()+1 < c->getLevel()) {
+		while(r->GetLevel()+1 < c->GetLevel()) {
 			if(r->children.empty()) {	// Add a dummy element if we skip a level
-				int level = r->getLevel()+1;
+				int level = r->GetLevel()+1;
 				string name = c->pos == r->pos ? c->name : r->name;
 				CompressionReportRecord* dummy = new CompressionReportRecord(name.c_str(), 
-					getType(level)|RECORD_DUMMY, sym->value, (sym->value < getRawSize()) ? sizefill[sym->value] : -1);
+					GetType(level)|RECORD_DUMMY, sym->value, (sym->value < GetRawSize()) ? sizefill[sym->value] : -1);
 				if(level == 1)
 					dummy->miscString = ".dummy";
 				r->children.push_back(dummy);
@@ -364,14 +361,14 @@ CompressionReportRecord* Hunk::getCompressionSummary(int* sizefill, int splittin
 		bool less_than_next = (it + 1) == symbols.end() || sym->value < (*(it + 1))->value;
 
 		// Add public symbol to start of sections, if they don't have one already
-		if(sym->value < getRawSize() && (c->type & RECORD_OLD_SECTION) && less_than_next) {
+		if(sym->value < GetRawSize() && (c->type & RECORD_OLD_SECTION) && less_than_next) {
 			CompressionReportRecord* dummy = new CompressionReportRecord(c->name.c_str(), 
 				RECORD_PUBLIC|RECORD_DUMMY, sym->value, sizefill[sym->value]);
 			c->children.push_back(dummy);
 		}
 
 		// Add public symbol to start of sections, if they don't have one already
-		if(sym->value < getRawSize() && (c->type & RECORD_PUBLIC) && less_than_next) {
+		if(sym->value < GetRawSize() && (c->type & RECORD_PUBLIC) && less_than_next) {
 			CompressionReportRecord* dummy = new CompressionReportRecord(c->name.c_str(), 
 				RECORD_DUMMY, sym->value, sizefill[sym->value]);
 			c->children.push_back(dummy);
@@ -381,22 +378,22 @@ CompressionReportRecord* Hunk::getCompressionSummary(int* sizefill, int splittin
 		r->children.push_back(c);
 	}
 
-	root->calculateSize(m_virtualsize, sizefill[getRawSize()]);
+	root->CalculateSize(m_virtualsize, sizefill[GetRawSize()]);
 	return root;
 }
 
 
-void Hunk::setImportDll(const char* dll) {
+void Hunk::SetImportDll(const char* dll) {
 	m_importDll = dll;
 }
 
-map<int, Symbol*> Hunk::getOffsetToRelocationMap() {
+map<int, Symbol*> Hunk::GetOffsetToRelocationMap() {
 	map<int, Symbol*> offsetmap;
-	map<int, Symbol*> symbolmap = getOffsetToSymbolMap();
+	map<int, Symbol*> symbolmap = GetOffsetToSymbolMap();
 	for(Relocation& relocation : m_relocations) {
-		Symbol* s = findSymbol(relocation.symbolname.c_str());
+		Symbol* s = FindSymbol(relocation.symbolname.c_str());
 		if(s && s->secondaryName.size() > 0)
-			s = findSymbol(s->secondaryName.c_str());
+			s = FindSymbol(s->secondaryName.c_str());
 		if(s && s->flags & SYMBOL_IS_RELOCATEABLE && s->flags & SYMBOL_IS_SECTION)
 			s = symbolmap.find(s->value)->second;	// Replace relocation to section with non-section
 		offsetmap.insert(make_pair(relocation.offset, s));
@@ -404,7 +401,7 @@ map<int, Symbol*> Hunk::getOffsetToRelocationMap() {
 	return offsetmap;
 }
 
-map<int, Symbol*> Hunk::getOffsetToSymbolMap() {
+map<int, Symbol*> Hunk::GetOffsetToSymbolMap() {
 	map<int, Symbol*> offsetmap;
 	for(const auto& p : m_symbols) {
 		Symbol* s = p.second;
@@ -423,28 +420,28 @@ map<int, Symbol*> Hunk::getOffsetToSymbolMap() {
 // Default round float: tf_
 // Default round double: __real@XXXXXXXXXXXXXXXX, *@3NA
 // Round *tf_XX* to XX bits.
-void Hunk::roundFloats(int defaultBits) {
-	map<int, Symbol*> offset_to_symbol = getOffsetToSymbolMap();
+void Hunk::RoundFloats(int defaultBits) {
+	map<int, Symbol*> offset_to_symbol = GetOffsetToSymbolMap();
 	for(const auto& p : m_symbols) {
 		Symbol* s = p.second;
 		if(!(s->flags & SYMBOL_IS_RELOCATEABLE))
 			continue;
 
 		int bits = defaultBits;
-		string name = stripCrinklerSymbolPrefix(s->name.c_str());
-		string undecoratedName = undecorateSymbolName(s->name.c_str());
+		string name = StripCrinklerSymbolPrefix(s->name.c_str());
+		string undecoratedName = UndecorateSymbolName(s->name.c_str());
 		bool isDouble = false;
 		int a;
-		if(startsWith(undecoratedName.c_str(), "tf_")) {
-			isDouble = endsWith(name.c_str(), "NA");
+		if(StartsWith(undecoratedName.c_str(), "tf_")) {
+			isDouble = EndsWith(name.c_str(), "NA");
 		} else if(sscanf_s(undecoratedName.c_str(), "tf%d_", &bits) && bits >= 0 && bits <= 64) {
-			isDouble = endsWith(name.c_str(), "NA");
+			isDouble = EndsWith(name.c_str(), "NA");
 		} else if((sscanf_s(name.c_str(), "__real@%16X", &a) && name.size() == (2+4+1+16)) ||
-			endsWith(name.c_str(), "@3NA")) {
+			EndsWith(name.c_str(), "@3NA")) {
 			isDouble = true;
 			bits = defaultBits;
 		} else if((sscanf_s(name.c_str(), "__real@%8X", &a) && name.size() == (2+4+1+8)) ||
-			endsWith(name.c_str(), "@3MA")) {
+			EndsWith(name.c_str(), "@3MA")) {
 			bits = defaultBits;
 		} else {
 			continue;
@@ -458,7 +455,7 @@ void Hunk::roundFloats(int defaultBits) {
 		// and thus not get truncated. Just ignore it. It only happens to numbers with norm < 10^-38
 		int address = s->value;
 		int type_size = isDouble ? sizeof(double) : sizeof(float);
-		while(address >= 0 && address <= getRawSize()-type_size) {
+		while(address >= 0 && address <= GetRawSize()-type_size) {
 			for(int i = 1; i < type_size; i++) {
 				if(offset_to_symbol.find(address+i) != offset_to_symbol.end())
 					goto endit;
@@ -469,13 +466,13 @@ void Hunk::roundFloats(int defaultBits) {
 				double orgf = *(double*)ptr;
 				int orgi0 = ptr[0];
 				int orgi1 = ptr[1];
-				*(unsigned long long*)ptr = roundInt64(*(unsigned long long*)ptr, bits);
+				*(unsigned long long*)ptr = RoundInt64(*(unsigned long long*)ptr, bits);
 				printf("%s[%d]: %f (0x%.8X%.8X 64 bits) -> %f (0x%.8X%.8X %d bits)\n",
 					name.c_str(), address - s->value, orgf, orgi1, orgi0, *(double*)ptr, ptr[1], ptr[0], bits);
 			} else {
 				float orgf = *(float*)ptr;
 				int orgi = ptr[0];
-				ptr[0] = (int)roundInt64(ptr[0], 32+bits);
+				ptr[0] = (int)RoundInt64(ptr[0], 32+bits);
 				printf("%s[%d]: %f (0x%.8X 32 bits) -> %f (0x%.8X %d bits)\n",
 					name.c_str(), address - s->value, orgf, orgi, *(float*)ptr, ptr[0], bits);
 			}
@@ -488,11 +485,11 @@ endit:
 	}
 }
 
-void Hunk::overrideAlignment(int defaultBits) {
+void Hunk::OverrideAlignment(int defaultBits) {
 	bool align_label = false;
 	for(const auto& p : m_symbols) {
 		Symbol* s = p.second;
-		string sname = s->getUndecoratedName();
+		string sname = s->GetUndecoratedName();
 		size_t apos = sname.find("align");
 		if (apos != string::npos) {
 			int align_bits = 0;
@@ -501,15 +498,15 @@ void Hunk::overrideAlignment(int defaultBits) {
 			if (n >= 1) {
 				// Align label match
 				if (align_bits < 0 || align_bits > 30) {
-					Log::error("", "Alignment label '%s' outside legal range for number of bits (0-30)", sname.c_str());
+					Log::Error("", "Alignment label '%s' outside legal range for number of bits (0-30)", sname.c_str());
 				}
 				if (align_label) {
-					Log::error("", "More than one alignment label in section '%s'", getName());
+					Log::Error("", "More than one alignment label in section '%s'", GetName());
 				}
 				int offset = align_offset - s->value;
-				setAlignmentBits(align_bits);
-				setAlignmentOffset(offset);
-				printf("Alignment of section '%s' overridden to %d bits", getName(), align_bits);
+				SetAlignmentBits(align_bits);
+				SetAlignmentOffset(offset);
+				printf("Alignment of section '%s' overridden to %d bits", GetName(), align_bits);
 				if (offset > 0) printf(" + %d", offset);
 				if (offset < 0) printf(" - %d", -offset);
 				printf("\n");
@@ -518,26 +515,26 @@ void Hunk::overrideAlignment(int defaultBits) {
 		}
 	}
 
-	if (!align_label && defaultBits != -1 && defaultBits > getAlignmentBits() && !(m_flags & HUNK_IS_CODE) && getRawSize() == 0) {
+	if (!align_label && defaultBits != -1 && defaultBits > GetAlignmentBits() && !(m_flags & HUNK_IS_CODE) && GetRawSize() == 0) {
 		// Override uninitialized section alignment
-		setAlignmentBits(defaultBits);
-		printf("Alignment of section '%s' overridden to default %d bits\n", getName(), defaultBits);
+		SetAlignmentBits(defaultBits);
+		printf("Alignment of section '%s' overridden to default %d bits\n", GetName(), defaultBits);
 	}
 
 }
 
-void Hunk::markHunkAsLibrary() {
+void Hunk::MarkHunkAsLibrary() {
 	for(auto& p : m_symbols) {
 		p.second->fromLibrary = true;
 	}
 }
 
-const string& Hunk::getID() {
+const string& Hunk::GetID() {
 	if (m_cached_id.empty()) {
 		Symbol *first = nullptr;
 		for (auto s : m_symbols) {
 			if (!(s.second->flags & SYMBOL_IS_SECTION)) {
-				if (first == nullptr || symbolComparator(s.second, first)) {
+				if (first == nullptr || SymbolComparator(s.second, first)) {
 					first = s.second;
 				}
 			}
@@ -554,7 +551,7 @@ const string& Hunk::getID() {
 		else {
 			section_name = m_name;
 		}
-		m_cached_id = section_name + ":" + stripCrinklerSymbolPrefix(first->name.c_str());
+		m_cached_id = section_name + ":" + StripCrinklerSymbolPrefix(first->name.c_str());
 	}
 	return m_cached_id;
 }

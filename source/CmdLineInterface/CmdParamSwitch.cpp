@@ -4,11 +4,11 @@ CmdParamSwitch::CmdParamSwitch(const char* paramName, const char* description, i
 	m_value = false;
 }
 
-int CmdParamSwitch::parse(const char* str, char* errorMsg, int buffsize) {
+int CmdParamSwitch::Parse(const char* str, char* errorMsg, int buffsize) {
 	m_value = true;
 	return PARSE_OK;
 }
 
-bool CmdParamSwitch::getValue() const {
+bool CmdParamSwitch::GetValue() const {
 	return m_value;
 }

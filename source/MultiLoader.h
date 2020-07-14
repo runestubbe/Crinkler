@@ -11,8 +11,8 @@ public:
 	MultiLoader();
 	~MultiLoader();
 
-	bool clicks(const char* data, int size);
-	HunkList* load(const char* data, int size, const char* module);
+	bool		Clicks(const char* data, int size) const;
+	HunkList*	Load(const char* data, int size, const char* module);
 };
 
 #endif

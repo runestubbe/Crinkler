@@ -4,5 +4,5 @@ class HunkList;
 class Reuse;
 class ExplicitHunkSorter {
 public:
-	static void sortHunkList(HunkList* hunklist, Reuse *reuse);
+	static void SortHunkList(HunkList* hunklist, Reuse *reuse);
 };

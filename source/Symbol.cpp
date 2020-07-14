@@ -11,7 +11,7 @@ Symbol::Symbol(const char* name, int value, unsigned int flags, Hunk* hunk, cons
 		this->miscString = miscString;
 }
 
-std::string Symbol::getUndecoratedName() {
+std::string Symbol::GetUndecoratedName() const {
 	string str = name;
 	char buff[1024];
 	UnDecorateSymbolName(str.c_str(), buff, sizeof(buff), UNDNAME_COMPLETE | UNDNAME_32_BIT_DECODE);

@@ -17,18 +17,18 @@ MultiLoader::~MultiLoader() {
 		delete loader;
 }
 
-bool MultiLoader::clicks(const char* data, int size) {
+bool MultiLoader::Clicks(const char* data, int size) const {
 	for(HunkLoader* loader : m_loaders) {
-		if(loader->clicks(data, size))
+		if(loader->Clicks(data, size))
 			return true;
 	}
 	return false;
 }
 
-HunkList* MultiLoader::load(const char* data, int size, const char* module) {
+HunkList* MultiLoader::Load(const char* data, int size, const char* module) {
 	for(HunkLoader* loader : m_loaders) {
-		if(loader->clicks(data, size))
-			return loader->load(data, size, module);
+		if(loader->Clicks(data, size))
+			return loader->Load(data, size, module);
 	}
 	
 	return NULL;

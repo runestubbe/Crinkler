@@ -18,9 +18,9 @@ struct Weights;
 
 const int MAX_N_MODELS = 32;
 
-void updateWeights(Weights *w, int bit, bool saturate);
+void UpdateWeights(Weights *w, int bit, bool saturate);
 
-static int nextPowerOf2(int v) {
+static int NextPowerOf2(int v) {
 	v--;
 	v |= v >> 1;
 	v |= v >> 2;
@@ -38,7 +38,7 @@ HashBits ComputeHashBits(const unsigned char* d, int size, unsigned char* contex
 	out.bits.reserve(bitlength);
 	out.weights.resize(models.nmodels);
 
-	out.tinyhashsize = nextPowerOf2(length);
+	out.tinyhashsize = NextPowerOf2(length);
 
 	unsigned char* databuf = new unsigned char[size + MAX_CONTEXT_LENGTH];
 	unsigned char* data = databuf + MAX_CONTEXT_LENGTH;
@@ -48,7 +48,7 @@ HashBits ComputeHashBits(const unsigned char* d, int size, unsigned char* contex
 	unsigned int weightmasks[MAX_N_MODELS];
 	unsigned char masks[MAX_N_MODELS];
 	int nmodels = models.nmodels;
-	unsigned int w = models.getMaskList(masks, finish);
+	unsigned int w = models.GetMaskList(masks, finish);
 
 	int v = 0;
 	for (int n = 0; n < models.nmodels; n++) {
@@ -159,7 +159,7 @@ void CompressionStream::CompressFromHashBits(const HashBits& hashbits, TinyHashE
 
 		// Update models
 		for (int m = 0; m < nmodels; m++) {
-			updateWeights((Weights*)hashEntries[m]->prob, bit, m_saturate);
+			UpdateWeights((Weights*)hashEntries[m]->prob, bit, m_saturate);
 		}
 	}
 
@@ -186,7 +186,7 @@ int CompressionStream::EvaluateSize(const unsigned char* d, int size, const Mode
 	data += MAX_CONTEXT_LENGTH;
 	memcpy(data, d, size);
 
-	unsigned int tinyhashsize = nextPowerOf2(size*3/2);
+	unsigned int tinyhashsize = NextPowerOf2(size*3/2);
 	unsigned int tinyhashmask = tinyhashsize - 1u;
 	int* hash_positions = new int[tinyhashsize];
 	uint16_t* hash_counter_states = new uint16_t[tinyhashsize];

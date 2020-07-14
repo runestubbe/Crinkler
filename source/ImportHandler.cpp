@@ -17,7 +17,7 @@ using namespace std;
 
 const char *LoadDLL(const char *name);
 
-unsigned int RVAToFileOffset(const char* module, unsigned int rva)
+static unsigned int RVAToFileOffset(const char* module, unsigned int rva)
 {
 	const IMAGE_DOS_HEADER* pDH = (const PIMAGE_DOS_HEADER)module;
 	const IMAGE_NT_HEADERS32* pNTH = (const PIMAGE_NT_HEADERS32)(module + pDH->e_lfanew);
@@ -34,7 +34,7 @@ unsigned int RVAToFileOffset(const char* module, unsigned int rva)
 	return rva;
 }
 
-int getOrdinal(const char* function, const char* dll) {
+static int GetOrdinal(const char* function, const char* dll) {
 	const char* module = LoadDLL(dll);
 
 	const IMAGE_DOS_HEADER* dh = (const IMAGE_DOS_HEADER*)module;
@@ -52,12 +52,12 @@ int getOrdinal(const char* function, const char* dll) {
 		}
 	}
 
-	Log::error("", "Import '%s' cannot be found in '%s'", function, dll);
+	Log::Error("", "Import '%s' cannot be found in '%s'", function, dll);
 	return -1;
 }
 
 
-const char *getForwardRVA(const char* dll, const char* function) {
+static const char *GetForwardRVA(const char* dll, const char* function) {
 	const char* module = LoadDLL(dll);
 	const IMAGE_DOS_HEADER* pDH = (const PIMAGE_DOS_HEADER)module;
 	const IMAGE_NT_HEADERS32* pNTH = (const PIMAGE_NT_HEADERS32)(module + pDH->e_lfanew);
@@ -81,36 +81,36 @@ const char *getForwardRVA(const char* dll, const char* function) {
 		}
 	}
 
-	Log::error("", "Import '%s' cannot be found in '%s'", function, dll);
+	Log::Error("", "Import '%s' cannot be found in '%s'", function, dll);
 	return false;
 }
 
 
-bool importHunkRelation(const Hunk* h1, const Hunk* h2) {
+static bool ImportHunkRelation(const Hunk* h1, const Hunk* h2) {
 	// Sort by DLL name
-	if(strcmp(h1->getImportDll(), h2->getImportDll()) != 0) {
+	if(strcmp(h1->GetImportDll(), h2->GetImportDll()) != 0) {
 		// kernel32 always first
-		if(strcmp(h1->getImportDll(), "kernel32") == 0)
+		if(strcmp(h1->GetImportDll(), "kernel32") == 0)
 			return true;
-		if(strcmp(h2->getImportDll(), "kernel32") == 0)
+		if(strcmp(h2->GetImportDll(), "kernel32") == 0)
 			return false;
 
 		// Then user32, to ensure MessageBoxA@16 is ready when we need it
-		if(strcmp(h1->getImportDll(), "user32") == 0)
+		if(strcmp(h1->GetImportDll(), "user32") == 0)
 			return true;
-		if(strcmp(h2->getImportDll(), "user32") == 0)
+		if(strcmp(h2->GetImportDll(), "user32") == 0)
 			return false;
 
 
-		return strcmp(h1->getImportDll(), h2->getImportDll()) < 0;
+		return strcmp(h1->GetImportDll(), h2->GetImportDll()) < 0;
 	}
 
 	// Sort by ordinal
-	return getOrdinal(h1->getImportName(), h1->getImportDll()) < 
-		getOrdinal(h2->getImportName(), h2->getImportDll());
+	return GetOrdinal(h1->GetImportName(), h1->GetImportDll()) < 
+		GetOrdinal(h2->GetImportName(), h2->GetImportDll());
 }
 
-const int hashCode(const char* str) {
+static const int HashCode(const char* str) {
 	int code = 0;
 	char eax;
 	do {
@@ -123,177 +123,7 @@ const int hashCode(const char* str) {
 }
 
 
-Hunk* forwardImport(Hunk* hunk) {
-	do {
-		const char *forward = getForwardRVA(hunk->getImportDll(), hunk->getImportName());
-		if (forward == NULL) break;
-
-		string dllName, functionName;
-		int sep = int(strstr(forward, ".") - forward);
-		dllName.append(forward, sep);
-		dllName = toLower(dllName);
-		functionName.append(&forward[sep + 1], strlen(forward) - (sep + 1));
-		Log::warning("", "Import '%s' from '%s' uses forwarded RVA. Replaced by '%s' from '%s'",
-			hunk->getImportName(), hunk->getImportDll(), functionName.c_str(), dllName.c_str());
-		hunk = new Hunk(hunk->getName(), functionName.c_str(), dllName.c_str());
-	} while (true);
-	return hunk;
-}
-
-HunkList* ImportHandler::createImportHunks(HunkList* hunklist, Hunk*& hashHunk, map<string, string>& fallbackDlls, const vector<string>& rangeDlls, bool verbose, bool& enableRangeImport) {
-	if(verbose)
-		printf("\n-Imports----------------------------------\n");
-
-	vector<Hunk*> importHunks;
-	vector<bool> usedRangeDlls(rangeDlls.size());
-	set<string> usedFallbackDlls;
-
-	// Fill list for import hunks
-	enableRangeImport = false;
-	for(int i = 0; i <hunklist->getNumHunks(); i++) {
-		Hunk* hunk = (*hunklist)[i];
-		if(hunk->getFlags() & HUNK_IS_IMPORT) {
-			hunk = forwardImport(hunk);
-
-			// Is the DLL a range DLL?
-			for(int i = 0; i < (int)rangeDlls.size(); i++) {
-				if(toUpper(rangeDlls[i]) == toUpper(hunk->getImportDll())) {
-					usedRangeDlls[i] = true;
-					enableRangeImport = true;
-					break;
-				}
-			}
-			importHunks.push_back(hunk);
-		}
-	}
-
-	// Sort import hunks
-	sort(importHunks.begin(), importHunks.end(), importHunkRelation);
-
-	vector<unsigned int> hashes;
-	Hunk* importList = new Hunk("ImportListHunk", 0, HUNK_IS_WRITEABLE, 16, 0, 0);
-	char dllNames[1024] = {0};
-	char* dllNamesPtr = dllNames+1;
-	char* hashCounter = dllNames;
-	string currentDllName;
-	int pos = 0;
-	for(vector<Hunk*>::const_iterator it = importHunks.begin(); it != importHunks.end();) {
-		Hunk* importHunk = *it;
-		bool useRange = false;
-
-		// Is the DLL a range DLL?
-		for(int i = 0; i < (int)rangeDlls.size(); i++) {
-			if(toUpper(rangeDlls[i]) == toUpper(importHunk->getImportDll())) {
-				usedRangeDlls[i] = true;
-				useRange = true;
-				break;
-			}
-		}
-
-		// Skip non hashes
-		if(currentDllName.compare(importHunk->getImportDll()))
-		{
-			if(strcmp(importHunk->getImportDll(), "kernel32") != 0)
-			{
-				set<string> seen;
-				string dll = importHunk->getImportDll();
-				strcpy_s(dllNamesPtr, sizeof(dllNames)-(dllNamesPtr-dllNames), dll.c_str());
-				dllNamesPtr += dll.size() + 1;
-				while (fallbackDlls.count(dll) != 0) {
-					usedFallbackDlls.insert(dll);
-					seen.insert(dll);
-					*dllNamesPtr = 0;
-					dllNamesPtr += 1;
-					dll = fallbackDlls[dll];
-					strcpy_s(dllNamesPtr, sizeof(dllNames) - (dllNamesPtr - dllNames), dll.c_str());
-					dllNamesPtr += dll.size() + 1;
-					if (seen.count(dll) != 0) Log::error("", "Cyclic DLL fallback");
-				}
-				hashCounter = dllNamesPtr;
-				*hashCounter = 0;
-				dllNamesPtr += 1;
-			}
-
-
-			currentDllName = importHunk->getImportDll();
-			if(verbose)
-				printf("%s\n", currentDllName.c_str());
-		}
-
-		(*hashCounter)++;
-		int hashcode = hashCode(importHunk->getImportName());
-		hashes.push_back(hashcode);
-		int startOrdinal = getOrdinal(importHunk->getImportName(), importHunk->getImportDll());
-		int ordinal = startOrdinal;
-
-		// Add import
-		if(verbose) {
-			if(useRange)
-				printf("  ordinal range {\n  ");
-			printf("  %s (ordinal %d, hash %08X)\n", (*it)->getImportName(), startOrdinal, hashcode);
-		}
-
-		importList->addSymbol(new Symbol(importHunk->getName(), pos*4, SYMBOL_IS_RELOCATEABLE, importList));
-		it++;
-
-		while(useRange && it != importHunks.end() && currentDllName.compare((*it)->getImportDll()) == 0)	// Import the rest of the range
-		{
-			int o = getOrdinal((*it)->getImportName(), (*it)->getImportDll());
-			if(o - startOrdinal >= 254)
-				break;
-
-			if(verbose) {
-				printf("    %s (ordinal %d)\n", (*it)->getImportName(), o);
-			}
-
-			ordinal = o;
-			importList->addSymbol(new Symbol((*it)->getName(), (pos+ordinal-startOrdinal)*4, SYMBOL_IS_RELOCATEABLE, importList));
-			it++;
-		}
-
-		if(verbose && useRange)
-			printf("  }\n");
-
-		if(enableRangeImport)
-			*dllNamesPtr++ = ordinal - startOrdinal + 1;
-		pos += ordinal - startOrdinal + 1;
-	}
-	*dllNamesPtr++ = -1;
-
-	// Warn about unused range DLLs
-	for (int i = 0; i < (int)rangeDlls.size(); i++) {
-		if (!usedRangeDlls[i]) {
-			Log::warning("", "No functions were imported from range DLL '%s'", rangeDlls[i].c_str());
-		}
-	}
-
-	// Warn about unused fallback DLLs
-	for (auto fallback : fallbackDlls) {
-		if (usedFallbackDlls.count(fallback.first) == 0) {
-			Log::warning("", "No functions were imported from fallback DLL '%s'", fallback.first.c_str());
-		}
-	}
-
-	importList->setVirtualSize(pos*4);
-	importList->addSymbol(new Symbol("_ImportList", 0, SYMBOL_IS_RELOCATEABLE, importList));
-	importList->addSymbol(new Symbol(".bss", 0, SYMBOL_IS_RELOCATEABLE|SYMBOL_IS_SECTION, importList, "crinkler import"));
-
-	hashHunk = new Hunk("HashHunk", (char*)hashes.data(), 0, 0, int(hashes.size()*sizeof(unsigned int)), int(hashes.size()*sizeof(unsigned int)));
-	
-	// Create new hunklist
-	HunkList* newHunks = new HunkList;
-
-	newHunks->addHunkBack(importList);
-
-	Hunk* dllNamesHunk = new Hunk("DllNames", dllNames, HUNK_IS_WRITEABLE | HUNK_IS_LEADING, 0, int(dllNamesPtr - dllNames), int(dllNamesPtr - dllNames));
-	dllNamesHunk->addSymbol(new Symbol(".data", 0, SYMBOL_IS_RELOCATEABLE|SYMBOL_IS_SECTION, dllNamesHunk, "crinkler import"));
-	dllNamesHunk->addSymbol(new Symbol("_DLLNames", 0, SYMBOL_IS_RELOCATEABLE, dllNamesHunk));
-	newHunks->addHunkBack(dllNamesHunk);
-
-	return newHunks;
-}
-
-__forceinline unsigned int hashCode_1k(const char* str, int hash_multiplier, int hash_bits)
+__forceinline unsigned int HashCode1K(const char* str, int hash_multiplier, int hash_bits)
 {
 	int eax = 0;
 	unsigned char c;
@@ -308,7 +138,7 @@ __forceinline unsigned int hashCode_1k(const char* str, int hash_multiplier, int
 	return ((unsigned int)eax) >> (32 - hash_bits);
 }
 
-static bool solve_dll_order_constraints(std::vector<unsigned int>& constraints, unsigned int* new_order)
+static bool SolveDllOrderConstraints(std::vector<unsigned int>& constraints, unsigned int* new_order)
 {
 	if(constraints[0] > 1)	// kernel32 must be first. it can't have dependencies on anything else
 	{
@@ -381,7 +211,7 @@ static void AddKnownExportsForDll(std::vector<string>& exports, const char* dll_
 	}
 }
 
-static bool findCollisionFreeHash(vector<string>& dll_names, const vector<Hunk*>& importHunks, int& hash_multiplier, int& hash_bits)
+static bool FindCollisionFreeHash(vector<string>& dll_names, const vector<Hunk*>& importHunks, int& hash_multiplier, int& hash_bits)
 {
 	assert(dll_names.size() <= 32);
 
@@ -432,10 +262,10 @@ static bool findCollisionFreeHash(vector<string>& dll_names, const vector<Hunk*>
 
 		for(Hunk* importHunk : importHunks)
 		{
-			if(strcmp(dllname, importHunk->getImportDll()) == 0)
+			if(strcmp(dllname, importHunk->GetImportDll()) == 0)
 			{
 				// Mark those that are used
-				auto it = std::find(info.exports.begin(), info.exports.end(), importHunk->getImportName());
+				auto it = std::find(info.exports.begin(), info.exports.end(), importHunk->GetImportName());
 				
 				if(it != info.exports.end())
 				{
@@ -445,7 +275,7 @@ static bool findCollisionFreeHash(vector<string>& dll_names, const vector<Hunk*>
 				else
 				{
 					assert(false);
-					Log::error("", "Could not find '%s' in '%s'", importHunk->getImportName(), importHunk->getImportDll());
+					Log::Error("", "Could not find '%s' in '%s'", importHunk->GetImportName(), importHunk->GetImportDll());
 				}
 			}
 		}
@@ -502,7 +332,7 @@ static bool findCollisionFreeHash(vector<string>& dll_names, const vector<Hunk*>
 					int num_names = (int)dllinfo.exports.size();
 					for(int i = 0; i < num_names; i++)
 					{
-						unsigned int hashcode = hashCode_1k(dllinfo.exports[i].c_str(), hash_multiplier, num_bits);
+						unsigned int hashcode = HashCode1K(dllinfo.exports[i].c_str(), hash_multiplier, num_bits);
 						bool new_referenced = dllinfo.used[i];
 						bool old_referenced = buckets[hashcode].referenced_function_dll_index > 0;
 
@@ -544,7 +374,7 @@ static bool findCollisionFreeHash(vector<string>& dll_names, const vector<Hunk*>
 					}
 				}
 
-				if(!has_collisions && solve_dll_order_constraints(dll_constraints, &new_dll_order[0]))
+				if(!has_collisions && SolveDllOrderConstraints(dll_constraints, &new_dll_order[0]))
 				{
 					Concurrency::critical_section::scoped_lock l(cs);
 					if(num_bits < best_num_bits || high_byte < best_high_byte)
@@ -587,7 +417,177 @@ static bool findCollisionFreeHash(vector<string>& dll_names, const vector<Hunk*>
 	return true;
 }
 
-HunkList* ImportHandler::createImportHunks1K(HunkList* hunklist, bool verbose, int& hash_bits, int& max_dll_name_length) {
+static Hunk* ForwardImport(Hunk* hunk) {
+	do {
+		const char *forward = GetForwardRVA(hunk->GetImportDll(), hunk->GetImportName());
+		if (forward == NULL) break;
+
+		string dllName, functionName;
+		int sep = int(strstr(forward, ".") - forward);
+		dllName.append(forward, sep);
+		dllName = ToLower(dllName);
+		functionName.append(&forward[sep + 1], strlen(forward) - (sep + 1));
+		Log::Warning("", "Import '%s' from '%s' uses forwarded RVA. Replaced by '%s' from '%s'",
+			hunk->GetImportName(), hunk->GetImportDll(), functionName.c_str(), dllName.c_str());
+		hunk = new Hunk(hunk->GetName(), functionName.c_str(), dllName.c_str());
+	} while (true);
+	return hunk;
+}
+
+HunkList* ImportHandler::CreateImportHunks(HunkList* hunklist, Hunk*& hashHunk, map<string, string>& fallbackDlls, const vector<string>& rangeDlls, bool verbose, bool& enableRangeImport) {
+	if(verbose)
+		printf("\n-Imports----------------------------------\n");
+
+	vector<Hunk*> importHunks;
+	vector<bool> usedRangeDlls(rangeDlls.size());
+	set<string> usedFallbackDlls;
+
+	// Fill list for import hunks
+	enableRangeImport = false;
+	for(int i = 0; i <hunklist->GetNumHunks(); i++) {
+		Hunk* hunk = (*hunklist)[i];
+		if(hunk->GetFlags() & HUNK_IS_IMPORT) {
+			hunk = ForwardImport(hunk);
+
+			// Is the DLL a range DLL?
+			for(int i = 0; i < (int)rangeDlls.size(); i++) {
+				if(ToUpper(rangeDlls[i]) == ToUpper(hunk->GetImportDll())) {
+					usedRangeDlls[i] = true;
+					enableRangeImport = true;
+					break;
+				}
+			}
+			importHunks.push_back(hunk);
+		}
+	}
+
+	// Sort import hunks
+	sort(importHunks.begin(), importHunks.end(), ImportHunkRelation);
+
+	vector<unsigned int> hashes;
+	Hunk* importList = new Hunk("ImportListHunk", 0, HUNK_IS_WRITEABLE, 16, 0, 0);
+	char dllNames[1024] = {0};
+	char* dllNamesPtr = dllNames+1;
+	char* hashCounter = dllNames;
+	string currentDllName;
+	int pos = 0;
+	for(vector<Hunk*>::const_iterator it = importHunks.begin(); it != importHunks.end();) {
+		Hunk* importHunk = *it;
+		bool useRange = false;
+
+		// Is the DLL a range DLL?
+		for(int i = 0; i < (int)rangeDlls.size(); i++) {
+			if(ToUpper(rangeDlls[i]) == ToUpper(importHunk->GetImportDll())) {
+				usedRangeDlls[i] = true;
+				useRange = true;
+				break;
+			}
+		}
+
+		// Skip non hashes
+		if(currentDllName.compare(importHunk->GetImportDll()))
+		{
+			if(strcmp(importHunk->GetImportDll(), "kernel32") != 0)
+			{
+				set<string> seen;
+				string dll = importHunk->GetImportDll();
+				strcpy_s(dllNamesPtr, sizeof(dllNames)-(dllNamesPtr-dllNames), dll.c_str());
+				dllNamesPtr += dll.size() + 1;
+				while (fallbackDlls.count(dll) != 0) {
+					usedFallbackDlls.insert(dll);
+					seen.insert(dll);
+					*dllNamesPtr = 0;
+					dllNamesPtr += 1;
+					dll = fallbackDlls[dll];
+					strcpy_s(dllNamesPtr, sizeof(dllNames) - (dllNamesPtr - dllNames), dll.c_str());
+					dllNamesPtr += dll.size() + 1;
+					if (seen.count(dll) != 0) Log::Error("", "Cyclic DLL fallback");
+				}
+				hashCounter = dllNamesPtr;
+				*hashCounter = 0;
+				dllNamesPtr += 1;
+			}
+
+
+			currentDllName = importHunk->GetImportDll();
+			if(verbose)
+				printf("%s\n", currentDllName.c_str());
+		}
+
+		(*hashCounter)++;
+		int hashcode = HashCode(importHunk->GetImportName());
+		hashes.push_back(hashcode);
+		int startOrdinal = GetOrdinal(importHunk->GetImportName(), importHunk->GetImportDll());
+		int ordinal = startOrdinal;
+
+		// Add import
+		if(verbose) {
+			if(useRange)
+				printf("  ordinal range {\n  ");
+			printf("  %s (ordinal %d, hash %08X)\n", (*it)->GetImportName(), startOrdinal, hashcode);
+		}
+
+		importList->AddSymbol(new Symbol(importHunk->GetName(), pos*4, SYMBOL_IS_RELOCATEABLE, importList));
+		it++;
+
+		while(useRange && it != importHunks.end() && currentDllName.compare((*it)->GetImportDll()) == 0)	// Import the rest of the range
+		{
+			int o = GetOrdinal((*it)->GetImportName(), (*it)->GetImportDll());
+			if(o - startOrdinal >= 254)
+				break;
+
+			if(verbose) {
+				printf("    %s (ordinal %d)\n", (*it)->GetImportName(), o);
+			}
+
+			ordinal = o;
+			importList->AddSymbol(new Symbol((*it)->GetName(), (pos+ordinal-startOrdinal)*4, SYMBOL_IS_RELOCATEABLE, importList));
+			it++;
+		}
+
+		if(verbose && useRange)
+			printf("  }\n");
+
+		if(enableRangeImport)
+			*dllNamesPtr++ = ordinal - startOrdinal + 1;
+		pos += ordinal - startOrdinal + 1;
+	}
+	*dllNamesPtr++ = -1;
+
+	// Warn about unused range DLLs
+	for (int i = 0; i < (int)rangeDlls.size(); i++) {
+		if (!usedRangeDlls[i]) {
+			Log::Warning("", "No functions were imported from range DLL '%s'", rangeDlls[i].c_str());
+		}
+	}
+
+	// Warn about unused fallback DLLs
+	for (auto fallback : fallbackDlls) {
+		if (usedFallbackDlls.count(fallback.first) == 0) {
+			Log::Warning("", "No functions were imported from fallback DLL '%s'", fallback.first.c_str());
+		}
+	}
+
+	importList->SetVirtualSize(pos*4);
+	importList->AddSymbol(new Symbol("_ImportList", 0, SYMBOL_IS_RELOCATEABLE, importList));
+	importList->AddSymbol(new Symbol(".bss", 0, SYMBOL_IS_RELOCATEABLE|SYMBOL_IS_SECTION, importList, "crinkler import"));
+
+	hashHunk = new Hunk("HashHunk", (char*)hashes.data(), 0, 0, int(hashes.size()*sizeof(unsigned int)), int(hashes.size()*sizeof(unsigned int)));
+	
+	// Create new hunklist
+	HunkList* newHunks = new HunkList;
+
+	newHunks->AddHunkBack(importList);
+
+	Hunk* dllNamesHunk = new Hunk("DllNames", dllNames, HUNK_IS_WRITEABLE | HUNK_IS_LEADING, 0, int(dllNamesPtr - dllNames), int(dllNamesPtr - dllNames));
+	dllNamesHunk->AddSymbol(new Symbol(".data", 0, SYMBOL_IS_RELOCATEABLE|SYMBOL_IS_SECTION, dllNamesHunk, "crinkler import"));
+	dllNamesHunk->AddSymbol(new Symbol("_DLLNames", 0, SYMBOL_IS_RELOCATEABLE, dllNamesHunk));
+	newHunks->AddHunkBack(dllNamesHunk);
+
+	return newHunks;
+}
+
+HunkList* ImportHandler::CreateImportHunks1K(HunkList* hunklist, bool verbose, int& hash_bits, int& max_dll_name_length) {
 	if (verbose)
 	{
 		printf("\n-Imports----------------------------------\n");
@@ -599,31 +599,31 @@ HunkList* ImportHandler::createImportHunks1K(HunkList* hunklist, bool verbose, i
 	bool found_kernel32 = false;
 
 	// Fill list for import hunks
-	for(int i = 0; i < hunklist->getNumHunks(); i++)
+	for(int i = 0; i < hunklist->GetNumHunks(); i++)
 	{
 		Hunk* hunk = (*hunklist)[i];
-		if(hunk->getFlags() & HUNK_IS_IMPORT)
+		if(hunk->GetFlags() & HUNK_IS_IMPORT)
 		{
-			hunk = forwardImport(hunk);
-			if(strcmp(hunk->getImportDll(), "kernel32") == 0)
+			hunk = ForwardImport(hunk);
+			if(strcmp(hunk->GetImportDll(), "kernel32") == 0)
 			{
 				found_kernel32 = true;
 			}
-			dll_set.insert(hunk->getImportDll());
+			dll_set.insert(hunk->GetImportDll());
 			importHunks.push_back(hunk);
 		}
 	}
 
 	if(!found_kernel32)
 	{
-		Log::error("", "Kernel32 needs to be linked for import code to function.");
+		Log::Error("", "Kernel32 needs to be linked for import code to function.");
 	}
 
 	int hash_multiplier;
 	vector<string> dlls(dll_set.begin(), dll_set.end());
-	if (!findCollisionFreeHash(dlls, importHunks, hash_multiplier, hash_bits))
+	if (!FindCollisionFreeHash(dlls, importHunks, hash_multiplier, hash_bits))
 	{
-		Log::error("", "Could not find collision-free hash function");
+		Log::Error("", "Could not find collision-free hash function");
 	}
 
 	string dllnames;
@@ -648,12 +648,12 @@ HunkList* ImportHandler::createImportHunks1K(HunkList* hunklist, bool verbose, i
 	}
 	 
 	Hunk* importList = new Hunk("ImportListHunk", 0, HUNK_IS_WRITEABLE, 8, 0, 65536*256);
-	importList->addSymbol(new Symbol("_HashMultiplier", hash_multiplier, 0, importList));
-	importList->addSymbol(new Symbol("_ImportList", 0, SYMBOL_IS_RELOCATEABLE, importList));
+	importList->AddSymbol(new Symbol("_HashMultiplier", hash_multiplier, 0, importList));
+	importList->AddSymbol(new Symbol("_ImportList", 0, SYMBOL_IS_RELOCATEABLE, importList));
 	for(Hunk* importHunk : importHunks)
 	{
-		unsigned int hashcode = hashCode_1k(importHunk->getImportName(), hash_multiplier, hash_bits);
-		importList->addSymbol(new Symbol(importHunk->getName(), hashcode*4, SYMBOL_IS_RELOCATEABLE, importList));
+		unsigned int hashcode = HashCode1K(importHunk->GetImportName(), hash_multiplier, hash_bits);
+		importList->AddSymbol(new Symbol(importHunk->GetName(), hashcode*4, SYMBOL_IS_RELOCATEABLE, importList));
 	}
 
 	if(verbose)
@@ -664,10 +664,10 @@ HunkList* ImportHandler::createImportHunks1K(HunkList* hunklist, bool verbose, i
 				
 			for(Hunk* importHunk : importHunks)
 			{
-				if(strcmp(importHunk->getImportDll(), dllname.c_str()) == 0)
+				if(strcmp(importHunk->GetImportDll(), dllname.c_str()) == 0)
 				{
-					int ordinal = getOrdinal(importHunk->getImportName(), importHunk->getImportDll());
-					printf("  %s (ordinal %d)\n", importHunk->getImportName(), ordinal);
+					int ordinal = GetOrdinal(importHunk->GetImportName(), importHunk->GetImportDll());
+					printf("  %s (ordinal %d)\n", importHunk->GetImportName(), ordinal);
 				}
 			}
 		}
@@ -675,9 +675,9 @@ HunkList* ImportHandler::createImportHunks1K(HunkList* hunklist, bool verbose, i
 
 	HunkList* newHunks = new HunkList;
 	Hunk* dllNamesHunk = new Hunk("DllNames", dllnames.c_str(), HUNK_IS_WRITEABLE | HUNK_IS_LEADING, 0, (int)dllnames.size() + 1, (int)dllnames.size() + 1);
-	dllNamesHunk->addSymbol(new Symbol("_DLLNames", 0, SYMBOL_IS_RELOCATEABLE, dllNamesHunk));
-	newHunks->addHunkBack(dllNamesHunk);
-	newHunks->addHunkBack(importList);
+	dllNamesHunk->AddSymbol(new Symbol("_DLLNames", 0, SYMBOL_IS_RELOCATEABLE, dllNamesHunk));
+	newHunks->AddHunkBack(dllNamesHunk);
+	newHunks->AddHunkBack(importList);
 	max_dll_name_length = max_name_length;
 
 	printf(

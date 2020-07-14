@@ -7,8 +7,8 @@ class HunkList;
 
 class LTCGLoader : public HunkLoader {
 public:
-	virtual bool clicks(const char* data, int size);
-	virtual HunkList* load(const char* data, int size, const char* module);
+	virtual bool		Clicks(const char* data, int size) const;
+	virtual HunkList*	Load(const char* data, int size, const char* module);
 };
 
 #endif

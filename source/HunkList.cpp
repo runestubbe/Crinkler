@@ -31,19 +31,19 @@ Hunk* const & HunkList::operator[] (unsigned idx) const {
 	return m_hunks[idx];
 }
 
-void HunkList::addHunkBack(Hunk* hunk) {
+void HunkList::AddHunkBack(Hunk* hunk) {
 	m_hunks.push_back(hunk);
 }
 
-void HunkList::addHunkFront(Hunk* hunk) {
+void HunkList::AddHunkFront(Hunk* hunk) {
 	m_hunks.insert(m_hunks.begin(), hunk);
 }
 
-void HunkList::insertHunk(int index, Hunk* hunk) {
+void HunkList::InsertHunk(int index, Hunk* hunk) {
 	m_hunks.insert(m_hunks.begin() + index, hunk);
 }
 
-Hunk* HunkList::removeHunk(Hunk* hunk) {
+Hunk* HunkList::RemoveHunk(Hunk* hunk) {
 	vector<Hunk*>::iterator it = find(m_hunks.begin(), m_hunks.end(), hunk);
 	if(it != m_hunks.end())
 		m_hunks.erase(it);
@@ -51,29 +51,23 @@ Hunk* HunkList::removeHunk(Hunk* hunk) {
 }
 
 
-void HunkList::clear() {
+void HunkList::Clear() {
 	m_hunks.clear();
 }
 
-int HunkList::getNumHunks() const {
+int HunkList::GetNumHunks() const {
 	return (int)m_hunks.size();
 }
 
-void HunkList::setHunk(int index, Hunk* h) {
-	assert(index >= 0 && index < (int)m_hunks.size());
-	m_hunks[index] = h;
-}
-
-
-void HunkList::append(HunkList* hunklist) {
+void HunkList::Append(HunkList* hunklist) {
 	for(Hunk* hunk : hunklist->m_hunks) {
 		m_hunks.push_back(new Hunk(*hunk));
 	}
 }
 
-bool HunkList::needsContinuationJump(vector<Hunk*>::const_iterator &it) const {
+bool HunkList::NeedsContinuationJump(vector<Hunk*>::const_iterator &it) const {
 	Hunk *h = *it;
-	Symbol *cont = h->getContinuation();
+	Symbol *cont = h->GetContinuation();
 	if (cont != NULL) {
 		vector<Hunk*>::const_iterator next_it = it+1;
 		
@@ -84,7 +78,7 @@ bool HunkList::needsContinuationJump(vector<Hunk*>::const_iterator &it) const {
 }
 
 
-Hunk* HunkList::toHunk(const char* name, int baseAddress, int* splittingPoint) const {
+Hunk* HunkList::ToHunk(const char* name, int baseAddress, int* splittingPoint) const {
 	// Calculate raw size
 	int rawsize = 0;
 	int virtualsize = 0;
@@ -94,32 +88,32 @@ Hunk* HunkList::toHunk(const char* name, int baseAddress, int* splittingPoint) c
 	for(vector<Hunk*>::const_iterator it = m_hunks.begin(); it != m_hunks.end(); it++) {
 		Hunk* h = *it;
 		// Align
-		virtualsize += baseAddress - h->getAlignmentOffset();
-		virtualsize = align(virtualsize, h->getAlignmentBits());
-		virtualsize -= baseAddress - h->getAlignmentOffset();
+		virtualsize += baseAddress - h->GetAlignmentOffset();
+		virtualsize = Align(virtualsize, h->GetAlignmentBits());
+		virtualsize -= baseAddress - h->GetAlignmentOffset();
 		if (virtualsize < 0) { overflow = true; break; }
 
 		// Section contents
-		if(h->getRawSize() > 0)
-			rawsize = virtualsize + h->getRawSize();
-		virtualsize += h->getVirtualSize();
+		if(h->GetRawSize() > 0)
+			rawsize = virtualsize + h->GetRawSize();
+		virtualsize += h->GetVirtualSize();
 		if (virtualsize < 0) { overflow = true; break; }
-		if (needsContinuationJump(it)) {
+		if (NeedsContinuationJump(it)) {
 			rawsize += 5;
 			virtualsize = rawsize;
 		}
 		if (virtualsize < 0) { overflow = true; break; }
 
 		// Max alignment and flags
-		alignmentBits = max(alignmentBits, h->getAlignmentBits());
-		if(h->getFlags() & HUNK_IS_CODE)
+		alignmentBits = max(alignmentBits, h->GetAlignmentBits());
+		if(h->GetFlags() & HUNK_IS_CODE)
 			flags |= HUNK_IS_CODE;
-		if(h->getFlags() & HUNK_IS_WRITEABLE)
+		if(h->GetFlags() & HUNK_IS_WRITEABLE)
 			flags |= HUNK_IS_WRITEABLE;
 	}
 
 	if (overflow) {
-		Log::error("", "Virtual size overflows 2GB limit");
+		Log::Error("", "Virtual size overflows 2GB limit");
 	}
 
 	// Copy data
@@ -131,9 +125,9 @@ Hunk* HunkList::toHunk(const char* name, int baseAddress, int* splittingPoint) c
 	for(vector<Hunk*>::const_iterator it = m_hunks.begin(); it != m_hunks.end(); it++) {
 		Hunk* h = *it;
 		// Align
-		address += baseAddress - h->getAlignmentOffset();
-		address = align(address, h->getAlignmentBits());
-		address -= baseAddress - h->getAlignmentOffset();
+		address += baseAddress - h->GetAlignmentOffset();
+		address = Align(address, h->GetAlignmentBits());
+		address -= baseAddress - h->GetAlignmentOffset();
 
 		// Copy symbols
 		for(const auto& p :h->m_symbols) {
@@ -143,41 +137,41 @@ Hunk* HunkList::toHunk(const char* name, int baseAddress, int* splittingPoint) c
 				s->value += address;
 				s->hunk_offset = p.second->hunk_offset + address;
 			}
-			newHunk->addSymbol(s);
+			newHunk->AddSymbol(s);
 		}
 
 		// Copy relocations
 		for(Relocation relocation : h->m_relocations) {
 			relocation.offset += address;
-			newHunk->addRelocation(relocation);
+			newHunk->AddRelocation(relocation);
 		}
 
-		if(splittingPoint && *splittingPoint == -1 && !(h->getFlags() & HUNK_IS_CODE))
+		if(splittingPoint && *splittingPoint == -1 && !(h->GetFlags() & HUNK_IS_CODE))
 			*splittingPoint = address;
 
-		memcpy(&newHunk->getPtr()[address], h->getPtr(), h->getRawSize());
-		if (needsContinuationJump(it)) {
+		memcpy(&newHunk->GetPtr()[address], h->GetPtr(), h->GetRawSize());
+		if (NeedsContinuationJump(it)) {
 			unsigned char jumpCode[5] = {0xE9, 0x00, 0x00, 0x00, 0x00};
-			memcpy(&newHunk->getPtr()[address+h->getRawSize()], jumpCode, 5);
-			Relocation r = {h->getContinuation()->name.c_str(), address+h->getRawSize()+1, RELOCTYPE_REL32};
-			newHunk->addRelocation(r);
-			address += h->getRawSize()+5;
+			memcpy(&newHunk->GetPtr()[address+h->GetRawSize()], jumpCode, 5);
+			Relocation r = {h->GetContinuation()->name.c_str(), address+h->GetRawSize()+1, RELOCTYPE_REL32};
+			newHunk->AddRelocation(r);
+			address += h->GetRawSize()+5;
 		} else {
-			address += h->getVirtualSize();
+			address += h->GetVirtualSize();
 		}
 	}
-	newHunk->trim();
+	newHunk->Trim();
 
 	return newHunk;
 }
 
 
-Symbol* HunkList::findUndecoratedSymbol(const char* name) const {
+Symbol* HunkList::FindUndecoratedSymbol(const char* name) const {
 	// Weak libs (0) < weak (1) < libs (2) < normal (3)
 	int best_level = -1;
 	Symbol* res = NULL;
 	for(const Hunk* hunk : m_hunks) {
-		Symbol* s = hunk->findUndecoratedSymbol(name);
+		Symbol* s = hunk->FindUndecoratedSymbol(name);
 		if(s != NULL) {
 			int level = 0;
 			if(s->fromLibrary) {
@@ -204,10 +198,10 @@ Symbol* HunkList::findUndecoratedSymbol(const char* name) const {
 	return res;
 }
 
-Symbol* HunkList::findSymbol(const char* name) const {
+Symbol* HunkList::FindSymbol(const char* name) const {
 	Symbol* res = NULL;
 	for(Hunk* hunk : m_hunks) {
-		Symbol* s = hunk->findSymbol(name);
+		Symbol* s = hunk->FindSymbol(name);
 		if(s != NULL) {
 			if(s->secondaryName.size() == 0)
 				return s;
@@ -219,7 +213,7 @@ Symbol* HunkList::findSymbol(const char* name) const {
 	return res;
 }
 
-void HunkList::removeUnreferencedHunks(vector<Hunk*> startHunks) {
+void HunkList::RemoveUnreferencedHunks(vector<Hunk*> startHunks) {
 	stack<Hunk*> stak;
 	for(Hunk* hunk : startHunks) {
 		hunk->m_numReferences++;
@@ -232,12 +226,12 @@ void HunkList::removeUnreferencedHunks(vector<Hunk*> startHunks) {
 		stak.pop();
 
 		for(Relocation& relocation : h->m_relocations) {
-			Symbol* s = findSymbol(relocation.symbolname.c_str());
+			Symbol* s = FindSymbol(relocation.symbolname.c_str());
 			
 			if(s) {
 				if(s->secondaryName.size() > 0)	{	// Weak symbol
 					s->hunk->m_numReferences++;
-					s = findSymbol(s->secondaryName.c_str());
+					s = FindSymbol(s->secondaryName.c_str());
 					if(s == NULL)
 						continue;
 				}
@@ -250,7 +244,7 @@ void HunkList::removeUnreferencedHunks(vector<Hunk*> startHunks) {
 
 	// Delete unreferenced hunks
 	for(vector<Hunk*>::iterator it = m_hunks.begin(); it != m_hunks.end();) {
-		if((*it)->getNumReferences() == 0) {
+		if((*it)->GetNumReferences() == 0) {
 			delete *it;
 			it = m_hunks.erase(it);
 		} else {
@@ -259,10 +253,10 @@ void HunkList::removeUnreferencedHunks(vector<Hunk*> startHunks) {
 	}
 }
 
-void HunkList::removeImportHunks() {
+void HunkList::RemoveImportHunks() {
 	// Delete import hunks
 	for(vector<Hunk*>::iterator it = m_hunks.begin(); it != m_hunks.end();) {
-		if((*it)->getFlags() & HUNK_IS_IMPORT) {
+		if((*it)->GetFlags() & HUNK_IS_IMPORT) {
 			delete *it;
 			it = m_hunks.erase(it);
 		} else {
@@ -271,22 +265,22 @@ void HunkList::removeImportHunks() {
 	}
 }
 
-void HunkList::trim() {
+void HunkList::Trim() {
 	for(Hunk* hunk : m_hunks)
-		hunk->trim();
+		hunk->Trim();
 }
 
-void HunkList::printHunks() {
+void HunkList::PrintHunks() {
 	for (Hunk* hunk : m_hunks)
-		hunk->printSymbols();
+		hunk->PrintSymbols();
 }
 
-void HunkList::roundFloats(int defaultBits) {
+void HunkList::RoundFloats(int defaultBits) {
 	for (Hunk* hunk : m_hunks)
-		hunk->roundFloats(defaultBits);
+		hunk->RoundFloats(defaultBits);
 }
 
-void HunkList::markHunksAsLibrary() {
+void HunkList::MarkHunksAsLibrary() {
 	for (Hunk* hunk : m_hunks)
-		hunk->markHunkAsLibrary();
+		hunk->MarkHunkAsLibrary();
 }

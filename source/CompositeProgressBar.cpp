@@ -2,31 +2,31 @@
 
 using namespace std;
 
-void CompositeProgressBar::init() {
+void CompositeProgressBar::Init() {
 	for(ProgressBar* progressBar : m_progressBars)
-		progressBar->init();
+		progressBar->Init();
 }
 
-void CompositeProgressBar::deinit() {
+void CompositeProgressBar::Deinit() {
 	for (ProgressBar* progressBar : m_progressBars)
-		progressBar->deinit();
+		progressBar->Deinit();
 }
 
-void CompositeProgressBar::beginTask(const char* name) {
+void CompositeProgressBar::BeginTask(const char* name) {
 	for (ProgressBar* progressBar : m_progressBars)
-		progressBar->beginTask(name);
+		progressBar->BeginTask(name);
 }
 
-void CompositeProgressBar::endTask() {
+void CompositeProgressBar::EndTask() {
 	for (ProgressBar* progressBar : m_progressBars)
-		progressBar->endTask();
+		progressBar->EndTask();
 }
 
-void CompositeProgressBar::update(int n, int max) {
+void CompositeProgressBar::Update(int n, int max) {
 	for (ProgressBar* progressBar : m_progressBars)
-		progressBar->update(n, max);
+		progressBar->Update(n, max);
 }
 
-void CompositeProgressBar::addProgressBar(ProgressBar* progressBar) {
+void CompositeProgressBar::AddProgressBar(ProgressBar* progressBar) {
 	m_progressBars.push_back(progressBar);
 }
