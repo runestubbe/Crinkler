@@ -103,6 +103,8 @@ int EmpiricalHunkSorter::TryHunkCombination(HunkList* hunklist, Transform& trans
 
 int EmpiricalHunkSorter::SortHunkList(HunkList* hunklist, Transform& transform, ModelList& codeModels, ModelList& dataModels, ModelList1k& models1k, int baseprob, bool saturate, int numIterations, ProgressBar* progress, bool use1KMode, int* out_size1, int* out_size2)
 {
+	srand(1);
+
 	int nHunks = hunklist->GetNumHunks();
 	
 	printf("\n\nReordering sections...\n");
