@@ -36,4 +36,6 @@ int Compress1K(unsigned char* data, int size, unsigned char* compressed, int com
 
 const char *CompressionTypeName(CompressionType ct);
 
+void InitCompressor();
+
 #endif

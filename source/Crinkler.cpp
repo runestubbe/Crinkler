@@ -92,6 +92,8 @@ Crinkler::Crinkler():
 {
 	m_modellist1 = InstantModels();
 	m_modellist2 = InstantModels();
+
+	InitCompressor();
 }
 
 

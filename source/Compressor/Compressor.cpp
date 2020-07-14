@@ -7,6 +7,7 @@
 #include "ModelList.h"
 #include "AritCode.h"
 #include "Model.h"
+#include "CounterState.h"
 
 static const unsigned int MAX_N_MODELS = 21;
 static const unsigned int MAX_MODEL_WEIGHT = 9;
@@ -22,7 +23,7 @@ static const int NUM_1K_BOOST_FACTORS = MAX_1K_BOOST_FACTOR - MIN_1K_BOOST_FACTO
 
 BOOL APIENTRY DllMain( HANDLE, DWORD, LPVOID )
 {
-    return TRUE;
+	return TRUE;
 }
 
 static int NextPowerOf2(int v) {
@@ -797,3 +798,7 @@ ModelList1k ApproximateModels1k(const unsigned char* org_data, int datasize, int
 	return model;
 }
 
+void InitCompressor()
+{
+	InitCounterStates();
+}

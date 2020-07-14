@@ -8,7 +8,9 @@ struct CounterState
 	unsigned short next_state[2];
 };
 
-extern CounterState unsaturated_counter_states[];
-extern CounterState saturated_counter_states[];
+CounterState unsaturated_counter_states[];
+CounterState saturated_counter_states[];
+
+void InitCounterStates();
 
 #endif
