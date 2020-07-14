@@ -3,28 +3,28 @@
 using namespace std;
 
 void CompositeProgressBar::init() {
-	for(vector<ProgressBar*>::iterator it = m_progressBars.begin(); it != m_progressBars.end(); it++)
-		(*it)->init();
+	for(ProgressBar* progressBar : m_progressBars)
+		progressBar->init();
 }
 
 void CompositeProgressBar::deinit() {
-	for(vector<ProgressBar*>::iterator it = m_progressBars.begin(); it != m_progressBars.end(); it++)
-		(*it)->deinit();
+	for (ProgressBar* progressBar : m_progressBars)
+		progressBar->deinit();
 }
 
 void CompositeProgressBar::beginTask(const char* name) {
-	for(vector<ProgressBar*>::iterator it = m_progressBars.begin(); it != m_progressBars.end(); it++)
-		(*it)->beginTask(name);
+	for (ProgressBar* progressBar : m_progressBars)
+		progressBar->beginTask(name);
 }
 
 void CompositeProgressBar::endTask() {
-	for(vector<ProgressBar*>::iterator it = m_progressBars.begin(); it != m_progressBars.end(); it++)
-		(*it)->endTask();
+	for (ProgressBar* progressBar : m_progressBars)
+		progressBar->endTask();
 }
 
 void CompositeProgressBar::update(int n, int max) {
-	for(vector<ProgressBar*>::iterator it = m_progressBars.begin(); it != m_progressBars.end(); it++)
-		(*it)->update(n, max);
+	for (ProgressBar* progressBar : m_progressBars)
+		progressBar->update(n, max);
 }
 
 void CompositeProgressBar::addProgressBar(ProgressBar* progressBar) {

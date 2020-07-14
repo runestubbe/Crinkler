@@ -23,7 +23,7 @@ const int RECORD_SECTION =		0x02;
 const int RECORD_PUBLIC	=		0x04;
 const int RECORD_OLD_SECTION =	0x10;
 const int RECORD_CODE =			0x20;
-const int RECORD_DUMMY =		0x40;		//record is a dummy record not in the actual file
+const int RECORD_DUMMY =		0x40;		// Record is a dummy record not in the actual file
 
 struct CompressionReportRecord {
 	std::string name;
@@ -33,7 +33,7 @@ struct CompressionReportRecord {
 	std::vector<CompressionReportRecord*> children;
 	int size;
 	int compressedSize;
-	std::string miscString; //for holding extra textual information about the symbol e.g. a section name.
+	std::string miscString; // For holding extra textual information about the symbol e.g. a section name.
 
 	CompressionReportRecord(const char* name, int type, int pos, int compressedPos) {
 		this->name = name;
@@ -43,8 +43,8 @@ struct CompressionReportRecord {
 	}
 
 	~CompressionReportRecord() {
-		for(std::vector<CompressionReportRecord*>::iterator it = children.begin(); it != children.end(); it++)
-			delete *it;
+		for(CompressionReportRecord* record : children)
+			delete record;
 	}
 
 	void calculateSize(int size, int compressedSize) {
@@ -61,7 +61,7 @@ struct CompressionReportRecord {
 		}
 	}
 
-	//returns the level of the record. level 0: section, level 1: old section, level 2: public symbol, level 3: private symbol
+	// Returns the level of the record. Level 0: section. Level 1: old section. Level 2: public symbol. Level 3: private symbol.
 	int getLevel() {
 		if(type & RECORD_SECTION)
 			return 0;

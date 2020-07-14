@@ -59,7 +59,7 @@ void ModelList::print(FILE *f) const {
 	fprintf(f, "\n");
 }
 
-//copy a sorted modellist to masks and return the corresponding weightmask
+// Copy a sorted model list to masks and return the corresponding weight mask
 unsigned int ModelList::getMaskList(unsigned char* masks, bool terminate) const {
 	unsigned int weightmask = 0;
 	int nmodels = this->nmodels;
@@ -77,7 +77,7 @@ unsigned int ModelList::getMaskList(unsigned char* masks, bool terminate) const 
 		biti--;
 	}
 
-	//pad with ones
+	// Pad with ones
 	while (biti >= 0) {
 		weightmask |= 1 << biti;
 		biti--;
@@ -105,7 +105,7 @@ void ModelList::setFromModelsAndMask(const unsigned char* models, int weightmask
 }
 
 CompressionType ModelList::detectCompressionType() const {
-	// This ocde does not work, as FAST mode has a single
+	// This code does not work, as FAST mode has a single
 	// weight optimization at the end.
 	ModelList instant = InstantModels();
 	bool is_instant = true;

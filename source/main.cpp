@@ -47,7 +47,7 @@ static void findFileInPathInner(vector<string> &res, std::string path, const cha
 	}
 }
 
-//returns a list of found files in uppercase
+// Returns a list of found files in uppercase
 static vector<string> findFileInPath(const char* filename, const char* path_string, bool isDll) {
 	vector<string> res;
 	string str = path_string;
@@ -132,24 +132,24 @@ static bool runExecutable(const char* filename) {
 	memset(&piProcessInfo, 0, sizeof(piProcessInfo));
 	siStartupInfo.cb = sizeof(siStartupInfo);
 
-	if(!CreateProcess(filename,		//LPCSTR lpApplicationName
-		args,	//LPSTR lpCommandLine,
-		NULL,			//LPSECURITY_ATTRIBUTES lpProcessAttributes,
-		NULL,			//LPSECURITY_ATTRIBUTES lpThreadAttributes,
-		FALSE,			//BOOL bInheritHandles,
-		CREATE_DEFAULT_ERROR_MODE,//DWORD dwCreationFlags,
-		NULL,			//LPVOID lpEnvironment,
-		NULL,			//LPCSTR lpCurrentDirectory,
-		&siStartupInfo, //LPSTARTUPINFOA lpStartupInfo,
-		&piProcessInfo))//LPPROCESS_INFORMATION lpProcessInformation
+	if(!CreateProcess(filename,		// LPCSTR lpApplicationName
+		args,						// LPSTR lpCommandLine,
+		NULL,						// LPSECURITY_ATTRIBUTES lpProcessAttributes,
+		NULL,						// LPSECURITY_ATTRIBUTES lpThreadAttributes,
+		FALSE,						// BOOL bInheritHandles,
+		CREATE_DEFAULT_ERROR_MODE,	// DWORD dwCreationFlags,
+		NULL,						// LPVOID lpEnvironment,
+		NULL,						// LPCSTR lpCurrentDirectory,
+		&siStartupInfo,				// LPSTARTUPINFOA lpStartupInfo,
+		&piProcessInfo))			// LPPROCESS_INFORMATION lpProcessInformation
 	{
 		return false;
 	}
 
-	//Wait until application has terminated
+	// Wait until application has terminated
 	WaitForSingleObject(piProcessInfo.hProcess, INFINITE);
 
-	//Close process and thread handles
+	// Close process and thread handles
 	CloseHandle(piProcessInfo.hThread);
 	CloseHandle(piProcessInfo.hProcess);
 	return true;
@@ -168,8 +168,8 @@ static void runOriginalLinker(const char* linkerName) {
 	const char* needle = "Crinkler";
 	const int needleLength = (int)strlen(needle);
 
-	for(vector<string>::const_iterator it = res.begin(); it != res.end(); it++) {
-		MemoryFile mf(it->c_str());
+	for(const string& str : res) {
+		MemoryFile mf(str.c_str());
 		bool isCrinkler = false;
 		for(int i = 0; i < mf.getSize()-needleLength; i++) {
 			if(memcmp(mf.getPtr()+i, needle, needleLength) == 0) {
@@ -179,16 +179,16 @@ static void runOriginalLinker(const char* linkerName) {
 		}
 
 		if(!isCrinkler) {
-			//run linker
-			printf("Launching default linker at '%s'\n\n", it->c_str());
+			// Run linker
+			printf("Launching default linker at '%s'\n\n", str.c_str());
 			fflush(stdout);
-			if(!runExecutable(it->c_str()))
+			if(!runExecutable(str.c_str()))
 				Log::error("", "Failed to launch default linker, errorcode: %X", GetLastError());
 			return;
 		}
 	}
 
-	//Linker not found
+	// Linker not found
 	Log::error("", "Cannot find default linker '%s' in path", linkerName);
 }
 
@@ -196,7 +196,7 @@ const int TRANSFORM_CALLS = 0x01;
 int main(int argc, char* argv[]) {
 	int time1 = GetTickCount();
 
-	//find canonical name of the Crinkler executable
+	// Find canonical name of the Crinkler executable
 	char crinklerCanonicalName[1024];
 	{
 		char tmp[1024];
@@ -204,11 +204,11 @@ int main(int argc, char* argv[]) {
 		GetFullPathName(tmp, sizeof(crinklerCanonicalName), crinklerCanonicalName, NULL);
 	}
 
-	//EnableMiniDumps();
-	
+	// EnableMiniDumps();
+
 	string crinklerFilename = stripPath(crinklerCanonicalName);
 	
-	//cmdline parameters
+	// Command line parameters
 	CmdParamInt hashsizeArg("HASHSIZE", "number of megabytes for hashing", "size in mb", PARAM_SHOW_CONSTRAINTS,
 							1, 1000, 500);
 	CmdParamInt hashtriesArg("HASHTRIES", "number of hashing tries", "number of hashing tries", 0,
@@ -272,7 +272,7 @@ int main(int argc, char* argv[]) {
 						NULL);
 	
 
-	//print syntax?
+	// Print syntax?
 	if(!cmdline.setCmdParameters(argc, argv) || argc == 1) {
 		cmdline.printSyntax();
 		return 0;
@@ -281,18 +281,18 @@ int main(int argc, char* argv[]) {
 	cmdline.printHeader();
 	fflush(stdout);
 
-	//Run default linker or Crinkler?
+	// Run default linker or Crinkler?
 	if(!cmdline.removeToken("/CRINKLER") && toUpper(crinklerFilename).compare("CRINKLER.EXE") != 0) {
 		runOriginalLinker(crinklerFilename.c_str());
 		return 0;
 	}
 
-	//set priority
+	// Set priority
 	SetPriorityClass(GetCurrentProcess(), priorityArg.getValue());
 
 	Crinkler crinkler;
 
-	//recompress
+	// Recompress
 	if(cmdline.removeToken("/RECOMPRESS")) {
 		CmdLineInterface cmdline2(CRINKLER_TITLE, CMDI_PARSE_FILES);
 		outArg.setDefault("*dummy*");
@@ -360,7 +360,7 @@ int main(int argc, char* argv[]) {
 			}
 			printf("Report: %s\n", strlen(summaryArg.getValue()) > 0 ? summaryArg.getValue() : "NONE");
 
-			//replace dll
+			// Replace DLL
 			{
 				printf("Replace DLLs: ");
 				if (!replaceDllArg.hasNext())
@@ -422,7 +422,7 @@ int main(int argc, char* argv[]) {
 		transformArg.m_value = 0;
 	}
 
-	//set Crinkler options
+	// Set Crinkler options
 	crinkler.setUseTinyHeader(tinyHeader.getValue());
 	crinkler.setUseTinyImport(tinyImport.getValue());
 	crinkler.setImportingType(!unsafeImportArg.getValue());
@@ -449,7 +449,7 @@ int main(int argc, char* argv[]) {
 	parseExports(exportArg, crinkler);
 
 
-	//transforms
+	// Transforms
 	IdentityTransform identTransform;
 	CallTransform callTransform;
 	if(transformArg.getValue() & TRANSFORM_CALLS)
@@ -458,7 +458,7 @@ int main(int argc, char* argv[]) {
 		crinkler.setTransform(&identTransform);
 
 
-	//print some info
+	// Print some info
 	printf("Target: %s\n", outArg.getValue());
 	printf("Tiny compressor: %s\n", tinyHeader.getValue() ? "YES" : "NO");
 	printf("Tiny import: %s\n", tinyImport.getValue() ? "YES" : "NO");
@@ -479,7 +479,7 @@ int main(int argc, char* argv[]) {
 	printf("Report: %s\n", strlen(summaryArg.getValue()) > 0 ? summaryArg.getValue() : "NONE");
 	printf("Transforms: %s\n", (transformArg.getValue() & TRANSFORM_CALLS) ? "CALLS" : "NONE");
 
-	//replace dll
+	// Replace DLL
 	{
 		printf("Replace DLLs: ");
 		if(!replaceDllArg.hasNext())
@@ -497,7 +497,7 @@ int main(int argc, char* argv[]) {
 		printf("\n");
 	}
 
-	//fallback dll
+	// Fallback DLL
 	{
 		printf("Fallback DLLs: ");
 		if (!fallbackDllArg.hasNext())
@@ -515,7 +515,7 @@ int main(int argc, char* argv[]) {
 		printf("\n");
 	}
 
-	//range
+	// Range
 	{
 		printf("Range DLLs: ");
 		if(!rangeImportArg.hasNext())
@@ -533,7 +533,7 @@ int main(int argc, char* argv[]) {
 		printf("\n");
 	}
 
-	// exports
+	// Exports
 	{
 		printf("Exports:");
 		auto exports = crinkler.getExports();
@@ -547,7 +547,7 @@ int main(int argc, char* argv[]) {
 	}
 	printf("\n");
 
-	//build search library+object search path
+	// Build search path
 	string lib = "";
 	char drive[3] = "?:";
 	drive[0] = (char) (_getdrive()+'A'-1);
@@ -561,7 +561,7 @@ int main(int argc, char* argv[]) {
 	lib += ";" + getEnv("LIB");
 	lib += ";" + getEnv("PATH");
 	
-	//load files
+	// Load files
 	{
 		while(filesArg.hasNext()) {
 			const char* filename = filesArg.getValue();

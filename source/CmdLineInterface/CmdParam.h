@@ -4,17 +4,16 @@
 
 #include <string>
 
-const int PARAM_SHOW_CONSTRAINTS =				0x01;	//show parameter constraints in overview
-const int PARAM_IS_SWITCH =						0x02;	//indicates that the parameters starts with a '/'
-const int PARAM_TAKES_ARGUMENT =				0x04;	//parameter name should be followed by a ':'' and an argument ex. /VERBOSE:LABELS
-const int PARAM_FORBID_MULTIPLE_DEFINITIONS =	0x08;	//forbids multiple definitions of this parameter
-const int PARAM_HIDE_IN_PARAM_LIST =			0x10;	//hide parameter in parameter list
-const int PARAM_ALLOW_NO_ARGUMENT_DEFAULT =		0x20;	//allows a form where /FOO eq. /FOO:default
-const int PARAM_ALLOW_MISSING_VALUE =			0x40;   //allows missing = and value in multi assign
+const int PARAM_SHOW_CONSTRAINTS =				0x01;	// Show parameter constraints in overview
+const int PARAM_IS_SWITCH =						0x02;	// Indicate that the parameter starts with a '/'
+const int PARAM_TAKES_ARGUMENT =				0x04;	// Parameter name should be followed by a ':' and an argument e.g. /VERBOSE:LABELS
+const int PARAM_FORBID_MULTIPLE_DEFINITIONS =	0x08;	// Forbid multiple definitions of this parameter
+const int PARAM_HIDE_IN_PARAM_LIST =			0x10;	// Hide parameter in parameter list
+const int PARAM_ALLOW_NO_ARGUMENT_DEFAULT =		0x20;	// Allow omitting the value
+const int PARAM_ALLOW_MISSING_VALUE =			0x40;   // Allow missing '=' and value in multi assign
 
-const int PARSE_OK =							0x00;	//the parameter parsed successfully
-const int PARSE_NO_MATCH =						0x01;	//the input doesn't match this parameter
-const int PARSE_INVALID =						0x02;	//the input matches this parameter, but is invalid
+const int PARSE_OK =							0x00;	// The parameter parsed successfully
+const int PARSE_INVALID =						0x01;	// The input matches this parameter, but is invalid
 
 class CmdParam {
 	std::string m_parameterName;

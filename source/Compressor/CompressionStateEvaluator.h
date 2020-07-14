@@ -19,12 +19,12 @@ struct Weights {
 
 struct CompactPackage
 {
-	__m128i prob[NUM_PACKAGE_VECTORS];	//0..63: right, 64..127: total
+	__m128i prob[NUM_PACKAGE_VECTORS];	// 0..63: right, 64..127: total
 };
 
 struct Package
 {
-	__m128 prob[NUM_PACKAGE_VECTORS][2];	//right, total
+	__m128 prob[NUM_PACKAGE_VECTORS][2];	// right, total
 };
 
 struct ModelPredictions {

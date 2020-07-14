@@ -58,7 +58,7 @@ Crinkler::~Crinkler() {
 
 void Crinkler::replaceDlls(HunkList& hunklist) {
 	set<string> usedDlls;
-	//replace dll
+	// Replace DLL
 	for(int i = 0; i < hunklist.getNumHunks(); i++) {
 		Hunk* hunk = hunklist[i];
 		if(hunk->getFlags() & HUNK_IS_IMPORT) {
@@ -70,10 +70,10 @@ void Crinkler::replaceDlls(HunkList& hunklist) {
 		}
 	}
 
-	//warn about unused replace DLLs
-	for(map<string, string>::iterator it = m_replaceDlls.begin(); it != m_replaceDlls.end(); it++) {
-		if(usedDlls.find(it->first) == usedDlls.end()) {
-			Log::warning("", "No functions were imported from replaced dll '%s'", it->first.c_str());
+	// Warn about unused replace DLLs
+	for(const auto& p : m_replaceDlls) {
+		if(usedDlls.find(p.first) == usedDlls.end()) {
+			Log::warning("", "No functions were imported from replaced dll '%s'", p.first.c_str());
 		}
 	}
 }
@@ -116,7 +116,7 @@ std::string Crinkler::getEntrySymbolName() const {
 }
 
 Symbol*	Crinkler::findEntryPoint() {
-	//place entry point in the beginning
+	// Place entry point in the beginning
 	string entryName = getEntrySymbolName();
 	Symbol* entry = m_hunkPool.findUndecoratedSymbol(entryName.c_str());
 	if(entry == NULL) {
@@ -133,11 +133,11 @@ Symbol*	Crinkler::findEntryPoint() {
 
 void Crinkler::removeUnreferencedHunks(Hunk* base)
 {
-	//check dependencies and remove unused hunks
+	// Check dependencies and remove unused hunks
 	vector<Hunk*> startHunks;
 	startHunks.push_back(base);
 
-	//keep hold of exported symbols
+	// Keep hold of exported symbols
 	for (const Export& e : m_exports)  {
 		if (e.hasValue()) {
 			Symbol* sym = m_hunkPool.findSymbol(e.getName().c_str());
@@ -158,7 +158,7 @@ void Crinkler::removeUnreferencedHunks(Hunk* base)
 		}
 	}
 
-	//hack to ensure that LoadLibrary & MessageBox is there to be used in the import code
+	// Hack to ensure that LoadLibrary & MessageBox is there to be used in the import code
 	Symbol* loadLibrary = m_hunkPool.findSymbol("__imp__LoadLibraryA@4"); 
 	Symbol* messageBox = m_hunkPool.findSymbol("__imp__MessageBoxA@16");
 	Symbol* dynamicInitializers = m_hunkPool.findSymbol("__DynamicInitializers");
@@ -201,12 +201,12 @@ void verboseLabels(CompressionReportRecord* csr) {
 			printf(" %9d          %9d\n", csr->pos, csr->size);
 	}
 
-	for(vector<CompressionReportRecord*>::iterator it = csr->children.begin(); it != csr->children.end(); it++)
-		verboseLabels(*it);
+	for(CompressionReportRecord* record : csr->children)
+		verboseLabels(record);
 }
 
 void Crinkler::loadImportCode(bool use1kMode, bool useSafeImporting, bool useDllFallback, bool useRangeImport) {
-	//do imports
+	// Do imports
 	if (use1kMode){
 		load(import1KObj, int(import1KObj_end - import1KObj), "Crinkler import");
 	} else {
@@ -446,7 +446,7 @@ void Crinkler::recompress(const char* input_filename, const char* output_filenam
 
 	FILE* outfile = 0;
 	if (strcmp(input_filename, output_filename) != 0) {
-		//open output file now, just to be sure :)
+		// Open output file now, just to be sure
 		if(fopen_s(&outfile, output_filename, "wb")) {
 			Log::error("", "Cannot open '%s' for writing", output_filename);
 			return;
@@ -492,7 +492,7 @@ void Crinkler::recompress(const char* input_filename, const char* output_filenam
 			notCrinklerFileError();
 	}
 
-	//oops: 0.6 -> 1.0
+	// Oops: 0.6 -> 1.0
 	if (majorlv == '0' && minorlv == '6') {
 		majorlv = '1';
 		minorlv = '0';
@@ -748,7 +748,7 @@ void Crinkler::recompress(const char* input_filename, const char* output_filenam
 	CloseHandle(pi.hProcess);
 	CloseHandle(pi.hThread);
 
-	//patch calltrans code
+	// Patch calltrans code
 	int import_offset = 0;
 	if (rawdata[0] == 0x89 && rawdata[1] == 0xD7) { // MOV EDI, EDX
 		// Old calltrans code - convert to new
@@ -764,7 +764,7 @@ void Crinkler::recompress(const char* input_filename, const char* output_filenam
 		import_offset = 24;
 	}
 
-	//patch import code
+	// Patch import code
 	static const unsigned char old_import_code[] = {0x31, 0xC0, 0x64, 0x8B, 0x40, 0x30, 0x8B, 0x40, 
 													0x0C, 0x8B, 0x40, 0x1C, 0x8B, 0x40, 0x00, 0x8B,
 													0x68, 0x08};
@@ -793,7 +793,7 @@ void Crinkler::recompress(const char* input_filename, const char* output_filenam
 			dll_names_address = *(int*)&rawdata[i + 1];
 		}
 
-		if (memcmp(rawdata+i, old_import_code, sizeof(old_import_code)) == 0) {			//no calltrans
+		if (memcmp(rawdata+i, old_import_code, sizeof(old_import_code)) == 0) {			// No calltrans
 			memcpy(rawdata+i, new_import_code, sizeof(new_import_code));
 			printf("Import code successfully patched.\n");
 			found_import = true;
@@ -820,9 +820,10 @@ void Crinkler::recompress(const char* input_filename, const char* output_filenam
 		Log::error("", "Cannot find old import code to patch\n");
 	}
 
+	// Make the 1k report a little more readable
 	if(is_tiny_header && dll_names_address - CRINKLER_CODEBASE < splittingPoint)
 	{
-		splittingPoint = dll_names_address - CRINKLER_CODEBASE;	// makes the 1k report a little more readable
+		splittingPoint = dll_names_address - CRINKLER_CODEBASE;	
 	}
 
 	setUseTinyImport(is_tiny_import);
@@ -835,7 +836,7 @@ void Crinkler::recompress(const char* input_filename, const char* output_filenam
 		{
 			char* start_ptr = (char*)&rawdata[dll_names_address - CRINKLER_CODEBASE];
 			char* end_ptr = (char*)&rawdata[rawsize];
-			for(auto& kv : m_replaceDlls)
+			for(const auto& kv : m_replaceDlls)
 			{
 				char* pos = std::search(start_ptr, end_ptr, kv.first.begin(), kv.first.end());
 				if(pos != end_ptr)
@@ -975,7 +976,7 @@ void Crinkler::recompress(const char* input_filename, const char* output_filenam
 				best_hashsize = previousPrime(m_hashsize / 2) * 2;
 				initProgressBar();
 
-				//rehashing time
+				// Rehash
 				best_hashsize = optimizeHashsize((unsigned char*)phase1->getPtr(), phase1->getRawSize(), best_hashsize, splittingPoint, m_hashtries);
 				deinitProgressBar();
 			}
@@ -989,7 +990,7 @@ void Crinkler::recompress(const char* input_filename, const char* output_filenam
 				initProgressBar();
 				idealsize = estimateModels((unsigned char*)phase1->getPtr(), phase1->getRawSize(), splittingPoint, false, false, INT_MAX, INT_MAX);
 
-				//hashing time
+				// Hashing
 				best_hashsize = optimizeHashsize((unsigned char*)phase1->getPtr(), phase1->getRawSize(), best_hashsize, splittingPoint, m_hashtries);
 				deinitProgressBar();
 			}
@@ -1009,7 +1010,7 @@ void Crinkler::recompress(const char* input_filename, const char* output_filenam
 	}
 
 	if(is_compatibility_header)
-	{	//copy hashes from old header
+	{	// Copy hashes from old header
 		DWORD* new_header_ptr = (DWORD*)header->getPtr();
 		DWORD* old_header_ptr = (DWORD*)indata;
 
@@ -1024,7 +1025,7 @@ void Crinkler::recompress(const char* input_filename, const char* output_filenam
 	Hunk *hashHunk = nullptr;
 	if (!is_compatibility_header && !is_tiny_import)
 	{
-		//create hashes hunk
+		// Create hunk with hashes
 		int hashes_offset = hashes_address - CRINKLER_IMAGEBASE;
 		int hashes_bytes = is_tiny_header ? (compressed_data_rva - CRINKLER_IMAGEBASE - hashes_offset) : (models_offset - hashes_offset);
 		hashHunk = new Hunk("HashHunk", (char*)&indata[hashes_offset], 0, 0, hashes_bytes, hashes_bytes);
@@ -1113,11 +1114,11 @@ Hunk* Crinkler::createDynamicInitializerHunk()
 }
 
 void Crinkler::link(const char* filename) {
-	//open output file now, just to be sure :)
+	// Open output file immediate, just to be sure
 	FILE* outfile;
 	int old_filesize = 0;
 	if (!fopen_s(&outfile, filename, "rb")) {
-		//find old size
+		// Find old size
 		fseek(outfile, 0, SEEK_END);
 		old_filesize = ftell(outfile);
 		fclose(outfile);
@@ -1128,7 +1129,7 @@ void Crinkler::link(const char* filename) {
 	}
 
 
-	//find entry hunk and move it to front
+	// Find entry hunk and move it to front
 	Symbol* entry = findEntryPoint();
 	if(entry == NULL)
 		return;
@@ -1142,15 +1143,15 @@ void Crinkler::link(const char* filename) {
 		}
 	}
 
-	//color hunks from entry hunk
+	// Color hunks from entry hunk
 	removeUnreferencedHunks(entry->hunk);
 
-	//replace dlls
+	// Replace DLLs
 	replaceDlls(m_hunkPool);
 
 	if (m_overrideAlignments) overrideAlignments(m_hunkPool);
 
-	//1byte align entry point and other sections
+	// 1-byte align entry point and other sections
 	int n_unaligned = 0;
 	bool entry_point_unaligned = false;
 	if(entry->hunk->getAlignmentBits() > 0) {
@@ -1175,9 +1176,9 @@ void Crinkler::link(const char* filename) {
 		printf(".\n");
 	}
 
-	//load appropriate header
+	// Load appropriate header
 	HunkList* headerHunks = m_useTinyHeader ?	m_hunkLoader.load(header1KObj, int(header1KObj_end - header1KObj), "crinkler header") :
-										m_hunkLoader.load(headerObj, int(headerObj_end - headerObj), "crinkler header");
+												m_hunkLoader.load(headerObj, int(headerObj_end - headerObj), "crinkler header");
 
 	Hunk* header = headerHunks->findSymbol("_header")->hunk;
 	if(!m_useTinyHeader)
@@ -1187,7 +1188,7 @@ void Crinkler::link(const char* filename) {
 	int hash_bits;
 	int max_dll_name_length;
 	bool usesRangeImport=false;
-	{	//add imports
+	{	// Add imports
 		HunkList* importHunkList = m_useTinyImport ? ImportHandler::createImportHunks1K(&m_hunkPool, (m_printFlags & PRINT_IMPORTS) != 0, hash_bits, max_dll_name_length) :
 													ImportHandler::createImportHunks(&m_hunkPool, hashHunk, m_fallbackDlls, m_rangeDlls, (m_printFlags & PRINT_IMPORTS) != 0, usesRangeImport);
 		m_hunkPool.removeImportHunks();
@@ -1217,15 +1218,13 @@ void Crinkler::link(const char* filename) {
 	importHunk->addSymbol(new Symbol("_ImageBase", CRINKLER_IMAGEBASE, 0, importHunk));
 	importHunk->addSymbol(new Symbol("___ImageBase", CRINKLER_IMAGEBASE, 0, importHunk));
 
-
 	if(m_useTinyImport)
 	{
 		*(importHunk->getPtr() + importHunk->findSymbol("_HashShiftPtr")->value) = 32 - hash_bits;
 		*(importHunk->getPtr() + importHunk->findSymbol("_MaxNameLengthPtr")->value) = max_dll_name_length;
 	}
 
-
-	//truncate floats
+	// Truncate floats
 	if(m_truncateFloats) {
 		printf("\nTruncating floats:\n");
 		m_hunkPool.roundFloats(m_truncateBits);
@@ -1235,7 +1234,7 @@ void Crinkler::link(const char* filename) {
 		m_hunkPool.addHunkBack(createExportTable(m_exports));
 	}
 
-	//sort hunks heuristically
+	// Sort hunks heuristically
 	HeuristicHunkSorter::sortHunkList(&m_hunkPool);
 
 	int best_hashsize = previousPrime(m_hashsize / 2) * 2;
@@ -1254,7 +1253,7 @@ void Crinkler::link(const char* filename) {
 		}
 	}
 
-	//create phase 1 data hunk
+	// Create phase 1 data hunk
 	int splittingPoint;
 	Hunk* phase1, *phase1Untransformed;
 	m_hunkPool[0]->addSymbol(new Symbol("_HeaderHashes", CRINKLER_IMAGEBASE+header->getRawSize(), SYMBOL_IS_SECTION, m_hunkPool[0]));
@@ -1266,7 +1265,7 @@ void Crinkler::link(const char* filename) {
 		delete phase1Untransformed;
 		m_transform->linkAndTransform(&m_hunkPool, importSymbol, CRINKLER_CODEBASE, phase1, &phase1Untransformed, &splittingPoint, false);
 	}
-	int maxsize = phase1->getRawSize()*2+1000;	//allocate plenty of memory	
+	int maxsize = phase1->getRawSize()*2+1000;	// Allocate plenty of memory	
 	unsigned char* data = new unsigned char[maxsize];
 
 	if (reuseType == REUSE_IMPROVE && reuse != nullptr) {
@@ -1314,7 +1313,7 @@ void Crinkler::link(const char* filename) {
 				idealsize = estimateModels((unsigned char*)phase1->getPtr(), phase1->getRawSize(), splittingPoint, true, m_useTinyHeader, target_size1, target_size2);
 			}
 
-			//hashing time
+			// Hashing time
 			if (!m_useTinyHeader)
 			{
 				best_hashsize = previousPrime(m_hashsize / 2) * 2;
@@ -1423,7 +1422,7 @@ Hunk *Crinkler::finalLink(Hunk *header, Hunk *depacker, Hunk *hashHunk,
 	phase2list.addHunkBack(phase1Compressed);
 	Hunk* phase2 = phase2list.toHunk("final", CRINKLER_IMAGEBASE);
 
-	//add constants
+	// Add constants
 	int exports_rva = m_useTinyHeader || m_exports.empty() ? 0 : phase1->findSymbol("_ExportTable")->value + CRINKLER_CODEBASE - CRINKLER_IMAGEBASE;
 	setHeaderConstants(phase2, phase1, hashsize, m_modellist1k.boost, m_modellist1k.baseprob0, m_modellist1k.baseprob1, m_modellist1k.modelmask, m_subsystem == SUBSYSTEM_WINDOWS ? IMAGE_SUBSYSTEM_WINDOWS_GUI : IMAGE_SUBSYSTEM_WINDOWS_CUI, exports_rva, m_useTinyHeader);
 	phase2->relocate(CRINKLER_IMAGEBASE);
@@ -1465,17 +1464,16 @@ void Crinkler::printOptions(FILE *out) {
 	for(int i = 0; i < (int)m_rangeDlls.size(); i++) {
 		fprintf(out, " /RANGE:%s", m_rangeDlls[i].c_str());
 	}
-	for(map<string, string>::iterator it = m_replaceDlls.begin(); it != m_replaceDlls.end(); it++) {
-		fprintf(out, " /REPLACEDLL:%s=%s", it->first.c_str(), it->second.c_str());
+	for(const auto& p : m_replaceDlls) {
+		fprintf(out, " /REPLACEDLL:%s=%s", p.first.c_str(), p.second.c_str());
 	}
-	for (map<string, string>::iterator it = m_fallbackDlls.begin(); it != m_fallbackDlls.end(); it++) {
-		fprintf(out, " /FALLBACKDLL:%s=%s", it->first.c_str(), it->second.c_str());
+	for (const auto& p : m_fallbackDlls) {
+		fprintf(out, " /FALLBACKDLL:%s=%s", p.first.c_str(), p.second.c_str());
 	}
 	if (!m_useTinyHeader && !m_useSafeImporting) {
 		fprintf(out, " /UNSAFEIMPORT");
 	}
 	if (m_transform->getDetransformer() != NULL) {
-		// TODO: Make the transform tell its name properly
 		fprintf(out, " /TRANSFORM:CALLS");
 	}
 	if (m_truncateFloats) {

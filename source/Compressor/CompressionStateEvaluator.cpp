@@ -57,7 +57,6 @@ long long CompressionStateEvaluator::changeWeight(int modelIndex, int diffw) {
 	const int PACKAGES_PER_JOB = 64;
 	int num_jobs = (numPackages + PACKAGES_PER_JOB - 1) / PACKAGES_PER_JOB;
 
-	//for(int n = 0; n < length; n++)
 	concurrency::parallel_for(0, num_jobs, [&](int job)
 	{
 		int package_idx_base = job * PACKAGES_PER_JOB;
@@ -73,7 +72,7 @@ long long CompressionStateEvaluator::changeWeight(int modelIndex, int diffw) {
 		__m128 vhalf = _mm_set1_ps(0.5f);
 
 #if defined(USE_POLY4)
-		//-0.08213064886366, 0.32118884789690, -0.67778393289462, 
+		// -0.08213064886366, 0.32118884789690, -0.67778393289462, 
 		__m128 vc0 = _mm_set1_ps(1.43872573386137f);
 		__m128 vc1 = _mm_set1_ps(-0.67778393289462f);
 		__m128 vc2 = _mm_set1_ps(0.32118884789690f);
@@ -93,7 +92,6 @@ long long CompressionStateEvaluator::changeWeight(int modelIndex, int diffw) {
 		int64_t diffsize2 = 0;
 		for(int i = 0; i < PACKAGES_PER_JOB && package_idx_base + i < numPackages; i++)
 		{
-			//IACA_VC64_START
 			int package_idx = package_idx_base + i;
 			
 			int packageOffset = packageOffsets[package_idx];
@@ -139,7 +137,7 @@ long long CompressionStateEvaluator::changeWeight(int modelIndex, int diffw) {
 			
 #if defined(USE_POLY4)
 			// log2(x) approximation (a*(x-1)^2 + b*(x-1) + (1-a-b))*x
-			// guaranteed to be exact at the endpoints x=1 and x=2
+			// Exact at the endpoints x=1 and x=2
 			vright_log = _mm_sub_ps(vright_log, vone);
 			vright_log = _mm_mul_ps(_mm_add_ps(_mm_mul_ps(_mm_add_ps(_mm_mul_ps(_mm_add_ps(_mm_mul_ps(vc3, vright_log), vc2), vright_log), vc1), vright_log), vc0), vright_log);
 
@@ -150,7 +148,7 @@ long long CompressionStateEvaluator::changeWeight(int modelIndex, int diffw) {
 			__m128i vnewsize = _mm_add_epi32(_mm_slli_epi32(_mm_sub_epi32(viprod_total_exponent, viprod_right_exponent), BITPREC_TABLE_BITS + EXTRA_BITS), vifrac_bits);
 #elif defined(USE_POLY3)
 			// log2(x) approximation (a*(x-1)^2 + b*(x-1) + (1-a-b))*x
-			// guaranteed to be exact at the endpoints x=1 and x=2
+			// Exact at the endpoints x=1 and x=2
 			vright_log = _mm_sub_ps(vright_log, vone);
 			vright_log = _mm_mul_ps(_mm_add_ps(_mm_mul_ps(_mm_add_ps(_mm_mul_ps(vc2, vright_log), vc1), vright_log), vc0), vright_log);
 
@@ -176,7 +174,6 @@ long long CompressionStateEvaluator::changeWeight(int modelIndex, int diffw) {
 			int oldsize = packageSizes[packageOffset];
 			packageSizes[packageOffset] = newsize;
 			diffsize2 += newsize - oldsize;
-			//IACA_VC64_END
 		}
 
 		diffsize.local() += diffsize2 / (1 << EXTRA_BITS);
@@ -204,5 +201,5 @@ long long CompressionStateEvaluator::evaluate(const ModelList& ml) {
 		}
 	
 	}
-	return m_compressedSize;	// compressed size including model cost
+	return m_compressedSize;	// Compressed size including model cost
 }

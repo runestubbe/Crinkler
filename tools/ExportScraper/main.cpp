@@ -89,12 +89,12 @@ int main(int argc, const char* argv[])
 			header.export_name_offset_table = symbol_table.size() * sizeof(int);
 			headers.push_back(header);
 
-			// add filename to pool
+			// add file name to pool
 			std::string filename = ffd.cFileName;
 			std::copy(filename.begin(), filename.end(), back_inserter(string_pool));
 			string_pool.push_back(0);
 
-			// add dll names to pool
+			// add DLL names to pool
 			for (std::string str : symbols)
 			{
 				symbol_table.push_back(string_pool.size());

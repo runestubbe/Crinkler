@@ -18,11 +18,11 @@ Hunk::Hunk(const Hunk& h) :
 	m_importName(h.m_importName), m_importDll(h.m_importDll), m_numReferences(0),
 	m_alignmentOffset(0), m_continuation(NULL)
 {
-	//deep copy symbols
-	for(map<std::string, Symbol*>::const_iterator it = h.m_symbols.begin(); it != h.m_symbols.end(); it++) {
-		Symbol* s = new Symbol(*it->second);
+	// Deep copy symbols
+	for(const auto& p : h.m_symbols) {
+		Symbol* s = new Symbol(*p.second);
 		s->hunk = this;
-		m_symbols[it->second->name] = s;
+		m_symbols[p.second->name] = s;
 	}
 }
 
@@ -49,9 +49,9 @@ Hunk::Hunk(const char* name, const char* data, unsigned int flags, int alignment
 
 
 Hunk::~Hunk() {
-	//free symbols
-	for(map<std::string, Symbol*>::iterator it = m_symbols.begin(); it != m_symbols.end(); it++) {
-		delete it->second;
+	// Free symbols
+	for(auto& p : m_symbols) {
+		delete p.second;
 	}
 }
 
@@ -62,7 +62,7 @@ void Hunk::addSymbol(Symbol* s) {
 	} else {
 		Symbol* oldSym = it->second;
 		if(oldSym->secondaryName.size() > 0) {
-			//overwrite weak symbols
+			// Overwrite weak symbols
 			m_symbols[s->name.c_str()] = s;
 			delete oldSym;
 		} else {
@@ -89,7 +89,7 @@ const char* Hunk::getName() const {
 	return m_name.c_str();
 }
 
-//sort symbols by address, then by type (section < global < local) and finally by name
+// Sort symbols by address, then by type (section < global < local) and finally by name
 static bool symbolComparator(Symbol* first, Symbol* second) {
 	if(first->value != second->value) {
 		return first->value < second->value;
@@ -104,21 +104,20 @@ static bool symbolComparator(Symbol* first, Symbol* second) {
 	}
 }
 
-
 void Hunk::printSymbols() const {
+	
+	// Extract relocatable symbols
 	vector<Symbol*> symbols;
-	//extract relocatable symbols
-	for(map<string, Symbol*>::const_iterator it = m_symbols.begin(); it != m_symbols.end(); it++) {
-		if(it->second->flags & SYMBOL_IS_RELOCATEABLE)
-			symbols.push_back(it->second);
+	for(const auto& p : m_symbols) {
+		if(p.second->flags & SYMBOL_IS_RELOCATEABLE)
+			symbols.push_back(p.second);
 	}
 
-	//sort symbol by value
+	// Sort symbol by value
 	sort(symbols.begin(), symbols.end(), symbolComparator);
 
-	//print symbol ordered symbols
-	for(vector<Symbol*>::const_iterator it = symbols.begin(); it != symbols.end(); it++) {
-		printf("%8x: %s\n", (*it)->value, (*it)->name.c_str());
+	for(Symbol* symbol : symbols) {
+		printf("%8x: %s\n", symbol->value, symbol->name.c_str());
 	}
 }
 
@@ -128,8 +127,8 @@ unsigned int Hunk::getFlags() const {
 }
 
 Symbol* Hunk::findUndecoratedSymbol(const char* name) const {
-	for(map<string, Symbol*>::const_iterator it = m_symbols.begin(); it != m_symbols.end(); it++) {
-		Symbol* s = it->second;
+	for(const auto& p : m_symbols) {
+		Symbol* s = p.second;
 		if(undecorateSymbolName(s->name.c_str()).compare(name) == 0)
 			return s;
 	}
@@ -144,7 +143,7 @@ Symbol* Hunk::findSymbol(const char* name) const {
 		return NULL;
 }
 
-//generates a help message based on the symbol name
+// Generate a help message based on the symbol name
 static string HelpMessage(const char* name) {
 	if(startsWith(name, "__RTC_")) {
 		return "Disable 'Basic Runtime Checks' in the compiler options.";
@@ -167,32 +166,30 @@ static string HelpMessage(const char* name) {
 
 void Hunk::relocate(int imageBase) {
 	bool error = false;
-	for(vector<Relocation>::const_iterator it = m_relocations.begin(); it != m_relocations.end(); it++) {
-		Relocation r = *it;
-
-		//find symbol
-		Symbol* s = findSymbol(r.symbolname.c_str());
+	for(const Relocation& relocation : m_relocations) {
+		// Find symbol
+		Symbol* s = findSymbol(relocation.symbolname.c_str());
 		if(s && s->secondaryName.size() > 0)
 			s = findSymbol(s->secondaryName.c_str());
 		if(s != NULL) {
-			//perform relocation
-			int* word = (int*)&m_data[r.offset];
-			switch(r.type) {
+			// Perform relocation
+			int* word = (int*)&m_data[relocation.offset];
+			switch(relocation.type) {
 				case RELOCTYPE_ABS32:
 					(*word) += s->value;
 					if(s->flags & SYMBOL_IS_RELOCATEABLE)
 						(*word) += imageBase;
 					break;
 				case RELOCTYPE_REL32:
-					(*word) += s->value - r.offset - 4;
+					(*word) += s->value - relocation.offset - 4;
 					break;
 			}
 		} else {
-			string help = HelpMessage(r.symbolname.c_str());
+			string help = HelpMessage(relocation.symbolname.c_str());
 			if(help.empty()) {
-				Log::nonfatalError(r.objectname.c_str(), "Cannot find symbol '%s'", r.symbolname.c_str());
+				Log::nonfatalError(relocation.objectname.c_str(), "Cannot find symbol '%s'", relocation.symbolname.c_str());
 			} else {
-				Log::nonfatalError(r.objectname.c_str(), "Cannot find symbol '%s'.\n * HINT: %s", r.symbolname.c_str(), help.c_str());
+				Log::nonfatalError(relocation.objectname.c_str(), "Cannot find symbol '%s'.\n * HINT: %s", relocation.symbolname.c_str(), help.c_str());
 			}
 			error = true;
 		}
@@ -259,9 +256,9 @@ void Hunk::setAlignmentOffset(int alignmentOffset) {
 
 void Hunk::trim() {
 	int farestReloc = 0;
-	for(vector<Relocation>::const_iterator it = m_relocations.begin(); it != m_relocations.end(); it++) {
+	for(const Relocation& relocation : m_relocations) {
 		int relocSize = 4;
-		farestReloc = max(it->offset+relocSize, farestReloc);
+		farestReloc = max(relocation.offset+relocSize, farestReloc);
 	}
 
 	while((int)m_data.size() > farestReloc && m_data.back() == 0)
@@ -273,7 +270,7 @@ void Hunk::appendZeroes(int num) {
 		m_data.push_back(0);
 }
 
-//chop of x bytes from the initialized data
+// Chop off x bytes from the initialized data
 void Hunk::chop(int size) {
 	m_data.erase((m_data.end()-size), m_data.end());
 }
@@ -285,11 +282,11 @@ void Hunk::insert(int offset, const unsigned char* data, int size) {
 	m_virtualsize += size;
 
 	// Adjust symbols and relocations
-	for (map<string, Symbol*>::iterator it = m_symbols.begin(); it != m_symbols.end(); it++) {
-		if (it->second->flags & SYMBOL_IS_RELOCATEABLE && it->second->value >= offset) it->second->value += size;
+	for (auto& p : m_symbols) {
+		if (p.second->flags & SYMBOL_IS_RELOCATEABLE && p.second->value >= offset) p.second->value += size;
 	}
-	for (vector<Relocation>::iterator it = m_relocations.begin(); it != m_relocations.end(); it++) {
-		if (it->offset >= offset) it->offset += size;
+	for (Relocation& relocation : m_relocations) {
+		if (relocation.offset >= offset) relocation.offset += size;
 	}
 }
 
@@ -307,13 +304,13 @@ static int getType(int level) {
 
 CompressionReportRecord* Hunk::getCompressionSummary(int* sizefill, int splittingPoint) {
 	vector<Symbol*> symbols;
-	//extract relocatable symbols
-	for(map<string, Symbol*>::const_iterator it = m_symbols.begin(); it != m_symbols.end(); it++) {
-		if(it->second->flags & SYMBOL_IS_RELOCATEABLE)
-			symbols.push_back(it->second);
+	// Extract relocatable symbols
+	for(const auto& p : m_symbols) {
+		if(p.second->flags & SYMBOL_IS_RELOCATEABLE)
+			symbols.push_back(p.second);
 	}
 
-	//sort symbols
+	// Sort symbols
 	sort(symbols.begin(), symbols.end(), symbolComparator);
 
 	CompressionReportRecord* root = new CompressionReportRecord("root", RECORD_ROOT, 0, 0);
@@ -329,10 +326,10 @@ CompressionReportRecord* Hunk::getCompressionSummary(int* sizefill, int splittin
 		CompressionReportRecord* c = new CompressionReportRecord(sym->name.c_str(), 
 			0, sym->value, (sym->value < getRawSize()) ? sizefill[sym->value] : -1);
 
-		//copy misc string
+		// Copy misc string
 		c->miscString = sym->miscString;
 
-		//set flags
+		// Set flags
 		if(sym->flags & SYMBOL_IS_SECTION) {
 			c->type |= RECORD_OLD_SECTION;
 		}
@@ -340,8 +337,8 @@ CompressionReportRecord* Hunk::getCompressionSummary(int* sizefill, int splittin
 			c->type |= RECORD_PUBLIC;
 		}
 
-		//find appropriate section
-		CompressionReportRecord* r;	//parent section
+		// Find appropriate section
+		CompressionReportRecord* r;	// Parent section
 		if(sym->value < splittingPoint) {
 			r = codeSection;
 		} else if(sym->value < getRawSize()) {
@@ -350,9 +347,9 @@ CompressionReportRecord* Hunk::getCompressionSummary(int* sizefill, int splittin
 			r = uninitSection;
 		}
 
-		//find where to place the record
+		// Find where to place the record
 		while(r->getLevel()+1 < c->getLevel()) {
-			if(r->children.empty()) {	//add a dummy element if we skip a level
+			if(r->children.empty()) {	// Add a dummy element if we skip a level
 				int level = r->getLevel()+1;
 				string name = c->pos == r->pos ? c->name : r->name;
 				CompressionReportRecord* dummy = new CompressionReportRecord(name.c_str(), 
@@ -366,14 +363,14 @@ CompressionReportRecord* Hunk::getCompressionSummary(int* sizefill, int splittin
 
 		bool less_than_next = (it + 1) == symbols.end() || sym->value < (*(it + 1))->value;
 
-		//add public symbol to start of sections, if they don't have one already
+		// Add public symbol to start of sections, if they don't have one already
 		if(sym->value < getRawSize() && (c->type & RECORD_OLD_SECTION) && less_than_next) {
 			CompressionReportRecord* dummy = new CompressionReportRecord(c->name.c_str(), 
 				RECORD_PUBLIC|RECORD_DUMMY, sym->value, sizefill[sym->value]);
 			c->children.push_back(dummy);
 		}
 
-		//add public symbol to start of sections, if they don't have one already
+		// Add public symbol to start of sections, if they don't have one already
 		if(sym->value < getRawSize() && (c->type & RECORD_PUBLIC) && less_than_next) {
 			CompressionReportRecord* dummy = new CompressionReportRecord(c->name.c_str(), 
 				RECORD_DUMMY, sym->value, sizefill[sym->value]);
@@ -396,23 +393,23 @@ void Hunk::setImportDll(const char* dll) {
 map<int, Symbol*> Hunk::getOffsetToRelocationMap() {
 	map<int, Symbol*> offsetmap;
 	map<int, Symbol*> symbolmap = getOffsetToSymbolMap();
-	for(vector<Relocation>::iterator it = m_relocations.begin(); it != m_relocations.end(); it++) {
-		Symbol* s = findSymbol(it->symbolname.c_str());
+	for(Relocation& relocation : m_relocations) {
+		Symbol* s = findSymbol(relocation.symbolname.c_str());
 		if(s && s->secondaryName.size() > 0)
 			s = findSymbol(s->secondaryName.c_str());
 		if(s && s->flags & SYMBOL_IS_RELOCATEABLE && s->flags & SYMBOL_IS_SECTION)
-			s = symbolmap.find(s->value)->second;	//replace relocation to section with non-section
-		offsetmap.insert(make_pair(it->offset, s));
+			s = symbolmap.find(s->value)->second;	// Replace relocation to section with non-section
+		offsetmap.insert(make_pair(relocation.offset, s));
 	}
 	return offsetmap;
 }
 
 map<int, Symbol*> Hunk::getOffsetToSymbolMap() {
 	map<int, Symbol*> offsetmap;
-	for(map<string, Symbol*>::iterator it = m_symbols.begin(); it != m_symbols.end(); it++) {
-		Symbol* s = it->second;
+	for(const auto& p : m_symbols) {
+		Symbol* s = p.second;
 		if(s->flags & SYMBOL_IS_RELOCATEABLE) {
-			if(offsetmap.find(s->value) != offsetmap.end() && s->flags & SYMBOL_IS_SECTION)	//favor non-sections
+			if(offsetmap.find(s->value) != offsetmap.end() && s->flags & SYMBOL_IS_SECTION)	// Favor non-sections
 				continue;
 
 			offsetmap[s->value] = s;
@@ -421,15 +418,15 @@ map<int, Symbol*> Hunk::getOffsetToSymbolMap() {
 	return offsetmap;
 }
 
-//roundFloats
-//default round float: __real@XXXXXXXX, *@3MA
-//default round float: tf_
-//default round double: __real@XXXXXXXXXXXXXXXX, *@3NA
-//round *tf_XX* to XX bits.
+// roundFloats
+// Default round float: __real@XXXXXXXX, *@3MA
+// Default round float: tf_
+// Default round double: __real@XXXXXXXXXXXXXXXX, *@3NA
+// Round *tf_XX* to XX bits.
 void Hunk::roundFloats(int defaultBits) {
 	map<int, Symbol*> offset_to_symbol = getOffsetToSymbolMap();
-	for(map<string, Symbol*>::iterator it = m_symbols.begin(); it != m_symbols.end(); it++) {
-		Symbol* s = it->second;
+	for(const auto& p : m_symbols) {
+		Symbol* s = p.second;
 		if(!(s->flags & SYMBOL_IS_RELOCATEABLE))
 			continue;
 
@@ -457,8 +454,8 @@ void Hunk::roundFloats(int defaultBits) {
 			continue;
 
 
-		//REMARK: a float with most significant byte = 0 could be trimmed down
-		//and thus not get truncated. Just ignore it. It only happens to numbers with norm < 10^-38
+		// REMARK: A float with most significant byte = 0 could be trimmed down
+		// and thus not get truncated. Just ignore it. It only happens to numbers with norm < 10^-38
 		int address = s->value;
 		int type_size = isDouble ? sizeof(double) : sizeof(float);
 		while(address >= 0 && address <= getRawSize()-type_size) {
@@ -493,8 +490,8 @@ endit:
 
 void Hunk::overrideAlignment(int defaultBits) {
 	bool align_label = false;
-	for(map<string, Symbol*>::const_iterator jt = m_symbols.begin(); jt != m_symbols.end(); jt++) {
-		Symbol* s = jt->second;
+	for(const auto& p : m_symbols) {
+		Symbol* s = p.second;
 		string sname = s->getUndecoratedName();
 		size_t apos = sname.find("align");
 		if (apos != string::npos) {
@@ -502,7 +499,7 @@ void Hunk::overrideAlignment(int defaultBits) {
 			int align_offset = 0;
 			int n = sscanf_s(&sname.c_str()[apos+5], "%d_%d", &align_bits, &align_offset);
 			if (n >= 1) {
-				// align label match
+				// Align label match
 				if (align_bits < 0 || align_bits > 30) {
 					Log::error("", "Alignment label '%s' outside legal range for number of bits (0-30)", sname.c_str());
 				}
@@ -522,7 +519,7 @@ void Hunk::overrideAlignment(int defaultBits) {
 	}
 
 	if (!align_label && defaultBits != -1 && defaultBits > getAlignmentBits() && !(m_flags & HUNK_IS_CODE) && getRawSize() == 0) {
-		// override uninitialized section alignment
+		// Override uninitialized section alignment
 		setAlignmentBits(defaultBits);
 		printf("Alignment of section '%s' overridden to default %d bits\n", getName(), defaultBits);
 	}
@@ -530,8 +527,8 @@ void Hunk::overrideAlignment(int defaultBits) {
 }
 
 void Hunk::markHunkAsLibrary() {
-	for(map<string, Symbol*>::iterator it = m_symbols.begin(); it != m_symbols.end(); it++) {
-		it->second->fromLibrary = true;
+	for(auto& p : m_symbols) {
+		p.second->fromLibrary = true;
 	}
 }
 

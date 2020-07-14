@@ -33,8 +33,8 @@ string toHtml(char c) {
 
 std::string escapeHtml(const std::string& s) {
 	string d;
-	for(string::const_iterator it = s.begin(); it != s.end(); it++) {
-		d += toHtml(*it);
+	for(char c : s) {
+		d += toHtml(c);
 	}
 	return d;
 }

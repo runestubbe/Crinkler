@@ -70,16 +70,16 @@ Hunk* createExportTable(const std::set<Export>& exports) {
 	assert((char*)words == &data[table_offset]);
 
 	// Put table
-	*words++ = 0;					// flags
-	*words++ = 0;					// timestamp
-	*words++ = 0;					// major/minor version
-	*words++ = 0;					// name rva
-	*words++ = 1;					// ordinal base
-	*words++ = (int)exports.size();	// address table entries
-	*words++ = (int)exports.size();	// number of name pointers
-	*words++ = -CRINKLER_IMAGEBASE;	// export address table rva
-	*words++ = -CRINKLER_IMAGEBASE;	// name pointer rva
-	*words++ = -CRINKLER_IMAGEBASE;	// ordinal table rva
+	*words++ = 0;					// Flags
+	*words++ = 0;					// Timestamp
+	*words++ = 0;					// Major/Minor version
+	*words++ = 0;					// Name rva
+	*words++ = 1;					// Ordinal base
+	*words++ = (int)exports.size();	// Address table entries
+	*words++ = (int)exports.size();	// Number of name pointers
+	*words++ = -CRINKLER_IMAGEBASE;	// Export address table rva
+	*words++ = -CRINKLER_IMAGEBASE;	// Name pointer rva
+	*words++ = -CRINKLER_IMAGEBASE;	// Ordinal table rva
 	assert((char*)words == &data[addresses_offset]);
 
 	// Put addresses and name pointers

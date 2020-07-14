@@ -45,7 +45,7 @@ void AritCode(struct AritState *state, unsigned int zero_prob, unsigned int one_
 	{
 		unsigned int old_interval_min = interval_min;
 		interval_min += threshold;
-		if(interval_min < old_interval_min)	// carry
+		if(interval_min < old_interval_min)	// Carry
 			PutBit(dest_ptr, dest_bit);
 
 		interval_size -= threshold;
@@ -77,7 +77,7 @@ int AritCodeEnd(struct AritState *state)
 	unsigned int interval_min = state->interval_min;
 	unsigned int interval_size = state->interval_size;
 	
-	if(interval_min + interval_size >= interval_min)	// not carry
+	if(interval_min + interval_size >= interval_min)	// Not carry
 	{
 		dest_bit++;
 	}

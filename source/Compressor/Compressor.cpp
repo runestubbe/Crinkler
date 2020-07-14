@@ -5,13 +5,13 @@
 #include "CompressionState.h"
 #include "CompressionStateEvaluator.h"
 #include "ModelList.h"
-#include "aritcode.h"
-#include "model.h"
+#include "AritCode.h"
+#include "Model.h"
 
 static const unsigned int MAX_N_MODELS = 21;
 static const unsigned int MAX_MODEL_WEIGHT = 9;
 
-static const int NUM_1K_MODELS = 33;	//31 is implicitly always enabled. 30 to -1 are optional
+static const int NUM_1K_MODELS = 33;	// 31 is always implicitly enabled. 30 to -1 are optional
 static const int MIN_1K_BASEPROB = 4;
 static const int MAX_1K_BASEPROB = 8;
 static const int NUM_1K_BASEPROBS = MAX_1K_BASEPROB - MIN_1K_BASEPROB + 1;
@@ -70,7 +70,7 @@ unsigned int optimizeWeights(CompressionState& cs, ModelList& models) {
 	unsigned int size;
 	unsigned int bestsize = approximateWeights(cs, models);
 	
-	if(models.nmodels == 0)	//nothing to optimize, leave and prevent a crash
+	if(models.nmodels == 0)	// Nothing to optimize, leave and prevent a crash
 		return bestsize;
 
 	do {
@@ -81,7 +81,7 @@ unsigned int optimizeWeights(CompressionState& cs, ModelList& models) {
 
 			if (i == index) {
 				newmodels[i].weight += dir;
-				// cap weight
+				// Clamp weight
 				if(newmodels[i].weight > MAX_MODEL_WEIGHT) {
 					newmodels[i].weight = MAX_MODEL_WEIGHT;
 					skip = 1;
@@ -93,7 +93,7 @@ unsigned int optimizeWeights(CompressionState& cs, ModelList& models) {
 			}
 		}
 		if (!skip) {
-			size = cs.setModels(newmodels);//calcSize(prep, bitlength, baseprob, newmodels, nmodels);
+			size = cs.setModels(newmodels);
 		}
 		if (!skip && size < bestsize) {
 			bestsize = size;
@@ -256,7 +256,7 @@ static int* GenerateModelData1k(const unsigned char* org_data, int datasize)
 	int bitlength = datasize * 8;
 	int* modeldata = new int[bitlength*NUM_1K_MODELS * 2];
 
-	//collect model data
+	// Collect model data
 	struct SHashEntry
 	{
 		unsigned int hash;
@@ -289,7 +289,7 @@ static int* GenerateModelData1k(const unsigned char* org_data, int datasize)
 			for(int model_idx = 0; model_idx < NUM_1K_MODELS; model_idx++)
 			{
 				int model = (unsigned char)(model_idx - 1);
-				// calculate hash
+				// Calculate hash
 				unsigned int hash = bitpos + (data[bytepos] & mask) * 8;
 				int m = model;
 				int k = 1;
@@ -322,9 +322,9 @@ static int* GenerateModelData1k(const unsigned char* org_data, int datasize)
 					}
 					else
 					{
-						// does it match?
 						bool match = false;
 
+						// Does it match?
 						if(entry_ptr->hash == hash && entry_ptr->bitpos == bitpos && entry_ptr->model == model && (data[entry_ptr->bytepos] & mask) == (data[bytepos] & mask))
 						{
 							match = true;
@@ -463,7 +463,7 @@ int Compress1K(unsigned char* org_data, int datasize, unsigned char* compressed,
 	data += 32;
 	memcpy(data, org_data, datasize);
 
-	struct SHashEntry1	// hash table is split in hot/cold
+	struct SHashEntry1	// Hash table is split in hot/cold
 	{
 		unsigned int hash;
 		int bytepos;
@@ -474,14 +474,13 @@ int Compress1K(unsigned char* org_data, int datasize, unsigned char* compressed,
 	{
 		unsigned int n[2];
 	};
-	SEncodeEntry* encode_entries = new SEncodeEntry[8 * datasize];	//zero
+	SEncodeEntry* encode_entries = new SEncodeEntry[8 * datasize];
 	memset(encode_entries, 0, 8 * datasize * sizeof(SEncodeEntry));
 
 	const int hash_table_size = nextPowerOf2(datasize * 2);
 
 	SHashEntry1* hash_table_data = new SHashEntry1[hash_table_size * 8];
 	
-	//for (int bitpos = 0; bitpos < 8; bitpos++)
 	concurrency::parallel_for(0, 8, [&](int bitpos)
 	{
 		int mask = 0xFF00 >> bitpos;
@@ -519,7 +518,7 @@ int Compress1K(unsigned char* org_data, int datasize, unsigned char* compressed,
 
 				unsigned int mmask = model;
 
-				// calculate hash
+				// Calculate hash
 				__m128i context_data = _mm_loadu_si128((__m128i*)&data[bytepos-16]);
 				context_data = _mm_unpackhi_epi8(context_data, zero);
 				__m128i temp_sum = _mm_mullo_epi16(context_data, mulmask);
@@ -628,7 +627,7 @@ int evaluate1K(unsigned char* data, int size, int* modeldata, int* out_b0, int* 
 		int mask = 0xFF00 >> bitpos;
 		int bit = ((data[bytepos] << bitpos) & 0x80) == 0x80;
 
-		int n[2][2] = {};	//boost_n0, boost_n1, no_boost_n0, no_boost_n1
+		int n[2][2] = {};	// boost_n0, boost_n1, no_boost_n0, no_boost_n1
 
 		unsigned int mmask = modelmask;
 
@@ -714,7 +713,7 @@ ModelList1k ApproximateModels1k(const unsigned char* org_data, int datasize, int
 
 	int best_size = INT_MAX;
 
-	unsigned int best_modelmask = 0xFFFFFFFF;	//note bit 31 must always be set
+	unsigned int best_modelmask = 0xFFFFFFFF;	// Bit 31 must always be set
 	unsigned int best_boost = 0;
 	unsigned int best_b0 = 0;
 	unsigned int best_b1 = 0;
@@ -768,7 +767,7 @@ ModelList1k ApproximateModels1k(const unsigned char* org_data, int datasize, int
 					best_b1 = b1;
 					best_modelmask = modelmask;
 					best_flip = i;
-					//printf("baseprob: (%d, %d) boost: %d modelmask: %8X compressed size: %f bytes\n", best_b0, best_b1, best_boost, best_modelmask, best_size / float(BITPREC * 8));
+					// printf("baseprob: (%d, %d) boost: %d modelmask: %8X compressed size: %f bytes\n", best_b0, best_b1, best_boost, best_modelmask, best_size / float(BITPREC * 8));
 				}
 			}
 

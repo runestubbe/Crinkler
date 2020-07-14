@@ -67,21 +67,21 @@ bool CmdLineInterface::setCmdParameters(int argc, char* argv[]) {
 
 	while(--argc) {
 		const char* arg = *(++argv);
-		if(m_flags & CMDI_PARSE_FILES && arg[0] == '@') {	//expand command files (@file)
-			arg++;	//skip leading '@'
+		if(m_flags & CMDI_PARSE_FILES && arg[0] == '@') {	// Expand command files (@file)
+			arg++;	// Skip leading '@'
 			MemoryFile mf(arg);
 
-			//add tokens from file
-			if(mf.getSize() >= 2 && (*(unsigned short*) mf.getPtr()) == 0xFEFF) {	//UNICODE
+			// Add tokens from file
+			if(mf.getSize() >= 2 && (*(unsigned short*) mf.getPtr()) == 0xFEFF) {	// UNICODE
 				char* tmp = new char[mf.getSize()+2];
 				WideCharToMultiByte(CP_ACP, 0, (LPCWSTR)(mf.getPtr()+2), -1, tmp, mf.getSize()+2, NULL, NULL);
 				addTokens(tmp);
 				delete[] tmp;
-			} else {	//ASCII
+			} else {	// ASCII
 				addTokens(mf.getPtr());
 			}
 		} else {
-			//commandline parser removes all "'s
+			// Command line parser removes all "'s
 			char token[1024];
 			sprintf_s(token, sizeof(token), "\"%s\"", arg);
 			addTokens(token);
@@ -111,8 +111,8 @@ bool CmdLineInterface::parse() {
 						argument = token.substr(split_index+1, token.size()-split_index-1);
 					}
 					string swi = token.substr(1, split_index-1);
-					if(toUpper(swi).compare(toUpper(param->getParameterName())) != 0) {	//case insensitive argument matching
-						continue;	//wrong parameter
+					if(toUpper(swi).compare(toUpper(param->getParameterName())) != 0) {	// Case-insensitive argument matching
+						continue;	// Wrong parameter
 					}
 
 					if(hasArgument && argument.size() == 0) {
@@ -120,7 +120,7 @@ bool CmdLineInterface::parse() {
 						return false;
 					}
 
-					//check for the correct number of arguments (0 or 1)
+					// Check for the correct number of arguments (0 or 1)
 					if((param->getFlags() & PARAM_TAKES_ARGUMENT) &&
 						!(param->getFlags() & PARAM_ALLOW_NO_ARGUMENT_DEFAULT) && !hasArgument) {
 						fprintf(stderr, "error: error parsing token: '%s'\n  parameter needs argument\n", token.c_str());
@@ -137,10 +137,10 @@ bool CmdLineInterface::parse() {
 				continue;
 			}
 			
-			//parse argument and handle potential errors
+			// Parse argument and handle potential errors
 			int hr = PARSE_OK;
 			if(!(param->getFlags() & PARAM_ALLOW_NO_ARGUMENT_DEFAULT) || hasArgument) {
-				hr = param->parse(argument.c_str(), errorMsg, sizeof(errorMsg));	//skip parsing of argument, if we are in the special default form
+				hr = param->parse(argument.c_str(), errorMsg, sizeof(errorMsg));	// Skip parsing of argument, if it is allowed
 			}
 			if(hr == PARSE_OK) {
 				if(param->m_numMatches && (param->getFlags() & PARAM_FORBID_MULTIPLE_DEFINITIONS)) {
@@ -175,14 +175,11 @@ void CmdLineInterface::addParams(CmdParam* param, ...) {
 }
 
 void CmdLineInterface::printHeader() {
-	//title
 	printf("%s\n\n", m_title.c_str());
 }
 
 void CmdLineInterface::printSyntax() {
 	printHeader();
-
-	//options
 	printf("   options:\n\n");
 
 	for(CmdParam* param : m_params) {

@@ -94,7 +94,7 @@ ModelPredictions CompressionState::applyModel(const unsigned char* data, int bit
 		}
 		packageOffsets[numPackages] = idx;
 		if(package_needs_commit)
-			numPackages++;	// actually commit the package if 
+			numPackages++;	// Actually commit the package if 
 	}
 
 	delete[] hashtable;
@@ -109,17 +109,15 @@ ModelPredictions CompressionState::applyModel(const unsigned char* data, int bit
 CompressionState::CompressionState(const unsigned char* data, int size, int baseprob, bool saturate, CompressionStateEvaluator* evaluator, char* context) :
 	m_size(size*8), m_saturate(saturate), m_stateEvaluator(evaluator)
 {
-	//create temporary data buffer with heading zeros
+	// Create temporary data buffer with leading zeros
 	unsigned char* data2 = new unsigned char[size+MAX_CONTEXT_LENGTH];
 	memcpy(data2, context, MAX_CONTEXT_LENGTH);
 	memcpy(data2+MAX_CONTEXT_LENGTH, data, size);
 
 	assert(baseprob >= 9);
-	//m_logScale = pow(pow(2.0, -126.0) / baseprob, 1.0 / 16.0);
-	//(*(int*)&m_logScale)++;
 	m_logScale = 1.0f / 2048.0f;	// baseprob * logScale^16 >= FLT_MIN
 
-	//apply models
+	// Apply models
 #if USE_OPENMP
 	#pragma omp parallel for
 	for(int mask = 0; mask <= 0xff; mask++) {

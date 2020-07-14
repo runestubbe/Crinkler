@@ -8,11 +8,11 @@
 using namespace std;
 
 bool hunkRelation(Hunk* h1, Hunk* h2) {
-	//initialized data < uninitialized data
+	// Initialized data < uninitialized data
 	if((h1->getRawSize() != 0) != (h2->getRawSize() != 0))
 		return h1->getRawSize() > h2->getRawSize();
 
-	//code < non-code
+	// Code < non-code
 	if((h1->getFlags() & HUNK_IS_CODE) != (h2->getFlags() & HUNK_IS_CODE))
 		return (h1->getFlags() & HUNK_IS_CODE);
 
@@ -40,7 +40,7 @@ bool hunkRelation(Hunk* h1, Hunk* h2) {
 			return h1->getRawSize() < h2->getRawSize();
 		else {
 			{
-				//compare data
+				// Compare data
 				return memcmp(h1->getPtr(), h2->getPtr(), h1->getRawSize()) > 0;
 			}
 		}				
@@ -63,20 +63,20 @@ void HeuristicHunkSorter::sortHunkList(HunkList* hunklist) {
 	if (initializer_hunk) hunklist->removeHunk(initializer_hunk);
 	hunklist->removeHunk(entry_hunk);
 
-	//move hunks to vector
+	// Move hunks to vector
 	for(int i = 0; i < hunklist->getNumHunks(); i++) {
 		Hunk* h = (*hunklist)[i];
 		hunks.push_back(h);
 	}
 	hunklist->clear();
 
-	//sort hunks
+	// Sort hunks
 	sort(hunks.begin(), hunks.end(), hunkRelation);
 
 	hunklist->addHunkBack(import_hunk);
 	if (initializer_hunk) hunklist->addHunkBack(initializer_hunk);
 	hunklist->addHunkBack(entry_hunk);
 
-	//copy back hunks to hunklist
+	// Copy back hunks to hunklist
 	for(Hunk *hunk : hunks) hunklist->addHunkBack(hunk);
 }

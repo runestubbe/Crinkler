@@ -26,9 +26,9 @@ static string getSectionName(const IMAGE_SECTION_HEADER* section, const char* st
 }
 
 static string getSymbolName(const IMAGE_SYMBOL* symbol, const char* stringTable) {
-	if(symbol->N.Name.Short == 0) {	//long name
+	if(symbol->N.Name.Short == 0) {	// Long name
 		return &stringTable[symbol->N.Name.Long];
-	} else {	//short name
+	} else {	// Short name
 		char tmp[9]; tmp[8] = 0;
 		memcpy(tmp, symbol->N.ShortName, 8);
 		return tmp;
@@ -46,22 +46,22 @@ CoffObjectLoader::~CoffObjectLoader() {
 }
 
 bool CoffObjectLoader::clicks(const char* data, int size) {
-	//TODO: implement a more safe check
+	//TODO: Implement a more safe check
 	return *(unsigned short*)data == IMAGE_FILE_MACHINE_I386;
 }
 
 HunkList* CoffObjectLoader::load(const char* data, int size, const char* module) {
 	const char* ptr = data;
 
-	//header
+	// Header
 	const IMAGE_FILE_HEADER* header = (const IMAGE_FILE_HEADER*)ptr;
 	ptr += sizeof(IMAGE_FILE_HEADER);
 
-	//symbol table pointer
+	// Symbol table pointer
 	const IMAGE_SYMBOL* symbolTable = (const IMAGE_SYMBOL*)(data + header->PointerToSymbolTable);
 	const char* stringTable = (const char*)symbolTable + header->NumberOfSymbols*sizeof(IMAGE_SYMBOL);
 
-	//section headers
+	// Section headers
 	const IMAGE_SECTION_HEADER* sectionHeaders = (const IMAGE_SECTION_HEADER*)ptr;
 
 	HunkList* hunklist = new HunkList;
@@ -73,7 +73,7 @@ HunkList* CoffObjectLoader::load(const char* data, int size, const char* module)
 	}
 
 	
-	//load sections
+	// Load sections
 	for(int i = 0; i < header->NumberOfSections; i++) {
 		string sectionName = getSectionName(&sectionHeaders[i], stringTable);
 		int chars = sectionHeaders[i].Characteristics;
@@ -86,13 +86,13 @@ HunkList* CoffObjectLoader::load(const char* data, int size, const char* module)
 			flags |= HUNK_IS_WRITEABLE;
 		bool isInitialized = (chars & IMAGE_SCN_CNT_INITIALIZED_DATA || 
 								chars & IMAGE_SCN_CNT_CODE);
-		Hunk* hunk = new Hunk(hunkName, data+sectionHeaders[i].PointerToRawData,	//data pointer
-								flags, getAlignmentBitsFromCharacteristics(chars),	//alignment
+		Hunk* hunk = new Hunk(hunkName, data+sectionHeaders[i].PointerToRawData,	// Data pointer
+								flags, getAlignmentBitsFromCharacteristics(chars),	// Alignment
 								isInitialized ? sectionHeaders[i].SizeOfRawData : 0,
-								sectionHeaders[i].SizeOfRawData);	//virtual size
+								sectionHeaders[i].SizeOfRawData);	// Virtual size
 		hunklist->addHunkBack(hunk);
 
-		//relocations
+		// Relocations
 		const IMAGE_RELOCATION* relocs = (const IMAGE_RELOCATION*) (data + sectionHeaders[i].PointerToRelocations);
 		int nRelocs = sectionHeaders[i].PointerToRelocations ? sectionHeaders[i].NumberOfRelocations : 0;
 		for(int j = 0; j < nRelocs; j++) {
@@ -101,8 +101,8 @@ HunkList* CoffObjectLoader::load(const char* data, int size, const char* module)
 			const IMAGE_SYMBOL* symbol = &symbolTable[symbolIndex];
 			string symbolName = getSymbolName(symbol, stringTable);
 			if(symbol->StorageClass == IMAGE_SYM_CLASS_STATIC || 
-				symbol->StorageClass == IMAGE_SYM_CLASS_LABEL) {	//local symbol reference
-				//construct local name
+				symbol->StorageClass == IMAGE_SYM_CLASS_LABEL) {	// Local symbol reference
+				// Construct local name
 				char name[1000];
 				sprintf_s(name, 1000, "l[%s(%d)]!%s", module, symbolIndex, symbolName.c_str());
 				r.symbolname = name;
@@ -124,13 +124,11 @@ HunkList* CoffObjectLoader::load(const char* data, int size, const char* module)
 		}
 	}
 
-
-
-	//symbols
+	// Symbols
 	for(int i = 0; i < (int)header->NumberOfSymbols; i++) {
 		const IMAGE_SYMBOL* sym = &symbolTable[i];
 	
-		//skip unknown symbol types
+		// Skip unknown symbol types
 		if(sym->StorageClass != IMAGE_SYM_CLASS_EXTERNAL &&
 			sym->StorageClass != IMAGE_SYM_CLASS_STATIC &&
 			sym->StorageClass != IMAGE_SYM_CLASS_LABEL &&
@@ -144,13 +142,13 @@ HunkList* CoffObjectLoader::load(const char* data, int size, const char* module)
 		if(sym->SectionNumber > 0) {
 			s->hunk = (*hunklist)[sym->SectionNumber-1];
 
-			if(sym->StorageClass == IMAGE_SYM_CLASS_EXTERNAL && sym->Type == 0x20 && sym->NumberOfAuxSymbols > 0) {	//function definition
+			if(sym->StorageClass == IMAGE_SYM_CLASS_EXTERNAL && sym->Type == 0x20 && sym->NumberOfAuxSymbols > 0) {	// Function definition
 				const IMAGE_AUX_SYMBOL* aux = (const IMAGE_AUX_SYMBOL*) (sym+1);
 				s->flags |= SYMBOL_IS_FUNCTION;
 				s->size = aux->Sym.Misc.TotalSize;
 			}
 
-			if(sym->StorageClass == IMAGE_SYM_CLASS_STATIC ||	//perform name mangling on local symbols
+			if(sym->StorageClass == IMAGE_SYM_CLASS_STATIC ||	// Perform name mangling on local symbols
 				sym->StorageClass == IMAGE_SYM_CLASS_LABEL) {
 
 				char symname[1000];
@@ -164,7 +162,7 @@ HunkList* CoffObjectLoader::load(const char* data, int size, const char* module)
 			}
 			s->hunk->addSymbol(s);
 		} else if(sym->SectionNumber == 0 && sym->StorageClass == IMAGE_SYM_CLASS_EXTERNAL && sym->Value > 0) {
-			//create an uninitialised hunk
+			// Create an uninitialised hunk
 			char hunkName[1000];
 			sprintf_s(hunkName, 1000, "u[%s]!%s", module, s->name.c_str());
 			Hunk* uninitHunk = new Hunk(hunkName, NULL, HUNK_IS_WRITEABLE, 1, 0, s->value);
@@ -173,26 +171,26 @@ HunkList* CoffObjectLoader::load(const char* data, int size, const char* module)
 			uninitHunk->addSymbol(s);
 			hunklist->addHunkBack(uninitHunk);
 		} else if(sym->SectionNumber == 0 && sym->StorageClass == IMAGE_SYM_CLASS_WEAK_EXTERNAL && sym->Value == 0) {
-			//weak external
+			// Weak external
 			const IMAGE_AUX_SYMBOL* aux = (const IMAGE_AUX_SYMBOL*) (sym+1);
 			s->secondaryName = getSymbolName(&symbolTable[aux->Sym.TagIndex], stringTable);
 			s->hunk = constantsHunk;
 			s->flags = 0;
 			s->hunk->addSymbol(s);
-		} else if(sym->SectionNumber == -1) {	//constant symbol
+		} else if(sym->SectionNumber == -1) {	// Constant symbol
 			s->hunk = constantsHunk;
 			s->flags = 0;
 			s->hunk->addSymbol(s);
 		} else {
-			//ignore unknown symbol type
+			// Ignore unknown symbol type
 			delete s;
 		}
 		
 
-		i += sym->NumberOfAuxSymbols;	//skip aux symbols
+		i += sym->NumberOfAuxSymbols;	// Skip aux symbols
 	}
 
-	//trim hunks
+	// Trim hunks
 	hunklist->addHunkBack(constantsHunk);
 	hunklist->trim();
 

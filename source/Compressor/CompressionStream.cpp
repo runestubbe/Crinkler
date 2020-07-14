@@ -61,7 +61,7 @@ HashBits ComputeHashBits(const unsigned char* d, int size, unsigned char* contex
 		weightmasks[n] = (unsigned int)masks[n] | (w & 0xFFFFFF00);
 	}
 
-	if (first) {	//encode start bit
+	if (first) {	// Encode start bit
 		int bit = 1;
 
 		// Query models
@@ -83,7 +83,7 @@ HashBits ComputeHashBits(const unsigned char* d, int size, unsigned char* contex
 		out.bits.push_back(bit);
 	}
 
-	{	//save context for next call
+	{	// Save context for next call
 		int s = min(size, MAX_CONTEXT_LENGTH);
 		if (s > 0)
 			memcpy(context + 8 - s, data + size - s, s);
@@ -172,7 +172,6 @@ __forceinline uint32_t Hash(__m128i& masked_contextdata)
 {
 	__m128i scrambler = _mm_set_epi8(113, 23, 5, 17, 13, 11, 7, 19, 3, 23, 29, 31, 37, 41, 43, 47);
 	
-	//__m128i sample = _mm_mullo_epi16(masked_contextdata, scrambler);
 	__m128i sample = _mm_madd_epi16(masked_contextdata, scrambler);
 	sample = _mm_add_epi32(_mm_add_epi32(sample, _mm_shuffle_epi32(sample, _MM_SHUFFLE(1, 1, 1, 1))), _mm_shuffle_epi32(sample, _MM_SHUFFLE(2, 2, 2, 2)));
 	uint32_t hash = _mm_cvtsi128_si32(sample);
@@ -182,7 +181,7 @@ __forceinline uint32_t Hash(__m128i& masked_contextdata)
 }
 
 int CompressionStream::EvaluateSize(const unsigned char* d, int size, const ModelList& models, int baseprob, char* context, int bitpos) {
-	unsigned char* data = new unsigned char[size + MAX_CONTEXT_LENGTH + 16];	// ensure 128bit operations are safe
+	unsigned char* data = new unsigned char[size + MAX_CONTEXT_LENGTH + 16];	// Ensure 128bit operations are safe
 	memcpy(data, context, MAX_CONTEXT_LENGTH);
 	data += MAX_CONTEXT_LENGTH;
 	memcpy(data, d, size);
@@ -192,7 +191,7 @@ int CompressionStream::EvaluateSize(const unsigned char* d, int size, const Mode
 	int* hash_positions = new int[tinyhashsize];
 	uint16_t* hash_counter_states = new uint16_t[tinyhashsize];
 
-	unsigned int* sums = new unsigned int[size*2];	//summed predictions
+	unsigned int* sums = new unsigned int[size*2];	// Summed predictions
 
 	for(int i = 0; i < size; i++) {
 		sums[i*2] = baseprob;
@@ -200,7 +199,7 @@ int CompressionStream::EvaluateSize(const unsigned char* d, int size, const Mode
 	}
 	CounterState* counter_states_ptr = m_saturate ? saturated_counter_states : unsaturated_counter_states;
 
-	//clear hashtable
+	// Clear hashtable
 	memset(hash_positions, -1, tinyhashsize * sizeof(hash_positions[0]));
 
 	__m128i vzero = _mm_setzero_si128();

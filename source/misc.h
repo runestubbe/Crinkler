@@ -4,7 +4,7 @@
 
 int align(int v, int alignmentBits);
 
-//round integer to 'bits' bits
+// Round integer to given precision
 unsigned long long roundInt64(unsigned long long v, int bits);
 
 int numberOfModelsInWeightMask(unsigned int mask);
