@@ -3,7 +3,7 @@
 #include <vector>
 #include <string>
 
-#include "Compressor/ModelList.h"
+#include "../Compressor/ModelList.h"
 #include "Hunk.h"
 #include "HunkList.h"
 #include "ExplicitHunkSorter.h"

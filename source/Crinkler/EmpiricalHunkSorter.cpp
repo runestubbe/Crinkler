@@ -4,7 +4,7 @@
 #include <ppl.h>
 #include "HunkList.h"
 #include "Hunk.h"
-#include "Compressor/CompressionStream.h"
+#include "../Compressor/CompressionStream.h"
 #include "ProgressBar.h"
 #include "Crinkler.h"
 

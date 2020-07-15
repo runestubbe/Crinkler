@@ -4,7 +4,7 @@ VisualStudioVersion = 15.0.27703.2000
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Compressor", "source\Compressor\Compressor.vcxproj", "{869F3A10-26E8-49E6-980F-FE72F642714F}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Crinkler", "source\Crinkler.vcxproj", "{B0591735-B8E8-4E45-8394-5A01A5F53984}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Crinkler", "source\Crinkler\Crinkler.vcxproj", "{B0591735-B8E8-4E45-8394-5A01A5F53984}"
 	ProjectSection(ProjectDependencies) = postProject
 		{869F3A10-26E8-49E6-980F-FE72F642714F} = {869F3A10-26E8-49E6-980F-FE72F642714F}
 	EndProjectSection

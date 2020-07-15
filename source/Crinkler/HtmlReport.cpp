@@ -6,13 +6,13 @@
 #include <sstream>
 #include <time.h>
 
-#include "Compressor/Compressor.h"
+#include "../Compressor/Compressor.h"
 #include "Log.h"
 #include "Hunk.h"
 #include "Symbol.h"
 #include "Crinkler.h"
 #include "StringMisc.h"
-#include "../external/distorm/distorm.h"
+#include "../../external/distorm/distorm.h"
 
 using namespace std;
 

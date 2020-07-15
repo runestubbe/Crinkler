@@ -115,7 +115,7 @@
       <AdditionalOptions>/MP %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>comctl32.lib;Dbghelp.lib;../external/distorm/x86/distorm.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>comctl32.lib;Dbghelp.lib;../../external/distorm/x86/distorm.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>$(OutDir)$(TargetName).exe</OutputFile>
       <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -140,7 +140,7 @@
       <AdditionalOptions>/MP %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>comctl32.lib;Dbghelp.lib;../external/distorm/x64/distorm.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>comctl32.lib;Dbghelp.lib;../../external/distorm/x64/distorm.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>$(OutDir)$(TargetName).exe</OutputFile>
       <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -176,7 +176,7 @@
       <DisableSpecificWarnings>4530; 4091</DisableSpecificWarnings>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>comctl32.lib;Dbghelp.lib;../external/distorm/x86/distorm.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>comctl32.lib;Dbghelp.lib;../../external/distorm/x86/distorm.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>$(OutDir)$(TargetName).exe</OutputFile>
       <ManifestFile />
       <IgnoreAllDefaultLibraries>false</IgnoreAllDefaultLibraries>
@@ -221,7 +221,7 @@
       <DisableSpecificWarnings>4530; 4091</DisableSpecificWarnings>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>comctl32.lib;Dbghelp.lib;../external/distorm/x64/distorm.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>comctl32.lib;Dbghelp.lib;../../external/distorm/x64/distorm.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>$(OutDir)$(TargetName).exe</OutputFile>
       <ManifestFile>
       </ManifestFile>
@@ -390,7 +390,7 @@ nasmw -f win64 -Xvc -dPATH=$(IntermediateOutputPath) %(FullPath) -o $(Intermedia
     <ResourceCompile Include="Crinkler.rc" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="Compressor\Compressor.vcxproj">
+    <ProjectReference Include="..\Compressor\Compressor.vcxproj">
       <Project>{869f3a10-26e8-49e6-980f-fe72f642714f}</Project>
     </ProjectReference>
   </ItemGroup>

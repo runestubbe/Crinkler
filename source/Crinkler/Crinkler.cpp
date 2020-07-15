@@ -1,5 +1,5 @@
 #include "Crinkler.h"
-#include "Compressor/Compressor.h"
+#include "../Compressor/Compressor.h"
 #include "Fix.h"
 
 #include <set>

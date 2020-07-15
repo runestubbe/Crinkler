@@ -9,7 +9,7 @@
 
 #include "MultiLoader.h"
 #include "HunkList.h"
-#include "Compressor/Compressor.h"
+#include "../Compressor/Compressor.h"
 #include "Transform.h"
 #include "StringMisc.h"
 #include "ConsoleProgressBar.h"

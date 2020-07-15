@@ -7,9 +7,8 @@
 #include <intrin.h>
 #include <ppl.h>
 
-#include "model.h"
-#include "aritcode.h"
-#include "..\misc.h"
+#include "Model.h"
+#include "AritCode.h"
 #include "CounterState.h"
 
 using namespace std;
