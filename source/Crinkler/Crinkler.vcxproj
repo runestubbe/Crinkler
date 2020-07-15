@@ -398,7 +398,6 @@ nasmw -f win64 -Xvc -dPATH=$(IntermediateOutputPath) %(FullPath) -o $(Intermedia
     <None Include="modules\calltrans.asm" />
     <None Include="modules\header11.asm" />
     <None Include="modules\header20.asm" />
-    <None Include="modules\header20_1k.asm" />
     <None Include="modules\header20_compatibility.asm" />
     <None Include="modules\header22_1k.asm" />
     <None Include="modules\import20.asm" />
