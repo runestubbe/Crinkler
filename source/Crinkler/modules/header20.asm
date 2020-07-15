@@ -19,8 +19,8 @@ global	_CharacteristicsPtr
 global	_SaturatePtr
 global	_SaturateAdjust1Ptr
 global	_SaturateAdjust2Ptr
-global _NumberOfDataDirectoriesPtr
-global _ExportTableRVAPtr
+global	_NumberOfDataDirectoriesPtr
+global	_ExportTableRVAPtr
 
 HASH_MULTIPLIER	equ 111
 
@@ -30,10 +30,10 @@ ModelSkipDummy	equ	23
 zero_offset	equ	20
 one_offset	equ	16
 
-section header	align=1
+section header align=1
 _header:
 ; DOS header
-	db		'M','Z'
+	db		'M', 'Z'
 _LinkerVersionPtr:
 	dw		0
 
@@ -149,7 +149,7 @@ _SpareNopPtr:
 	; ecx = 0
 	; eax = 1
 	; ebx = subsystem version
-	; Stack: _UnpackedData (twice if call transform), PEB
+	; Stack: _UnpackedData (twice when using call transform), PEB
 	jmp		short _DepackEntry											;2
 
 _NumberOfDataDirectoriesPtr:
@@ -162,20 +162,20 @@ _ExportTableRVAPtr:
 ; 4 bytes:
 ; Export Table Size
 AritDecode3:
-	pop		edx						; edx = interval_size				;1
+	pop		edx					; edx = interval_size					;1
 	jb		short .zero													;2
 	;one
-	xchg	eax, edx				; interval_size <-> threshold		;1
+	xchg	eax, edx			; eax = interval_size, edx = threshold	;1
 
 ; 4 bytes:
 ; Import Table RVA (must point to valid, zeroed memory)
-	sub		ecx, edx				; data -= threshold					;2
-	add		al, 0					; 04 00								;2
+	sub		ecx, edx			; data -= threshold						;2
+	add		al, 0				; 04 00									;2
 
 ; 8 bytes:
 ; Import Table Size
 ; Resource Table RVA
-	sub		eax, edx				; eax = interval_size - threshold	;2
+	sub		eax, edx			; eax = interval_size - threshold		;2
 .zero:
 	; ebx = -bit
 	; ecx = new data
@@ -186,8 +186,8 @@ _DepackEntry:
 EndCheck:
 	pusha																;1
 	lodsd																;1
-	add		eax,edi														;2
-	je		short InitHash			; block_end == unpacked_byte_offset	;2
+	add		eax, edi														;2
+	je		short InitHash		; block_end == unpacked_byte_offset		;2
 	; carry = 1
 
 ; 32 bytes:
@@ -208,37 +208,37 @@ Model:
 BaseProbPtrP1:
 	pop		edx															;1
 ; Take advantage of the fact that base prob is always 10
-;	mov		[esp+zero_offset],edx
+;	mov		[esp+zero_offset], edx
 	mov		[esp+edx*2], edx											;3
 	mov		[esp+one_offset], edx										;4
 
 	; Init weight
-	lodsd							; Model weight shift mask			;1
-	xor		ebp, ebp				; weight = 0						;2
+	lodsd						; Model weight shift mask				;1
+	xor		ebp, ebp			; weight = 0							;2
 
 ModelLoop:
-	dec		ebp						; weight--							;1
+	dec		ebp					; weight--								;1
 IncreaseWeight:
-	inc		ebp						; weight++							;1
-	add		eax, eax				; Check next bit in model weight mask;2
+	inc		ebp					; weight++								;1
+	add		eax, eax			; Check next bit in model weight mask	;2
 	jc		short IncreaseWeight										;2
 	jz		short ModelEndJumpPad										;2
 
 	pusha																;1
-	lodsb							; Model mask						;1
-	mov		dl, al					; dl = mask							;2
+	lodsb						; Model mask							;1
+	mov		dl, al				; dl = mask								;2
 
 .hashloop:
 	xor		al, [edi]													;2
 	imul	eax, byte HASH_MULTIPLIER									;3
-	db		0x02, 0x87				; add al, [dword edi + 0]			;2
+	db		0x02, 0x87			; add al, [dword edi + 0]				;2
 
-	dd		0						; Debug Size (must be 0)
+	dd		0					; Debug Size (must be 0)
 
 	dec		eax
 .next:
-	dec		edi						; Next byte
-	add		dl, dl					; Hash byte?
+	dec		edi					; Next byte
+	add		dl, dl				; Hash byte?
 	jc		short .hashloop
 	jnz		short .next
 	; cf = 0
@@ -261,11 +261,11 @@ ModelSkipPtrP1:
 UpdateHash:
 	div		ecx
 	; edx = hash
-	lea		edi, [edi + edx*2]		; edi = hashTableEntry
+	lea		edi, [edi + edx*2]	; edi = hashTableEntry
 
 	; Calculate weight
-	mov		ecx, ebp				; ecx = weight
-	xor		eax, eax				; eax = 0
+	mov		ecx, ebp			; ecx = weight
+	xor		eax, eax			; eax = 0
 	scasb
 	je		short .boost
 	add		[edi], al
@@ -305,7 +305,7 @@ _SaturatePtr:
 
 SkipUpdate:
 	popa
-	inc		esi						; Next model
+	inc		esi					; Next model
 	jmp		short ModelLoop
 SaturateAdjust2PtrP1:
 
@@ -313,4 +313,3 @@ _ModelSkipPtr		equ	ModelSkipPtrP1-1
 _BaseProbPtr		equ	BaseProbPtrP1-1
 _SaturateAdjust1Ptr	equ SaturateAdjust1PtrP1-1
 _SaturateAdjust2Ptr	equ SaturateAdjust2PtrP1-1
-
