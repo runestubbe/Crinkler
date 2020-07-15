@@ -3,7 +3,6 @@
 
 #include <cstdio>
 #include <algorithm>
-#include <sstream>
 #include <time.h>
 
 #include "../Compressor/Compressor.h"
@@ -539,9 +538,9 @@ static void HtmlReportRecursive(CompressionReportRecord* csr, FILE* out, Hunk& h
 		if(csr->children.empty() && (csr->size == 0 || csr->compressedPos < 0))
 			div_prefix = 0;
 		if(div_prefix) {
-			stringstream ss;
-			ss << div_prefix << "_" << num_divs[level]++;
-			divstr = ss.str();
+			char tmp[512];
+			sprintf(tmp, "%c_%d", div_prefix, num_divs[level]++);
+			divstr = tmp;
 			fprintf(out, "<tr class='%s_expandable' onclick=\"switchMenu('%s');\">", css_class.c_str(), divstr.c_str());
 		} else {
 			fprintf(out, "<tr class='%s'>", css_class.c_str());
