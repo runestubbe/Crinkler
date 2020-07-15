@@ -64,11 +64,12 @@ _CharacteristicsPtr:
 ; Optional header (PE-header)
 	dw		0x010B				; Magic (Image file)
 
-; 14 bytes:
+; 18 bytes:
 ; Major/Minor linker version
 ; Size of code
 ; Size of initialized data
 ; Size of uninitialized data
+; Entry point
 AritDecodeLoop2:
 	adc		ecx, ecx			; Shift bit in							;2
 	inc		ebp					; Next bit								;1
@@ -79,9 +80,7 @@ AritDecode:
 	push	eax					; Push interval_size					;1
 	mul		edx					; edx:eax = p0 * interval_size			;2
 	nop																	;1
-	db		0x3D				; cmp eax, DepackInit-_header			;1
-
-	dd		DepackInit-_header	; Entry point
+	cmp		eax, strict dword DepackInit-_header						;5
 
 ; 8 bytes:
 ; Base of code
@@ -186,11 +185,11 @@ _DepackEntry:
 EndCheck:
 	pusha																;1
 	lodsd																;1
-	add		eax, edi														;2
+	add		eax, edi													;2
 	je		short InitHash		; block_end == unpacked_byte_offset		;2
 	; carry = 1
 
-; 32 bytes:
+; 36 bytes:
 ; Resource Table Size
 ; Exception Table RVA
 ; Exception Table Size
@@ -199,6 +198,7 @@ EndCheck:
 ; Base Relocation Table RVA
 ; Base Relocation Table Size
 ; Debug RVA
+; Debug Size (must be 0)
 Model:
 	; Find probs from model
 	; If ebx is 0 or 1,
@@ -231,9 +231,7 @@ IncreaseWeight:
 .hashloop:
 	xor		al, [edi]													;2
 	imul	eax, byte HASH_MULTIPLIER									;3
-	db		0x02, 0x87			; add al, [dword edi + 0]				;2
-
-	dd		0					; Debug Size (must be 0)
+	add		al, [dword edi + 0]											;6
 
 	dec		eax
 .next:
