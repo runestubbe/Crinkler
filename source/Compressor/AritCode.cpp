@@ -1,4 +1,4 @@
-#include "aritcode.h"
+#include "AritCode.h"
 
 #include <cstdint>
 

@@ -3,7 +3,7 @@
 #include <memory>
 #include <ppl.h>
 
-#include "aritcode.h"
+#include "AritCode.h"
 
 #define IACA_VC64_START __writegsbyte(111, 111);
 #define IACA_VC64_END   __writegsbyte(222, 222);
@@ -43,9 +43,9 @@ bool CompressionStateEvaluator::Init(ModelPredictions* models, int length, int b
 			else
 				m_packages[i].prob[j][1] = _mm_set1_ps(baseprob * logScale);	// right / total = 1.0
 		}
-		m_packageSizes[i] = std::min(length - i * PACKAGE_SIZE, PACKAGE_SIZE) * (BITPREC_TABLE << EXTRA_BITS);
+		m_packageSizes[i] = std::min(length - i * PACKAGE_SIZE, PACKAGE_SIZE) * (TABLE_BIT_PRECISION << EXTRA_BITS);
 	}
-	m_compressedSize = (long long)length << BITPREC_TABLE_BITS;
+	m_compressedSize = (long long)length << TABLE_BIT_PRECISION_BITS;
 
 	return true;
 }
@@ -82,7 +82,7 @@ long long CompressionStateEvaluator::ChangeWeight(int modelIndex, int diffw) {
 		__m128 vc1 = _mm_set1_ps(-0.58208536795165f);
 		__m128 vc2 = _mm_set1_ps(0.15922006346951f);
 #endif
-		__m128 vbitprec_scale = _mm_set1_ps(BITPREC_TABLE << EXTRA_BITS);
+		__m128 vbitprec_scale = _mm_set1_ps(TABLE_BIT_PRECISION << EXTRA_BITS);
 
 		
 		Package* sum_packages = m_packages;
@@ -145,7 +145,7 @@ long long CompressionStateEvaluator::ChangeWeight(int modelIndex, int diffw) {
 			vtotal_log = _mm_mul_ps(_mm_add_ps(_mm_mul_ps(_mm_add_ps(_mm_mul_ps(_mm_add_ps(_mm_mul_ps(vc3, vtotal_log), vc2), vtotal_log), vc1), vtotal_log), vc0), vtotal_log);
 
 			__m128i vifrac_bits = _mm_cvtps_epi32(_mm_mul_ps(_mm_sub_ps(vtotal_log, vright_log), vbitprec_scale));
-			__m128i vnewsize = _mm_add_epi32(_mm_slli_epi32(_mm_sub_epi32(viprod_total_exponent, viprod_right_exponent), BITPREC_TABLE_BITS + EXTRA_BITS), vifrac_bits);
+			__m128i vnewsize = _mm_add_epi32(_mm_slli_epi32(_mm_sub_epi32(viprod_total_exponent, viprod_right_exponent), TABLE_BIT_PRECISION_BITS + EXTRA_BITS), vifrac_bits);
 #elif defined(USE_POLY3)
 			// log2(x) approximation (a*(x-1)^2 + b*(x-1) + (1-a-b))*x
 			// Exact at the endpoints x=1 and x=2
@@ -156,14 +156,14 @@ long long CompressionStateEvaluator::ChangeWeight(int modelIndex, int diffw) {
 			vtotal_log = _mm_mul_ps(_mm_add_ps(_mm_mul_ps(_mm_add_ps(_mm_mul_ps(vc2, vtotal_log), vc1), vtotal_log), vc0), vtotal_log);
 
 			__m128i vifrac_bits = _mm_cvtps_epi32(_mm_mul_ps(_mm_sub_ps(vtotal_log, vright_log), vbitprec_scale));
-			__m128i vnewsize = _mm_add_epi32(_mm_slli_epi32(_mm_sub_epi32(viprod_total_exponent, viprod_right_exponent), BITPREC_TABLE_BITS + EXTRA_BITS), vifrac_bits);
+			__m128i vnewsize = _mm_add_epi32(_mm_slli_epi32(_mm_sub_epi32(viprod_total_exponent, viprod_right_exponent), TABLE_BIT_PRECISION_BITS + EXTRA_BITS), vifrac_bits);
 #else
 			vright_log = _mm_mul_ps(vright_log, vright_log);	vright_log = _mm_mul_ps(vright_log, vright_log);	vright_log = _mm_mul_ps(vright_log, vright_log);	vright_log = _mm_mul_ps(vright_log, vright_log);
 			vtotal_log = _mm_mul_ps(vtotal_log, vtotal_log);	vtotal_log = _mm_mul_ps(vtotal_log, vtotal_log);	vtotal_log = _mm_mul_ps(vtotal_log, vtotal_log);	vtotal_log = _mm_mul_ps(vtotal_log, vtotal_log);
 			
 			__m128i vnewsize = _mm_sub_epi32(_mm_castps_si128(vtotal_log), _mm_castps_si128(vright_log));
-			vnewsize = _mm_srai_epi32(vnewsize, 23 - BITPREC_TABLE_BITS + 4);
-			vnewsize = _mm_add_epi32(vnewsize, _mm_slli_epi32(_mm_sub_epi32(viprod_total_exponent, viprod_right_exponent), BITPREC_TABLE_BITS));
+			vnewsize = _mm_srai_epi32(vnewsize, 23 - TABLE_BIT_PRECISION_BITS + 4);
+			vnewsize = _mm_add_epi32(vnewsize, _mm_slli_epi32(_mm_sub_epi32(viprod_total_exponent, viprod_right_exponent), TABLE_BIT_PRECISION_BITS));
 #endif
 
 			vnewsize = _mm_add_epi32(vnewsize, _mm_shuffle_epi32(vnewsize, _MM_SHUFFLE(1, 0, 3, 2)));
@@ -182,9 +182,8 @@ long long CompressionStateEvaluator::ChangeWeight(int modelIndex, int diffw) {
 	return diffsize.combine(std::plus<long long>());
 }
 
-long long CompressionStateEvaluator::Evaluate(const ModelList& ml) {
-	int newWeights[MAX_MODELS];
-	memset(newWeights, 0, sizeof(newWeights));
+long long CompressionStateEvaluator::Evaluate(const ModelList4k& ml) {
+	int newWeights[MAX_MODELS] = {};
 	for(int i = 0; i < ml.nmodels; i++) {
 		newWeights[ml[i].mask] = 1<<ml[i].weight;
 	}
@@ -193,9 +192,9 @@ long long CompressionStateEvaluator::Evaluate(const ModelList& ml) {
 		if(newWeights[i] != m_weights[i]) {
 			long long diffsize = ChangeWeight(i, newWeights[i] - m_weights[i]);
 			if(m_weights[i] == 0)
-				m_compressedSize += 8 * BITPREC_TABLE;
+				m_compressedSize += 8 * TABLE_BIT_PRECISION;
 			else if(newWeights[i] == 0)
-				m_compressedSize -= 8 * BITPREC_TABLE;
+				m_compressedSize -= 8 * TABLE_BIT_PRECISION;
 			m_weights[i] = newWeights[i];
 			m_compressedSize += diffsize;
 		}

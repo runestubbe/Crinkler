@@ -4,7 +4,7 @@
 
 #include <vector>
 
-#include "aritcode.h"
+#include "AritCode.h"
 #include "ModelList.h"
 
 struct HashBits {
@@ -31,10 +31,10 @@ public:
 	CompressionStream(unsigned char* data, int* sizefill, int maxsize, bool saturate);
 	
 	void	CompressFromHashBits(const HashBits& hashbits, TinyHashEntry* hashtable, int baseprob, int hashsize);
-	int		EvaluateSize(const unsigned char* data, int size, const ModelList& models, int baseprob, char* context, int bitpos);
+	int		EvaluateSize(const unsigned char* data, int size, const ModelList4k& models, int baseprob, char* context, int bitpos);
 	int		Close();
 };
 
-HashBits ComputeHashBits(const unsigned char* d, int size, unsigned char* context, const ModelList& models, bool first, bool finish);
+HashBits ComputeHashBits(const unsigned char* d, int size, unsigned char* context, const ModelList4k& models, bool first, bool finish);
 
 #endif

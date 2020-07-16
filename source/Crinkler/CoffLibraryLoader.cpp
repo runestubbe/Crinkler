@@ -130,8 +130,7 @@ HunkList* CoffLibraryLoader::Load(const char* data, int size, const char* module
 
 			if(strlen(symbolNames[i]) >= 6 && memcmp(symbolNames[i], "__imp_", 6) == 0) {
 				// An import
-				char dllName[256];
-				memset(dllName, 0, 256*sizeof(char));
+				char dllName[256] = {};
 				for(int j = 0; importDLL[j] && importDLL[j] != '.'; j++)
 					dllName[j] = (char)tolower(importDLL[j]);
 

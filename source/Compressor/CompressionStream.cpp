@@ -28,7 +28,7 @@ static int NextPowerOf2(int v) {
 	return v+1;
 }
 
-HashBits ComputeHashBits(const unsigned char* d, int size, unsigned char* context, const ModelList& models, bool first, bool finish) {
+HashBits ComputeHashBits(const unsigned char* d, int size, unsigned char* context, const ModelList4k& models, bool first, bool finish) {
 	int bitlength = first + size * 8;
 	int length = bitlength * models.nmodels;
 	HashBits out;
@@ -84,7 +84,7 @@ HashBits ComputeHashBits(const unsigned char* d, int size, unsigned char* contex
 	{	// Save context for next call
 		int s = min(size, MAX_CONTEXT_LENGTH);
 		if (s > 0)
-			memcpy(context + 8 - s, data + size - s, s);
+			memcpy(context + MAX_CONTEXT_LENGTH - s, data + size - s, s);
 	}
 
 	delete[] databuf;
@@ -114,7 +114,7 @@ void CompressionStream::CompressFromHashBits(const HashBits& hashbits, TinyHashE
 		int bit = hashbits.bits[bitpos];
 
 		if (m_sizefillptr && ((bitpos - bitlength) & 7) == 0) {
-			*m_sizefillptr++ = AritCodePos(&m_aritstate) / (BITPREC_TABLE / BITPREC);
+			*m_sizefillptr++ = AritCodePos(&m_aritstate) / (TABLE_BIT_PRECISION / BIT_PRECISION);
 		}
 
 		// Query models
@@ -162,7 +162,7 @@ void CompressionStream::CompressFromHashBits(const HashBits& hashbits, TinyHashE
 	}
 
 	if (m_sizefillptr) {
-		*m_sizefillptr = AritCodePos(&m_aritstate) / (BITPREC_TABLE / BITPREC);
+		*m_sizefillptr = AritCodePos(&m_aritstate) / (TABLE_BIT_PRECISION / BIT_PRECISION);
 	}
 }
 
@@ -178,7 +178,7 @@ __forceinline uint32_t Hash(__m128i& masked_contextdata)
 	return (uint32_t)tmp ^ uint32_t(tmp >> 32);
 }
 
-int CompressionStream::EvaluateSize(const unsigned char* d, int size, const ModelList& models, int baseprob, char* context, int bitpos) {
+int CompressionStream::EvaluateSize(const unsigned char* d, int size, const ModelList4k& models, int baseprob, char* context, int bitpos) {
 	unsigned char* data = new unsigned char[size + MAX_CONTEXT_LENGTH + 16];	// Ensure 128bit operations are safe
 	memcpy(data, context, MAX_CONTEXT_LENGTH);
 	data += MAX_CONTEXT_LENGTH;
@@ -272,11 +272,11 @@ int CompressionStream::EvaluateSize(const unsigned char* d, int size, const Mode
 	delete[] data;
 	delete[] sums;
 
-	return (int) (totalsize / (BITPREC_TABLE / BITPREC));
+	return (int) (totalsize / (TABLE_BIT_PRECISION / BIT_PRECISION));
 }
 
-CompressionStream::CompressionStream(unsigned char* data, int* sizefill, int maxsize, bool saturate) :
-m_data(data), m_sizefill(sizefill), m_sizefillptr(sizefill), m_maxsize(maxsize), m_saturate(saturate)
+CompressionStream::CompressionStream(unsigned char* data, int* sizefill, int maxCompressedSize, bool saturate) :
+m_data(data), m_sizefill(sizefill), m_sizefillptr(sizefill), m_maxsize(maxCompressedSize), m_saturate(saturate)
 {
 	if(data != NULL) {
 		memset(m_data, 0, m_maxsize);

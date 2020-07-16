@@ -3,9 +3,9 @@
 #include <ppl.h>
 
 #include "ModelList.h"
-#include "aritcode.h"
-#include "model.h"
-#include "compressor.h"
+#include "AritCode.h"
+#include "Model.h"
+#include "Compressor.h"
 
 struct HashEntry {
 	unsigned char mask;
@@ -106,7 +106,7 @@ ModelPredictions CompressionState::ApplyModel(const unsigned char* data, int bit
 	return mp;
 }
 
-CompressionState::CompressionState(const unsigned char* data, int size, int baseprob, bool saturate, CompressionStateEvaluator* evaluator, char* context) :
+CompressionState::CompressionState(const unsigned char* data, int size, int baseprob, bool saturate, CompressionStateEvaluator* evaluator, const unsigned char* context) :
 	m_size(size*8), m_saturate(saturate), m_stateEvaluator(evaluator)
 {
 	// Create temporary data buffer with leading zeros
@@ -132,7 +132,7 @@ CompressionState::CompressionState(const unsigned char* data, int size, int base
 	delete[] data2;
 
 	m_stateEvaluator->Init(m_models, size*8, baseprob, m_logScale);
-	m_compressedsize = BITPREC_TABLE*(long long)m_size;
+	m_compressedsize = TABLE_BIT_PRECISION*(long long)m_size;
 }
 
 CompressionState::~CompressionState() {
@@ -142,7 +142,7 @@ CompressionState::~CompressionState() {
 	}
 }
 
-int CompressionState::SetModels(const ModelList& models) {
+int CompressionState::SetModels(const ModelList4k& models) {
 	m_compressedsize = m_stateEvaluator->Evaluate(models);
-	return (int) (m_compressedsize / (BITPREC_TABLE / BITPREC));
+	return (int) (m_compressedsize / (TABLE_BIT_PRECISION / BIT_PRECISION));
 }

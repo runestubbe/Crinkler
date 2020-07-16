@@ -126,10 +126,8 @@ static bool RunExecutable(const char* filename) {
 	char args[MAX_PATH];
 	strcpy_s(args, GetCommandLine());
 
-	STARTUPINFO siStartupInfo;
-	PROCESS_INFORMATION piProcessInfo;
-	memset(&siStartupInfo, 0, sizeof(siStartupInfo));
-	memset(&piProcessInfo, 0, sizeof(piProcessInfo));
+	STARTUPINFO siStartupInfo = {};
+	PROCESS_INFORMATION piProcessInfo = {};
 	siStartupInfo.cb = sizeof(siStartupInfo);
 
 	if(!CreateProcess(filename,		// LPCSTR lpApplicationName

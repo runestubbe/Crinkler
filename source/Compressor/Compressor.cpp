@@ -59,7 +59,7 @@ const char *CompressionTypeName(CompressionType ct)
 	return "UNKNOWN";
 }
 
-unsigned int ApproximateWeights(CompressionState& cs, ModelList& models) {
+unsigned int ApproximateWeights(CompressionState& cs, ModelList4k& models) {
 	for (int i = 0 ; i < models.nmodels ; i++) {
 		unsigned char w = 0;
 		for (int b = 0 ; b < 8 ; b++) {
@@ -72,8 +72,8 @@ unsigned int ApproximateWeights(CompressionState& cs, ModelList& models) {
 	return cs.SetModels(models);
 }
 
-unsigned int OptimizeWeights(CompressionState& cs, ModelList& models) {
-	ModelList newmodels(models);
+unsigned int OptimizeWeights(CompressionState& cs, ModelList4k& models) {
+	ModelList4k newmodels(models);
 	int index = models.nmodels-1;
 	int dir = 1;
 	int lastindex = index;
@@ -128,7 +128,7 @@ unsigned int OptimizeWeights(CompressionState& cs, ModelList& models) {
 	return bestsize;
 }
 
-unsigned int TryWeights(CompressionState& cs, ModelList& models, CompressionType compressionType) {
+unsigned int TryWeights(CompressionState& cs, ModelList4k& models, CompressionType compressionType) {
 	unsigned int size;
 	switch (compressionType) {
 	case COMPRESSION_FAST:
@@ -142,8 +142,8 @@ unsigned int TryWeights(CompressionState& cs, ModelList& models, CompressionType
 	return size;
 }
 
-ModelList InstantModels() {
-	ModelList models;
+ModelList4k InstantModels4k() {
+	ModelList4k models;
 	models[0].mask = 0x00;	models[0].weight = 0;
 	models[1].mask = 0x80;	models[1].weight = 2;
 	models[2].mask = 0x40;	models[2].weight = 1;
@@ -159,11 +159,11 @@ ModelList InstantModels() {
 	return models;
 }
 
-ModelList ApproximateModels4k(const unsigned char* data, int datasize, int baseprob, bool saturate, int* compsize, CompressionType compressionType, char* context, ProgressCallback* progressCallback, void* progressUserData) {
+ModelList4k ApproximateModels4k(const unsigned char* data, int datasize, const unsigned char context[MAX_CONTEXT_LENGTH], CompressionType compressionType, bool saturate, int baseprob, int* outCompressedSize, ProgressCallback* progressCallback, void* progressUserData) {
 	int width = compressionType == COMPRESSION_VERYSLOW ? 3 : 1;
 	const int ELITE_FLAG = INT_MIN;
 
-	std::vector<ModelList> modelsets(width * 2);
+	std::vector<ModelList4k> modelsets(width * 2);
 	CompressionStateEvaluator evaluator;
 
 	CompressionState cs(data, datasize, baseprob, saturate, &evaluator, context);
@@ -186,8 +186,8 @@ ModelList ApproximateModels4k(const unsigned char* data, int datasize, int basep
 		int mask = masks[maski];
 
 		for (int s = 0; s < width; s++) {
-			ModelList& models = modelsets[s];
-			ModelList& new_models = modelsets[width + s];
+			ModelList4k& models = modelsets[s];
+			ModelList4k& new_models = modelsets[width + s];
 
 			new_models.size = INT_MAX;
 			if (models.size == INT_MAX) continue;
@@ -235,7 +235,7 @@ ModelList ApproximateModels4k(const unsigned char* data, int datasize, int basep
 			}
 		}
 
-		std::stable_sort(modelsets.begin(), modelsets.end(), [](const ModelList& a, const ModelList& b) {
+		std::stable_sort(modelsets.begin(), modelsets.end(), [](const ModelList4k& a, const ModelList4k& b) {
 			return a.size < b.size;
 		});
 
@@ -245,13 +245,13 @@ ModelList ApproximateModels4k(const unsigned char* data, int datasize, int basep
 
 	assert((modelsets[0].size & ELITE_FLAG) != 0);
 	modelsets[0].size &= ~ELITE_FLAG;
-	std::stable_sort(modelsets.begin(), modelsets.end(), [](const ModelList& a, const ModelList& b) {
+	std::stable_sort(modelsets.begin(), modelsets.end(), [](const ModelList4k& a, const ModelList4k& b) {
 		return a.size < b.size;
 	});
-	ModelList models = modelsets[0];
+	ModelList4k models = modelsets[0];
 	int size = OptimizeWeights(cs, models);
-	if(compsize)
-		*compsize = size;
+	if(outCompressedSize)
+		*outCompressedSize = size;
 
 	return models;
 }
@@ -390,70 +390,94 @@ static int* GenerateModelData1k(const unsigned char* org_data, int datasize)
 	return modeldata;
 }
 
-int EvaluateSize(const unsigned char* data, int rawsize, int splittingPoint,
-	const ModelList& models1, const ModelList& models2, int baseprob, bool saturate,
-	int* out_size1, int* out_size2)
+int	EvaluateSize4k(const unsigned char* inputData, int numSegments, const int* segmentSizes, int* outCompressedSegmentSizes, ModelList4k** modelLists, int baseprob, bool saturate)
 {
 	CompressionStream cs(NULL, NULL, 0, saturate);
-	int sizes[16];
-
-	char contexts[2][8];
-	memset(contexts[0], 0, 8);
-	memset(contexts[1], 0, 8);
-	int context_size = 8;
-	if (splittingPoint < 8) context_size = splittingPoint;
-	memcpy(contexts[1] + (8 - context_size), data + splittingPoint - context_size, context_size);
-
-	concurrency::parallel_for(0, 16, [&](int i)
+	
+	std::vector<int> compressedSizes(numSegments * 8);
+	std::vector<int> segmentOffsets(numSegments);
+	
+	int segmentOffset = 0;
+	for (int i = 0; i < numSegments; i++)
 	{
-		if (i < 8)
-			sizes[i] = cs.EvaluateSize(data, splittingPoint, models1, baseprob, contexts[0], i);
-		else
-			sizes[i] = cs.EvaluateSize(data + splittingPoint, rawsize - splittingPoint, models2, baseprob, contexts[1], i - 8);
-	});
-
-	int size1 = models1.nmodels * 8 * BITPREC;
-	int size2 = models2.nmodels * 8 * BITPREC;
-	for (int i = 0; i < 8; i++)
-	{
-		size1 += sizes[i];
-		size2 += sizes[i + 8];
+		segmentOffsets[i] = segmentOffset;
+		segmentOffset += segmentSizes[i];
 	}
 
-	if (out_size1) *out_size1 = size1;
-	if (out_size2) *out_size2 = size2;
+	concurrency::parallel_for(0, numSegments * 8, [&](int i)
+	{
+		int segment = i >> 3;
+		int bitpos = i & 7;
 
-	return size1 + size2;
+		int offset = segmentOffsets[segment];
+		char context[MAX_CONTEXT_LENGTH];
+		for (int i = 0; i < MAX_CONTEXT_LENGTH; i++)
+		{
+			int srcpos = offset - MAX_CONTEXT_LENGTH + i;
+			context[i] = srcpos >= 0 ? inputData[srcpos] : 0;
+		}
+
+		compressedSizes[i] = cs.EvaluateSize(inputData + offset, segmentSizes[segment], *modelLists[segment], baseprob, context, bitpos);
+	});
+
+	int totalSize = 0;
+	for (int i = 0; i < numSegments; i++)
+	{
+		int segmentSize = modelLists[i]->nmodels * 8 * BIT_PRECISION;
+		for (int j = 0; j < 8; j++)
+			segmentSize += compressedSizes[i * 8 + j];
+		totalSize += segmentSize;
+		
+		if (outCompressedSegmentSizes)
+			outCompressedSegmentSizes[i] = segmentSize;
+	}
+	
+	return totalSize;
 }
 
-int Compress(unsigned char* compressed, int* sizefill, int maxsize, bool saturate,
-	const unsigned char* data, int rawsize, int splittingPoint,
-	const ModelList& models1, const ModelList& models2, int baseprob, int hashsize)
+int Compress4k(const unsigned char* inputData, int numSegments, const int* segmentSizes, unsigned char* outCompressedData, int maxCompressedSize, ModelList4k** modelLists, bool saturate, int baseprob, int hashsize, int* sizefill)
 {
-	unsigned char context[8];
-	memset(context, 0, sizeof(context));
-	HashBits hashbits1 = ComputeHashBits(data, splittingPoint, context, models1, true, false);
-	HashBits hashbits2 = ComputeHashBits(data + splittingPoint, rawsize - splittingPoint, context, models2, false, true);
-	std::vector<TinyHashEntry> hashtable1(hashbits1.tinyhashsize);
-	std::vector<TinyHashEntry> hashtable2(hashbits2.tinyhashsize);
-	return CompressFromHashBits(compressed, sizefill, hashtable1.data(), hashtable2.data(), maxsize, saturate, hashbits1, hashbits2, baseprob, hashsize);
+	unsigned char context[MAX_CONTEXT_LENGTH] = {};
+
+	std::vector<HashBits> hashbits(numSegments);
+	std::vector<std::vector<TinyHashEntry>> hashtables(numSegments);
+	std::vector<TinyHashEntry*> hashtablePtrs(numSegments);
+
+	int segmentOffset = 0;
+	for (int i = 0; i < numSegments; i++)
+	{
+		int segmentSize = segmentSizes[i];
+		hashbits[i] = ComputeHashBits(inputData + segmentOffset, segmentSize, context, *modelLists[i], i == 0, (i + 1) == numSegments);
+		segmentOffset += segmentSize;
+
+		hashtables[i].resize(hashbits[i].tinyhashsize);
+		hashtablePtrs[i] = hashtables[i].data();
+	}
+
+	return CompressFromHashBits4k(hashbits.data(), hashtablePtrs.data(), numSegments, outCompressedData, maxCompressedSize, saturate, baseprob, hashsize, sizefill);
 }
 
-int CompressFromHashBits(unsigned char* compressed, int* sizefill, TinyHashEntry* hashtable1, TinyHashEntry* hashtable2, int maxsize, bool saturate,
-	const HashBits& hashbits1, const HashBits& hashbits2, int baseprob, int hashsize)
+int CompressFromHashBits4k(const HashBits* hashbits, TinyHashEntry** hashtables, int numSegments, unsigned char* outCompressedData, int maxCompressedSize, bool saturate, int baseprob, int hashsize, int* sizefill)
 {
-	CompressionStream cs(compressed, sizefill, maxsize, saturate);
-	cs.CompressFromHashBits(hashbits1, hashtable1, baseprob, hashsize);
-	cs.CompressFromHashBits(hashbits2, hashtable2, baseprob, hashsize);
+	CompressionStream cs(outCompressedData, sizefill, maxCompressedSize, saturate);
+	for (int i = 0; i < numSegments; i++)
+	{
+		cs.CompressFromHashBits(hashbits[i], hashtables[i], baseprob, hashsize);
+	}
 	return cs.Close();
 }
 
-int Compress1K(unsigned char* org_data, int datasize, unsigned char* compressed, int compressed_size, int boost_factor, int b0, int b1, unsigned int modelmask, int* sizefill, int* internal_size)
+int Compress1k(const unsigned char* orgInputData, int inputSize, unsigned char* outCompressedData, int maxCompressedSize, ModelList1k& modelList, int* sizefill, int* outInternalSize)
 {
-	unsigned char* data = new unsigned char[datasize + 32];
+	int boost_factor = modelList.boost;
+	int b0 = modelList.baseprob0;
+	int b1 = modelList.baseprob1;
+	unsigned int modelmask = modelList.modelmask;
+
+	unsigned char* data = new unsigned char[inputSize + 32];
 	memset(data, 0, 32);
 	data += 32;
-	memcpy(data, org_data, datasize);
+	memcpy(data, orgInputData, inputSize);
 
 	struct SHashEntry1	// Hash table is split in hot/cold
 	{
@@ -466,10 +490,10 @@ int Compress1K(unsigned char* org_data, int datasize, unsigned char* compressed,
 	{
 		unsigned int n[2];
 	};
-	SEncodeEntry* encode_entries = new SEncodeEntry[8 * datasize];
-	memset(encode_entries, 0, 8 * datasize * sizeof(SEncodeEntry));
+	SEncodeEntry* encode_entries = new SEncodeEntry[8 * inputSize];
+	memset(encode_entries, 0, 8 * inputSize * sizeof(SEncodeEntry));
 
-	const int hash_table_size = NextPowerOf2(datasize * 2);
+	const int hash_table_size = NextPowerOf2(inputSize * 2);
 
 	SHashEntry1* hash_table_data = new SHashEntry1[hash_table_size * 8];
 	
@@ -504,7 +528,7 @@ int Compress1K(unsigned char* org_data, int datasize, unsigned char* compressed,
 			}
 			
 
-			for (int bytepos = -1; bytepos < datasize; bytepos++)
+			for (int bytepos = -1; bytepos < inputSize; bytepos++)
 			{
 				int bit = ((data[bytepos] << bitpos) & 0x80) == 0x80;
 
@@ -552,7 +576,7 @@ int Compress1K(unsigned char* org_data, int datasize, unsigned char* compressed,
 								
 								unsigned int factor = (c0 == 0 || c1 == 0) ? boost_factor : 1;
 
-								SEncodeEntry& encode_entry = encode_entries[bitpos*datasize + bytepos];
+								SEncodeEntry& encode_entry = encode_entries[bitpos*inputSize + bytepos];
 								encode_entry.n[0] += c0 * factor;
 								encode_entry.n[1] += c1 * factor;
 								break;
@@ -571,20 +595,20 @@ int Compress1K(unsigned char* org_data, int datasize, unsigned char* compressed,
 	delete[] hash_table_data;
 
 	AritState as;
-	memset(compressed, 0, compressed_size);
-	AritCodeInit(&as, compressed);
+	memset(outCompressedData, 0, maxCompressedSize);
+	AritCodeInit(&as, outCompressedData);
 
-	for (int bytepos = 0; bytepos < datasize; bytepos++)
+	for (int bytepos = 0; bytepos < inputSize; bytepos++)
 	{
 		if (sizefill)
 		{
-			*sizefill++ = AritCodePos(&as) / (BITPREC_TABLE / BITPREC);
+			*sizefill++ = AritCodePos(&as) / (TABLE_BIT_PRECISION / BIT_PRECISION);
 		}
 
 		for (int bitpos = 0; bitpos < 8; bitpos++)
 		{
 			int bit = ((data[bytepos] << bitpos) & 0x80) == 0x80;
-			const SEncodeEntry& entry = encode_entries[bitpos*datasize + bytepos];
+			const SEncodeEntry& entry = encode_entries[bitpos*inputSize + bytepos];
 			AritCode(&as, entry.n[1] + b0, entry.n[0] + b1, 1 - bit);
 		}
 	}
@@ -596,12 +620,12 @@ int Compress1K(unsigned char* org_data, int datasize, unsigned char* compressed,
 
 	if (sizefill)
 	{
-		*sizefill++ = AritCodePos(&as) / (BITPREC_TABLE / BITPREC);
+		*sizefill++ = AritCodePos(&as) / (TABLE_BIT_PRECISION / BIT_PRECISION);
 	}
 
-	if (internal_size)
+	if (outInternalSize)
 	{
-		*internal_size = AritCodePos(&as) / (BITPREC_TABLE / BITPREC);
+		*outInternalSize = AritCodePos(&as) / (TABLE_BIT_PRECISION / BIT_PRECISION);
 	}
 
 	return (AritCodeEnd(&as) + 7) / 8;
@@ -691,17 +715,17 @@ int Evaluate1K(unsigned char* data, int size, int* modeldata, int* out_b0, int* 
 		}
 	}
 
-	return (min_totalsize / (BITPREC_TABLE / BITPREC));
+	return (min_totalsize / (TABLE_BIT_PRECISION / BIT_PRECISION));
 }
 
-ModelList1k ApproximateModels1k(const unsigned char* org_data, int datasize, int* compsize, ProgressCallback* progressCallback, void* progressUserData)
+ModelList1k ApproximateModels1k(const unsigned char* orgInputData, int inputSize, int* outCompressedSize, ProgressCallback* progressCallback, void* progressUserData)
 {
-	unsigned char* data = new unsigned char[datasize + 16];
+	unsigned char* data = new unsigned char[inputSize + 16];
 	memset(data, 0, 16);
 	data += 16;
-	memcpy(data, org_data, datasize);
+	memcpy(data, orgInputData, inputSize);
 
-	int* modeldata = GenerateModelData1k(org_data, datasize);
+	int* modeldata = GenerateModelData1k(orgInputData, inputSize);
 
 	int best_size = INT_MAX;
 
@@ -748,7 +772,7 @@ ModelList1k ApproximateModels1k(const unsigned char* org_data, int datasize, int
 				int boost_factor;
 				int testsize;
 				int b0, b1;
-				testsize = Evaluate1K(data, datasize, modeldata, &b0, &b1, &boost_factor, modelmask);
+				testsize = Evaluate1K(data, inputSize, modeldata, &b0, &b1, &boost_factor, modelmask);
 
 				Concurrency::critical_section::scoped_lock l(cs);
 				if (testsize < best_size)
@@ -790,9 +814,9 @@ ModelList1k ApproximateModels1k(const unsigned char* org_data, int datasize, int
 	model.baseprob1 = best_b1;
 	model.boost = best_boost;
 
-	if (compsize)
+	if (outCompressedSize)
 	{
-		*compsize = best_size;
+		*outCompressedSize = best_size;
 	}
 
 	return model;

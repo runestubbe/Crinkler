@@ -73,7 +73,7 @@ EmpiricalHunkSorter::EmpiricalHunkSorter() {
 EmpiricalHunkSorter::~EmpiricalHunkSorter() {
 }
 
-int EmpiricalHunkSorter::TryHunkCombination(HunkList* hunklist, Transform& transform, ModelList& codeModels, ModelList& dataModels, ModelList1k& models1k, int baseprob, bool saturate, bool use1KMode, int* out_size1, int* out_size2)
+int EmpiricalHunkSorter::TryHunkCombination(HunkList* hunklist, Transform& transform, ModelList4k& codeModels, ModelList4k& dataModels, ModelList1k& models1k, int baseprob, bool saturate, bool use1KMode, int* out_size1, int* out_size2)
 {
 	int splittingPoint;
 
@@ -86,7 +86,7 @@ int EmpiricalHunkSorter::TryHunkCombination(HunkList* hunklist, Transform& trans
 	{
 		int max_size = phase1->GetRawSize() * 2 + 1000;
 		unsigned char* compressed_data_ptr = new unsigned char[max_size];
-		Compress1K((unsigned char*)phase1->GetPtr(), phase1->GetRawSize(), compressed_data_ptr, max_size, models1k.boost, models1k.baseprob0, models1k.baseprob1, models1k.modelmask, nullptr, &totalsize);	//TODO: Estimate instead of compress
+		Compress1k((unsigned char*)phase1->GetPtr(), phase1->GetRawSize(), compressed_data_ptr, max_size, models1k, nullptr, &totalsize);	//TODO: Estimate instead of compress
 		delete[] compressed_data_ptr;
 
 		if(out_size1) *out_size1 = totalsize;
@@ -94,14 +94,21 @@ int EmpiricalHunkSorter::TryHunkCombination(HunkList* hunklist, Transform& trans
 	}
 	else
 	{
-		totalsize = EvaluateSize((unsigned char*)phase1->GetPtr(), phase1->GetRawSize(), splittingPoint, codeModels, dataModels, baseprob, saturate, out_size1, out_size2);
+		ModelList4k* ModelLists[] = { &codeModels, &dataModels };
+		int sectionSizes[] = {splittingPoint, phase1->GetRawSize() - splittingPoint};
+		int compressedSizes[2] = {};
+		totalsize = EvaluateSize4k((unsigned char*)phase1->GetPtr(), 2, sectionSizes, compressedSizes, ModelLists, baseprob, saturate);
+		
+		if (out_size1) *out_size1 = compressedSizes[0];
+		if (out_size2) *out_size2 = compressedSizes[1];
+
 		delete phase1;
 	}
 
 	return totalsize;
 }
 
-int EmpiricalHunkSorter::SortHunkList(HunkList* hunklist, Transform& transform, ModelList& codeModels, ModelList& dataModels, ModelList1k& models1k, int baseprob, bool saturate, int numIterations, ProgressBar* progress, bool use1KMode, int* out_size1, int* out_size2)
+int EmpiricalHunkSorter::SortHunkList(HunkList* hunklist, Transform& transform, ModelList4k& codeModels, ModelList4k& dataModels, ModelList1k& models1k, int baseprob, bool saturate, int numIterations, ProgressBar* progress, bool use1KMode, int* out_size1, int* out_size2)
 {
 	srand(1);
 
@@ -115,11 +122,11 @@ int EmpiricalHunkSorter::SortHunkList(HunkList* hunklist, Transform& transform, 
 	int best_total_size = TryHunkCombination(hunklist, transform, codeModels, dataModels, models1k, baseprob, saturate, use1KMode, &best_size1, &best_size2);
 	if(use1KMode)
 	{
-		printf("  Iteration: %5d  Size: %5.2f\n", 0, best_total_size / (BITPREC * 8.0f));
+		printf("  Iteration: %5d  Size: %5.2f\n", 0, best_total_size / (BIT_PRECISION * 8.0f));
 	}
 	else
 	{
-		printf("  Iteration: %5d  Code: %.2f  Data: %.2f  Size: %.2f\n", 0, best_size1 / (BITPREC * 8.0f), best_size2 / (BITPREC * 8.0f), best_total_size / (BITPREC * 8.0f));
+		printf("  Iteration: %5d  Code: %.2f  Data: %.2f  Size: %.2f\n", 0, best_size1 / (BIT_PRECISION * 8.0f), best_size2 / (BIT_PRECISION * 8.0f), best_total_size / (BIT_PRECISION * 8.0f));
 	}
 	
 	if(progress)
@@ -172,11 +179,11 @@ int EmpiricalHunkSorter::SortHunkList(HunkList* hunklist, Transform& transform, 
 		if(total_size < best_total_size) {
 			if(use1KMode)
 			{
-				printf("  Iteration: %5d  Size: %5.2f\n", i, total_size / (BITPREC * 8.0f));
+				printf("  Iteration: %5d  Size: %5.2f\n", i, total_size / (BIT_PRECISION * 8.0f));
 			}
 			else
 			{
-				printf("  Iteration: %5d  Code: %.2f  Data: %.2f  Size: %.2f\n", i, size1 / (BITPREC * 8.0f), size2 / (BITPREC * 8.0f), total_size / (BITPREC * 8.0f));
+				printf("  Iteration: %5d  Code: %.2f  Data: %.2f  Size: %.2f\n", i, size1 / (BIT_PRECISION * 8.0f), size2 / (BIT_PRECISION * 8.0f), total_size / (BIT_PRECISION * 8.0f));
 			}
 			
 			fflush(stdout);

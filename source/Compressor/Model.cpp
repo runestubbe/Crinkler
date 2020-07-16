@@ -1,4 +1,4 @@
-#include "model.h"
+#include "Model.h"
 
 unsigned int ModelHashStart(unsigned int mask, int hashmul)
 {

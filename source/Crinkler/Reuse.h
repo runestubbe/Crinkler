@@ -27,8 +27,8 @@ static const char *ReuseTypeName(ReuseType mode) {
 }
 
 class Reuse {
-	ModelList *m_code_models;
-	ModelList *m_data_models;
+	ModelList4k *m_code_models;
+	ModelList4k *m_data_models;
 
 	std::vector<std::string> m_code_hunk_ids;
 	std::vector<std::string> m_data_hunk_ids;
@@ -41,10 +41,10 @@ class Reuse {
 
 public:
 	Reuse();
-	Reuse(const ModelList& code_models, const ModelList& data_models, const HunkList& hl, int hashsize);
+	Reuse(const ModelList4k& code_models, const ModelList4k& data_models, const HunkList& hl, int hashsize);
 
-	const ModelList*	GetCodeModels() const { return m_code_models; }
-	const ModelList*	GetDataModels() const { return m_data_models; }
+	const ModelList4k*	GetCodeModels() const { return m_code_models; }
+	const ModelList4k*	GetDataModels() const { return m_data_models; }
 	int					GetHashSize() const { return m_hashsize; }
 
 	void				Save(const char* filename) const;

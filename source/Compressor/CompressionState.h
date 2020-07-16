@@ -14,12 +14,12 @@ class CompressionState {
 
 	ModelPredictions			ApplyModel(const unsigned char* data, int bitlength, unsigned char mask);
 public:
-	CompressionState(const unsigned char* data, int size, int baseprob, bool saturate, CompressionStateEvaluator* evaluator, char* context);
+	CompressionState(const unsigned char* data, int size, int baseprob, bool saturate, CompressionStateEvaluator* evaluator, const unsigned char* context);
 	~CompressionState();
 	
-	int SetModels(const ModelList& models);
+	int SetModels(const ModelList4k& models);
 
-	int GetCompressedSize() const	{ return (int)(m_compressedsize / (BITPREC_TABLE / BITPREC)); }
+	int GetCompressedSize() const	{ return (int)(m_compressedsize / (TABLE_BIT_PRECISION / BIT_PRECISION)); }
 	int GetSize() const				{ return m_size;}
 };
 #endif

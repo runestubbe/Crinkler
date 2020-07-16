@@ -7,6 +7,10 @@
 
 #include <emmintrin.h>
 
+static const int LOG2_NUM_PACKAGE_VECTORS	= 4;
+static const int NUM_PACKAGE_VECTORS		= 1 << LOG2_NUM_PACKAGE_VECTORS;
+static const int PACKAGE_SIZE				= NUM_PACKAGE_VECTORS * 4;
+
 struct CounterPair {
 	float p0, p1;
 	int old_size;
@@ -52,7 +56,7 @@ public:
 	~CompressionStateEvaluator();
 
 	bool		Init(ModelPredictions* models, int length, int baseprob, float logScale);
-	long long	Evaluate(const ModelList& models);
+	long long	Evaluate(const ModelList4k& models);
 };
 
 #endif

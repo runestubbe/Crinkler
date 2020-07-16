@@ -5,9 +5,8 @@
 #include <cassert>
 #include <intrin.h>
 
-static const int BITPREC = 256;
-static const int BITPREC_TABLE_BITS = 12;
-static const int BITPREC_TABLE = 1 << BITPREC_TABLE_BITS;
+static const int TABLE_BIT_PRECISION_BITS = 12;
+static const int TABLE_BIT_PRECISION = 1 << TABLE_BIT_PRECISION_BITS;
 
 struct AritState {
   void*			dest_ptr;
@@ -32,7 +31,7 @@ inline int AritSize2(int right_prob, int wrong_prob) {
 
 	int right_len, total_len;
 	int total_prob = right_prob + wrong_prob;
-	if(total_prob < BITPREC_TABLE) {
+	if(total_prob < TABLE_BIT_PRECISION) {
 		return LogTable[total_prob] - LogTable[right_prob];
 	}
 	_BitScanReverse((unsigned long*)&right_len, right_prob);

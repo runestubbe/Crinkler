@@ -276,7 +276,7 @@ static string ToIdent(string str) {
 }
 
 static int SizeToColor(int size) {
-	float bsize = size / (float)BITPREC;
+	float bsize = size / (float)BIT_PRECISION;
 	for (int i = 0 ; i < sizeof(sizecols)/sizeof(SizeColor) ; i++) {
 		if (bsize < sizecols[i].size) {
 			return sizecols[i].color;
@@ -316,11 +316,11 @@ static void PrintRow(FILE *out, Hunk& hunk, const int *sizefill, int index, int 
 
 			if (ascii) {
 				fprintf(out, "<td title='%.2f bits' style='color: #%.6X;'>"
-					"&#x%.2X;</td>", size / (float)BITPREC, SizeToColor(size), ToAscii(c));
+					"&#x%.2X;</td>", size / (float)BIT_PRECISION, SizeToColor(size), ToAscii(c));
 			}
 			else {
 				fprintf(out, "<td title='%.2f bits' style='color: #%.6X;'>"
-					"%.2X</td>", size / (float)BITPREC, SizeToColor(size), c);
+					"%.2X</td>", size / (float)BIT_PRECISION, SizeToColor(size), c);
 			}
 		} else {
 			if (ascii) {
@@ -560,8 +560,8 @@ static void HtmlReportRecursive(CompressionReportRecord* csr, FILE* out, Hunk& h
 			if(csr->compressedPos >= 0) {	// Initialized data
 				fprintf(out,"<th nowrap class='c4'>%.2f</th>"
 							"<th nowrap class='c5'>%.1f%%</th>", 
-							csr->compressedSize / (BITPREC*8.0f),
-							(csr->compressedSize / (BITPREC*8.0f)) * 100 / csr->size);
+							csr->compressedSize / (BIT_PRECISION *8.0f),
+							(csr->compressedSize / (BIT_PRECISION *8.0f)) * 100 / csr->size);
 			} else {	// Uninitialized data
 				fprintf(out,"<th nowrap class='c4'>&nbsp;</th>"
 							"<th nowrap class='c5'>&nbsp;</th>");
@@ -612,7 +612,7 @@ static void HtmlReportRecursive(CompressionReportRecord* csr, FILE* out, Hunk& h
 						int size = InstructionSize(&insts[i], sizefill);
 
 						fprintf(out, "<td nowrap title='%.2f bytes' style='color: #%.6X;'>%s",
-							size / (float)(BITPREC*8), SizeToColor(size/insts[i].size), insts[i].mnemonic.p);
+							size / (float)(BIT_PRECISION*8), SizeToColor(size/insts[i].size), insts[i].mnemonic.p);
 						for (int j = 0 ; j < OPCODE_WIDTH-(int)insts[i].mnemonic.length ; j++) {
 							fprintf(out, "&nbsp;");
 						}
@@ -678,7 +678,7 @@ static void HtmlReportRecursive(CompressionReportRecord* csr, FILE* out, Hunk& h
 							int value = *((int*)&untransformedHunk.GetPtr()[idx]);
 							string label = GenerateLabel(jt->second, value, symbols);
 							fprintf(out, "<td title='%.2f bytes' style='color: #%.6X;' colspan='%d'>%s</td>",
-								size / (float)(BITPREC*8), SizeToColor(size/4), DATA_BYTE_COLUMNS, label.c_str());
+								size / (float)(BIT_PRECISION*8), SizeToColor(size/4), DATA_BYTE_COLUMNS, label.c_str());
 						} else {
 							// Write ascii
 							PrintRow(out, hunk, sizefill, idx, rowLength, DATA_BYTE_COLUMNS, DATA_HEX_WIDTH, true, false);

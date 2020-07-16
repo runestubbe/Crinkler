@@ -15,8 +15,8 @@ enum State {
 #define BSS_HUNKS_TAG "# Uninitialized sections"
 #define HASHSIZE_TAG "# Hash table size"
 
-static ModelList *ParseModelList(const char *line) {
-	ModelList *ml = new ModelList();
+static ModelList4k *ParseModelList(const char *line) {
+	ModelList4k *ml = new ModelList4k();
 	int mask, weight, n;
 	while (sscanf(line, " %x:%d%n", &mask, &weight, &n) == 2) {
 		ml->AddModel(Model{ (unsigned char)weight, (unsigned char)mask });
@@ -27,9 +27,9 @@ static ModelList *ParseModelList(const char *line) {
 
 Reuse::Reuse() : m_code_models(nullptr), m_data_models(nullptr), m_hashsize(0) {}
 
-Reuse::Reuse(const ModelList& code_models, const ModelList& data_models, const HunkList& hl, int hashsize) {
-	m_code_models = new ModelList(code_models);
-	m_data_models = new ModelList(data_models);
+Reuse::Reuse(const ModelList4k& code_models, const ModelList4k& data_models, const HunkList& hl, int hashsize) {
+	m_code_models = new ModelList4k(code_models);
+	m_data_models = new ModelList4k(data_models);
 	for (int h = 0; h < hl.GetNumHunks(); h++) {
 		Hunk *hunk = hl[h];
 		const std::string& id = hunk->GetID();

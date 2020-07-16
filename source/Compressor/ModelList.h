@@ -14,17 +14,17 @@ struct Model {
 	unsigned char mask;
 };
 
-class ModelList {
+class ModelList4k {
 	Model	m_models[MAX_MODELS];
 public:
 	int		nmodels;
 	int		size;
 
-	ModelList();
-	ModelList(const unsigned char* models, int weightmask);
-	ModelList(const ModelList& ml);
+	ModelList4k();
+	ModelList4k(const unsigned char* models, int weightmask);
+	ModelList4k(const ModelList4k& ml);
 	
-	ModelList&		operator=(const ModelList& ml);
+	ModelList4k&	operator=(const ModelList4k& ml);
 	Model&			operator[] (unsigned idx);
 	const Model&	operator[] (unsigned idx) const;
 

@@ -13,24 +13,24 @@ static int Parity(int n) {
 }
 
 
-ModelList::ModelList() :
+ModelList4k::ModelList4k() :
 	nmodels(0)
 {
 
 }
 
-ModelList::ModelList(const ModelList& ml) {
+ModelList4k::ModelList4k(const ModelList4k& ml) {
 	this->nmodels = ml.nmodels;
 	this->size = ml.size;
 	if(nmodels > 0)
 		memcpy(m_models, ml.m_models, nmodels*sizeof(Model));
 }
 
-ModelList::ModelList(const unsigned char* models, int weightmask) {
+ModelList4k::ModelList4k(const unsigned char* models, int weightmask) {
 	SetFromModelsAndMask(models, weightmask);
 }
 
-ModelList& ModelList::operator=(const ModelList& ml) {
+ModelList4k& ModelList4k::operator=(const ModelList4k& ml) {
 	this->nmodels = ml.nmodels;
 	this->size = ml.size;
 	if(nmodels > 0)
@@ -38,21 +38,21 @@ ModelList& ModelList::operator=(const ModelList& ml) {
 	return *this;
 }
 
-Model& ModelList::operator[] (unsigned idx) {
+Model& ModelList4k::operator[] (unsigned idx) {
 	assert(idx < MAX_MODELS);
 	return m_models[idx];
 }
 
-const Model& ModelList::operator[] (unsigned idx) const {
+const Model& ModelList4k::operator[] (unsigned idx) const {
 	assert(idx < MAX_MODELS);
 	return m_models[idx];
 }
 
-void ModelList::AddModel(Model model) {
+void ModelList4k::AddModel(Model model) {
 	m_models[nmodels++] = model;
 }
 
-void ModelList::Print(FILE *f) const {
+void ModelList4k::Print(FILE *f) const {
 	for(int m = 0 ; m < nmodels; m++) {
 		fprintf(f, "%s%02X:%d", m == 0 ? "" : " ", m_models[m].mask, m_models[m].weight);
 	}
@@ -60,7 +60,7 @@ void ModelList::Print(FILE *f) const {
 }
 
 // Copy a sorted model list to masks and return the corresponding weight mask
-unsigned int ModelList::GetMaskList(unsigned char* masks, bool terminate) const {
+unsigned int ModelList4k::GetMaskList(unsigned char* masks, bool terminate) const {
 	unsigned int weightmask = 0;
 	int nmodels = this->nmodels;
 	int biti = 31;
@@ -86,7 +86,7 @@ unsigned int ModelList::GetMaskList(unsigned char* masks, bool terminate) const 
 	return weightmask & (-2 + (int(terminate) ^ Parity(weightmask)));
 }
 
-void ModelList::SetFromModelsAndMask(const unsigned char* models, int weightmask) {
+void ModelList4k::SetFromModelsAndMask(const unsigned char* models, int weightmask) {
 	nmodels = 0;
 	int weight = 0;
 	do {
@@ -104,10 +104,10 @@ void ModelList::SetFromModelsAndMask(const unsigned char* models, int weightmask
 	} while(weightmask);
 }
 
-CompressionType ModelList::DetectCompressionType() const {
+CompressionType ModelList4k::DetectCompressionType() const {
 	// This code does not work, as FAST mode has a single
 	// weight optimization at the end.
-	ModelList instant = InstantModels();
+	ModelList4k instant = InstantModels4k();
 	bool is_instant = true;
 	bool is_fast = true;
 	for (int i = 0 ; i < nmodels ; i++)

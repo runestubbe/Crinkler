@@ -25,7 +25,7 @@ static const int CRINKLER_IMAGEBASE =	0x400000;
 static const int CRINKLER_SECTIONSIZE = 0x10000;
 static const int CRINKLER_SECTIONBASE = CRINKLER_IMAGEBASE+CRINKLER_SECTIONSIZE;
 static const int CRINKLER_CODEBASE =	CRINKLER_IMAGEBASE+2*CRINKLER_SECTIONSIZE;
-static const int CRINKLER_BASEPROB =	10;
+static const int CRINKLER_BASEPROB =	DEFAULT_BASEPROB;
 
 enum SubsystemType {SUBSYSTEM_CONSOLE, SUBSYSTEM_WINDOWS};
 
@@ -68,8 +68,8 @@ class Crinkler {
 	bool								m_runInitializers;
 	int									m_largeAddressAware;
 	int									m_saturate;
-	ModelList							m_modellist1;
-	ModelList							m_modellist2;
+	ModelList4k							m_modellist1;
+	ModelList4k							m_modellist2;
 	ModelList1k							m_modellist1k;
 
 	ConsoleProgressBar					m_consoleBar;
