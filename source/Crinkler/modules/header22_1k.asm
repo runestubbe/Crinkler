@@ -85,17 +85,19 @@ AritDecodeLoop2:
 AritDecode:
 	test	eax, eax			; MSB of interval != 0					;2
 	jns		short AritDecodeLoop; Loop while msb of interval == 0		;2
-	jmp		short _AritDecode2											;2
+	add		ebx, edx			; ebx = p0 + p1							;2
 
-	dw		3					; Major subsystem version
-	dw		0x8000				; Minor subsystem version
-
-	dd		0					; Reserved (Must be 0)
+; 8 bytes:
+; Major subsystem version
+; Minor subsystem version
+; Reserved (Must be 0)
+	add		al, 0				; 04 00									;2
+	push	eax					; Push interval_size					;1
+	cmp		eax, strict dword 0											;5
 
 ; 4 bytes:
 ; Size of imnage
-_AritDecode2:
-	jmp		short _AritDecode3											;2
+	jmp		short _AritDecode2											;2
 	db		0x00														;1
 _VirtualSizeHighBytePtr:
 	db		0x01														;1
@@ -231,9 +233,7 @@ BoostFactorPtrP:
 	cmp		di, strict word 0
 DepackEndPositionP:
 	jmp		short _AritDecodeJumpPad
-_AritDecode3:
-	add		ebx, edx			; ebx = p0 + p1
-	push	eax					; Push interval_size
+_AritDecode2:
 	mul		edx					; edx:eax = p0 * interval_size
 	div		ebx					; eax = (p0 * interval_size) / (p0 + p1)
 	pop		edx					; edx = interval_size
