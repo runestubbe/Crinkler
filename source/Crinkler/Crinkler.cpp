@@ -146,6 +146,11 @@ void Crinkler::Load(const char* data, int size, const char* module) {
 	delete hunkList;
 }
 
+void Crinkler::AddLibrary(HunkList* hunklist) {
+	m_hunkPool.Append(hunklist);
+	delete hunklist;
+}
+
 std::string Crinkler::GetEntrySymbolName() const {
 	if(m_entry.empty()) {
 		switch(m_subsystem) {

@@ -56,6 +56,21 @@ static int GetOrdinal(const char* function, const char* dll) {
 	return -1;
 }
 
+void ForEachExportInDLL(const char *dll, std::function<void (const char*)> fun) {
+	const char* module = LoadDLL(dll);
+
+	const IMAGE_DOS_HEADER* dh = (const IMAGE_DOS_HEADER*)module;
+	const IMAGE_FILE_HEADER* coffHeader = (const IMAGE_FILE_HEADER*)(module + dh->e_lfanew + 4);
+	const IMAGE_OPTIONAL_HEADER32* pe = (const IMAGE_OPTIONAL_HEADER32*)(coffHeader + 1);
+	const IMAGE_EXPORT_DIRECTORY* exportdir = (const IMAGE_EXPORT_DIRECTORY*)(module + RVAToFileOffset(module, pe->DataDirectory[IMAGE_DIRECTORY_ENTRY_EXPORT].VirtualAddress));
+
+	const int* nameTable = (const int*)(module + RVAToFileOffset(module, exportdir->AddressOfNames));
+	for (int i = 0; i < (int)exportdir->NumberOfNames; i++) {
+		const char* name = module + RVAToFileOffset(module, nameTable[i]);
+		fun(name);
+	}
+}
+
 
 static const char *GetForwardRVA(const char* dll, const char* function) {
 	const char* module = LoadDLL(dll);

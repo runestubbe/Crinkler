@@ -101,6 +101,7 @@ public:
 
 	void Load(const char* filename);
 	void Load(const char* data, int size, const char* module);
+	void AddLibrary(HunkList* library);
 	void Recompress(const char* input_filename, const char* output_filename);
 	
 	void Link(const char* filename);

@@ -137,17 +137,7 @@ HunkList* CoffLibraryLoader::Load(const char* data, int size, const char* module
 				hunklist->AddHunkBack(new Hunk(symbolNames[i], importName.c_str(), dllName));
 			} else {
 				// A call stub
-				unsigned char stubData[6] = {0xFF, 0x25, 0x00, 0x00, 0x00, 0x00};
-				string hunkName = string("stub_for_") + symbolNames[i];
-				Hunk* stubHunk = new Hunk(hunkName.c_str(), (char*)stubData, HUNK_IS_CODE, 1, 6, 6);
-				hunklist->AddHunkBack(stubHunk);
-				stubHunk->AddSymbol(new Symbol(symbolNames[i], 0, SYMBOL_IS_RELOCATEABLE, stubHunk));
-				
-				Relocation r;
-				r.symbolname += string("__imp_") + symbolNames[i];
-				r.offset = 2;
-				r.type = RELOCTYPE_ABS32;
-				stubHunk->AddRelocation(r);
+				hunklist->AddHunkBack(MakeCallStub(symbolNames[i]));
 			}
 		}
 	}
@@ -155,4 +145,19 @@ HunkList* CoffLibraryLoader::Load(const char* data, int size, const char* module
 	hunklist->MarkHunksAsLibrary();
 
 	return hunklist;
+}
+
+Hunk* MakeCallStub(const char* name) {
+	unsigned char stubData[6] = { 0xFF, 0x25, 0x00, 0x00, 0x00, 0x00 };
+	string hunkName = string("stub_for_") + name;
+	Hunk* stubHunk = new Hunk(hunkName.c_str(), (char*)stubData, HUNK_IS_CODE, 1, 6, 6);
+	stubHunk->AddSymbol(new Symbol(name, 0, SYMBOL_IS_RELOCATEABLE, stubHunk));
+
+	Relocation r;
+	r.symbolname += string("__imp_") + name;
+	r.offset = 2;
+	r.type = RELOCTYPE_ABS32;
+	stubHunk->AddRelocation(r);
+
+	return stubHunk;
 }
