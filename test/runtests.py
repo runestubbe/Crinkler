@@ -17,7 +17,6 @@ LIBS = [
     'dxguid.lib',
     'gdi32.lib',
     'glu32.lib',
-    'msvcrt_old.lib',
     'opengl32.lib',
     'user32.lib',
     'winmm.lib',
