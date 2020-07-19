@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+from __future__ import print_function
 import sys
 import os
 import subprocess
@@ -26,7 +27,9 @@ LIBS = [
 FIXED_OPTIONS = [
     '/CRINKLER', '/UNSAFEIMPORT', '/ORDERTRIES:10000', '/COMPMODE:SLOW', '/HASHSIZE:500', '/HASHTRIES:100',
     '/OVERRIDEALIGNMENTS', '/UNALIGNCODE',
-    '/PRINT:IMPORTS', '/PRINT:MODELS', '/PRIORITY:IDLE', '/LIBPATH:libs'
+    '/PRINT:IMPORTS', '/PRINT:MODELS', '/PRIORITY:IDLE',
+    '/LIBPATH:""C:\\Program Files (x86)\\Windows Kits\\10\\Lib\\10.0.18362.0\\um\\x86""',
+    '/LIBPATH:""C:\\Program Files (x86)\\Microsoft DirectX SDK (June 2010)\\Lib\\x86""',
 ]
 
 
@@ -47,7 +50,7 @@ if len(sys.argv) > 4:
 else:
     exefile_postfix = ""
 
-print "Name\t\t Size\t Time"
+print("Name\t\t Size\t Time")
 
 for test in tests:
     argi = test.rindex('\t')
@@ -58,7 +61,7 @@ for test in tests:
     exefile = name+exefile_postfix+".exe"
     t0 = time.time()
     
-    print test[0:argi],
+    print(test[0:argi])
     sys.stdout.flush()
     minsize = 99999
 
@@ -66,10 +69,10 @@ for test in tests:
     rval = subprocess.call(cmdline, stdout=logfile)
     if rval == 0:
         size = os.stat(exefile).st_size
-        print "\t%5d" % size,
+        print("\t%5d" % size, end='')
     else:
-        print "\terror",
+        print("\terror", end='')
     sys.stdout.flush()
 
     t1 = time.time()
-    print "\t%5d" % (t1 - t0)
+    print("\t%5d" % (t1 - t0))

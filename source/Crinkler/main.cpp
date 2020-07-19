@@ -566,7 +566,7 @@ int main(int argc, char* argv[]) {
 			filesArg.Next();
 			vector<string> res = FindFileInPath(filename, lib.c_str(), false);
 			if(res.size() == 0) {
-				Log::Error(filename, "Cannot open file");
+				Log::Error(filename, "Cannot open file '%s'\n", filename);
 				return -1;
 			} else {
 				printf("Loading %s...\n", filename);

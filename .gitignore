@@ -6,3 +6,4 @@
 /test/*.exe
 /test/*.html
 /test/testlog.txt
+/source/ExportScraper/SystemDLLs

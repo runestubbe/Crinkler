@@ -6,8 +6,8 @@
 #include <iterator>
 #include <cassert>
 
-#define ROOT_DIRECTORY		"dlls"
-#define OUTPUT_PATH			"..\\known_dll_exports.dat"
+#define ROOT_DIRECTORY		"SystemDLLs"
+#define OUTPUT_PATH			"..\\Crinkler\\known_dll_exports.dat"
 
 // file format:
 //   num_dlls
@@ -50,7 +50,7 @@ static void ScrapeDirectory(std::set<std::string>& symbols, const char* dlldir)
 	printf("scraping directory: %s\n", dlldir);
 	WIN32_FIND_DATA ffd;
 	char search_str[MAX_PATH];
-	sprintf(search_str, "%s\\%s\\*", ROOT_DIRECTORY, dlldir);
+	sprintf(search_str, "%s\\%s\\*.dll", ROOT_DIRECTORY, dlldir);
 	
 	HANDLE hFind = FindFirstFile(search_str, &ffd);
 	assert(hFind != INVALID_HANDLE_VALUE);
@@ -78,7 +78,7 @@ int main(int argc, const char* argv[])
 	assert(hFind != INVALID_HANDLE_VALUE);
 	do
 	{
-		if ((ffd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) && strcmp(ffd.cFileName, ".") && strcmp(ffd.cFileName, ".."))
+		if ((ffd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) && ffd.cFileName[0] != '.')
 		{
 			std::set<std::string> symbols;
 			ScrapeDirectory(symbols, ffd.cFileName);
