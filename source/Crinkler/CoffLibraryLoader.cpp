@@ -135,22 +135,16 @@ HunkList* CoffLibraryLoader::Load(const char* data, int size, const char* module
 					dllName[j] = (char)tolower(importDLL[j]);
 
 				hunklist->AddHunkBack(new Hunk(symbolNames[i], importName.c_str(), dllName));
-			} else {	// A call stub
+			} else {
+				// A call stub
 				unsigned char stubData[6] = {0xFF, 0x25, 0x00, 0x00, 0x00, 0x00};
-				char hunkName[512];
-				sprintf_s(hunkName, 512, "stub_for_%s", symbolNames[i]);
-				
-				Hunk* stubHunk = new Hunk(hunkName, (char*)stubData, HUNK_IS_CODE, 1, 6, 6);
+				string hunkName = string("stub_for_") + symbolNames[i];
+				Hunk* stubHunk = new Hunk(hunkName.c_str(), (char*)stubData, HUNK_IS_CODE, 1, 6, 6);
 				hunklist->AddHunkBack(stubHunk);
 				stubHunk->AddSymbol(new Symbol(symbolNames[i], 0, SYMBOL_IS_RELOCATEABLE, stubHunk));
 				
 				Relocation r;
-				if(strlen(symbolNames[i]) >= 6 && memcmp("__imp_", symbolNames[i], 6) == 0) {
-					r.symbolname = symbolNames[i];
-				} else {
-					r.symbolname += string("__imp_") + symbolNames[i];
-				}
-				
+				r.symbolname += string("__imp_") + symbolNames[i];
 				r.offset = 2;
 				r.type = RELOCTYPE_ABS32;
 				stubHunk->AddRelocation(r);
