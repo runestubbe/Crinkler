@@ -519,14 +519,14 @@ void Crinkler::Recompress(const char* input_filename, const char* output_filenam
 					break;
 				case '4':
 				case '5':
-					FixMemory((char*)indata);
+					FixHeader04((char*)indata);
 					break;
 			}
 			break;
 		case '1':
 			switch(minorlv) {
 				case '0':
-					FixMemory((char*)indata);
+					FixHeader10((char*)indata);
 					break;
 			}
 			break;

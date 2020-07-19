@@ -1,31 +1,38 @@
-#include "MemoryFile.h"
-#include "CoffObjectLoader.h"
-#include "data.h"
-#include "Log.h"
-#include "Hunk.h"
-#include "HunkList.h"
-#include "Symbol.h"
+#include <cstring>
+#include <initializer_list>
 
-static void Fix(char *data, char *hptr, int offset, int size) {
-	memcpy(&data[offset], &hptr[offset], size);
+static void Fix(char *data, int offset, std::initializer_list<unsigned char> bytes) {
+	memcpy(&data[offset], bytes.begin(), bytes.size());
 }
 
-void FixMemory(char* data) {
-	CoffObjectLoader loader;
-	HunkList *hl = loader.Load(header11Obj, int(header11Obj_end-header11Obj), "");
-	Symbol *sym = hl->FindSymbol("_header");
-	char *hptr = sym->hunk->GetPtr()+sym->value;
+// Fix up old headers just enough to run them:
+// - Move entry point to section
+// - Clear DLL characteristics
 
-	int models = *(int *)&data[108];
-	if (*(short *)&data[106] == 0) {
-		models = *(int *)&data[110];
-	}
+void FixHeader04(char* data) {
+	int models = *(int *)&data[0x6C];
 
-	Fix(data, hptr, 2, 1);
-	Fix(data, hptr, 7, 5);
-	Fix(data, hptr, 54, 1);
-	Fix(data, hptr, 100, 4);
-	Fix(data, hptr, 106, 11);
-	Fix(data, hptr, 156, 8);
-	*(int *)&data[110] = models;
+	// DepackInit
+	Fix(data, 0x02, { 0x68 });       // push (_Unpackeddata)
+	Fix(data, 0x07, { 0x31, 0xC0 }); // xor eax, eax
+	Fix(data, 0x09, { 0x40 });       // inc eax
+
+	// Entry point
+	Fix(data, 0x36, { 0x01 });       // Entry point in 0x410000 header mirror
+
+	// DepackInit2
+	Fix(data, 0x64, { 0x31, 0xFF }); // xor edi, edi
+	Fix(data, 0x66, { 0x57 });       // push edi
+	Fix(data, 0x67, { 0xBB });       // mov ebx, (dword)
+	Fix(data, 0x6A, { 0x00, 0x00 }); // DLL characteristics
+	Fix(data, 0x6C, { 0x5D });       // pop ebp
+	Fix(data, 0x6D, { 0xBE });       // mov esi, (_Models)
+	*(int *)&data[0x6E] = models;
+	Fix(data, 0x72, { 0x6A, 0x00 }); // push byte 0
+	Fix(data, 0x74, { 0x59 });       // pop ecx
+}
+
+void FixHeader10(char* data) {
+	// Entry point
+	Fix(data, 0x36, { 0x01 });       // Entry point in 0x410000 header mirror
 }
