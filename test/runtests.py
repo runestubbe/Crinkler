@@ -57,14 +57,22 @@ for test in tests:
     if len(chosen) > 0 and name not in chosen:
         continue
     args = test[argi+1:].strip().split(' ')
-    exefile = name+exefile_postfix+".exe"
     t0 = time.time()
     
-    print(test[0:argi])
+    print(test[0:argi], end='')
     sys.stdout.flush()
     minsize = 99999
 
-    cmdline = [crinkler_exe, "/OUT:"+exefile] + ['/REPORT:' + name + '.html'] + FIXED_OPTIONS + args + LIBS
+    cmdline = [crinkler_exe] + ['/REPORT:' + name + '.html'] + FIXED_OPTIONS + args + LIBS
+    exefile = ""
+    for s in cmdline:
+        if s.startswith("/OUT:"):
+            exefile = s.split(':')[1]
+    
+    if exefile == "":
+        exefile = name+exefile_postfix+".exe"
+        cmdline += ["/OUT:"+exefile]
+
     rval = subprocess.call(cmdline, stdout=logfile)
     if rval == 0:
         size = os.stat(exefile).st_size
