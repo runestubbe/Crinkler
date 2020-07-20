@@ -28,6 +28,7 @@ INCBIN importSafeFallbackRangeObj, "import20-safe-fallback-range.obj"
 INCBIN import1KObj, "import20_1k.obj"
 
 INCBIN calltransObj, "calltrans.obj"
+INCBIN runtimeObj, "runtime.obj"
 
 global knownDllExports
 global _knownDllExports

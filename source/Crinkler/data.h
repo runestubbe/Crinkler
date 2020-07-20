@@ -36,6 +36,9 @@ extern "C" {
 	char calltransObj[];
 	char calltransObj_end[];
 
+	char runtimeObj[];
+	char runtimeObj_end[];
+
 	char knownDllExports[];
 	char knownDllExports_end[];
 };

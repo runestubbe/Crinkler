@@ -122,16 +122,6 @@ const char *LoadDLL(const char *name) {
 	return mf->GetPtr();
 }
 
-HunkList* CreateImportLibraryFromDLL(const char* dll) {
-	HunkList* hunklist = new HunkList;
-	ForEachExportInDLL(dll, [&](const char* name) {
-		string symbolName = name[0] == '?' ? name : string("_") + name;
-		hunklist->AddHunkBack(new Hunk(symbolName.c_str(), name, dll));
-		hunklist->AddHunkBack(MakeCallStub(symbolName.c_str()));
-	});
-	return hunklist;
-}
-
 static bool RunExecutable(const char* filename) {
 	char args[MAX_PATH];
 	strcpy_s(args, GetCommandLine());
@@ -585,7 +575,7 @@ int main(int argc, char* argv[]) {
 				crinkler.Load(filepath.c_str());
 			}
 		}
-		crinkler.AddLibrary(CreateImportLibraryFromDLL("msvcrt"));
+		crinkler.AddRuntimeLibrary();
 		printf("\n");
 	}
 
