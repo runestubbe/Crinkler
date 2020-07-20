@@ -1005,7 +1005,7 @@ void Crinkler::Recompress(const char* input_filename, const char* output_filenam
 		}
 
 		ModelList4k* modelLists[] = { &m_modellist1, &m_modellist2 };
-		int segmentSizes[] = { splittingPoint, phase1->GetRawSize() };
+		int segmentSizes[] = { splittingPoint, phase1->GetRawSize() - splittingPoint };
 		size = Compress4k((unsigned char*)phase1->GetPtr(), 2, segmentSizes, data, maxsize, modelLists, m_saturate != 0, CRINKLER_BASEPROB, best_hashsize, sizefill);
 
 		if(m_compressionType != -1 && m_compressionType != COMPRESSION_INSTANT) {
