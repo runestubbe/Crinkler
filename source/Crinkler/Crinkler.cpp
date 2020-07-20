@@ -146,7 +146,21 @@ void Crinkler::Load(const char* data, int size, const char* module) {
 	delete hunkList;
 }
 
-void Crinkler::AddLibrary(HunkList* hunklist) {
+void Crinkler::AddRuntimeLibrary() {
+	// Add minimal console entry point
+	HunkList* runtime = m_hunkLoader.Load(runtimeObj, int(runtimeObj_end - runtimeObj), "runtime");
+	m_hunkPool.Append(runtime);
+	delete runtime;
+
+	// Add imports from msvcrt
+	HunkList* hunklist = new HunkList;
+	ForEachExportInDLL("msvcrt", [&](const char* name) {
+		string symbolName = name[0] == '?' ? name : string("_") + name;
+		string importName = string("__imp_" + symbolName);
+		hunklist->AddHunkBack(new Hunk(importName.c_str(), name, "msvcrt"));
+		hunklist->AddHunkBack(MakeCallStub(symbolName.c_str()));
+	});
+	hunklist->MarkHunksAsLibrary();
 	m_hunkPool.Append(hunklist);
 	delete hunklist;
 }

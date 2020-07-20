@@ -33,9 +33,9 @@ static const int PRINT_LABELS =		1;
 static const int PRINT_IMPORTS =	2;
 static const int PRINT_MODELS =		4;
 
-#define CRINKLER_TITLE "Crinkler 2.2 (" __DATE__ ") (c) 2005-2019 Aske Simon Christensen & Rune Stubbe"
-#define CRINKLER_WITH_VERSION "Crinkler 2.2"
-static const int CRINKLER_LINKER_VERSION = 0x3232;
+#define CRINKLER_TITLE "Crinkler 2.3 (" __DATE__ ") (c) 2005-2020 Aske Simon Christensen & Rune Stubbe"
+#define CRINKLER_WITH_VERSION "Crinkler 2.3"
+static const int CRINKLER_LINKER_VERSION = 0x3332;
 
 class Crinkler {
 	MultiLoader							m_hunkLoader;
@@ -101,7 +101,7 @@ public:
 
 	void Load(const char* filename);
 	void Load(const char* data, int size, const char* module);
-	void AddLibrary(HunkList* library);
+	void AddRuntimeLibrary();
 	void Recompress(const char* input_filename, const char* output_filename);
 	
 	void Link(const char* filename);

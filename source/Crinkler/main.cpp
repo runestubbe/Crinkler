@@ -122,16 +122,6 @@ const char *LoadDLL(const char *name) {
 	return mf->GetPtr();
 }
 
-HunkList* CreateImportLibraryFromDLL(const char* dll) {
-	HunkList* hunklist = new HunkList;
-	ForEachExportInDLL(dll, [&](const char* name) {
-		string symbolName = name[0] == '?' ? name : string("_") + name;
-		hunklist->AddHunkBack(new Hunk(symbolName.c_str(), name, dll));
-		hunklist->AddHunkBack(MakeCallStub(symbolName.c_str()));
-	});
-	return hunklist;
-}
-
 static bool RunExecutable(const char* filename) {
 	char args[MAX_PATH];
 	strcpy_s(args, GetCommandLine());
@@ -228,6 +218,7 @@ int main(int argc, char* argv[]) {
 	CmdParamInt overrideAlignmentsArg("OVERRIDEALIGNMENTS", "override section alignments using align labels", "bits",  PARAM_ALLOW_NO_ARGUMENT_DEFAULT,
 							0, 30, -1);
 	CmdParamSwitch unalignCodeArg("UNALIGNCODE", "force alignment of code sections to 1", 0);
+	CmdParamSwitch noDefaultLibArg("NODEFAULTLIB", "Do not implicitly link to runtime library", 0);
 	CmdParamString entryArg("ENTRY", "name of the entrypoint", "symbol",
 						PARAM_IS_SWITCH|PARAM_FORBID_MULTIPLE_DEFINITIONS, "");
 	CmdParamString outArg("OUT", "output filename", "filename", 
@@ -273,7 +264,7 @@ int main(int argc, char* argv[]) {
 	CmdParamString filesArg("FILES", "list of filenames", "", PARAM_HIDE_IN_PARAM_LIST, 0);
 	CmdLineInterface cmdline(CRINKLER_TITLE, CMDI_PARSE_FILES);
 
-	cmdline.AddParams(&crinklerFlag, &hashsizeArg, &hashtriesArg, &hunktriesArg, &entryArg, &outArg, &summaryArg, &reuseFileArg, &reuseArg, &unsafeImportArg,
+	cmdline.AddParams(&crinklerFlag, &hashsizeArg, &hashtriesArg, &hunktriesArg, &noDefaultLibArg, &entryArg, &outArg, &summaryArg, &reuseFileArg, &reuseArg, &unsafeImportArg,
 						&subsystemArg, &largeAddressAwareArg, &truncateFloatsArg, &overrideAlignmentsArg, &unalignCodeArg, &compmodeArg, &saturateArg, &printArg, &transformArg, &libpathArg, 
 						&rangeImportArg, &replaceDllArg, &fallbackDllArg, &exportArg, &stripExportsArg, &noInitializersArg, &filesArg, &priorityArg, &showProgressArg, &recompressFlag,
 						&tinyHeader, &tinyImport,
@@ -585,7 +576,9 @@ int main(int argc, char* argv[]) {
 				crinkler.Load(filepath.c_str());
 			}
 		}
-		crinkler.AddLibrary(CreateImportLibraryFromDLL("msvcrt"));
+		if (!noDefaultLibArg.GetValue()) {
+			crinkler.AddRuntimeLibrary();
+		}
 		printf("\n");
 	}
 
