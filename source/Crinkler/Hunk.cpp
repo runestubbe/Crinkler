@@ -194,9 +194,9 @@ void Hunk::Relocate(int imageBase) {
 			}
 			const char* helpMessage = HelpMessage(relocation.symbolname.c_str());
 			if (helpMessage) {
-				Log::NonfatalError(location.c_str(), "Cannot find symbol '%s'", relocation.symbolname.c_str());
-			} else {
 				Log::NonfatalError(location.c_str(), "Cannot find symbol '%s'.\n * HINT: %s", relocation.symbolname.c_str(), helpMessage);
+			} else {
+				Log::NonfatalError(location.c_str(), "Cannot find symbol '%s'", relocation.symbolname.c_str());
 			}
 			error = true;
 		}
