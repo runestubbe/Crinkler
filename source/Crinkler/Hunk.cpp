@@ -186,8 +186,8 @@ void Hunk::Relocate(int imageBase) {
 				if (symbolMap.count(offset)) {
 					Symbol* symbol = symbolMap[offset];
 					if (!(symbol->flags & SYMBOL_IS_LOCAL)) {
-						location += ":";
-						location += symbol->name;
+						location += ": ";
+						location += symbol->GetUndecoratedName();
 						break;
 					}
 				}
