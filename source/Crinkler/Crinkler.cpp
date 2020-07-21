@@ -354,7 +354,7 @@ int Crinkler::EstimateModels(unsigned char* data, int datasize, int splittingPoi
 	}
 	else
 	{
-		unsigned char contexts[2][MAX_CONTEXT_LENGTH];
+		unsigned char contexts[2][MAX_CONTEXT_LENGTH] = {};
 		for (int i = 0; i < MAX_CONTEXT_LENGTH; i++)
 		{
 			int srcpos = splittingPoint - MAX_CONTEXT_LENGTH + i;
