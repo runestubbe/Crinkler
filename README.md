@@ -2,7 +2,9 @@
 
 Crinkler is a compressing linker for Windows, specifically targeted towards executables with a size of just a few kilobytes. Its main purpose is as a tool for producing small [demoscene](https://en.wikipedia.org/wiki/Demoscene) productions.
 
-Usage information and version history can be found in [the manual](doc/manual.txt).
+Download the latest version from the [Releases page](https://github.com/runestubbe/Crinkler/releases).
+
+Usage information and version history can be found in the [manual](doc/manual.txt).
 
 For general discussion, questions and comments, use the [Pouët.net forum](http://www.pouet.net/prod.php?which=18158).
 
