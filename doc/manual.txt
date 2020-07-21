@@ -4,12 +4,27 @@ CRINKLER - Compressing linker for Windows specialized for 4k intros
 Aske Simon Christensen "Blueberry/Loonies"
 Rune L. H. Stubbe "Mentor/TBC"
 
-Version 2.2 (June 15, 2019)
+Version 2.3 (July 21, 2020)
 
+Web:    http://crinkler.net/
+GitHub: https://github.com/runestubbe/Crinkler
+Forum:  http://www.pouet.net/prod.php?which=18158
+Mail:   authors@crinkler.net
 
 
 VERSION HISTORY
 ---------------
+21.07.20: 2.3:  Crinkler is now open source under the Zlib license!
+                /TINYHEADER size reduced by another 3 bytes.
+                Faster hash size optimization, especially with many cores.
+                Include function name in unresolved symbol error message.
+                Automatically import from msvcrt. No need for lib any more.
+                Built-in, minimal console statup code supplying args to main.
+                Disable built-in startup and msvcrt import via /NODEFAULTLIB.
+                Support more kinds of lib files (from rustc, for instance).
+                Don't crash on missing export table (for Wine kernel32.dll).
+                Only write one dump file if several threads crash.
+
 15.06.19: 2.2:  /TINYHEADER decompression code is 6 bytes smaller.
                 Fixed memory size increase of recompressed /TINYHEADER intros.
 
@@ -365,10 +380,10 @@ CRINKLER [options] [object files] [library files] [@commandfile]
 When running from within Visual Studio, the object files will be the
 ones generated from the sources in the project. The library files will
 be the standard set of Win32 libraries, plus any additional library
-files specified under Linker/Input/Additional Dependencies. If you are
-using a standard runtime library, such as msvcrt, you will have to
-specify this one manually. See the section on standard libraries for
-more information.
+files specified under Linker/Input/Additional Dependencies.
+
+Crinkler automatically links to msvcrt.dll - the Visual Studio 6
+runtime library. You don't need to specify a library file for this.
 
 
 The following options are compatible with the VS linker and can be set
@@ -403,6 +418,17 @@ using switches in the Visual Studio configuration window:
     Specify the entry label in the code. The default entry label is
     mainCRTStartup for CONSOLE subsystem applications and
     WinMainCRTStartup for WINDOWS subsystem applications.
+
+    If you use the CONSOLE subsystem without changing the entry point from
+    its default value and don't define mainCRTStartup yourself, Crinkler
+    will insert a small entry point that will read the commandline and
+    call main with the usual argc and argv parameters.
+
+/NODEFAULTLIB
+(Linker/Input/Ignore All Default Libraries)
+
+    Disable the automatic linking against msvcrt.dll and the automatic
+    insertion of mainCRTStartup for CONSOLE applications.
 
 /LIBPATH:[path]
 (Linker/General/Additional Library Directories)
@@ -1030,21 +1056,9 @@ and Crinkler does not support manifests. Furthermore, these DLLs are
 not present by default on Windows installations, so you will usually
 not want your program to be dependent on them.
 
-To work around this, link to the Visual Studio 6 runtime library -
-msvcrt.dll - which is distributed with all Windows versions. This is
-done by using the Visual Studio 6 version of msvcrt.lib, which can be
-obtained thus:
-
-- Download Service Pack 6 for Visual Studio 6.0 at
-  https://www.microsoft.com/en-us/download/details.aspx?id=9183
-- Place the downloaded self-extractor in an empty directory and run
-  it, or open it using an archive tool such as WinRAR.
-- Open the VS6sp61.cab file and go to the vc98\lib directory. There
-  you will find the msvcrt.lib file.
-- Rename this file to something else (such as msvcrt_old.lib) and
-  place it in your project directory.
-- Add msvcrt_old.lib to the list of libraries to link to at
-  Linker/Input/Additional Dependencies.
+Unless explicitly disabled by using the /NODEFAULTLIB option, Crinkler
+automatically links to the Visual Studio 6 runtime library - msvcrt.dll
+- which is distributed with all Windows versions.
 
 There are a couple of caveats to using an older runtime library than
 the compiler expects, though. With out-of-the-box compilation
@@ -1058,18 +1072,6 @@ Generation:
 
 Also, do not use C++ exception handling in your code. And do not use
 STL classes, since they use exceptions all over.
-
-Finally, even when using the DLL-based runtime, not all support code
-is linked dynamically. The runtime library contains an entry function
-which is included into the executable and takes care of things like
-parsing the commandline and executing dynamic initializers. The entry
-function then calls the main function.
-
-The standard entry function is around half a kilobyte in size and is
-usually not needed for intro code to function properly. To avoid this
-overhead, define your own entry function, either by defining a
-function called mainCRTStartup or WinMainCRTStartup (depending on
-which Windows subsystem you use) or by using the /ENTRY option.
 
 The best strategy is of course to avoid linking to a runtime DLL at
 all, assuming you can do without the functions provided by the
@@ -1177,28 +1179,11 @@ likely crash.
 The final compressed size must be less than 128k, or Crinkler will fail
 horribly. You shouldn't use it for such big files anyway.
 
-
-
-SUPPORT
--------
-
-Try out Crinkler, and let us know what you think about it. If you have
-any problems, comments or suggestions, please write a message at the
-Pouet.net forum:
-
-http://www.pouet.net/prod.php?which=18158
-
-If you want to contact us directly, e.g. for sending us a file, write
-to authors@crinkler.net.
-
 If Crinkler crashes, it will write two dump files named
 dump<n>_mini.dmp and dump<n>_full.dmp, where <n> is an integer making
 the file name unique. These files contain information about the
 execution state of Crinkler at the time of the crash. When reporting a
 crash, please include at least the mini dump, or, if possible, both.
-
-The newest released version of Crinkler can always be found at
-http://www.crinkler.net.
 
 
 

@@ -64,12 +64,12 @@ Checklist:
 Release/open:
 	2.3
 		+Bump version
-		Edit manual to reflect changes
+		+Edit manual to reflect changes
 		Write release notes
 		Put GitHub release
 		Test on various Windows versions
-		Fix recompression bug
-	LICENSE
+		+Fix recompression bug
+	+LICENSE
 	README.md
 		Project
 		Link to manual
