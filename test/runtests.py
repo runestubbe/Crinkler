@@ -27,7 +27,16 @@ FIXED_OPTIONS = [
     '/CRINKLER', '/UNSAFEIMPORT', '/ORDERTRIES:10000', '/COMPMODE:SLOW', '/HASHSIZE:500', '/HASHTRIES:100',
     '/OVERRIDEALIGNMENTS', '/UNALIGNCODE',
     '/PRINT:IMPORTS', '/PRINT:MODELS', '/PRIORITY:IDLE',
+    '/LIBPATH:""C:\\Program Files (x86)\\Windows Kits\\10\\Lib\\10.0.19041.0\\um\\x86""',
     '/LIBPATH:""C:\\Program Files (x86)\\Windows Kits\\10\\Lib\\10.0.18362.0\\um\\x86""',
+    '/LIBPATH:""C:\\Program Files (x86)\\Windows Kits\\10\\Lib\\10.0.17763.0\\um\\x86""',
+    '/LIBPATH:""C:\\Program Files (x86)\\Windows Kits\\10\\Lib\\10.0.17134.0\\um\\x86""',
+    '/LIBPATH:""C:\\Program Files (x86)\\Windows Kits\\10\\Lib\\10.0.16299.0\\um\\x86""',
+    '/LIBPATH:""C:\\Program Files (x86)\\Windows Kits\\10\\Lib\\10.0.15063.0\\um\\x86""',
+    '/LIBPATH:""C:\\Program Files (x86)\\Windows Kits\\10\\Lib\\10.0.14393.0\\um\\x86""',
+    '/LIBPATH:""C:\\Program Files (x86)\\Windows Kits\\10\\Lib\\10.0.10586.0\\um\\x86""',
+    '/LIBPATH:""C:\\Program Files (x86)\\Windows Kits\\10\\Lib\\10.0.10240.0\\um\\x86""',
+    '/LIBPATH:""C:\\Program Files (x86)\\Windows Kits\\10\\Lib\\10.0.10150.0\\um\\x86""',
     '/LIBPATH:""C:\\Program Files (x86)\\Microsoft DirectX SDK (June 2010)\\Lib\\x86""',
 ]
 
