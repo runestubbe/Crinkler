@@ -121,12 +121,12 @@ CompressionState::CompressionState(const unsigned char* data, int size, int base
 #if USE_OPENMP
 	#pragma omp parallel for
 	for(int mask = 0; mask <= 0xff; mask++) {
-		m_models[mask] = ApplyModel(data2+8, m_size, (unsigned char)mask);
+		m_models[mask] = ApplyModel(data2+MAX_CONTEXT_LENGTH, m_size, (unsigned char)mask);
 	}
 #else
 	concurrency::parallel_for(0, 0x100, [&](int mask)
 	{
-		m_models[mask] = ApplyModel(data2+8, m_size, (unsigned char)mask);
+		m_models[mask] = ApplyModel(data2+MAX_CONTEXT_LENGTH, m_size, (unsigned char)mask);
 	});
 #endif
 	delete[] data2;
