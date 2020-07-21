@@ -69,14 +69,16 @@ Release/open:
 		Put GitHub release
 		Test on various Windows versions
 		+Fix recompression bug
-	+LICENSE
 	README.md
-		Project
-		Link to manual
-		Link to Pouet
-		License
-		Welcome to use - base on released version
-		Compressor lib
+		+Project
+		+Compressing linker
+		+Developed by
+		+Link to manual
+		+Link to Pouet
+		+License
+		+Welcome to use - base on released version
+		+How to build
+		+Compressor lib
 		How to contribute
 			Use it
 			Feature suggestions
