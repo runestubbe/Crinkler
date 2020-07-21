@@ -334,7 +334,7 @@ nasmw -f win32 -Xvc -dIMPORT_SAFE -dIMPORT_FALLBACK modules\import20.asm -o $(In
 nasmw -f win32 -Xvc -dIMPORT_SAFE -dIMPORT_FALLBACK -dIMPORT_RANGE modules\import20.asm -o $(IntermediateOutputPath)\import20-safe-fallback-range.obj
 nasmw -f win32 -Xvc modules\import20_1k.asm -o $(IntermediateOutputPath)\import20_1k.obj
 nasmw -f win32 -Xvc modules\runtime.asm -o $(IntermediateOutputPath)\runtime.obj
-nasmw -f win64 -Xvc -dPATH=$(IntermediateOutputPath) %(FullPath) -o $(IntermediateOutputPath)\%(Filename).obj</Command>
+nasmw -f win32 -Xvc -dPATH=$(IntermediateOutputPath) %(FullPath) -o $(IntermediateOutputPath)\%(Filename).obj</Command>
       <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">nasmw -f win32 -Xvc modules\calltrans.asm -o $(IntermediateOutputPath)\calltrans.obj
 nasmw -f win32 -Xvc modules\header20.asm -o $(IntermediateOutputPath)\header20.obj
 nasmw -f win32 -Xvc modules\header20_compatibility.asm -o $(IntermediateOutputPath)\header20_compatibility.obj
@@ -366,7 +366,7 @@ nasmw -f win32 -Xvc -dIMPORT_SAFE -dIMPORT_FALLBACK modules\import20.asm -o $(In
 nasmw -f win32 -Xvc -dIMPORT_SAFE -dIMPORT_FALLBACK -dIMPORT_RANGE modules\import20.asm -o $(IntermediateOutputPath)\import20-safe-fallback-range.obj
 nasmw -f win32 -Xvc modules\import20_1k.asm -o $(IntermediateOutputPath)\import20_1k.obj
 nasmw -f win32 -Xvc modules\runtime.asm -o $(IntermediateOutputPath)\runtime.obj
-nasmw -f win64 -Xvc -dPATH=$(IntermediateOutputPath) %(FullPath) -o $(IntermediateOutputPath)\%(Filename).obj</Command>
+nasmw -f win32 -Xvc -dPATH=$(IntermediateOutputPath) %(FullPath) -o $(IntermediateOutputPath)\%(Filename).obj</Command>
       <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">nasmw -f win32 -Xvc modules\calltrans.asm -o $(IntermediateOutputPath)\calltrans.obj
 nasmw -f win32 -Xvc modules\header20.asm -o $(IntermediateOutputPath)\header20.obj
 nasmw -f win32 -Xvc modules\header20_compatibility.asm -o $(IntermediateOutputPath)\header20_compatibility.obj
