@@ -3,6 +3,7 @@
 #include <cstdio>
 #include <set>
 #include <vector>
+#include <string>
 #include <iterator>
 #include <cassert>
 
