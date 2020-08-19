@@ -44,11 +44,21 @@ Linker:
 	Pad code section to page size
 
 Warnings/hints:
+	Better error message when input file is 64 bit
 	Detect bad lib files or report error if there are no imports
 	warning when lib entry point detected but initializers are enabled?
 	hint for __chkstk: /Gs option
 	hint for error: LNK: Cannot open DLL 'msvcr90' etc.
 	Read /STACK option and complain if larger than fixed stack size
+
+README.md
+	More details about compatibility
+	How to contribute
+		Use it
+		Feature suggestions
+		Bug reports
+		PRs
+		Test files
 
 Misc:
 	/TRANSFORM:FLOAT2INT
@@ -60,29 +70,3 @@ Checklist:
 	Versions in manual
 	Make PDB
 	Test on Wine
-
-Release/open:
-	2.3
-		+Bump version
-		+Edit manual to reflect changes
-		Write release notes
-		Put GitHub release
-		Test on various Windows versions
-		+Fix recompression bug
-	README.md
-		+Project
-		+Compressing linker
-		+Developed by
-		+Link to manual
-		+Link to Pouet
-		+License
-		+Welcome to use - base on released version
-		+How to build
-		+Compressor lib
-		How to contribute
-			Use it
-			Feature suggestions
-			Bug reports
-			PRs
-			Test files
-	Change website (just redirect?)
