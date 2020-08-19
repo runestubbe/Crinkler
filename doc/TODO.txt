@@ -18,6 +18,7 @@ Report:
 	Upgrade to newest diStorm (BSD license)
 
 Compressor:
+	Obfuscate headers to prevent Crinkler.exe being flagged as malware
 	Only one size estimator
 	Better reordering??
 	ABS coding
