@@ -78,10 +78,6 @@ static const char *GetForwardRVA(const char* dll, const char* function) {
 	const IMAGE_NT_HEADERS32* pNTH = (const PIMAGE_NT_HEADERS32)(module + pDH->e_lfanew);
 
 	const DWORD exportRVA = pNTH->OptionalHeader.DataDirectory[0].VirtualAddress;
-	if (exportRVA == 0) {
-		Log::Error("", "Missing export table in '%s'\n\n"
-			"If running under Wine, copy all imported DLL files from a real Windows to your Wine path.", dll);
-	}
 	const IMAGE_EXPORT_DIRECTORY* pIED = (const PIMAGE_EXPORT_DIRECTORY)(module + RVAToFileOffset(module, exportRVA));
 
 	const short* ordinalTable = (const short*)(module + RVAToFileOffset(module, pIED->AddressOfNameOrdinals));

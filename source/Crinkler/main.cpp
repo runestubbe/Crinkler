@@ -119,7 +119,18 @@ const char *LoadDLL(const char *name) {
 
 	MemoryFile* mf = new MemoryFile(filepaths[0].c_str());
 	dllFileMap[strName] = mf;
-	return mf->GetPtr();
+	const char* module = mf->GetPtr();
+
+	const IMAGE_DOS_HEADER* pDH = (const PIMAGE_DOS_HEADER)module;
+	const IMAGE_NT_HEADERS32* pNTH = (const PIMAGE_NT_HEADERS32)(module + pDH->e_lfanew);
+
+	const DWORD exportRVA = pNTH->OptionalHeader.DataDirectory[0].VirtualAddress;
+	if (exportRVA == 0) {
+		Log::Error("", "Missing export table in '%s'\n\n"
+			"If running under Wine, copy all imported DLL files from a real Windows to your Wine path.", strName.c_str());
+	}
+
+	return module;
 }
 
 static bool RunExecutable(const char* filename) {
