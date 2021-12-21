@@ -441,7 +441,10 @@ void Crinkler::SetHeaderConstants(Hunk* header, Hunk* phase1, int hashsize, int 
 		int virtualSize = Align(max(phase1->GetVirtualSize(), phase1->GetRawSize() + hashsize), 16);
 		header->AddSymbol(new Symbol("_VirtualSize", virtualSize, 0, header));
 		*(header->GetPtr() + header->FindSymbol("_BaseProbPtr")->value) = CRINKLER_BASEPROB;
-		*(header->GetPtr() + header->FindSymbol("_ModelSkipPtr")->value) = m_modellist1.nmodels + 8;
+		Symbol* modelSkipPtr = header->FindSymbol("_ModelSkipPtr");
+		if (modelSkipPtr != nullptr) {
+			*(header->GetPtr() + modelSkipPtr->value) = m_modellist1.nmodels + 8;
+		}
 		if (exports_rva) {
 			*(int*)(header->GetPtr() + header->FindSymbol("_ExportTableRVAPtr")->value) = exports_rva;
 			*(int*)(header->GetPtr() + header->FindSymbol("_NumberOfDataDirectoriesPtr")->value) = 1;

@@ -12,7 +12,6 @@ global	_header
 global	_DepackEntry
 global	_LinkerVersionPtr
 global	_SubsystemTypePtr
-global	_ModelSkipPtr
 global	_BaseProbPtr
 global	_SpareNopPtr
 global	_CharacteristicsPtr
@@ -25,7 +24,6 @@ global	_ExportTableRVAPtr
 HASH_MULTIPLIER	equ 111
 
 BaseProbDummy	equ	10
-ModelSkipDummy	equ	23
 
 zero_offset	equ	20
 one_offset	equ	16
@@ -129,7 +127,8 @@ _SubsystemTypePtr:
 ; Size of heap reserve
 ; Size of heap commit
 ; (must all have reasonable sizes, since these are allocated)
-	nop							; 90									;1
+_SpareNopPtr:
+	nop							; push edi when using call transform	;1
 	mov		esi, _Models		; BE 7C 01 40 00						;5
 	push	byte 1				; 6A 01									;2
 	pop		eax					; 58									;1
@@ -138,9 +137,9 @@ _SubsystemTypePtr:
 
 ; 4 bytes:
 ; Loader flags
-_SpareNopPtr:
-	nop							; push edi when using call transform	;1
 	push	edi															;1
+NextPart:
+	push	esi					; Space for next-part model pointer		;1
 	; Initialized state:
 	; edi = _UnpackedData
 	; esi = _Models
@@ -251,9 +250,8 @@ _ClearHash:
 	rep stosw
 	or		al, [esi]
 	popa
-	lea		esi, [esi + ModelSkipDummy]
-ModelSkipPtrP1:
-	jpo		short EndCheck
+	pop		esi
+	jpo		short NextPart
 	ret
 
 UpdateHash:
@@ -304,10 +302,10 @@ _SaturatePtr:
 SkipUpdate:
 	popa
 	inc		esi					; Next model
+	mov		[esp+8*4], esi
 	jmp		short ModelLoop
 SaturateAdjust2PtrP1:
 
-_ModelSkipPtr		equ	ModelSkipPtrP1-1
 _BaseProbPtr		equ	BaseProbPtrP1-1
 _SaturateAdjust1Ptr	equ SaturateAdjust1PtrP1-1
 _SaturateAdjust2Ptr	equ SaturateAdjust2PtrP1-1
