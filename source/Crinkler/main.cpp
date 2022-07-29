@@ -240,6 +240,7 @@ int main(int argc, char* argv[]) {
 		PARAM_IS_SWITCH | PARAM_FORBID_MULTIPLE_DEFINITIONS, "");
 	CmdParamFlags reuseArg("REUSEMODE", "select reuse mode", PARAM_FORBID_MULTIPLE_DEFINITIONS, REUSE_STABLE,
 		"OFF", REUSE_OFF, "WRITE", REUSE_WRITE, "IMPROVE", REUSE_IMPROVE, "STABLE", REUSE_STABLE, NULL);
+	CmdParamSwitch helpFlag("?", "help", 0);
 	CmdParamSwitch crinklerFlag("CRINKLER", "enables Crinkler", 0);
 	CmdParamSwitch recompressFlag("RECOMPRESS", "recompress a Crinkler file", 0);
 	CmdParamSwitch unsafeImportArg("UNSAFEIMPORT", "crash if a DLL is missing", 0);
@@ -275,7 +276,7 @@ int main(int argc, char* argv[]) {
 	CmdParamString filesArg("FILES", "list of filenames", "", PARAM_HIDE_IN_PARAM_LIST, 0);
 	CmdLineInterface cmdline(CRINKLER_TITLE, CMDI_PARSE_FILES);
 
-	cmdline.AddParams(&crinklerFlag, &hashsizeArg, &hashtriesArg, &hunktriesArg, &noDefaultLibArg, &entryArg, &outArg, &summaryArg, &reuseFileArg, &reuseArg, &unsafeImportArg,
+	cmdline.AddParams(&helpFlag, &crinklerFlag, &hashsizeArg, &hashtriesArg, &hunktriesArg, &noDefaultLibArg, &entryArg, &outArg, &summaryArg, &reuseFileArg, &reuseArg, &unsafeImportArg,
 						&subsystemArg, &largeAddressAwareArg, &truncateFloatsArg, &overrideAlignmentsArg, &unalignCodeArg, &compmodeArg, &saturateArg, &printArg, &transformArg, &libpathArg, 
 						&rangeImportArg, &replaceDllArg, &fallbackDllArg, &exportArg, &stripExportsArg, &noInitializersArg, &filesArg, &priorityArg, &showProgressArg, &recompressFlag,
 						&tinyHeader, &tinyImport,
@@ -283,7 +284,7 @@ int main(int argc, char* argv[]) {
 	
 
 	// Print syntax?
-	if(!cmdline.SetCmdParameters(argc, argv) || argc == 1) {
+	if(!cmdline.SetCmdParameters(argc, argv) || argc == 1 || cmdline.RemoveToken("/?")) {
 		cmdline.PrintSyntax();
 		return 0;
 	}
