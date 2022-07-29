@@ -76,12 +76,15 @@ int AritCodeEnd(struct AritState *state)
 	unsigned int dest_bit = state->dest_bit;
 	unsigned int interval_min = state->interval_min;
 	unsigned int interval_size = state->interval_size;
-	
-	if(interval_min + interval_size >= interval_min)	// Not carry
-	{
-		dest_bit++;
+
+	if (interval_min > 0) {
+		// If current bit is not contained in interval, advance bit
+		if (interval_min + interval_size - 1 >= interval_min)
+		{
+			dest_bit++;
+		}
+		PutBit(dest_ptr, dest_bit);
 	}
 
-	PutBit(dest_ptr, dest_bit);
 	return dest_bit;
 }
