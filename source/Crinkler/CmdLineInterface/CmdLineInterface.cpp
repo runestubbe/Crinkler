@@ -116,18 +116,18 @@ bool CmdLineInterface::Parse() {
 					}
 
 					if(hasArgument && argument.size() == 0) {
-						fprintf(stderr, "error: argument must be non-empty\n");
+						printf("Error: argument must be non-empty\n");
 						return false;
 					}
 
 					// Check for the correct number of arguments (0 or 1)
 					if((param->GetFlags() & PARAM_TAKES_ARGUMENT) &&
 						!(param->GetFlags() & PARAM_ALLOW_NO_ARGUMENT_DEFAULT) && !hasArgument) {
-						fprintf(stderr, "error: error parsing token: '%s'\n  parameter needs argument\n", token.c_str());
+						printf("Error: error parsing token: '%s'\n  parameter needs argument\n", token.c_str());
 						return false;
 					}
 					if(!(param->GetFlags() & PARAM_TAKES_ARGUMENT) && hasArgument) {
-						fprintf(stderr, "error: error parsing token: '%s'\n  parameter doesn't take any arguments\n", token.c_str());
+						printf("Error: error parsing token: '%s'\n  parameter doesn't take any arguments\n", token.c_str());
 						return false;
 					}
 				} else {
@@ -144,19 +144,19 @@ bool CmdLineInterface::Parse() {
 			}
 			if(hr == PARSE_OK) {
 				if(param->m_numMatches && (param->GetFlags() & PARAM_FORBID_MULTIPLE_DEFINITIONS)) {
-					fprintf(stderr, "error: parameter cannot be defined more than once '%s'\n", token.c_str());
+					printf("Error: parameter cannot be defined more than once '%s'\n", token.c_str());
 					return false;
 				}
 				param->m_numMatches++;
 				nMatches++;
 			} else if(hr == PARSE_INVALID) {
-				fprintf(stderr, "error: cannot parse token '%s': %s\n", token.c_str(), errorMsg);
+				printf("Error: cannot parse token '%s': %s\n", token.c_str(), errorMsg);
 				return false;
 			}
 		}
 
 		if(nMatches < 1) {
-			fprintf(stderr, "Ignoring unknown argument '%s'\n", token.c_str());
+			printf("Ignoring unknown argument '%s'\n", token.c_str());
 		}
 	}
 
