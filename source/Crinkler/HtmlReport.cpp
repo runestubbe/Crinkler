@@ -15,216 +15,224 @@
 
 using namespace std;
 
-static const char* htmlHeader1 =
-						"<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01//EN\" \"http://www.w3.org/TR/html4/strict.dtd\">"
-						"<html><head>"
-						"<meta http-equiv=\"Content-Type\" content=\"text/html; charset=iso-8859-1\">"
-						"<title>Crinkler compression report</title>"
-						"<script type='text/javascript'>"
-						"function collapse(el){"
-							"el.style.display='none';"
-							"el=el.parentNode.parentNode.previousSibling;"
-							"while(el.className!='c1'){"
-								"el=el.firstChild;"
-							"}"
-							"var address=el.innerHTML.substr(1);"
-							"el.innerHTML='+'+address;"
-						"}"
-						"function expand(el){"
-							"el.style.display='';"	
-							"el=el.parentNode.parentNode.previousSibling;"
-							"while(el.className!='c1'){"
-								"el=el.firstChild;"
-							"}"
-							"var address=el.innerHTML.substr(1);"
-							"el.innerHTML='-'+address;"
-						"}"
-						"function hideSections(){"
-							"var el;"
-							"for(i=0;(el=document.getElementById('h_'+i))!=null;i++){"
-								"el.style.display = 'none';"
-							"}"
-							"expandPrefix(\"o_\");"
-						"}"
-						"function showSections(){"
-							"var el;"
-							"for(i=0;(el=document.getElementById('h_'+i))!=null;i++){"
-								"el.style.display='';"
-							"}"
-						"}"
-						"function switchMenu(obj){"
-							"var el=document.getElementById(obj);"
-							"if(el.style.display != 'none'){"
-								"collapse(el);"
-							"}else{"
-								"expand(el);"
-							"}"
-						"}"
-						"function collapsePrefix(prefix){"
-							"var el;"
-							"for(i=0;(el=document.getElementById(prefix+i))!=null;i++){"
-								"collapse(el);"
-							"}"
-						"}"
-						"function expandPrefix(prefix){"
-							"var el;"
-							"for(i=0;(el=document.getElementById(prefix+i))!=null;i++){"
-								"expand(el);"
-							"}"
-						"}"
-						"function markState(s){"
-							"for(i=1;i<=6;i++){"
-								"var e=document.getElementById('state_'+i);"
-								"e.setAttribute('style', i==s?'font-weight:bold':'');"
-							"}"
-						"}"
-						"function stateCollapsed(){"
-							"collapsePrefix('s_');"
-							"collapsePrefix('o_');"
-							"collapsePrefix('p_');"
-							"showSections();"
-							"markState(1);"
-						"}"
-						"function stateSections(){"
-							"expandPrefix('s_');"
-							"collapsePrefix('o_');"
-							"collapsePrefix('p_');"
-							"showSections();"
-							"markState(2);"
-						"}"
-						"function stateGlobals(){"
-							"expandPrefix('s_');"
-							"expandPrefix('o_');"
-							"collapsePrefix('p_');"
-							"hideSections();"
-							"markState(3);"
-						"}"
-						"function stateSectionsGlobals(){"
-							"expandPrefix('s_');"
-							"expandPrefix('o_');"
-							"collapsePrefix('p_');"
-							"showSections();"
-							"markState(4);"
-						"}"
-						"function stateGlobalsExpanded(){"
-							"expandPrefix('s_');"
-							"expandPrefix('o_');"
-							"expandPrefix('p_');"
-							"hideSections();"
-							"markState(5);"
-						"}"
-						"function stateSectionsGlobalsExpanded(){"
-							"expandPrefix('s_');"
-							"expandPrefix('o_');"
-							"expandPrefix('p_');"
-							"showSections();"
-							"markState(6);"
-						"}"
-						"function startState(){"
-							"stateGlobals();"
-						"}"
-						"function recursiveExpand(id){"
-							"var el=document.getElementById(id);"
-							"while(el!=null){"
-								"if(el.localName == 'DIV' && el.id.match('h_') == null){"
-									"expand(el);"
-								"}"
-								"el=el.parentNode;"
-							"}"
-						"}"
-						"</script>"
-						"<style type='text/css'>"	// CSS style courtesy of gargaj
-							"body{"
-							"font-family:monospace;"
-						"}"
+static const char* htmlHeader0 = R""""(
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html><head>
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<title>Crinkler compression report</title>
+<script type='text/javascript'>
+)"""";
 
-						".data{"
-							"border-collapse:collapse;"
-						"}"
-						".data td{"
-							"border:0px;"
-						"}"
-						".grptable{"
-							"border-collapse:collapse;"
-							"border:0px;"
-						"}"
-						".grptable td{"
-							"border:0px;"
-							"padding:0px;"
-						"}"
-						".grptable th{"
-							"border:0px;"
-							"padding:0px;"
-						"}"
-						".address{width:7em;text-align:left;white-space:nowrap;}"
-						".private_symbol_row th{"
-							"background-color:#eef;"
-						"}"
-						".public_symbol_row th{"
-							"background-color:#99c;"
-							"font-weight:bold;"
-						"}"
-						".oldsection_symbol_row th{"
-							"background-color:#c88;"
-							"font-weight:bold;"
-						"}"
-						".section_symbol_row th{"
-							"background-color:#8c8;"
-							"font-weight:bold;"
-						"}"
+static const char* script = R""""(
+function collapse(el) {
+	el.style.display = 'none';
+	el = el.parentNode.parentNode.previousSibling;
+	while (el.className != 'c1') {
+		el = el.firstChild;
+	}
+	var address = el.innerHTML.substr(1);
+	el.innerHTML = '+'+address;
+}
+function expand(el) {
+	el.style.display = '';
+	el = el.parentNode.parentNode.previousSibling;
+	while (el.className != 'c1') {
+		el = el.firstChild;
+	}
+	var address = el.innerHTML.substr(1);
+	el.innerHTML = '-'+address;
+}
+function hideSections() {
+	var el;
+	for (i = 0; (el = document.getElementById('h_'+i)) != null; i++) {
+		el.style.display  =  'none';
+	}
+	expandPrefix("o_");
+}
+function showSections() {
+	var el;
+	for (i = 0; (el = document.getElementById('h_'+i)) != null; i++) {
+		el.style.display = '';
+	}
+}
+function switchMenu(obj) {
+	var el = document.getElementById(obj);
+	if (el.style.display != 'none') {
+		collapse(el);
+	}else{
+		expand(el);
+	}
+}
+function collapsePrefix(prefix) {
+	var el;
+	for (i = 0; (el = document.getElementById(prefix+i)) != null; i++) {
+		collapse(el);
+	}
+}
+function expandPrefix(prefix) {
+	var el;
+	for (i = 0; (el = document.getElementById(prefix+i)) != null; i++) {
+		expand(el);
+	}
+}
+function markState(s) {
+	for (i = 1; i <= 6; i++) {
+		var e = document.getElementById('state_'+i);
+		e.setAttribute('style', i == s ? 'font-weight:bold' : '');
+	}
+}
+function stateCollapsed() {
+	collapsePrefix('s_');
+	collapsePrefix('o_');
+	collapsePrefix('p_');
+	showSections();
+	markState(1);
+}
+function stateSections() {
+	expandPrefix('s_');
+	collapsePrefix('o_');
+	collapsePrefix('p_');
+	showSections();
+	markState(2);
+}
+function stateGlobals() {
+	expandPrefix('s_');
+	expandPrefix('o_');
+	collapsePrefix('p_');
+	hideSections();
+	markState(3);
+}
+function stateSectionsGlobals() {
+	expandPrefix('s_');
+	expandPrefix('o_');
+	collapsePrefix('p_');
+	showSections();
+	markState(4);
+}
+function stateGlobalsExpanded() {
+	expandPrefix('s_');
+	expandPrefix('o_');
+	expandPrefix('p_');
+	hideSections();
+	markState(5);
+}
+function stateSectionsGlobalsExpanded() {
+	expandPrefix('s_');
+	expandPrefix('o_');
+	expandPrefix('p_');
+	showSections();
+	markState(6);
+}
+function startState() {
+	stateGlobals();
+}
+function recursiveExpand(id) {
+	var el = document.getElementById(id);
+	while (el != null) {
+		if (el.localName == 'DIV' && el.id.match('h_') == null) {
+			expand(el);
+		}
+		el = el.parentNode;
+	}
+}
+)"""";
 
-						".public_symbol_row_expandable th{"
-							"cursor: pointer;"
-							"cursor: hand;"
-							"background-color:#99c;"
-							"font-weight:bold;"
-						"}"
-						".oldsection_symbol_row_expandable th{"
-							"cursor: pointer;"
-							"cursor: hand;"
-							"background-color:#c88;"
-							"font-weight:bold;"
-						"}"
-						".section_symbol_row_expandable th{"
-							"cursor: pointer;"
-							"cursor: hand;"
-							"background-color:#8c8;"
-							"font-weight:bold;"
-						"}"
-						".c1{width:7em;text-align:left;white-space:nowrap;}"
-						".c2{width:45em;text-align:right;white-space:nowrap;}"
-						".c3{width:7em;text-align:right;white-space:nowrap;}"
-						".c4{width:7em;text-align:right;white-space:nowrap;}"
-						".c5{width:7em;text-align:right;white-space:nowrap;}"
-						"a:link { color: #333333; }"
-						"a:visited { color: #333333; }"
-						"a:hover { color: #333333; }"
-						"a:active { color: #333333; }"
-						"</style>"
-						"</head><body onload='startState()'>"
-						// Header
-						"<h1>Crinkler compression report</h1>"
-						"<p><b>Report for file %s generated by " CRINKLER_WITH_VERSION " on %s</b></p>";
+static const char* htmlHeader1 = R""""(
+</script>
+<style type='text/css'>
+body{
+	font-family:monospace;
+}
 
-static const char* htmlHeader2 =
-						"<a id='state_1' href='#' onclick='stateCollapsed()'>collapsed</a>&nbsp;"
-						"<a id='state_2' href='#' onclick='stateSections()'>sections</a>&nbsp;"
-						"<a id='state_3' href='#' onclick='stateGlobals()'>globals</a>&nbsp;"
-						"<a id='state_4' href='#' onclick='stateSectionsGlobals()'>sections + globals</a>&nbsp;"
-						"<a id='state_5' href='#' onclick='stateGlobalsExpanded()'>globals expanded</a>&nbsp;"
-						"<a id='state_6' href='#' onclick='stateSectionsGlobalsExpanded()'>sections + globals expanded</a>&nbsp;"
-						"<table class='grptable'><tr>"
-						"<th nowrap class='c1'>&nbsp;Address</th>"
-						"<th nowrap class='c2'>Label name</th>"
-						"<th nowrap class='c3'>Size</th>"
-						"<th nowrap class='c4'>Comp. size</th>"
-						"<th nowrap class='c5'>Ratio</th>"
-						"</tr>";
+.data{
+	border-collapse:collapse;
+}
+.data td{
+	border:0px;
+}
+.grptable{
+	border-collapse:collapse;
+	border:0px;
+}
+.grptable td{
+	border:0px;
+	padding:0px;
+}
+.grptable th{
+	border:0px;
+	padding:0px;
+}
+.address{width:7em;text-align:left;white-space:nowrap;}
+.private_symbol_row th{
+	background-color:#eef;
+}
+.public_symbol_row th{
+	background-color:#99c;
+	font-weight:bold;
+}
+.oldsection_symbol_row th{
+	background-color:#c88;
+	font-weight:bold;
+}
+.section_symbol_row th{
+	background-color:#8c8;
+	font-weight:bold;
+}
 
-static const char* htmlFooter = 
-						"</table>"
-						"<p><a href='http://crinkler.net'>http://www.crinkler.net</a></p>"
-						"</body></html>";
+.public_symbol_row_expandable th{
+	cursor: pointer;
+	cursor: hand;
+	background-color:#99c;
+	font-weight:bold;
+}
+.oldsection_symbol_row_expandable th{
+	cursor: pointer;
+	cursor: hand;
+	background-color:#c88;
+	font-weight:bold;
+}
+.section_symbol_row_expandable th{
+	cursor: pointer;
+	cursor: hand;
+	background-color:#8c8;
+	font-weight:bold;
+}
+.c1{width:7em;text-align:left;white-space:nowrap;}
+.c2{width:45em;text-align:right;white-space:nowrap;}
+.c3{width:7em;text-align:right;white-space:nowrap;}
+.c4{width:7em;text-align:right;white-space:nowrap;}
+.c5{width:7em;text-align:right;white-space:nowrap;}
+a:link { color: #333333; }
+a:visited { color: #333333; }
+a:hover { color: #333333; }
+a:active { color: #333333; }
+</style>
+</head><body onload='startState()'>
+<h1>Crinkler compression report</h1>
+<p><b>Report for file %s generated by %s on %s</b></p>
+)"""";
+
+static const char* htmlHeader2 = R""""(
+<a id='state_1' href='#' onclick='stateCollapsed()'>collapsed</a>&nbsp;
+<a id='state_2' href='#' onclick='stateSections()'>sections</a>&nbsp;
+<a id='state_3' href='#' onclick='stateGlobals()'>globals</a>&nbsp;
+<a id='state_4' href='#' onclick='stateSectionsGlobals()'>sections + globals</a>&nbsp;
+<a id='state_5' href='#' onclick='stateGlobalsExpanded()'>globals expanded</a>&nbsp;
+<a id='state_6' href='#' onclick='stateSectionsGlobalsExpanded()'>sections + globals expanded</a>&nbsp;
+<table class='grptable'><tr>
+<th nowrap class='c1'>&nbsp;Address</th>
+<th nowrap class='c2'>Label name</th>
+<th nowrap class='c3'>Size</th>
+<th nowrap class='c4'>Comp. size</th>
+<th nowrap class='c5'>Ratio</th>
+</tr>
+)"""";
+
+static const char* htmlFooter = R""""(
+</table>
+<p><a href='http://crinkler.net'>http://www.crinkler.net</a></p>
+</body></html>
+)"""";
 
 const int CODE_BYTE_COLUMNS = 15;
 const int DATA_BYTE_COLUMNS = 32;
@@ -465,12 +473,18 @@ static void HtmlReportRecursive(CompressionReportRecord* csr, FILE* out, Hunk& h
 	string divstr;
 	// Handle enter node events
 	if(csr->type & RECORD_ROOT) {
-		// Write header
+		// Header until script
+		fprintf(out, htmlHeader0);
+
+		// Script
+		fprintf(out, script);
+
+		// Header after script
 		time_t rawtime;
 		struct tm * timeinfo;
 		time ( &rawtime );
 		timeinfo = localtime ( &rawtime );
-		fprintf(out, htmlHeader1, exefilename, asctime(timeinfo));
+		fprintf(out, htmlHeader1, exefilename, CRINKLER_WITH_VERSION, asctime(timeinfo));
 
 		// Print option string
 		fprintf(out, "<p><b>Options:");
