@@ -123,9 +123,7 @@ function stateSectionsGlobalsExpanded() {
 	showSections();
 	markState(6);
 }
-function startState() {
-	stateGlobals();
-}
+
 function recursiveExpand(id) {
 	var el = document.getElementById(id);
 	while (el != null) {
@@ -134,6 +132,159 @@ function recursiveExpand(id) {
 		}
 		el = el.parentNode;
 	}
+}
+
+function getByteInterval(elem) {
+	let byteAttr = elem.getAttribute('byte');
+	if (byteAttr) {
+		let p = byteAttr.split(';');
+		let base = parseInt(p[0]);
+		if (p.length == 1) return [base, base + 1];
+		return [base, base + parseInt(p[1])];
+	}
+}
+function findByteInterval(elem) {
+	while (elem instanceof HTMLElement) {
+		let interval = getByteInterval(elem);
+		if (interval) return interval;
+		elem = elem.parentNode;
+	}
+}
+function elementsOnInterval(interval) {
+	let elems = [];
+	let [start, end] = interval;
+	for (var b = start; b < end; b++) {
+		elems.push(...byteIndex[b]);
+	}
+	return elems;
+}
+function intervalUnion(interval1, interval2) {
+	if (!interval1) return interval2;
+	if (!interval2) return interval1;
+	const [start1, end1] = interval1;
+	const [start2, end2] = interval2;
+	return [Math.min(start1, start2), Math.max(end1, end2)];
+}
+function intervalDiff(interval1, interval2) {
+	if (!interval1) return interval2;
+	if (!interval2) return interval1;
+	const [start1, end1] = interval1;
+	const [start2, end2] = interval2;
+	if (start1 == start2) return [Math.min(end1, end2), Math.max(end1, end2)];
+	if (end1 == end2) return [Math.min(start1, start2), Math.max(start1, start2)];
+	return [Math.min(start1, start2), Math.max(end1, end2)];
+}
+function isSubInterval(interval1, interval2) {
+	if (!interval2) return false;
+	const [start1, end1] = interval1;
+	const [start2, end2] = interval2;
+	return start1 >= start2 && end1 <= end2;
+}
+
+var byteIndex;
+function buildByteIndex() {
+	byteIndex = Array(sizefill.length);
+	const elements = document.getElementsByName('byte');
+	for (var i = 0; i < elements.length; i++) {
+		const e = elements[i];
+		const [start, end] = getByteInterval(e);
+		for (var b = start; b < end; b++) {
+			byteIndex[b] ??= [];
+			byteIndex[b].push(e);
+		}
+	}
+}
+
+const CURSOR = '#dddddd';
+const SELECT = '#faedce';
+
+var currentHover;
+var currentSelect;
+var startSelect;
+var justSelected;
+function setHover(interval) {
+	const diff = intervalDiff(currentHover, interval);
+	currentHover = interval;
+	updateHighlight(diff);
+	updateOverlay();
+}
+function updateSelect() {
+	const beforeSelect = currentSelect;
+	if (startSelect && currentHover) {
+		currentSelect = intervalUnion(startSelect, currentHover);
+		if (isSubInterval(currentSelect, startSelect)) {
+			currentSelect = undefined;
+		}
+	}
+	const diff = intervalDiff(beforeSelect, currentSelect);
+	updateHighlight(diff);
+	updateOverlay();
+}
+function updateOverlay() {
+	let overlay = document.getElementById('overlay');
+	let measure = currentSelect ?? currentHover;
+	if (measure) {
+		const selected = startSelect || currentSelect;
+		const [start, end] = measure;
+		const length = end - start;
+		const size = (sizefill[end] - sizefill[start]) / BIT_PRECISION / 8;
+		const per_byte = size / length * 8;
+		const address = (CODEBASE + start).toString(16).toUpperCase().padStart(8, '0');
+		var text = address+' +'+length+': '+size.toFixed(2)+' bytes ('+per_byte.toFixed(2)+' bits per byte).'
+		if (!selected) text += ' Right-drag to measure interval.';
+		overlay.textContent = text;
+		overlay.style.display = 'block';
+		overlay.style.background = selected ? SELECT : CURSOR;
+	} else {
+		overlay.style.display = 'none';
+	}
+}
+function updateHighlight(interval) {
+	if (!interval) return;
+	for (const elem of elementsOnInterval(interval)) {
+		const elemInterval = getByteInterval(elem);
+		const hover = isSubInterval(elemInterval, currentHover);
+		const select = isSubInterval(elemInterval, currentSelect);
+		if (hover) {
+			elem.style.background = CURSOR;
+		} else if (select) {
+			elem.style.background = SELECT;
+		} else {
+			elem.style.background = 'initial';
+		}
+	}
+}
+
+function moveListener(event) {
+	var elem = document.elementFromPoint(event.clientX, event.clientY)
+	setHover(findByteInterval(elem));
+	updateSelect();
+}
+function downListener(event) {
+	if (event.button != 2) return;
+	startSelect = currentHover;
+	updateSelect();
+}
+function upListener(event) {
+	if (event.button != 2) return;
+	if (startSelect) justSelected = true;
+	startSelect = undefined;
+	updateSelect();
+}
+function contextListener(event) {
+	if (justSelected) {
+		event.preventDefault();
+		justSelected = false;
+	}
+}
+
+function initialize() {
+	stateGlobals();
+	buildByteIndex();
+	document.addEventListener('mousemove', moveListener, {passive: true});
+	document.addEventListener('mousedown', downListener, {passive: true});
+	document.addEventListener('mouseup', upListener, {passive: true});
+	document.addEventListener('contextmenu', contextListener, false);
 }
 )"""";
 
@@ -150,9 +301,22 @@ body{
 .data td{
 	border:0px;
 }
+.maintable{
+	border-collapse:collapse;
+	border:0px;
+}
+.maintable td{
+	border:0px;
+	padding:0px;
+}
+.maintable th{
+	border:0px;
+	padding:0px;
+}
 .grptable{
 	border-collapse:collapse;
 	border:0px;
+	width:100%%;
 }
 .grptable td{
 	border:0px;
@@ -197,6 +361,20 @@ body{
 	background-color:#8c8;
 	font-weight:bold;
 }
+#overlay {
+	position: fixed;
+	width: 100%;
+	height: 25px;
+	padding: 10px;
+	left: 20px;
+	right: 20px;
+	bottom: 20px;
+	font-size: 20px;
+	vertical-align: middle;
+	color: black;
+	display: none;
+	box-shadow: 0 0 15px 2px rgb(0,0,0,0.8);
+}
 .c1{width:7em;text-align:left;white-space:nowrap;}
 .c2{width:45em;text-align:right;white-space:nowrap;}
 .c3{width:7em;text-align:right;white-space:nowrap;}
@@ -207,7 +385,7 @@ a:visited { color: #333333; }
 a:hover { color: #333333; }
 a:active { color: #333333; }
 </style>
-</head><body onload='startState()'>
+</head><body onload='initialize()'>
 <h1>Crinkler compression report</h1>
 <p><b>Report for file %s generated by %s on %s</b></p>
 )"""";
@@ -219,7 +397,7 @@ static const char* htmlHeader2 = R""""(
 <a id='state_4' href='#' onclick='stateSectionsGlobals()'>sections + globals</a>&nbsp;
 <a id='state_5' href='#' onclick='stateGlobalsExpanded()'>globals expanded</a>&nbsp;
 <a id='state_6' href='#' onclick='stateSectionsGlobalsExpanded()'>sections + globals expanded</a>&nbsp;
-<table class='grptable'><tr>
+<table class='maintable'><tr>
 <th nowrap class='c1'>&nbsp;Address</th>
 <th nowrap class='c2'>Label name</th>
 <th nowrap class='c3'>Size</th>
@@ -231,6 +409,8 @@ static const char* htmlHeader2 = R""""(
 static const char* htmlFooter = R""""(
 </table>
 <p><a href='http://crinkler.net'>http://www.crinkler.net</a></p>
+<p style='height:100px'></p>
+<div id='overlay'></div>
 </body></html>
 )"""";
 
@@ -319,16 +499,16 @@ static void PrintRow(FILE *out, Hunk& hunk, const int *sizefill, int index, int 
 			int idx = index + x;
 			if (idx < hunk.GetRawSize()) {
 				size = sizefill[idx + 1] - sizefill[idx];
-				c = hunk.GetPtr()[idx++];
+				c = hunk.GetPtr()[idx];
 			}
 
 			if (ascii) {
-				fprintf(out, "<td title='%.2f bits' style='color: #%.6X;'>"
-					"&#x%.2X;</td>", size / (float)BIT_PRECISION, SizeToColor(size), ToAscii(c));
+				fprintf(out, "<td title='%.2f bits' style='color: #%.6X;' name='byte' byte='%d'>"
+					"&#x%.2X;</td>", size / (float)BIT_PRECISION, SizeToColor(size), idx, ToAscii(c));
 			}
 			else {
-				fprintf(out, "<td title='%.2f bits' style='color: #%.6X;'>"
-					"%.2X</td>", size / (float)BIT_PRECISION, SizeToColor(size), c);
+				fprintf(out, "<td title='%.2f bits' style='color: #%.6X;' name='byte' byte='%d'>"
+					"%.2X</td>", size / (float)BIT_PRECISION, SizeToColor(size), idx, c);
 			}
 		} else {
 			if (ascii) {
@@ -477,6 +657,13 @@ static void HtmlReportRecursive(CompressionReportRecord* csr, FILE* out, Hunk& h
 		fprintf(out, htmlHeader0);
 
 		// Script
+		fprintf(out, "const CODEBASE = %d;\n", CRINKLER_CODEBASE);
+		fprintf(out, "const BIT_PRECISION = %d;\n", BIT_PRECISION);
+		fprintf(out, "const sizefill = [");
+		for (int i = 0; i <= hunk.GetRawSize(); i++) {
+			fprintf(out, "%s%d", i > 0 ? "," : "", sizefill[i]);
+		}
+		fprintf(out, "];\n");
 		fprintf(out, script);
 
 		// Header after script
@@ -610,13 +797,14 @@ static void HtmlReportRecursive(CompressionReportRecord* csr, FILE* out, Hunk& h
 					unsigned int numinsts;
 					distorm_decode64(CRINKLER_CODEBASE + csr->pos, (unsigned char*)&untransformedHunk.GetPtr()[csr->pos], size, Decode32Bits, insts, instspace, &numinsts);
 					for(int i = 0; i < (int)numinsts; i++) {
-						fprintf(out, "<tr>");
+						int offset = (int)insts[i].offset - CRINKLER_CODEBASE;
+						fprintf(out, "<tr name='byte' byte='%d;%d'>", offset, insts[i].size);
 						// Address
 						fprintf(out, "<td nowrap class='address'>&nbsp;%.8X&nbsp;</td>", (unsigned int)insts[i].offset);
 						
 						// Hex dump
 						fprintf(out, "<td nowrap colspan=4 class='hexdump'><table class='data'><tr>");
-						PrintRow(out, hunk, sizefill, (int)insts[i].offset - CRINKLER_CODEBASE, insts[i].size, CODE_BYTE_COLUMNS, CODE_HEX_WIDTH, false, false);
+						PrintRow(out, hunk, sizefill, offset, insts[i].size, CODE_BYTE_COLUMNS, CODE_HEX_WIDTH, false, false);
 
 						// Disassembly
 						// Make hex digits uppercase
