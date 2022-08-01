@@ -221,23 +221,21 @@ function updateSelect() {
 	updateOverlay();
 }
 function updateOverlay() {
-	let overlay = document.getElementById('overlay');
-	let measure = currentSelect ?? currentHover;
+	var text = '';
+	const measure = currentSelect ?? currentHover;
+	const selected = startSelect || currentSelect;
 	if (measure) {
-		const selected = startSelect || currentSelect;
 		const [start, end] = measure;
 		const length = end - start;
 		const size = (sizefill[end] - sizefill[start]) / BIT_PRECISION / 8;
 		const per_byte = size / length * 8;
 		const address = (CODEBASE + start).toString(16).toUpperCase().padStart(8, '0');
-		var text = address+' +'+length+': '+size.toFixed(2)+' bytes ('+per_byte.toFixed(2)+' bits per byte).'
-		if (!selected) text += ' Right-drag to measure interval.';
-		overlay.textContent = text;
-		overlay.style.display = 'block';
-		overlay.style.background = selected ? SELECT : CURSOR;
-	} else {
-		overlay.style.display = 'none';
+		text = address+' +'+length+': '+size.toFixed(2)+' bytes ('+per_byte.toFixed(2)+' bits per byte).'
 	}
+	if (!selected) text += ' Right-drag to measure interval.';
+	let overlay = document.getElementById('overlay');
+	overlay.textContent = text;
+	overlay.style.background = selected ? SELECT : CURSOR;
 }
 function updateHighlight(interval) {
 	if (!interval) return;
@@ -372,7 +370,7 @@ body{
 	font-size: 20px;
 	vertical-align: middle;
 	color: black;
-	display: none;
+	display: block;
 	box-shadow: 0 0 15px 2px rgb(0,0,0,0.8);
 }
 .c1{width:7em;text-align:left;white-space:nowrap;}
