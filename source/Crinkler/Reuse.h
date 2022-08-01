@@ -5,7 +5,7 @@
 
 #include "../Compressor/ModelList.h"
 #include "Hunk.h"
-#include "HunkList.h"
+#include "PartList.h"
 #include "ExplicitHunkSorter.h"
 
 enum ReuseType {

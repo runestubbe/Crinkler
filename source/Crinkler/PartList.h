@@ -1,6 +1,6 @@
 #pragma once
-#ifndef _HUNK_LIST_H_
-#define _HUNK_LIST_H_
+#ifndef _PART_LIST_H_
+#define _PART_LIST_H_
 
 #include <vector>
 #include <functional>

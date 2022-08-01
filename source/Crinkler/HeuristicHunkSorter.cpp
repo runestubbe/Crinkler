@@ -1,5 +1,5 @@
 #include "HeuristicHunkSorter.h"
-#include "HunkList.h"
+#include "PartList.h"
 #include "Hunk.h"
 #include "Symbol.h"
 #include <vector>

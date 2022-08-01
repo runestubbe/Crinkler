@@ -247,10 +247,10 @@
     <ClCompile Include="Fix.cpp" />
     <ClCompile Include="HtmlReport.cpp" />
     <ClCompile Include="Hunk.cpp" />
-    <ClCompile Include="HunkList.cpp" />
     <ClCompile Include="ImportHandler.cpp" />
     <ClCompile Include="LTCGLoader.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="PartList.cpp" />
     <ClCompile Include="Reuse.cpp" />
     <ClCompile Include="Symbol.cpp" />
     <ClCompile Include="Log.cpp" />
@@ -287,9 +287,9 @@
     <ClInclude Include="Fix.h" />
     <ClInclude Include="HtmlReport.h" />
     <ClInclude Include="Hunk.h" />
-    <ClInclude Include="HunkList.h" />
     <ClInclude Include="ImportHandler.h" />
     <ClInclude Include="LTCGLoader.h" />
+    <ClInclude Include="PartList.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="Reuse.h" />
     <ClInclude Include="Symbol.h" />

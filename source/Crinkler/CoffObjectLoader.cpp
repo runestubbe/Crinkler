@@ -2,7 +2,7 @@
 
 #include <windows.h>
 #include "Hunk.h"
-#include "HunkList.h"
+#include "PartList.h"
 #include "Symbol.h"
 #include "StringMisc.h"
 

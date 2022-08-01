@@ -47,9 +47,6 @@
     <ClCompile Include="Hunk.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="HunkList.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="ImportHandler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -143,6 +140,9 @@
     <ClCompile Include="Misc.cpp">
       <Filter>Utility</Filter>
     </ClCompile>
+    <ClCompile Include="PartList.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Crinkler.h">
@@ -158,9 +158,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Hunk.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="HunkList.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="ImportHandler.h">
@@ -258,6 +255,9 @@
     </ClInclude>
     <ClInclude Include="Misc.h">
       <Filter>Utility</Filter>
+    </ClInclude>
+    <ClInclude Include="PartList.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

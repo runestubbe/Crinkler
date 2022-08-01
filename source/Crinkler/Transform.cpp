@@ -1,6 +1,6 @@
 #include "Transform.h"
 #include "Hunk.h"
-#include "HunkList.h"
+#include "PartList.h"
 #include "Log.h"
 #include "Symbol.h"
 #include "Crinkler.h"

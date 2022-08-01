@@ -8,7 +8,7 @@
 #include <cstdio>
 
 #include "MultiLoader.h"
-#include "HunkList.h"
+#include "PartList.h"
 #include "../Compressor/Compressor.h"
 #include "Transform.h"
 #include "StringMisc.h"

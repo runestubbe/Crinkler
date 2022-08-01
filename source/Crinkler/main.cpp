@@ -7,7 +7,7 @@
 
 #include "CoffObjectLoader.h"
 #include "CoffLibraryLoader.h"
-#include "HunkList.h"
+#include "PartList.h"
 #include "Hunk.h"
 #include "Crinkler.h"
 #include "CmdLineInterFace/CmdLineInterface.h"

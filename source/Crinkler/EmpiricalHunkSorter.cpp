@@ -2,7 +2,7 @@
 #include <ctime>
 #include <cmath>
 #include <ppl.h>
-#include "HunkList.h"
+#include "PartList.h"
 #include "Hunk.h"
 #include "../Compressor/CompressionStream.h"
 #include "ProgressBar.h"

@@ -6,7 +6,7 @@
 #include "misc.h"
 
 #include "Hunk.h"
-#include "HunkList.h"
+#include "PartList.h"
 #include "NameMangling.h"
 #include "Log.h"
 #include "Symbol.h"

@@ -2,7 +2,7 @@
 #include "Hunk.h"
 #include "CoffObjectLoader.h"
 #include "data.h"
-#include "HunkList.h"
+#include "PartList.h"
 #include "Symbol.h"
 #include "Log.h"
 

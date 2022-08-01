@@ -1,7 +1,7 @@
 #include <windows.h>
 #include "ImportHandler.h"
 
-#include "HunkList.h"
+#include "PartList.h"
 #include "Hunk.h"
 #include "StringMisc.h"
 #include "Log.h"

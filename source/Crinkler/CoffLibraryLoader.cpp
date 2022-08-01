@@ -2,7 +2,7 @@
 
 #include <windows.h>
 #include <string>
-#include "HunkList.h"
+#include "PartList.h"
 #include "CoffObjectLoader.h"
 #include "Hunk.h"
 #include "misc.h"
