@@ -1,6 +1,9 @@
+#define NOMINMAX
 #include <windows.h>
 #include <cstdio>
 #include <ppl.h>
+#include <algorithm>
+
 #include "Compressor.h"
 #include "CompressionState.h"
 #include "CompressionStateEvaluator.h"
@@ -390,26 +393,26 @@ static int* GenerateModelData1k(const unsigned char* org_data, int datasize)
 	return modeldata;
 }
 
-int	EvaluateSize4k(const unsigned char* inputData, int numSegments, const int* segmentSizes, int* outCompressedSegmentSizes, ModelList4k** modelLists, int baseprob, bool saturate)
+int	EvaluateSize4k(const unsigned char* inputData, int numParts, const int* partSizes, int* outCompressedPartSizes, ModelList4k** modelLists, int baseprob, bool saturate)
 {
 	CompressionStream cs(NULL, NULL, 0, saturate);
 	
-	std::vector<int> compressedSizes(numSegments * 8);
-	std::vector<int> segmentOffsets(numSegments);
+	std::vector<int> compressedSizes(numParts * 8);
+	std::vector<int> partOffsets(numParts);
 	
-	int segmentOffset = 0;
-	for (int i = 0; i < numSegments; i++)
+	int partOffset = 0;
+	for (int i = 0; i < numParts; i++)
 	{
-		segmentOffsets[i] = segmentOffset;
-		segmentOffset += segmentSizes[i];
+		partOffsets[i] = partOffset;
+		partOffset += partSizes[i];
 	}
 
-	concurrency::parallel_for(0, numSegments * 8, [&](int i)
+	concurrency::parallel_for(0, numParts * 8, [&](int i)
 	{
-		int segment = i >> 3;
+		int part = i >> 3;
 		int bitpos = i & 7;
 
-		int offset = segmentOffsets[segment];
+		int offset = partOffsets[part];
 		char context[MAX_CONTEXT_LENGTH];
 		for (int i = 0; i < MAX_CONTEXT_LENGTH; i++)
 		{
@@ -417,52 +420,52 @@ int	EvaluateSize4k(const unsigned char* inputData, int numSegments, const int* s
 			context[i] = srcpos >= 0 ? inputData[srcpos] : 0;
 		}
 
-		compressedSizes[i] = cs.EvaluateSize(inputData + offset, segmentSizes[segment], *modelLists[segment], baseprob, context, bitpos);
+		compressedSizes[i] = cs.EvaluateSize(inputData + offset, partSizes[part], *modelLists[part], baseprob, context, bitpos);
 	});
 
 	int totalSize = 0;
-	for (int i = 0; i < numSegments; i++)
+	for (int i = 0; i < numParts; i++)
 	{
-		int segmentSize = modelLists[i]->nmodels * 8 * BIT_PRECISION;
+		int partSize = modelLists[i]->nmodels * 8 * BIT_PRECISION;
 		for (int j = 0; j < 8; j++)
-			segmentSize += compressedSizes[i * 8 + j];
-		totalSize += segmentSize;
+			partSize += compressedSizes[i * 8 + j];
+		totalSize += partSize;
 		
-		if (outCompressedSegmentSizes)
-			outCompressedSegmentSizes[i] = segmentSize;
+		if (outCompressedPartSizes)
+			outCompressedPartSizes[i] = partSize;
 	}
 	
 	return totalSize;
 }
 
-int Compress4k(const unsigned char* inputData, int numSegments, const int* segmentSizes, unsigned char* outCompressedData, int maxCompressedSize, ModelList4k** modelLists, bool saturate, int baseprob, int hashsize, int* sizefill)
+int Compress4k(const unsigned char* inputData, int numParts, const int* partSizes, unsigned char* outCompressedData, int maxCompressedSize, ModelList4k** modelLists, bool saturate, int baseprob, int hashsize, int* sizefill)
 {
 	unsigned char context[MAX_CONTEXT_LENGTH] = {};
 
-	std::vector<HashBits> hashbits(numSegments);
-	std::vector<std::vector<TinyHashEntry>> hashtables(numSegments);
-	std::vector<TinyHashEntry*> hashtablePtrs(numSegments);
+	std::vector<HashBits> hashbits(numParts);
 
-	int segmentOffset = 0;
-	for (int i = 0; i < numSegments; i++)
+	unsigned int maxTinyHashSize = 0;
+	int partOffset = 0;
+	for (int i = 0; i < numParts; i++)
 	{
-		int segmentSize = segmentSizes[i];
-		hashbits[i] = ComputeHashBits(inputData + segmentOffset, segmentSize, context, *modelLists[i], i == 0, (i + 1) == numSegments);
-		segmentOffset += segmentSize;
+		int partSize = partSizes[i];
+		hashbits[i] = ComputeHashBits(inputData + partOffset, partSize, context, *modelLists[i], i == 0, (i + 1) == numParts);
+		partOffset += partSize;
 
-		hashtables[i].resize(hashbits[i].tinyhashsize);
-		hashtablePtrs[i] = hashtables[i].data();
+		maxTinyHashSize = std::max(maxTinyHashSize, hashbits[i].tinyhashsize);
 	}
 
-	return CompressFromHashBits4k(hashbits.data(), hashtablePtrs.data(), numSegments, outCompressedData, maxCompressedSize, saturate, baseprob, hashsize, sizefill);
+	std::vector<TinyHashEntry> hashtablePtrs(maxTinyHashSize);
+
+	return CompressFromHashBits4k(hashbits.data(), hashtablePtrs.data(), numParts, outCompressedData, maxCompressedSize, saturate, baseprob, hashsize, sizefill);
 }
 
-int CompressFromHashBits4k(const HashBits* hashbits, TinyHashEntry** hashtables, int numSegments, unsigned char* outCompressedData, int maxCompressedSize, bool saturate, int baseprob, int hashsize, int* sizefill)
+int CompressFromHashBits4k(const HashBits* hashbits, TinyHashEntry* hashtable, int numParts, unsigned char* outCompressedData, int maxCompressedSize, bool saturate, int baseprob, int hashsize, int* sizefill)
 {
 	CompressionStream cs(outCompressedData, sizefill, maxCompressedSize, saturate);
-	for (int i = 0; i < numSegments; i++)
+	for (int i = 0; i < numParts; i++)
 	{
-		cs.CompressFromHashBits(hashbits[i], hashtables[i], baseprob, hashsize);
+		cs.CompressFromHashBits(hashbits[i], hashtable, baseprob, hashsize);
 	}
 	return cs.Close();
 }

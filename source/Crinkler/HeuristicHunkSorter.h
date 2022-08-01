@@ -2,10 +2,10 @@
 #ifndef _HEURISTIC_HUNK_SORTER_H_
 #define _HEURISTIC_HUNK_SORTER_H_
 
-class HunkList;
+class PartList;
 class HeuristicHunkSorter {
 public:
-	static void SortHunkList(HunkList* hunklist);
+	static void SortHunkList(PartList& parts);
 };
 
 #endif

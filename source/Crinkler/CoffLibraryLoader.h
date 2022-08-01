@@ -3,13 +3,13 @@
 #define _COFF_LIBRARY_LOADER_H_
 
 #include "HunkLoader.h"
+
 class Hunk;
-class HunkList;
 
 class CoffLibraryLoader : public HunkLoader {
 public:
-	virtual bool		Clicks(const char* data, int size) const;
-	virtual HunkList*	Load(const char* data, int size, const char* module);
+	virtual bool	Clicks(const char* data, int size) const;
+	virtual bool	Load(PartList& parts, const char* data, int size, const char* module, bool inLibrary = false);
 };
 
 Hunk* MakeCallStub(const char* name);

@@ -25,13 +25,12 @@ static std::vector<Hunk*> PickHunks(const std::vector<std::string>& ids, std::un
 	return hunks;
 }
 
-void ExplicitHunkSorter::SortHunkList(HunkList* hunklist, Reuse *reuse) {
+void ExplicitHunkSorter::SortHunks(PartList& parts, Reuse *reuse) {
 	std::unordered_map<std::string, Hunk*> hunk_by_id;
-	for (int h = 0; h < hunklist->GetNumHunks(); h++) {
-		Hunk *hunk = (*hunklist)[h];
-		hunk_by_id[hunk->GetID()] = hunk;
-	}
+	parts.ForEachHunk([&hunk_by_id](Hunk* hunk) { hunk_by_id[hunk->GetID()] = hunk; });
 
+	/*
+	// REFACTOR_TODO
 	std::vector<Hunk*> code_hunks = PickHunks(reuse->m_code_hunk_ids, hunk_by_id);
 	std::vector<Hunk*> data_hunks = PickHunks(reuse->m_data_hunk_ids, hunk_by_id);
 	std::vector<Hunk*> bss_hunks = PickHunks(reuse->m_bss_hunk_ids, hunk_by_id);
@@ -60,4 +59,5 @@ void ExplicitHunkSorter::SortHunkList(HunkList* hunklist, Reuse *reuse) {
 	for (Hunk *hunk : code_hunks) hunklist->AddHunkBack(hunk);
 	for (Hunk *hunk : data_hunks) hunklist->AddHunkBack(hunk);
 	for (Hunk *hunk : bss_hunks) hunklist->AddHunkBack(hunk);
+	*/
 }

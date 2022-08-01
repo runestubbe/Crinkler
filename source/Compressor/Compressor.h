@@ -23,8 +23,8 @@ int				Compress1k(const unsigned char* inputData, int inputSize, unsigned char* 
 
 ModelList4k		InstantModels4k();
 ModelList4k		ApproximateModels4k(const unsigned char* inputData, int inputSize, const unsigned char context[MAX_CONTEXT_LENGTH], CompressionType compressionType, bool saturate, int baseprob, int* outCompressedSize, ProgressCallback* progressCallback, void* progressUserData);
-int				EvaluateSize4k(const unsigned char* inputData, int numSegments, const int* segmentSizes, int* outCompressedSegmentSizes, ModelList4k** modelLists, int baseprob, bool saturate);
-int				Compress4k(const unsigned char* inputData, int numSegments, const int* segmentSizes, unsigned char* outCompressedData, int maxCompressedSize, ModelList4k** modelLists, bool saturate, int baseprob, int hashsize, int* sizefill);
-int				CompressFromHashBits4k(const HashBits* hashbits, TinyHashEntry** hashtables, int numSegments, unsigned char* outCompressedData, int maxCompressedSize, bool saturate, int baseprob, int hashsize, int* sizefill);
+int				EvaluateSize4k(const unsigned char* inputData, int numParts, const int* partSizes, int* outCompressedPartSizes, ModelList4k** modelLists, int baseprob, bool saturate);
+int				Compress4k(const unsigned char* inputData, int numParts, const int* partSizes, unsigned char* outCompressedData, int maxCompressedSize, ModelList4k** modelLists, bool saturate, int baseprob, int hashsize, int* sizefill);
+int				CompressFromHashBits4k(const HashBits* hashbits, TinyHashEntry* hashtable, int numParts, unsigned char* outCompressedData, int maxCompressedSize, bool saturate, int baseprob, int hashsize, int* sizefill);
 
 #endif

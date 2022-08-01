@@ -4,13 +4,13 @@
 
 #include "HunkLoader.h"
 
-class HunkList;
+class PartList;
 class CoffObjectLoader : public HunkLoader {
 public:
 	virtual ~CoffObjectLoader();
 
-	virtual bool		Clicks(const char* data, int size) const;
-	virtual HunkList*	Load(const char* data, int size, const char* module);
+	virtual bool	Clicks(const char* data, int size) const;
+	virtual bool	Load(PartList& parts, const char* data, int size, const char* module, bool inLibrary = false);
 };
 
 #endif

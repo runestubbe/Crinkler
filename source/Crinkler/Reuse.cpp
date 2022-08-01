@@ -27,9 +27,11 @@ static ModelList4k *ParseModelList(const char *line) {
 
 Reuse::Reuse() : m_code_models(nullptr), m_data_models(nullptr), m_hashsize(0) {}
 
-Reuse::Reuse(const ModelList4k& code_models, const ModelList4k& data_models, const HunkList& hl, int hashsize) {
+Reuse::Reuse(const ModelList4k& code_models, const ModelList4k& data_models, const PartList& parts, int hashsize) {
 	m_code_models = new ModelList4k(code_models);
 	m_data_models = new ModelList4k(data_models);
+	/*
+	// REFACTOR_TODO
 	for (int h = 0; h < hl.GetNumHunks(); h++) {
 		Hunk *hunk = hl[h];
 		const std::string& id = hunk->GetID();
@@ -43,6 +45,7 @@ Reuse::Reuse(const ModelList4k& code_models, const ModelList4k& data_models, con
 			m_data_hunk_ids.push_back(id);
 		}
 	}
+	*/
 	m_hashsize = hashsize;
 }
 

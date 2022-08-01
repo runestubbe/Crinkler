@@ -8,7 +8,7 @@ class CallTransform : public Transform {
 	bool disabled;
 public:
 	Hunk* GetDetransformer();
-	bool DoTransform(Hunk* hunk, int splittingPoint, bool verbose);
+	bool DoTransform(Hunk* hunk, int codeSize, bool verbose);
 
 	int GetFlags();
 };

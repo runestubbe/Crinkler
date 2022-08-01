@@ -6,6 +6,7 @@ const int SYMBOL_IS_RELOCATEABLE =	0x01;
 const int SYMBOL_IS_LOCAL =			0x02;
 const int SYMBOL_IS_FUNCTION =		0x04;
 const int SYMBOL_IS_SECTION =		0x08;
+const int SYMBOL_IS_CODE =			0x10;
 
 #include <string>
 
@@ -20,7 +21,7 @@ public:
 	unsigned int	flags;
 	Hunk*			hunk;
 	int				size;
-	int				hunk_offset;	// For compression report
+	int				hunkOffset;	// For compression report
 	bool			fromLibrary;
 
 	// Demangle the VC decorations

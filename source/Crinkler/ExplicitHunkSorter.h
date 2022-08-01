@@ -1,8 +1,8 @@
 #pragma once
 
-class HunkList;
+class PartList;
 class Reuse;
 class ExplicitHunkSorter {
 public:
-	static void SortHunkList(HunkList* hunklist, Reuse *reuse);
+	static void SortHunks(PartList& parts, Reuse *reuse);
 };

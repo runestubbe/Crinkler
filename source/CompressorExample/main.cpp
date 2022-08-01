@@ -82,8 +82,8 @@ int main(int argc, const char* argv[])
 	// be close to what you would see when recalculating the models from scratch.
 	// Reusing models allows for more rapid iteration by users or tools.
 	ModelList4k* modelLists[] = { &modelList };
-	int segmentSizes[] = { dataSize };
-	int transformedSize = EvaluateSize4k(data, 1, segmentSizes, nullptr, modelLists, DEFAULT_BASEPROB, false);
+	int partSizes[] = { dataSize };
+	int transformedSize = EvaluateSize4k(data, 1, partSizes, nullptr, modelLists, DEFAULT_BASEPROB, false);
 	printf("Estimated compressed size of transformed data: %.3f bytes\n", transformedSize / float(BIT_PRECISION * 8));
 
 	delete[] data;

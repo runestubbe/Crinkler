@@ -30,10 +30,11 @@ bool CoffLibraryLoader::Clicks(const char* data, int size) const {
 	return true;
 }
 
-HunkList* CoffLibraryLoader::Load(const char* data, int size, const char* module) {
+bool CoffLibraryLoader::Load(PartList& parts, const char* data, int size, const char* module, bool inLibrary) {
 	// Assume that the header and first linker member are fine (as it is checked by click)
 	
-	HunkList* hunklist = new HunkList;
+	CoffObjectLoader coffLoader;
+
 	const char* ptr = data + 8;
 	// Skip first linker member
 	int memberSize = atoi(&ptr[48]);
@@ -92,10 +93,7 @@ HunkList* CoffLibraryLoader::Load(const char* data, int size, const char* module
 
 		// COFF
 		if(*(int*)ptr != 0xFFFF0000) {
-			CoffObjectLoader coffLoader;
-			HunkList* hl = coffLoader.Load(ptr, 0, memberModuleName);
-			hunklist->Append(hl);
-			delete hl;
+			coffLoader.Load(parts, ptr, 0, memberModuleName, true);
 		}
 	}
 
@@ -134,17 +132,18 @@ HunkList* CoffLibraryLoader::Load(const char* data, int size, const char* module
 				for(int j = 0; importDLL[j] && importDLL[j] != '.'; j++)
 					dllName[j] = (char)tolower(importDLL[j]);
 
-				hunklist->AddHunkBack(new Hunk(symbolNames[i], importName.c_str(), dllName));
+				Hunk* hunk = new Hunk(symbolNames[i], importName.c_str(), dllName);
+				hunk->MarkHunkAsLibrary();
+				parts.GetUninitializedPart().AddHunkBack(hunk);
 			} else {
 				// A call stub
-				hunklist->AddHunkBack(MakeCallStub(symbolNames[i]));
+				Hunk* hunk = MakeCallStub(symbolNames[i]);
+				hunk->MarkHunkAsLibrary();
+				parts.GetCodePart().AddHunkBack(hunk);
 			}
 		}
 	}
-
-	hunklist->MarkHunksAsLibrary();
-
-	return hunklist;
+	return true;
 }
 
 Hunk* MakeCallStub(const char* name) {

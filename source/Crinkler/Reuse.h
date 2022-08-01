@@ -37,11 +37,11 @@ class Reuse {
 	int m_hashsize;
 
 	friend Reuse* LoadReuseFile(const char *filename);
-	friend void ExplicitHunkSorter::SortHunkList(HunkList* hunklist, Reuse *reuse);
+	friend void ExplicitHunkSorter::SortHunks(PartList& parts, Reuse *reuse);
 
 public:
 	Reuse();
-	Reuse(const ModelList4k& code_models, const ModelList4k& data_models, const HunkList& hl, int hashsize);
+	Reuse(const ModelList4k& code_models, const ModelList4k& data_models, const PartList& parts, int hashsize);
 
 	const ModelList4k*	GetCodeModels() const { return m_code_models; }
 	const ModelList4k*	GetDataModels() const { return m_data_models; }

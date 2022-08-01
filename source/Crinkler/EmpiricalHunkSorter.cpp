@@ -10,204 +10,185 @@
 
 using namespace std;
 
-static void PermuteHunklist(HunkList* hunklist, int strength) {
-	int n_permutes = (rand() % strength) + 1;
-	for (int p = 0 ; p < n_permutes ; p++)
-	{
-		int h1i, h2i;
-		int sections[3];
-		int nHunks = hunklist->GetNumHunks();
-		int codeHunks = 0;
-		int dataHunks = 0;
-		int uninitHunks = 0;
+static void PermuteHunklist(PartList& parts, int strength) {
 
-		{
-			// Count different types of hunks
-			codeHunks = 0;
-			while(codeHunks < nHunks && (*hunklist)[codeHunks]->GetFlags() & HUNK_IS_CODE)
-				codeHunks++;
-			dataHunks = codeHunks;
-			while(dataHunks < nHunks && (*hunklist)[dataHunks]->GetRawSize() > 0)
-				dataHunks++;
-			uninitHunks = nHunks - dataHunks;
-			dataHunks -= codeHunks;
-			if (codeHunks < 2 && dataHunks < 2 && uninitHunks < 2) return;
-			sections[0] = codeHunks;
-			sections[1] = dataHunks;
-			sections[2] = uninitHunks;
+	const int numParts = parts.GetNumParts();
+	int numTotalHunks = 0;
+	for (int partIndex = 0; partIndex < numParts; partIndex++) {
+		const int numHunks = parts[partIndex].GetNumHunks();
+		numTotalHunks += numHunks;
+	}
+	
+	int numPermutes = (rand() % strength) + 1;	//TODO
+	for (int p = 0 ; p < numPermutes; p++)
+	{
+		int t = rand() % numTotalHunks;
+		int partIndex = 0;
+		while (t >= parts[partIndex].GetNumHunks()) {
+			t -= parts[partIndex].GetNumHunks();
+			partIndex++;
 		}
 
-		int s;
-		do {
-			s = rand() % 3;
-		} while (sections[s] < 2);
-		int max_n = sections[s]/2;
-		if (max_n > strength) max_n = strength;
-		int n = (rand() % max_n) + 1;
-		h1i = rand() % (sections[s] - n + 1);
-		do {
-			h2i = rand() % (sections[s] - n + 1);
-		} while (h2i == h1i);
-		int base = (s > 0 ? sections[0] : 0) + (s > 1 ? sections[1] : 0);
+		Part& part = parts[partIndex];
+		if (part.GetNumHunks() < 2)
+			continue;
 
-		if (h2i < h1i)
-		{
+		int maxN = part.GetNumHunks() / 2;
+		if (maxN > strength) maxN = strength;
+		int n = (rand() % maxN) + 1;
+		int h1i = rand() % (part.GetNumHunks() - n + 1);
+		int h2i;
+		do {
+			h2i = rand() % (part.GetNumHunks() - n + 1);
+		} while (h2i == h1i);
+
+		if (h2i < h1i) {
 			// Insert before
-			for (int i = 0 ; i < n ; i++)
-			{
-				hunklist->InsertHunk(base+h2i+i, hunklist->RemoveHunk((*hunklist)[base+h1i+i]));
+			for (int i = 0 ; i < n ; i++) {
+				Hunk* hunk = part[h1i + i];
+				part.RemoveHunk(hunk);
+				part.InsertHunk(h2i+i, hunk);
 			}
 		} else {
 			// Insert after
-			for (int i = 0 ; i < n ; i++)
-			{
-				hunklist->InsertHunk(base+h2i+n-1, hunklist->RemoveHunk((*hunklist)[base+h1i]));
+			for (int i = 0 ; i < n ; i++) {
+				Hunk* hunk = part[h1i];
+				part.RemoveHunk(hunk);
+				part.InsertHunk(h2i+n-1, hunk);
 			}
 		}
+		// RUNE_TODO: handle trailing hunks
 	}
 }
 
-EmpiricalHunkSorter::EmpiricalHunkSorter() {
-}
-
-EmpiricalHunkSorter::~EmpiricalHunkSorter() {
-}
-
-int EmpiricalHunkSorter::TryHunkCombination(HunkList* hunklist, Transform& transform, ModelList4k& codeModels, ModelList4k& dataModels, ModelList1k& models1k, int baseprob, bool saturate, bool use1KMode, int* out_size1, int* out_size2)
+int EmpiricalHunkSorter::TryHunkCombination(PartList& parts, Transform& transform, bool saturate, bool use1KMode)
 {
-	int splittingPoint;
-
 	Hunk* phase1;
-	Symbol* import = hunklist->FindSymbol("_Import");
-	transform.LinkAndTransform(hunklist, import, CRINKLER_CODEBASE, phase1, NULL, &splittingPoint, false);
+	Symbol* import = parts.FindSymbol("_Import");
+	transform.LinkAndTransform(parts, import, CRINKLER_CODEBASE, phase1, NULL, false);
 
 	int totalsize = 0;
 	if (use1KMode)
 	{
 		int max_size = phase1->GetRawSize() * 2 + 1000;
 		unsigned char* compressed_data_ptr = new unsigned char[max_size];
-		Compress1k((unsigned char*)phase1->GetPtr(), phase1->GetRawSize(), compressed_data_ptr, max_size, models1k, nullptr, &totalsize);	//TODO: Estimate instead of compress
+		Compress1k((unsigned char*)phase1->GetPtr(), phase1->GetRawSize(), compressed_data_ptr, max_size, parts[0].m_model1k, nullptr, &totalsize);	//TODO: Estimate instead of compress
 		delete[] compressed_data_ptr;
-
-		if(out_size1) *out_size1 = totalsize;
-		if(out_size2) *out_size2 = 0;
 	}
 	else
 	{
-		ModelList4k* ModelLists[] = { &codeModels, &dataModels };
-		int sectionSizes[] = {splittingPoint, phase1->GetRawSize() - splittingPoint};
-		int compressedSizes[2] = {};
-		totalsize = EvaluateSize4k((unsigned char*)phase1->GetPtr(), 2, sectionSizes, compressedSizes, ModelLists, baseprob, saturate);
+		const int numInitializedParts = parts.GetNumInitializedParts();
 		
-		if (out_size1) *out_size1 = compressedSizes[0];
-		if (out_size2) *out_size2 = compressedSizes[1];
+		std::vector<ModelList4k*> modelLists(numInitializedParts);
+		std::vector<int> partSizes(numInitializedParts);
+		std::vector<int> compressedSizes(numInitializedParts);
+		
+		for (int i = 0; i < numInitializedParts; i++) {
+			Part& part = parts[i];
+			modelLists[i] = &part.m_model4k;
+			partSizes[i] = part.GetLinkedSize();
+		}
 
+		totalsize = EvaluateSize4k((unsigned char*)phase1->GetPtr(), numInitializedParts, partSizes.data(), compressedSizes.data(), modelLists.data(), CRINKLER_BASEPROB, saturate);
+
+		for (int i = 0; i < numInitializedParts; i++) {
+			parts[i].m_compressedSize = compressedSizes[i];
+		}
+		
 		delete phase1;
 	}
 
 	return totalsize;
 }
 
-int EmpiricalHunkSorter::SortHunkList(HunkList* hunklist, Transform& transform, ModelList4k& codeModels, ModelList4k& dataModels, ModelList1k& models1k, int baseprob, bool saturate, int numIterations, ProgressBar* progress, bool use1KMode, int* out_size1, int* out_size2)
+static void PrintIterationStats(PartList& parts, int iteration, int totalSize, bool use1KMode)
+{
+	if (use1KMode)
+	{
+		printf("  Iteration: %5d  Size: %5.2f\n", iteration, totalSize / (BIT_PRECISION * 8.0f));
+	}
+	else
+	{
+		printf("  Iteration: %5d", iteration);
+	
+		parts.ForEachPart([](Part& part, int index) {
+			if (part.IsInitialized())
+			{
+				printf("  %s: %.2f", part.GetName(), part.m_compressedSize / (BIT_PRECISION * 8.0f));
+			}
+			});
+
+		printf("  Size: %5.2f\n", totalSize / (BIT_PRECISION * 8.0f));
+	}
+}
+
+int EmpiricalHunkSorter::SortHunkList(PartList& parts, Transform& transform, bool saturate, int numIterations, ProgressBar* progress, bool use1KMode)
 {
 	srand(1);
-
-	int nHunks = hunklist->GetNumHunks();
 	
 	printf("\n\nReordering sections...\n");
 	fflush(stdout);
 	
-	int best_size1;
-	int best_size2;
-	int best_total_size = TryHunkCombination(hunklist, transform, codeModels, dataModels, models1k, baseprob, saturate, use1KMode, &best_size1, &best_size2);
-	if(use1KMode)
-	{
-		printf("  Iteration: %5d  Size: %5.2f\n", 0, best_total_size / (BIT_PRECISION * 8.0f));
-	}
-	else
-	{
-		printf("  Iteration: %5d  Code: %.2f  Data: %.2f  Size: %.2f\n", 0, best_size1 / (BIT_PRECISION * 8.0f), best_size2 / (BIT_PRECISION * 8.0f), best_total_size / (BIT_PRECISION * 8.0f));
-	}
+	int bestTotalSize = TryHunkCombination(parts, transform, saturate, use1KMode);
+
+	const int stime = clock();
+
+	PrintIterationStats(parts, 0, bestTotalSize, use1KMode);
 	
 	if(progress)
 		progress->BeginTask("Reordering sections");
 
-	Hunk** backup = new Hunk*[nHunks];
-	int fails = 0;
-	int stime = clock();
+	int numTotalHunks = 0;
+	parts.ForEachPart([&numTotalHunks](Part& part, int index) {
+		numTotalHunks += part.GetNumHunks();
+		});
+
+	Hunk** backup = new Hunk*[numTotalHunks];
 	for(int i = 1; i < numIterations; i++) {
-		for(int j = 0; j < nHunks; j++)
-			backup[j] = (*hunklist)[j];
 		
-		// Save DLL hunk
-		Hunk* dllhunk = nullptr;
-		int dlli;
-		for(dlli = 0; dlli < hunklist->GetNumHunks(); dlli++) {
-			if((*hunklist)[dlli]->GetFlags() & HUNK_IS_LEADING) {
-				dllhunk = (*hunklist)[dlli];
-				hunklist->RemoveHunk(dllhunk);
-				break;
-			}
-		}
-		
-
-		Hunk* eh = nullptr;
-		int ehi;
-		for (ehi = 0; ehi < hunklist->GetNumHunks(); ehi++) {
-			if ((*hunklist)[ehi]->GetFlags() & HUNK_IS_TRAILING) {
-				eh = (*hunklist)[ehi];
-				hunklist->RemoveHunk(eh);
-				break;
-			}
-		}
-
-		PermuteHunklist(hunklist, 2);
-		
-		// Restore export hunk, if present
-		if (eh) {
-			hunklist->InsertHunk(ehi, eh);
-		}
-		
-		if(dllhunk)
 		{
-			hunklist->InsertHunk(dlli, dllhunk);
+			//TODO: this is ugly
+			int offset = 0;
+			parts.ForEachPart([&](Part& part, int index) {
+				const int numHunks = part.GetNumHunks();
+				for (int i = 0; i < numHunks; i++) {
+					backup[offset + i] = part[i];
+				}
+				offset += numHunks;
+				});
 		}
 
-
-		int size1, size2;
-		int total_size = TryHunkCombination(hunklist, transform, codeModels, dataModels, models1k, baseprob, saturate, use1KMode, &size1, &size2);
-		if(total_size < best_total_size) {
-			if(use1KMode)
-			{
-				printf("  Iteration: %5d  Size: %5.2f\n", i, total_size / (BIT_PRECISION * 8.0f));
-			}
-			else
-			{
-				printf("  Iteration: %5d  Code: %.2f  Data: %.2f  Size: %.2f\n", i, size1 / (BIT_PRECISION * 8.0f), size2 / (BIT_PRECISION * 8.0f), total_size / (BIT_PRECISION * 8.0f));
-			}
+		PermuteHunklist(parts, 2);
+		
+		int totalSize = TryHunkCombination(parts, transform, saturate, use1KMode);
+		if(totalSize < bestTotalSize) {
+			bestTotalSize = totalSize;
+			PrintIterationStats(parts, i, bestTotalSize, use1KMode);
 			
 			fflush(stdout);
-			best_total_size = total_size;
-			best_size1 = size1;
-			best_size2 = size2;
-			fails = 0;
-		} else {
-			fails++;
-			// Restore from backup
-			for(int j = 0; j < nHunks; j++)
-				(*hunklist)[j] = backup[j];
+		}
+		else
+		{
+			{
+				//TODO: this is ugly
+				int offset = 0;
+				parts.ForEachPart([&](Part& part, int index) {
+					const int numHunks = part.GetNumHunks();
+					for (int i = 0; i < numHunks; i++) {
+						part[i] = backup[offset + i];
+					}
+					offset += numHunks;
+					});
+			}
 		}
 		if(progress)
 			progress->Update(i+1, numIterations);
 	}
+	delete[] backup;
 	if(progress)
 		progress->EndTask();
 
-	if(out_size1) *out_size1 = best_size1;
-	if(out_size2) *out_size2 = best_size2;
-
-	delete[] backup;
 	int timespent = (clock() - stime)/CLOCKS_PER_SEC;
 	printf("Time spent: %dm%02ds\n", timespent/60, timespent%60);
-	return best_total_size;
+	return bestTotalSize;
 }

@@ -3,7 +3,7 @@
 #define _TRANSFORM_H_
 
 class Hunk;
-class HunkList;
+class PartList;
 class Symbol;
 class Transform {
 	bool m_enabled;
@@ -16,7 +16,7 @@ public:
 
 	// Links and transforms a hunklist. Provides both a transformed and non-transformed linked version.
 	// Returns true if the transform succeeds
-	bool			LinkAndTransform(HunkList* hunklist, Symbol *entry_label, int baseAddress, Hunk* &transformedHunk, Hunk** untransformedHunk, int* splittingPoint, bool verbose);
+	bool			LinkAndTransform(PartList& parts, Symbol *entry_label, int baseAddress, Hunk* &transformedHunk, Hunk** untransformedHunk, bool verbose);
 
 	void			Disable() { m_enabled = false; }
 };

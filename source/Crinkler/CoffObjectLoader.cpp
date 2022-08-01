@@ -50,7 +50,7 @@ bool CoffObjectLoader::Clicks(const char* data, int size) const {
 	return *(unsigned short*)data == IMAGE_FILE_MACHINE_I386;
 }
 
-HunkList* CoffObjectLoader::Load(const char* data, int size, const char* module) {
+bool CoffObjectLoader::Load(PartList& parts, const char* data, int size, const char* module, bool inLibrary) {
 	const char* ptr = data;
 
 	// Header
@@ -64,16 +64,18 @@ HunkList* CoffObjectLoader::Load(const char* data, int size, const char* module)
 	// Section headers
 	const IMAGE_SECTION_HEADER* sectionHeaders = (const IMAGE_SECTION_HEADER*)ptr;
 
-	HunkList* hunklist = new HunkList;
 	Hunk* constantsHunk;
 	{
 		char hunkName[1000];
 		sprintf_s(hunkName, 1000, "c[%s]!constants", module);
 		constantsHunk = new Hunk(hunkName, 0, 0, 1, 0, 0);
+		parts.GetUninitializedPart().AddHunkBack(constantsHunk);
 	}
 
 	
 	// Load sections
+	std::vector<Hunk*> LinearHunkList;
+	LinearHunkList.resize(header->NumberOfSections);
 	for(int i = 0; i < header->NumberOfSections; i++) {
 		string sectionName = GetSectionName(&sectionHeaders[i], stringTable);
 		int chars = sectionHeaders[i].Characteristics;
@@ -90,7 +92,18 @@ HunkList* CoffObjectLoader::Load(const char* data, int size, const char* module)
 								flags, GetAlignmentBitsFromCharacteristics(chars),	// Alignment
 								isInitialized ? sectionHeaders[i].SizeOfRawData : 0,
 								sectionHeaders[i].SizeOfRawData);	// Virtual size
-		hunklist->AddHunkBack(hunk);
+		if (inLibrary)
+			constantsHunk->MarkHunkAsLibrary();
+
+		LinearHunkList[i] = hunk;
+
+		if (flags & HUNK_IS_CODE)
+			parts.GetCodePart().AddHunkBack(hunk);
+		else if (isInitialized)
+			parts.GetDataPart().AddHunkBack(hunk);
+		else
+			parts.GetUninitializedPart().AddHunkBack(hunk);
+		
 
 		// Relocations
 		const IMAGE_RELOCATION* relocs = (const IMAGE_RELOCATION*) (data + sectionHeaders[i].PointerToRelocations);
@@ -140,7 +153,7 @@ HunkList* CoffObjectLoader::Load(const char* data, int size, const char* module)
 		Symbol* s = new Symbol(GetSymbolName(sym, stringTable).c_str(), sym->Value, SYMBOL_IS_RELOCATEABLE, 0);
 
 		if(sym->SectionNumber > 0) {
-			s->hunk = (*hunklist)[sym->SectionNumber-1];
+			s->hunk = LinearHunkList[sym->SectionNumber-1];
 
 			if(sym->StorageClass == IMAGE_SYM_CLASS_EXTERNAL && sym->Type == 0x20 && sym->NumberOfAuxSymbols > 0) {	// Function definition
 				const IMAGE_AUX_SYMBOL* aux = (const IMAGE_AUX_SYMBOL*) (sym+1);
@@ -169,7 +182,9 @@ HunkList* CoffObjectLoader::Load(const char* data, int size, const char* module)
 			s->hunk = uninitHunk;
 			s->value = 0;
 			uninitHunk->AddSymbol(s);
-			hunklist->AddHunkBack(uninitHunk);
+			if (inLibrary)
+				constantsHunk->MarkHunkAsLibrary();
+			parts.GetUninitializedPart().AddHunkBack(uninitHunk);
 		} else if(sym->SectionNumber == 0 && sym->StorageClass == IMAGE_SYM_CLASS_WEAK_EXTERNAL && sym->Value == 0) {
 			// Weak external
 			const IMAGE_AUX_SYMBOL* aux = (const IMAGE_AUX_SYMBOL*) (sym+1);
@@ -190,9 +205,7 @@ HunkList* CoffObjectLoader::Load(const char* data, int size, const char* module)
 		i += sym->NumberOfAuxSymbols;	// Skip aux symbols
 	}
 
-	// Trim hunks
-	hunklist->AddHunkBack(constantsHunk);
-	hunklist->Trim();
-
-	return hunklist;
+	// Trim hunks	
+	parts.ForEachHunk([](Hunk* hunk) { hunk->Trim(); });
+	return true;
 }

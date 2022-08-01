@@ -48,35 +48,31 @@ static bool HunkRelation(Hunk* h1, Hunk* h2) {
 	return h1->GetAlignmentBits() < h2->GetAlignmentBits();
 }
 
-void HeuristicHunkSorter::SortHunkList(HunkList* hunklist) {
-	vector<Hunk*> hunks;
-
-	Hunk *import_hunk = hunklist->FindSymbol("_Import")->hunk;
+void HeuristicHunkSorter::SortHunkList(PartList& parts) {
+	
+	Hunk *import_hunk = parts.FindSymbol("_Import")->hunk;
 	Hunk *entry_hunk = import_hunk->GetContinuation()->hunk;
 	Hunk *initializer_hunk = NULL;
+	
 	if (entry_hunk->GetContinuation() != NULL) {
 		initializer_hunk = entry_hunk;
 		entry_hunk = initializer_hunk->GetContinuation()->hunk;
 	}
 
-	hunklist->RemoveHunk(import_hunk);
-	if (initializer_hunk) hunklist->RemoveHunk(initializer_hunk);
-	hunklist->RemoveHunk(entry_hunk);
-
-	// Move hunks to vector
-	for(int i = 0; i < hunklist->GetNumHunks(); i++) {
-		Hunk* h = (*hunklist)[i];
-		hunks.push_back(h);
-	}
-	hunklist->Clear();
+	Part& codePart = parts.GetCodePart();
+	codePart.RemoveHunk(import_hunk);
+	if (initializer_hunk) codePart.RemoveHunk(initializer_hunk);
+	codePart.RemoveHunk(entry_hunk);
 
 	// Sort hunks
-	sort(hunks.begin(), hunks.end(), HunkRelation);
+	parts.ForEachPart([](Part& part, int index)
+		{
+			sort(part.m_hunks.begin(), part.m_hunks.end(), HunkRelation);
+		});
 
-	hunklist->AddHunkBack(import_hunk);
-	if (initializer_hunk) hunklist->AddHunkBack(initializer_hunk);
-	hunklist->AddHunkBack(entry_hunk);
-
-	// Copy hunks back to hunklist
-	for(Hunk *hunk : hunks) hunklist->AddHunkBack(hunk);
+	codePart.AddHunkFront(entry_hunk);
+	if (initializer_hunk) codePart.AddHunkFront(initializer_hunk);
+	codePart.AddHunkFront(import_hunk);
+	
+	
 }

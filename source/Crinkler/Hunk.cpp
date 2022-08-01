@@ -6,6 +6,7 @@
 #include "misc.h"
 
 #include "Hunk.h"
+#include "HunkList.h"
 #include "NameMangling.h"
 #include "Log.h"
 #include "Symbol.h"
@@ -16,8 +17,8 @@ using namespace std;
 static bool SymbolComparator(Symbol* first, Symbol* second) {
 	if(first->value != second->value) {
 		return first->value < second->value;
-	} else if(first->hunk_offset != second->hunk_offset) {
-		return first->hunk_offset < second->hunk_offset;
+	} else if(first->hunkOffset != second->hunkOffset) {
+		return first->hunkOffset < second->hunkOffset;
 	} else {
 		if((first->flags & SYMBOL_IS_SECTION) != (second->flags & SYMBOL_IS_SECTION))
 			return (first->flags & SYMBOL_IS_SECTION) != 0;
@@ -250,9 +251,9 @@ void Hunk::Insert(int offset, const unsigned char* data, int size) {
 }
 
 
-CompressionReportRecord* Hunk::GetCompressionSummary(int* sizefill, int splittingPoint) {
-	vector<Symbol*> symbols;
+CompressionReportRecord* Hunk::GenerateCompressionSummary(PartList& parts, int* sizefill) {
 	// Extract relocatable symbols
+	vector<Symbol*> symbols;
 	for(const auto& p : m_symbols) {
 		if(p.second->flags & SYMBOL_IS_RELOCATEABLE)
 			symbols.push_back(p.second);
@@ -262,17 +263,24 @@ CompressionReportRecord* Hunk::GetCompressionSummary(int* sizefill, int splittin
 	sort(symbols.begin(), symbols.end(), SymbolComparator);
 
 	CompressionReportRecord* root = new CompressionReportRecord("root", RECORD_ROOT, 0, 0);
-	CompressionReportRecord* codeSection = new CompressionReportRecord("Code sections", RECORD_SECTION|RECORD_CODE, 0, 0);
-	CompressionReportRecord* dataSection = new CompressionReportRecord("Data sections", RECORD_SECTION, splittingPoint, sizefill[splittingPoint]);
-	CompressionReportRecord* uninitSection = new CompressionReportRecord("Uninitialized sections", RECORD_SECTION, GetRawSize(), -1);
-	root->children.push_back(codeSection);
-	root->children.push_back(dataSection);
-	root->children.push_back(uninitSection);
+
+	parts.ForEachPart([&](Part& part, int index)
+		{
+			char desc[512];
+			sprintf(desc, "%s sections", part.GetName());
+
+			CompressionReportRecord* record;
+			if (part.IsInitialized())
+				record = new CompressionReportRecord(desc, RECORD_SECTION, part.GetLinkedOffset(), sizefill[part.GetLinkedOffset()]);
+			else
+				record = new CompressionReportRecord(desc, RECORD_SECTION, part.GetLinkedOffset(), -1);
+
+			root->children.push_back(record);
+		});
 
 	for(vector<Symbol*>::iterator it = symbols.begin(); it != symbols.end(); it++) {
 		Symbol* sym = *it;
-		CompressionReportRecord* c = new CompressionReportRecord(sym->name.c_str(), 
-			0, sym->value, (sym->value < GetRawSize()) ? sizefill[sym->value] : -1);
+		CompressionReportRecord* c = new CompressionReportRecord(sym->name.c_str(), 0, sym->value, (sym->value < GetRawSize()) ? sizefill[sym->value] : -1);
 
 		// Copy misc string
 		c->miscString = sym->miscString;
@@ -285,16 +293,19 @@ CompressionReportRecord* Hunk::GetCompressionSummary(int* sizefill, int splittin
 			c->type |= RECORD_PUBLIC;
 		}
 
-		// Find appropriate section
-		CompressionReportRecord* r;	// Parent section
-		if(sym->value < splittingPoint) {
-			r = codeSection;
-		} else if(sym->value < GetRawSize()) {
-			r = dataSection;
-		} else {
-			r = uninitSection;
-		}
+		if (sym->flags & SYMBOL_IS_CODE)
+			c->type |= RECORD_CODE;
 
+		// Find parent section
+		CompressionReportRecord* r = root->children.back();
+		for (CompressionReportRecord* section : root->children)
+		{
+			if (sym->value >= section->pos)
+				r = section;
+			else
+				break;
+		}
+		
 		// Find where to place the record
 		while(r->GetLevel()+1 < c->GetLevel()) {
 			if(r->children.empty()) {	// Add a dummy element if we skip a level

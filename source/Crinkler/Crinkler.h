@@ -39,7 +39,7 @@ static const int CRINKLER_LINKER_VERSION = 0x3332;
 
 class Crinkler {
 	MultiLoader							m_hunkLoader;
-	HunkList							m_hunkPool;
+	PartList							m_parts;
 	std::string							m_entry;
 	std::string							m_summaryFilename;
 	std::string							m_reuseFilename;
@@ -68,9 +68,6 @@ class Crinkler {
 	bool								m_runInitializers;
 	int									m_largeAddressAware;
 	int									m_saturate;
-	ModelList4k							m_modellist1;
-	ModelList4k							m_modellist2;
-	ModelList1k							m_modellist1k;
 
 	ConsoleProgressBar					m_consoleBar;
 	WindowProgressBar					m_windowBar;
@@ -79,21 +76,23 @@ class Crinkler {
 	Symbol*	FindEntryPoint();
 	void RemoveUnreferencedHunks(Hunk* base);
 	std::string GetEntrySymbolName() const;
-	void ReplaceDlls(HunkList& hunkslist);
-	void OverrideAlignments(HunkList& hunklist);
+	void ReplaceDlls(PartList& parts);
+	void OverrideAlignments(PartList& parts);
 
 	void LoadImportCode(bool use1kMode, bool useSafeImporting, bool useDllFallback, bool useRangeImport);
-	Hunk* CreateModelHunk(int splittingPoint, int rawsize);
+	Hunk* CreateModelHunk4k(PartList& parts);
 	Hunk* CreateDynamicInitializerHunk();
 	void InitProgressBar();
 	void DeinitProgressBar();
 
-	Hunk *FinalLink(Hunk *header, Hunk *depacker, Hunk *hashHunk, Hunk *phase1, unsigned char *data, int size, int splittingPoint, int hashsize);
+	Hunk *FinalLink(PartList& parts, Hunk *header, Hunk *depacker, Hunk *hashHunk, Hunk *phase1, unsigned char *data, int size, int hashsize);
 
-	int OptimizeHashsize(unsigned char* data, int datasize, int hashsize, int splittingPoint, int tries);
-	int EstimateModels(unsigned char* data, int datasize, int splittingPoint, bool reestimate, bool use1kMode, int target_size1, int target_size2);
+	int OptimizeHashsize(PartList& parts, unsigned char* data, int datasize, int hashsize, int tries);
+	int EstimateModels(PartList& parts, unsigned char* data, int datasize, bool reestimate, bool use1kMode);
 	void SetHeaderSaturation(Hunk* header);
-	void SetHeaderConstants(Hunk* header, Hunk* phase1, int hashsize, int boostfactor, int baseprob0, int baseprob1, unsigned int modelmask, int subsystem_version, int exports_rva, bool use1kHeader);
+	void SetHeaderConstants1k(Hunk* header, Hunk* phase1, int boostfactor, int baseprob0, int baseprob1, unsigned int modelmask, int subsystemVersion);
+	void SetHeaderConstants4k(Hunk* header, Hunk* phase1, PartList& Parts, int hashsize, int subsystemVersion, int exportsRVA);
+	void SetHeaderConstantsCommon(Hunk* header, int subsystemVersion);
 
 public:
 	Crinkler();

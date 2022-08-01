@@ -15,7 +15,7 @@ const int HUNK_IS_ALIGNED =		0x20;
 
 class Symbol;
 class Hunk;
-class HunkList;
+class PartList;
 enum RelocationType {RELOCTYPE_ABS32, RELOCTYPE_REL32};
 
 const int RECORD_ROOT =			0x01;
@@ -81,7 +81,8 @@ struct Relocation {
 };
 
 class Hunk {
-	friend class HunkList;
+	friend class PartList;
+
 	int				m_alignmentBits;
 	int				m_alignmentOffset;
 	unsigned int	m_flags;
@@ -125,7 +126,7 @@ public:
 
 	void		MarkHunkAsLibrary();
 
-	CompressionReportRecord* GetCompressionSummary(int* sizefill, int splittingPoint);
+	CompressionReportRecord* GenerateCompressionSummary(PartList& parts, int* sizefill);
 
 
 	int				GetAlignmentBits() const		{ return m_alignmentBits; }
