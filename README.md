@@ -15,7 +15,16 @@ Crinkler is mainly being developed by Rune L. H. Stubbe (Mentor/TBC) and Aske Si
 You are welcome to integrate Crinkler into your own tools or toolchains. If you do so, preferably base your work on the `master` branch. This way, the Crinkler version identifier written into output executables (two digits at offset 2 in the file) will match the actual contents produced by Crinkler. All feature development that significantly affects the output from Crinkler will generally take place on other branches.
 
 ## Building
+Build Crinkler using Visual Studio 2017 or later.
 
-Build Crinkler using Visual Studio 2017 or later. The custom build rules for the assembly files require that `nasmw.exe` is in the executable path.
+### MSBuild
+The custom build rules for the assembly files require that `nasmw.exe` is in the executable path.
 
 The data compressor itself is separated out into its own library, located in the `Compressor` project. This library enables tools to estimate how big a particular piece of data would be after being compressed by Crinkler. Take a look at the `CompressorExample` project for a description of its usage.
+
+### CMake
+If the location of `nasm.exe` is not in the `PATH` variable, CMake requires you to either specify a nasm executable path using `-DNASM_PATH=/path/to/your/nasm` or letting it download nasm automatically using `-DDOWNLOAD_NASM=ON`.
+
+You can select different build types by supplying `-DCMAKE_BUILD_TYPE=Release` or `-DCMAKE_BUILD_TYPE=Debug`.
+
+Select the target architecture by using `-A Win32` or `-A x64`.

@@ -1,0 +1,2 @@
+add_executable(CompressorExample main.cpp)
+target_link_libraries(CompressorExample Compressor)
