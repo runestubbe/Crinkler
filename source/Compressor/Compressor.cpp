@@ -426,7 +426,7 @@ int	EvaluateSize4k(const unsigned char* inputData, int numParts, const int* part
 	int totalSize = 0;
 	for (int i = 0; i < numParts; i++)
 	{
-		int partSize = modelLists[i]->nmodels * 8 * BIT_PRECISION;
+		int partSize = 0;
 		for (int j = 0; j < 8; j++)
 			partSize += compressedSizes[i * 8 + j];
 		totalSize += partSize;

@@ -1412,7 +1412,8 @@ void Crinkler::Link(const char* filename) {
 	if(!m_useTinyHeader && m_compressionType != COMPRESSION_INSTANT) {
 		int sizeIncludingModels = size;
 		m_parts.ForEachPart([&sizeIncludingModels](Part& part, int index) {
-			sizeIncludingModels += 8 + part.m_model4k.nmodels;
+			if(part.IsInitialized())
+				sizeIncludingModels += 8 + part.m_model4k.nmodels;
 			});
 		float byteslost = sizeIncludingModels - idealsize / (float) (BIT_PRECISION * 8);
 		printf("Real compressed total size: %d\nBytes lost to hashing: %.2f\n", sizeIncludingModels, byteslost);
