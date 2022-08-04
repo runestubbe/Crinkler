@@ -26,13 +26,19 @@ static const char *ReuseTypeName(ReuseType mode) {
 	return "";
 }
 
-class Reuse {
-	ModelList4k *m_code_models;
-	ModelList4k *m_data_models;
+class ReusePart {
+public:
+	ReusePart(Part& part);
+	ReusePart(std::string name, bool initialized);
 
-	std::vector<std::string> m_code_hunk_ids;
-	std::vector<std::string> m_data_hunk_ids;
-	std::vector<std::string> m_bss_hunk_ids;
+	std::string m_name;
+	std::vector<std::string> m_hunk_ids;
+	const ModelList4k *m_models;
+	bool m_initialized;
+};
+
+class Reuse {
+	std::vector<ReusePart> m_parts;
 
 	int m_hashsize;
 
@@ -41,10 +47,8 @@ class Reuse {
 
 public:
 	Reuse();
-	Reuse(const ModelList4k& code_models, const ModelList4k& data_models, const PartList& parts, int hashsize);
+	Reuse(PartList& parts, int hashsize);
 
-	const ModelList4k*	GetCodeModels() const { return m_code_models; }
-	const ModelList4k*	GetDataModels() const { return m_data_models; }
 	int					GetHashSize() const { return m_hashsize; }
 
 	void				Save(const char* filename) const;

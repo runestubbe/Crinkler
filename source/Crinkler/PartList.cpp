@@ -104,6 +104,13 @@ PartList::~PartList()
 		delete part;
 }
 
+void PartList::Clear()
+{
+	for (Part* part : m_parts)
+		delete part;
+	m_parts.clear();
+}
+
 Part& PartList::operator[] (unsigned idx)
 {
 	return *m_parts[idx];
@@ -113,7 +120,7 @@ Part const& PartList::operator[] (unsigned idx) const
 	return *m_parts[idx];
 }
 
-Part& PartList::GetOrAddPart(const char* name)
+Part& PartList::GetOrAddPart(const char* name, bool initialized)
 {
 	for (Part* part : m_parts)
 	{
@@ -123,7 +130,7 @@ Part& PartList::GetOrAddPart(const char* name)
 		}
 	}
 
-	Part* part = new Part(name, true);
+	Part* part = new Part(name, initialized);
 	m_parts.insert(m_parts.begin() + m_parts.size() - 1, part);
 
 	return *part;
@@ -161,6 +168,15 @@ void PartList::ForEachPart(std::function<void(Part&, int)> fun)
 {
 	int index = 0;
 	for (Part* part : m_parts)
+	{
+		fun(*part, index++);
+	}
+}
+
+void PartList::ForEachPart(std::function<void(const Part&, int)> fun) const
+{
+	int index = 0;
+	for (const Part* part : m_parts)
 	{
 		fun(*part, index++);
 	}

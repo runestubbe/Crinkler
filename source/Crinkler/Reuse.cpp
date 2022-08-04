@@ -4,15 +4,15 @@
 #include "MemoryFile.h"
 #include "StringMisc.h"
 
+#include <algorithm>
+
 enum State {
-	INITIAL, CODE_MODELS, DATA_MODELS, CODE_HUNKS, DATA_HUNKS, BSS_HUNKS, HASHSIZE
+	INITIAL, MODELS, SECTIONS, HASHSIZE
 };
 
-#define CODE_MODELS_TAG "# Code models"
-#define DATA_MODELS_TAG "# Data models"
-#define CODE_HUNKS_TAG "# Code sections"
-#define DATA_HUNKS_TAG "# Data sections"
-#define BSS_HUNKS_TAG "# Uninitialized sections"
+#define MODELS_TAG "models"
+#define SECTIONS_TAG "sections"
+#define UNINITIALIZED_NAME "Uninitialized"
 #define HASHSIZE_TAG "# Hash table size"
 
 static ModelList4k *ParseModelList(const char *line) {
@@ -25,101 +25,123 @@ static ModelList4k *ParseModelList(const char *line) {
 	return ml;
 }
 
-Reuse::Reuse() : m_code_models(nullptr), m_data_models(nullptr), m_hashsize(0) {}
+ReusePart::ReusePart(Part& part)
+	: m_name(part.GetName()), m_models(&part.m_model4k), m_initialized(part.IsInitialized()) {
+	part.ForEachHunk([this](Hunk* hunk) {
+		m_hunk_ids.push_back(hunk->GetID());
+	});
+}
 
-Reuse::Reuse(const ModelList4k& code_models, const ModelList4k& data_models, const PartList& parts, int hashsize) {
-	m_code_models = new ModelList4k(code_models);
-	m_data_models = new ModelList4k(data_models);
-	/*
-	// REFACTOR_TODO
-	for (int h = 0; h < hl.GetNumHunks(); h++) {
-		Hunk *hunk = hl[h];
-		const std::string& id = hunk->GetID();
-		if (hunk->GetRawSize() == 0) {
-			m_bss_hunk_ids.push_back(id);
-		}
-		else if (hunk->GetFlags() & HUNK_IS_CODE) {
-			m_code_hunk_ids.push_back(id);
-		}
-		else {
-			m_data_hunk_ids.push_back(id);
-		}
-	}
-	*/
-	m_hashsize = hashsize;
+ReusePart::ReusePart(std::string name, bool initialized)
+	: m_name(std::move(name)), m_models(nullptr), m_initialized(initialized) {}
+
+Reuse::Reuse() : m_hashsize(0) {}
+
+Reuse::Reuse(PartList& parts, int hashsize) : m_hashsize(hashsize) {
+	parts.ForEachPart([this](Part& part, int p) {
+		m_parts.emplace_back(part);
+	});
 }
 
 Reuse* LoadReuseFile(const char *filename) {
 	MemoryFile mf(filename, false);
 	if (mf.GetPtr() == nullptr) return nullptr;
 	Reuse *reuse = new Reuse();
+	std::map<std::string, ModelList4k*> models_by_name;
 	State state = INITIAL;
+	ModelList4k** current_models = nullptr;
 	for (auto line : IntoLines(mf.GetPtr(), mf.GetSize())) {
 		if (line.empty()) continue;
-		if (line == CODE_MODELS_TAG) {
-			state = CODE_MODELS;
-		}
-		else if (line == DATA_MODELS_TAG) {
-			state = DATA_MODELS;
-		}
-		else if (line == CODE_HUNKS_TAG) {
-			state = CODE_HUNKS;
-		}
-		else if (line == DATA_HUNKS_TAG) {
-			state = DATA_HUNKS;
-		}
-		else if (line == BSS_HUNKS_TAG) {
-			state = BSS_HUNKS;
-		}
-		else if (line == HASHSIZE_TAG) {
+		if (line == HASHSIZE_TAG) {
+			if (reuse->m_hashsize != 0) {
+				Log::Error(filename, "Duplicate hash size: %s", line.c_str());
+			}
 			state = HASHSIZE;
-		}
-		else if (line[0] == '#') {
-			Log::Warning(filename, "Unknown reuse file tag: %s", line.c_str());
-		}
-		else switch (state) {
-		case CODE_MODELS:
-			reuse->m_code_models = ParseModelList(line.c_str());
+		} else if (line[0] == '#') {
+			// Skip leading spaces
+			size_t start = 1;
+			while (start < line.length() && line[start] == ' ') start++;
+			size_t end = line.rfind(' ');
+			if (end != std::string::npos && end > start) {
+				std::string name = line.substr(start, end - start);
+				std::string tag = line.substr(end + 1);
+				bool initialized = name != UNINITIALIZED_NAME;
+				if (tag == MODELS_TAG) {
+					if (models_by_name.count(name)) {
+						Log::Error(filename, "Duplicate part: %s", line.c_str());
+					}
+					state = MODELS;
+					current_models = &models_by_name[name];
+				} else if (tag == SECTIONS_TAG) {
+					const auto this_name = [&name](ReusePart& part) { return part.m_name == name; };
+					if (std::any_of(reuse->m_parts.begin(), reuse->m_parts.end(), this_name)) {
+						Log::Error(filename, "Duplicate part: %s", line.c_str());
+					}
+					state = SECTIONS;
+					reuse->m_parts.emplace_back(name, initialized);
+				} else {
+					Log::Warning(filename, "Unknown reuse file tag: %s", line.c_str());
+				}
+			} else {
+				Log::Warning(filename, "Unknown reuse file tag: %s", line.c_str());
+			}
+		} else switch (state) {
+		case MODELS:
+			if (*current_models != nullptr) {
+				Log::Error(filename, "Duplicate models: %s", line.c_str());
+			}
+			*current_models = ParseModelList(line.c_str());
 			break;
-		case DATA_MODELS:
-			reuse->m_data_models = ParseModelList(line.c_str());
-			break;
-		case CODE_HUNKS:
-			reuse->m_code_hunk_ids.push_back(line);
-			break;
-		case DATA_HUNKS:
-			reuse->m_data_hunk_ids.push_back(line);
-			break;
-		case BSS_HUNKS:
-			reuse->m_bss_hunk_ids.push_back(line);
+		case SECTIONS:
+			reuse->m_parts.back().m_hunk_ids.push_back(line);
 			break;
 		case HASHSIZE:
+			if (reuse->m_hashsize != 0) {
+				Log::Error(filename, "Duplicate hash size: %s", line.c_str());
+			}
 			sscanf(line.c_str(), " %d", &reuse->m_hashsize);
 			break;
 		}
 	}
+
+	if (reuse->m_parts.back().m_initialized) {
+		Log::Error(filename, "The 'Uninitialized' part must be last");
+	}
+
+	// Attach models to parts
+	for (ReusePart& part : reuse->m_parts) {
+		if (models_by_name.count(part.m_name)) {
+			part.m_models = models_by_name[part.m_name];
+			models_by_name.erase(part.m_name);
+		}
+	}
+	for (auto models : models_by_name) {
+		if (models.second != nullptr) {
+			Log::Warning(filename, "Models specified for unknown part '%s'", models.first);
+			delete models.second;
+		}
+	}
+
 	return reuse;
 }
 
 void Reuse::Save(const char *filename) const {
 	FILE* f = fopen(filename, "w");
-	fprintf(f, "\n%s\n", CODE_MODELS_TAG);
-	m_code_models->Print(f);
-	fprintf(f, "\n%s\n", DATA_MODELS_TAG);
-	m_data_models->Print(f);
-	fprintf(f, "\n%s\n", CODE_HUNKS_TAG);
-	for (auto id : m_code_hunk_ids) {
-		fprintf(f, "%s\n", id.c_str());
+	for (const ReusePart& part : m_parts) {
+		if (part.m_models != nullptr) {
+			fprintf(f, "\n# %s %s\n", part.m_name.c_str(), MODELS_TAG);
+			part.m_models->Print(f);
+		}
 	}
-	fprintf(f, "\n%s\n", DATA_HUNKS_TAG);
-	for (auto id : m_data_hunk_ids) {
-		fprintf(f, "%s\n", id.c_str());
+	for (const ReusePart& part : m_parts) {
+		fprintf(f, "\n# %s %s\n", part.m_name.c_str(), SECTIONS_TAG);
+		for (auto id : part.m_hunk_ids) {
+			fprintf(f, "%s\n", id.c_str());
+		}
 	}
-	fprintf(f, "\n%s\n", BSS_HUNKS_TAG);
-	for (auto id : m_bss_hunk_ids) {
-		fprintf(f, "%s\n", id.c_str());
+	if (m_hashsize != 0) {
+		fprintf(f, "\n%s\n", HASHSIZE_TAG);
+		fprintf(f, "%d\n", m_hashsize);
 	}
-	fprintf(f, "\n%s\n", HASHSIZE_TAG);
-	fprintf(f, "%d\n", m_hashsize);
 	fclose(f);
 }

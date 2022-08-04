@@ -67,16 +67,20 @@ public:
 class PartList {
 	std::vector<Part*>	m_parts;
 public:
+	static const size_t CODE_PART_INDEX = 0;
+	static const size_t DATA_PART_INDEX = 1;
+
 	PartList();
 	~PartList();
 	Part& operator[] (unsigned idx);
 	Part const& operator[] (unsigned idx) const;
 
-	void	AddPart(const char* name, bool binitialized);
-	Part&	GetOrAddPart(const char* name);
+	Part&	GetOrAddPart(const char* name, bool initialized);
 
-	Part&	GetCodePart() const{ return *m_parts[0]; }
-	Part&	GetDataPart() const { return *m_parts[1]; }
+	void	Clear();
+
+	Part&	GetCodePart() const{ return *m_parts[CODE_PART_INDEX]; }
+	Part&	GetDataPart() const { return *m_parts[DATA_PART_INDEX]; }
 	Part&	GetUninitializedPart() const{ return *m_parts.back(); }
 
 	int		GetNumParts() const { return (int)m_parts.size(); }
@@ -88,6 +92,7 @@ public:
 	bool	ForEachHunkWithBreak(std::function<bool(Part&, Hunk*, Hunk*)> fun);
 
 	void	ForEachPart(std::function<void(Part&, int)> fun);
+	void	ForEachPart(std::function<void(const Part&, int)> fun) const;
 
 	Hunk*	Link(const char* name, int baseAddress);
 
