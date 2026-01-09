@@ -279,11 +279,11 @@ Hunk* Crinkler::CreateModelHunk4k(PartList& parts) {
 	return models;
 }
 
-int Crinkler::OptimizeHashsize(PartList& parts, unsigned char* data, int datasize, int hashsize, int tries) {
+int Crinkler::OptimizeHashsize(PartList& parts, Hunk* phase1, int hashsize, int tries) {
 	if(tries == 0)
 		return hashsize;
 
-	int maxsize = datasize*2+1000;
+	int maxsize = phase1->GetRawSize()*2+1000;
 	int bestsize = INT_MAX;
 	int best_hashsize = hashsize;
 	m_progressBar.BeginTask("Optimizing hash table size");
@@ -298,7 +298,7 @@ int Crinkler::OptimizeHashsize(PartList& parts, unsigned char* data, int datasiz
 		Part& part = parts[i];
 		bool first = (i == 0);
 		bool last = ((i + 1) == numInitializedParts);
-		hashbits[i] = ComputeHashBits(data + part.GetLinkedOffset(), part.GetLinkedSize(), context, parts[i].m_model4k, first, last);
+		hashbits[i] = ComputeHashBits(phase1->GetPtr() + part.GetLinkedOffset(), part.GetLinkedSize(), context, part.m_model4k, first, last);
 		maxTinyHashSize = std::max(maxTinyHashSize, hashbits[i].tinyhashsize);
 	}
 
@@ -336,7 +336,7 @@ int Crinkler::OptimizeHashsize(PartList& parts, unsigned char* data, int datasiz
 	return best_hashsize;
 }
 
-int Crinkler::EstimateModels(PartList& parts, unsigned char* data, int datasize, bool reestimate, bool use1kMode)
+int Crinkler::EstimateModels(PartList& parts, Hunk* phase1, bool reestimate, bool use1kMode)
 {
 	bool verbose = (m_printFlags & PRINT_MODELS) != 0;
 
@@ -371,14 +371,14 @@ int Crinkler::EstimateModels(PartList& parts, unsigned char* data, int datasize,
 			for (int i = 0; i < MAX_CONTEXT_LENGTH; i++)
 			{
 				int srcpos = part.GetLinkedOffset() - MAX_CONTEXT_LENGTH + i;
-				contexts[i] = srcpos >= 0 ? data[srcpos] : 0;
+				contexts[i] = srcpos >= 0 ? phase1->GetPtr()[srcpos] : 0;
 			}
 
 			int newCompressedSize;
 			char desc[512];
 			sprintf(desc, "%s models for %s", reestimate ? "Reestimating" : "Estimating", part.GetName());
 			m_progressBar.BeginTask(desc);
-			ModelList4k newModel = ApproximateModels4k(data + part.GetLinkedOffset(), part.GetLinkedSize(), contexts, m_compressionType, m_saturate != 0, CRINKLER_BASEPROB, &newCompressedSize, ProgressUpdateCallback, &m_progressBar);
+			ModelList4k newModel = ApproximateModels4k(phase1->GetPtr() + part.GetLinkedOffset(), part.GetLinkedSize(), contexts, m_compressionType, m_saturate != 0, CRINKLER_BASEPROB, &newCompressedSize, ProgressUpdateCallback, &m_progressBar);
 			m_progressBar.EndTask();
 
 			if (newCompressedSize < part.m_compressedSize)
@@ -394,26 +394,7 @@ int Crinkler::EstimateModels(PartList& parts, unsigned char* data, int datasize,
 			printf("Estimated compressed size of %s: %.2f\n", part.GetName(), part.m_compressedSize / (float)(BIT_PRECISION * 8));
 		}
 
-		std::vector<ModelList4k*> modelLists(numInitializedParts);
-		std::vector<int> partSizes(numInitializedParts);
-		std::vector<int> compressedPartSizes(numInitializedParts);
-
-		for (int i = 0; i < numInitializedParts; i++)
-		{
-			Part& part = parts[i];
-			modelLists[i] = &part.m_model4k;
-			partSizes[i] = part.GetLinkedSize();
-		}
-
-		int idealsize = EvaluateSize4k(data, numInitializedParts, partSizes.data(), compressedPartSizes.data(), modelLists.data(), CRINKLER_BASEPROB, m_saturate != 0);
-		printf("\n");
-		for (int i = 0; i < numInitializedParts; i++)
-		{
-			printf("Ideal compressed size of %s: %.2f\n", parts[i].GetName(), compressedPartSizes[i] / (float)(BIT_PRECISION * 8));
-		}
-		printf("Ideal compressed total size: %.2f\n", idealsize / (float)(BIT_PRECISION * 8));
-
-		return idealsize;
+		return EvaluatePartsSize4k(phase1);
 	}
 }
 
@@ -1133,7 +1114,7 @@ Hunk* Crinkler::CreateDynamicInitializerHunk()
 		const int hunk_size = num_symbols*5;
 		Hunk* hunk = new Hunk("dynamic initializer calls", NULL, HUNK_IS_CODE, 0, hunk_size, hunk_size);
 
-		char* ptr = hunk->GetPtr();
+		unsigned char* ptr = hunk->GetPtr();
 		for(int i = 0; i < num_symbols; i++)
 		{
 			*ptr++ = (char)0xE8;
@@ -1286,22 +1267,17 @@ void Crinkler::Link(const char* filename) {
 
 	int best_hashsize = PreviousPrime(m_hashsize / 2) * 2;
 
-	Reuse *reuse = nullptr;
 	int reuse_filesize = 0;
+	Reuse *reuse = nullptr;
 	ReuseType reuseType = m_useTinyHeader ? REUSE_OFF : m_reuseType;
-	/*
-	// REFACTOR_TODO
 	if (reuseType != REUSE_OFF && reuseType != REUSE_WRITE) {
 		reuse = LoadReuseFile(m_reuseFilename.c_str());
 		if (reuse != nullptr) {
-			m_modellist1 = *reuse->GetCodeModels();
-			m_modellist2 = *reuse->GetDataModels();
-			ExplicitHunkSorter::SortHunkList(&m_parts, reuse);
+			ExplicitHunkSorter::SortHunks(m_parts, reuse);
 			best_hashsize = reuse->GetHashSize();
 			printf("\nRead reuse file: %s\n", m_reuseFilename.c_str());
 		}
 	}
-	*/
 
 	// Create phase 1 data hunk
 	Hunk* phase1, *phase1Untransformed;
@@ -1317,17 +1293,14 @@ void Crinkler::Link(const char* filename) {
 	int maxsize = phase1->GetRawSize()*2+1000;	// Allocate plenty of memory	
 	unsigned char* data = new unsigned char[maxsize];
 
-	/*
-	// REFACTOR_TODO
 	if (reuseType == REUSE_IMPROVE && reuse != nullptr) {
-		ModelList4k* modelLists[] = { &m_modellist1, &m_modellist2 };
-		int size = Compress4k((unsigned char*)phase1->GetPtr(), (int)partSizes.size(), partSizes.data(), data, maxsize, modelLists, m_saturate != 0, CRINKLER_BASEPROB, best_hashsize, nullptr);
-		Hunk *phase2 = FinalLink(header, nullptr, hashHunk, phase1, data, size, (int)partSizes.size(), partSizes.data(), best_hashsize);
+		int size = CompressParts4k(phase1, data, maxsize, best_hashsize, nullptr);
+		Hunk *phase2 = FinalLink(m_parts, header, nullptr, hashHunk, phase1, data, size, best_hashsize);
 		reuse_filesize = phase2->GetRawSize();
 		delete phase2;
 
 		printf("\nFile size with reuse parameters: %d\n", reuse_filesize);
-	}*/
+	}
 
 	// Print uncompressed section sizes
 	{
@@ -1347,25 +1320,15 @@ void Crinkler::Link(const char* filename) {
 	int* sizefill = new int[maxsize];
 	int size, idealsize = 0;
 	if (m_useTinyHeader || m_compressionType != COMPRESSION_INSTANT)
-	{/*
-		// REFACTOR_TODO
+	{
 		if (reuseType == REUSE_STABLE && reuse != nullptr) {
 			// Calculate ideal size with reuse parameters
-			ModelList4k* modelLists[] = { &m_modellist1, &m_modellist2 };
-			int segmentSizes[] = { splittingPoint, phase1->GetRawSize() - splittingPoint};
-			int compressedSizes[2] = {};
-			
-			idealsize = EvaluateSize4k((unsigned char*)phase1->GetPtr(), 2, segmentSizes, compressedSizes, modelLists, CRINKLER_BASEPROB, m_saturate != 0);
-			printf("\nIdeal compressed size of code: %.2f\n", compressedSizes[0] / (float)(BIT_PRECISION * 8));
-			printf("Ideal compressed size of data: %.2f\n", compressedSizes[1] / (float)(BIT_PRECISION * 8));
-			printf("Ideal compressed total size: %.2f\n", idealsize / (float)(BIT_PRECISION * 8));
-		} else */		// TODO
-		{
+			idealsize = EvaluatePartsSize4k(phase1);
+		} else {
 			// Full size estimation and hunk reordering
-			bool verbose_models = (m_printFlags & PRINT_MODELS) != 0;
 			InitProgressBar();
 
-			idealsize = EstimateModels(m_parts, (unsigned char*)phase1->GetPtr(), phase1->GetRawSize(), false, m_useTinyHeader);
+			idealsize = EstimateModels(m_parts, phase1, false, m_useTinyHeader);
 
 			if (m_hunktries > 0)
 			{
@@ -1374,14 +1337,14 @@ void Crinkler::Link(const char* filename) {
 				delete phase1Untransformed;
 				m_transform->LinkAndTransform(m_parts, importSymbol, CRINKLER_CODEBASE, phase1, &phase1Untransformed, true);
 
-				idealsize = EstimateModels(m_parts, (unsigned char*)phase1->GetPtr(), phase1->GetRawSize(), true, m_useTinyHeader);
+				idealsize = EstimateModels(m_parts, phase1, true, m_useTinyHeader);
 			}
 
 			// Hashing time
 			if (!m_useTinyHeader)
 			{
 				best_hashsize = PreviousPrime(m_hashsize / 2) * 2;
-				best_hashsize = OptimizeHashsize(m_parts, (unsigned char*)phase1->GetPtr(), phase1->GetRawSize(), best_hashsize, m_hashtries);
+				best_hashsize = OptimizeHashsize(m_parts, phase1, best_hashsize, m_hashtries);
 			}
 
 			DeinitProgressBar();
@@ -1395,18 +1358,7 @@ void Crinkler::Link(const char* filename) {
 	}
 	else
 	{
-		const int numInitializedParts = m_parts.GetNumInitializedParts();
-		std::vector<ModelList4k*> modelLists(numInitializedParts);
-		std::vector<int> partSizes(numInitializedParts);
-
-		for (int i = 0; i < numInitializedParts; i++)
-		{
-			Part& part = m_parts[i];
-			modelLists[i] = &part.m_model4k;
-			partSizes[i] = part.GetLinkedSize();
-		}
-
-		size = Compress4k((unsigned char*)phase1->GetPtr(), numInitializedParts, partSizes.data(), data, maxsize, modelLists.data(), m_saturate != 0, CRINKLER_BASEPROB, best_hashsize, sizefill);
+		size = CompressParts4k(phase1, data, maxsize, best_hashsize, sizefill);
 	}
 	
 	if(!m_useTinyHeader && m_compressionType != COMPRESSION_INSTANT) {
@@ -1445,8 +1397,7 @@ void Crinkler::Link(const char* filename) {
 		}
 	}
 	printf("\n\n");
-	/*
-	// REFACTOR_TODO
+
 	if (reuseType != REUSE_OFF) {
 		bool write = false;
 		if (reuse == nullptr) {
@@ -1464,11 +1415,11 @@ void Crinkler::Link(const char* filename) {
 			}
 		}
 		if (write) {
-			reuse = new Reuse(m_modellist1, m_modellist2, m_parts, best_hashsize);
+			reuse = new Reuse(m_parts, best_hashsize);
 			reuse->Save(m_reuseFilename.c_str());
 		}
 	}
-	*/
+
 	if (phase2->GetRawSize() > 128*1024)
 	{
 		Log::Error(filename, "Output file too big. Crinkler does not support final file sizes of more than 128k.");
@@ -1479,6 +1430,47 @@ void Crinkler::Link(const char* filename) {
 	delete phase1Untransformed;
 	delete phase2;
 }
+
+int	Crinkler::EvaluatePartsSize4k(Hunk* phase1) {
+	const int numInitializedParts = m_parts.GetNumInitializedParts();
+	std::vector<ModelList4k*> modelLists(numInitializedParts);
+	std::vector<int> partSizes(numInitializedParts);
+	std::vector<int> compressedPartSizes(numInitializedParts);
+
+	for (int i = 0; i < numInitializedParts; i++)
+	{
+		Part& part = m_parts[i];
+		modelLists[i] = &part.m_model4k;
+		partSizes[i] = part.GetLinkedSize();
+	}
+
+	int size = EvaluateSize4k(phase1->GetPtr(), numInitializedParts, partSizes.data(), compressedPartSizes.data(), modelLists.data(), CRINKLER_BASEPROB, m_saturate != 0);
+
+	printf("\n");
+	for (int i = 0; i < numInitializedParts; i++)
+	{
+		printf("Ideal compressed size of %s: %.2f\n", m_parts[i].GetName(), compressedPartSizes[i] / (float)(BIT_PRECISION * 8));
+	}
+	printf("Ideal compressed total size: %.2f\n", size / (float)(BIT_PRECISION * 8));
+
+	return size;
+}
+
+int Crinkler::CompressParts4k(Hunk* phase1, unsigned char* outCompressedData, int maxCompressedSize, int hashsize, int* sizefill) {
+	const int numInitializedParts = m_parts.GetNumInitializedParts();
+	std::vector<ModelList4k*> modelLists(numInitializedParts);
+	std::vector<int> partSizes(numInitializedParts);
+
+	for (int i = 0; i < numInitializedParts; i++)
+	{
+		Part& part = m_parts[i];
+		modelLists[i] = &part.m_model4k;
+		partSizes[i] = part.GetLinkedSize();
+	}
+
+	return Compress4k((unsigned char*)phase1->GetPtr(), numInitializedParts, partSizes.data(), outCompressedData, maxCompressedSize, modelLists.data(), m_saturate != 0, CRINKLER_BASEPROB, hashsize, sizefill);
+}
+
 
 Hunk *Crinkler::FinalLink(PartList& parts, Hunk *header, Hunk *depacker, Hunk *hashHunk, Hunk *phase1, unsigned char *data, int size, int hashsize)
 {

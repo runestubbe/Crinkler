@@ -85,10 +85,12 @@ class Crinkler {
 	void InitProgressBar();
 	void DeinitProgressBar();
 
+	int EvaluatePartsSize4k(Hunk* phase1);
+	int CompressParts4k(Hunk* phase1, unsigned char* outCompressedData, int maxCompressedSize, int hashsize, int* sizefill);
 	Hunk *FinalLink(PartList& parts, Hunk *header, Hunk *depacker, Hunk *hashHunk, Hunk *phase1, unsigned char *data, int size, int hashsize);
 
-	int OptimizeHashsize(PartList& parts, unsigned char* data, int datasize, int hashsize, int tries);
-	int EstimateModels(PartList& parts, unsigned char* data, int datasize, bool reestimate, bool use1kMode);
+	int OptimizeHashsize(PartList& parts, Hunk* phase1, int hashsize, int tries);
+	int EstimateModels(PartList& parts, Hunk* phase1, bool reestimate, bool use1kMode);
 	void SetHeaderSaturation(Hunk* header);
 	void SetHeaderConstants1k(Hunk* header, Hunk* phase1, int boostfactor, int baseprob0, int baseprob1, unsigned int modelmask, int subsystemVersion);
 	void SetHeaderConstants4k(Hunk* header, Hunk* phase1, PartList& Parts, int hashsize, int subsystemVersion, int exportsRVA);

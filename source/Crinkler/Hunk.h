@@ -88,7 +88,7 @@ class Hunk {
 	unsigned int	m_flags;
 	int				m_virtualsize;
 
-	std::vector<char>	m_data;
+	std::vector<unsigned char> m_data;
 	std::vector<Relocation> m_relocations;
 	std::map<std::string, Symbol*> m_symbols;
 	Symbol* m_continuation;
@@ -133,7 +133,7 @@ public:
 	int				GetAlignmentOffset() const		{ return m_alignmentOffset; }
 	unsigned int	GetFlags() const				{ return m_flags; }
 	const char*		GetName() const					{ return m_name.c_str(); }
-	char*			GetPtr()						{ return m_data.data(); }
+	unsigned char*	GetPtr()						{ return m_data.data(); }
 	int				GetRawSize() const				{ return (int)m_data.size(); }
 	int				GetVirtualSize() const			{ return m_virtualsize; }
 	int				GetNumReferences() const		{ return m_numReferences; }

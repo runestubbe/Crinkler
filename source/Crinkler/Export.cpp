@@ -145,7 +145,7 @@ Hunk* CreateExportTable(const std::set<Export>& exports) {
 std::set<Export> StripExports(Hunk* phase1, int exports_rva) {
 	const int rva_to_offset = CRINKLER_IMAGEBASE - CRINKLER_CODEBASE;
 	phase1->AppendZeroes(1); // To make sure names are terminated
-	char* data = phase1->GetPtr();
+	unsigned char* data = phase1->GetPtr();
 
 	// Locate tables
 	int table_offset = exports_rva + rva_to_offset;

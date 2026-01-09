@@ -11,10 +11,7 @@
 
 using namespace std;
 
-Part::~Part() {
-	for(Hunk* hunk : m_hunks)
-		delete hunk;
-}
+Part::~Part() {}
 
 Hunk*& Part::operator[] (unsigned idx) {
 	return m_hunks[idx];
@@ -131,7 +128,11 @@ Part& PartList::GetOrAddPart(const char* name, bool initialized)
 	}
 
 	Part* part = new Part(name, initialized);
-	m_parts.insert(m_parts.begin() + m_parts.size() - 1, part);
+	if (!m_parts.empty() && !m_parts.back()->m_initialized) {
+		m_parts.insert(m_parts.begin() + m_parts.size() - 1, part);
+	} else {
+		m_parts.push_back(part);
+	}
 
 	return *part;
 }

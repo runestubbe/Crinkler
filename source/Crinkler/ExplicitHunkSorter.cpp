@@ -49,6 +49,7 @@ void ExplicitHunkSorter::SortHunks(PartList& parts, Reuse *reuse) {
 				part_name = parts.GetDataPart().GetName();
 			}
 			Log::Warning("", "Section not present in reuse file: %s (added to %s)", id.c_str(), part_name);
+			hunk_by_id.erase(hunk_it);
 		}
 	});
 	assert(hunk_by_id.empty());
@@ -60,6 +61,9 @@ void ExplicitHunkSorter::SortHunks(PartList& parts, Reuse *reuse) {
 		Part& part = parts.GetOrAddPart(reuse_part.m_name.c_str(), reuse_part.m_initialized);
 		for (Hunk* hunk : part_hunks[i]) {
 			part.AddHunkBack(hunk);
+		}
+		if (part.m_initialized) {
+			part.m_model4k = *reuse_part.m_models;
 		}
 	}
 }

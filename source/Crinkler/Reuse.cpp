@@ -26,7 +26,7 @@ static ModelList4k *ParseModelList(const char *line) {
 }
 
 ReusePart::ReusePart(Part& part)
-	: m_name(part.GetName()), m_models(&part.m_model4k), m_initialized(part.IsInitialized()) {
+	: m_name(part.GetName()), m_models(part.m_initialized ? &part.m_model4k : nullptr), m_initialized(part.IsInitialized()) {
 	part.ForEachHunk([this](Hunk* hunk) {
 		m_hunk_ids.push_back(hunk->GetID());
 	});
@@ -113,11 +113,13 @@ Reuse* LoadReuseFile(const char *filename) {
 		if (models_by_name.count(part.m_name)) {
 			part.m_models = models_by_name[part.m_name];
 			models_by_name.erase(part.m_name);
+		} else if (part.m_initialized) {
+			Log::Error(filename, "Models missing for part '%s'", part.m_name.c_str());
 		}
 	}
 	for (auto models : models_by_name) {
 		if (models.second != nullptr) {
-			Log::Warning(filename, "Models specified for unknown part '%s'", models.first);
+			Log::Warning(filename, "Models specified for unknown part '%s'", models.first.c_str());
 			delete models.second;
 		}
 	}
