@@ -459,7 +459,7 @@ void ImportHandler::AddImportHunks4K(PartList& parts, Hunk*& hashHunk, map<strin
 	
 	// Fill list for import hunks
 	enableRangeImport = false;
-	parts.ForEachHunkWithBreak([&rangeDlls, &importHunks, &usedRangeDlls, &enableRangeImport](Hunk* hunk)
+	parts.ForEachHunk([&rangeDlls, &importHunks, &usedRangeDlls, &enableRangeImport](Hunk* hunk)
 		{
 			if(hunk->GetFlags() & HUNK_IS_IMPORT) {
 				hunk = ForwardImport(hunk);
@@ -469,12 +469,11 @@ void ImportHandler::AddImportHunks4K(PartList& parts, Hunk*& hashHunk, map<strin
 					if(ToUpper(rangeDlls[i]) == ToUpper(hunk->GetImportDll())) {
 						usedRangeDlls[i] = true;
 						enableRangeImport = true;
-						return true;
+						break;
 					}
 				}
 				importHunks.push_back(hunk);
 			}
-			return false;
 		});
 
 	// Sort import hunks

@@ -27,6 +27,7 @@ FIXED_OPTIONS = [
     '/CRINKLER', '/UNSAFEIMPORT', '/ORDERTRIES:10000', '/COMPMODE:SLOW', '/HASHSIZE:500', '/HASHTRIES:100',
     '/OVERRIDEALIGNMENTS', '/UNALIGNCODE',
     '/PRINT:IMPORTS', '/PRINT:MODELS', '/PRIORITY:IDLE',
+    '/LIBPATH:""C:\\Program Files (x86)\\Windows Kits\\10\\Lib\\10.0.26100.0\\um\\x86""',
     '/LIBPATH:""C:\\Program Files (x86)\\Windows Kits\\10\\Lib\\10.0.19041.0\\um\\x86""',
     '/LIBPATH:""C:\\Program Files (x86)\\Windows Kits\\10\\Lib\\10.0.18362.0\\um\\x86""',
     '/LIBPATH:""C:\\Program Files (x86)\\Windows Kits\\10\\Lib\\10.0.17763.0\\um\\x86""',
