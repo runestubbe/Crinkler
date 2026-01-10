@@ -209,7 +209,6 @@ const SELECT = 'var(--select-color)';
 var currentHover;
 var currentSelect;
 var startSelect;
-var justSelected;
 function setHover(interval) {
 	const diff = intervalDiff(currentHover, interval);
 	currentHover = interval;
@@ -240,7 +239,7 @@ function updateOverlay() {
 		const address = (CODEBASE + start).toString(16).toUpperCase().padStart(8, '0');
 		text = address+' +'+length+': '+size.toFixed(2)+' bytes ('+per_byte.toFixed(2)+' bits per byte).'
 	}
-	if (!selected) text += ' Right-drag to measure interval.';
+	if (!selected) text += ' Drag to measure interval.';
 	let overlay = document.getElementById('overlay');
 	overlay.textContent = text;
 	overlay.style.color = 'var(--text-color)';
@@ -268,21 +267,15 @@ function moveListener(event) {
 	updateSelect();
 }
 function downListener(event) {
-	if (event.button != 2) return;
+	if (event.button != 0) return;
 	startSelect = currentHover;
+	if (startSelect) event.preventDefault();
 	updateSelect();
 }
 function upListener(event) {
-	if (event.button != 2) return;
-	if (startSelect) justSelected = true;
+	if (event.button != 0) return;
 	startSelect = undefined;
 	updateSelect();
-}
-function contextListener(event) {
-	if (justSelected) {
-		event.preventDefault();
-		justSelected = false;
-	}
 }
 
 function initialize() {
@@ -292,9 +285,8 @@ function initialize() {
 	stateGlobals();
 	buildByteIndex();
 	document.addEventListener('mousemove', moveListener, {passive: true});
-	document.addEventListener('mousedown', downListener, {passive: true});
+	document.addEventListener('mousedown', downListener, {passive: false});
 	document.addEventListener('mouseup', upListener, {passive: true});
-	document.addEventListener('contextmenu', contextListener, false);
 }
 )"""";
 
