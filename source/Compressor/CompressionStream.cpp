@@ -95,7 +95,7 @@ HashBits ComputeHashBits(const unsigned char* d, int size, unsigned char* contex
 void CompressionStream::CompressFromHashBits(const HashBits& hashbits, TinyHashEntry* hashtable, int baseprob, int hashsize) {
 	int length = (int)hashbits.hashes.size();
 	int nmodels = (int)hashbits.weights.size();
-	int bitlength = length / nmodels;
+	int bitlength = (int)hashbits.bits.size();
 	assert(bitlength * nmodels == length);
 
 	hashsize /= 2;
