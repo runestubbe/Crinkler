@@ -124,6 +124,14 @@ function stateSectionsGlobalsExpanded() {
 	markState(6);
 }
 
+function switchTheme() {
+	if (document.body.classList.contains('dark')) {
+		document.body.classList.remove('dark');
+	} else {
+		document.body.classList.add('dark');
+	}
+}
+
 function recursiveExpand(id) {
 	var el = document.getElementById(id);
 	while (el != null) {
@@ -195,8 +203,8 @@ function buildByteIndex() {
 	}
 }
 
-const CURSOR = '#bbb';
-const SELECT = '#ddd';
+const CURSOR = 'var(--cursor-color)';
+const SELECT = 'var(--select-color)';
 
 var currentHover;
 var currentSelect;
@@ -235,6 +243,7 @@ function updateOverlay() {
 	if (!selected) text += ' Right-drag to measure interval.';
 	let overlay = document.getElementById('overlay');
 	overlay.textContent = text;
+	overlay.style.color = 'var(--text-color)';
 	overlay.style.background = selected ? SELECT : CURSOR;
 }
 function updateHighlight(interval) {
@@ -277,6 +286,9 @@ function contextListener(event) {
 }
 
 function initialize() {
+	if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+		document.body.classList.add('dark');
+	}
 	stateGlobals();
 	buildByteIndex();
 	document.addEventListener('mousemove', moveListener, {passive: true});
@@ -325,39 +337,18 @@ body{
 	padding:0px;
 }
 .address{width:7em;text-align:left;white-space:nowrap;}
-.private_symbol_row th{
-	background-color:#eef;
-}
-.public_symbol_row th{
-	background-color:#99c;
-	font-weight:bold;
-}
-.oldsection_symbol_row th{
-	background-color:#77a;
-	font-weight:bold;
-}
-.section_symbol_row th{
-	background-color:#eda;
-	font-weight:bold;
-}
 
 .public_symbol_row_expandable th{
 	cursor: pointer;
 	cursor: hand;
-	background-color:#99c;
-	font-weight:bold;
 }
 .oldsection_symbol_row_expandable th{
 	cursor: pointer;
 	cursor: hand;
-	background-color:#77a;
-	font-weight:bold;
 }
 .section_symbol_row_expandable th{
 	cursor: pointer;
 	cursor: hand;
-	background-color:#eda;
-	font-weight:bold;
 }
 #overlay {
 	position: fixed;
@@ -378,10 +369,57 @@ body{
 .c3{width:7em;text-align:right;white-space:nowrap;}
 .c4{width:7em;text-align:right;white-space:nowrap;}
 .c5{width:7em;text-align:right;white-space:nowrap;}
-a:link { color: #333333; }
-a:visited { color: #333333; }
-a:hover { color: #333333; }
-a:active { color: #333333; }
+a:link { color: var(--link-color); }
+a:visited { color: var(--link-color); }
+a:hover { color: var(--link-color); }
+a:active { color: var(--link-color); }
+
+:root {
+	--bg-color: #ffffff;
+	--text-color: #000000;
+	--link-color: #444444;
+	--table-header-bg: #eef;
+	--public-sym-bg: #99c;
+	--old-section-bg: #77a;
+	--section-bg: #eda;
+	--cursor-color: #bbb;
+	--select-color: #ddd;
+	--label-weight: bold;
+}
+
+body.dark {
+	--bg-color: #181820;
+	--text-color: #d5dade;
+	--link-color: #ffffff;
+	--table-header-bg: #234;
+	--public-sym-bg: #346;
+	--old-section-bg: #458;
+	--section-bg: #a7850f;
+	--cursor-color: #383840;
+	--select-color: #282830;
+	--label-weight: normal;
+}
+
+body {
+	background-color: var(--bg-color);
+	color: var(--text-color);
+}
+.private_symbol_row th{
+	background-color: var(--table-header-bg);
+	font-weight: var(--label-weight);
+}
+.public_symbol_row th, .public_symbol_row_expandable th{
+	background-color: var(--public-sym-bg);
+	font-weight: var(--label-weight);
+}
+.oldsection_symbol_row th, .oldsection_symbol_row_expandable th{
+	background-color: var(--old-section-bg);
+	font-weight: var(--label-weight);
+}
+.section_symbol_row th, .section_symbol_row_expandable th{
+	background-color: var(--section-bg);
+	font-weight: var(--label-weight);
+}
 </style>
 </head><body onload='initialize()'>
 <h1>Crinkler compression report</h1>
@@ -395,6 +433,7 @@ static const char* htmlHeader2 = R""""(
 <a id='state_4' href='#' onclick='stateSectionsGlobals()'>sections + globals</a>&nbsp;
 <a id='state_5' href='#' onclick='stateGlobalsExpanded()'>globals expanded</a>&nbsp;
 <a id='state_6' href='#' onclick='stateSectionsGlobalsExpanded()'>sections + globals expanded</a>&nbsp;
+<a href='#' onclick='switchTheme()'>switch theme</a>&nbsp;
 <table class='maintable'><tr>
 <th nowrap class='c1'>&nbsp;Address</th>
 <th nowrap class='c2'>Label name</th>
@@ -428,17 +467,18 @@ struct SizeColor {
 	float size;
 	const char *text;
 	unsigned color;
+	unsigned darkColor;
 } sizecols[] = {
-	{ 0.1f, "0.1", 0x90f090 },
-	{ 0.5f, "0.5", 0x30e030 },
-	{ 1.0f, "1", 0x00b000 },
-	{ 2.0f, "2", 0x008050 },
-	{ 3.0f, "3", 0x006090 },
-	{ 5.0f, "5", 0x0020f0 },
-	{ 7.0f, "7", 0x0000a0 },
-	{ 9.0f, "9", 0x000000 },
-	{ 12.0f, "12", 0x900000 },
-	{ 1000000.0f, "a lot of", 0xff0000 },
+	{ 0.1f, "0.1", 0x90f090, 0x004000 },
+	{ 0.5f, "0.5", 0x30e030, 0x006000 },
+	{ 1.0f, "1", 0x00b000, 0x009010 },
+	{ 2.0f, "2", 0x008050, 0x00c020 },
+	{ 3.0f, "3", 0x006090, 0x00a0a0 },
+	{ 5.0f, "5", 0x0020f0, 0x4060d0 },
+	{ 7.0f, "7", 0x0000a0, 0x90a0e0 },
+	{ 9.0f, "9", 0x000000, 0xe0e0e0 },
+	{ 12.0f, "12", 0x900000, 0xe06060 },
+	{ 1000000.0f, "a lot of", 0xff0000, 0xd01010 },
 };
 
 // Converts a string to an unique identifier consisting of only ['A'-Z']
@@ -461,14 +501,14 @@ static string ToIdent(string str) {
 	return ident;
 }
 
-static int SizeToColor(int size) {
+static int SizeToColorIndex(int size) {
 	float bsize = size / (float)BIT_PRECISION;
 	for (int i = 0 ; i < sizeof(sizecols)/sizeof(SizeColor) ; i++) {
 		if (bsize < sizecols[i].size) {
-			return sizecols[i].color;
+			return i;
 		}
 	}
-	return 0xff0000;
+	return sizeof(sizecols)/sizeof(SizeColor) - 1;
 }
 
 static int InstructionSize(_DecodedInst *inst, const int *sizefill) {
@@ -501,12 +541,12 @@ static void PrintRow(FILE *out, Hunk& hunk, const int *sizefill, int index, int 
 			}
 
 			if (ascii) {
-				fprintf(out, "<td title='%.2f bits' style='color: #%.6X;' name='byte' byte='%d'>"
-					"&#x%.2X;</td>", size / (float)BIT_PRECISION, SizeToColor(size), idx, ToAscii(c));
+				fprintf(out, "<td title='%.2f bits' class='sc%d' name='byte' byte='%d'>"
+					"&#x%.2X;</td>", size / (float)BIT_PRECISION, SizeToColorIndex(size), idx, ToAscii(c));
 			}
 			else {
-				fprintf(out, "<td title='%.2f bits' style='color: #%.6X;' name='byte' byte='%d'>"
-					"%.2X</td>", size / (float)BIT_PRECISION, SizeToColor(size), idx, c);
+				fprintf(out, "<td title='%.2f bits' class='sc%d' name='byte' byte='%d'>"
+					"%.2X</td>", size / (float)BIT_PRECISION, SizeToColorIndex(size), idx, c);
 			}
 		} else {
 			if (ascii) {
@@ -682,7 +722,7 @@ static void HtmlReportRecursive(CompressionReportRecord* csr, FILE* out, Hunk& h
 		fprintf(out, "<p><table><tr><td rowspan='2'><b>Bits per byte:</b></td><td>&nbsp;&nbsp;</td>");
 		int ncols = sizeof(sizecols) / sizeof(SizeColor);
 		for (int i = 0; i < ncols; i++) {
-			fprintf(out, "<td bgcolor='#%.6X' colspan='2' title='", sizecols[i].color);
+			fprintf(out, "<td class='sc%d' style='background-color:currentColor' colspan='2' title='", i);
 			if (i == 0) {
 				fprintf(out, "Less than %s bits per byte", sizecols[i].text);
 			} else if (i == ncols - 1) {
@@ -697,6 +737,14 @@ static void HtmlReportRecursive(CompressionReportRecord* csr, FILE* out, Hunk& h
 			fprintf(out, "<td colspan='2' align='center'>%s</td>", sizecols[i].text);
 		}
 		fprintf(out, "<td></td></tr></table></p>\n");
+
+		fprintf(out, "<style type='text/css'>\n");
+		for (int i = 0; i < ncols; i++) {
+			fprintf(out, ".sc%d { color: #%.6X; }\n"
+				"body.dark .sc%d { color: #%.6X; }\n",
+				i, sizecols[i].color, i, sizecols[i].darkColor);
+		}
+		fprintf(out, "</style>\n");
 
 		fprintf(out, htmlHeader2);
 	} else {
@@ -811,8 +859,8 @@ static void HtmlReportRecursive(CompressionReportRecord* csr, FILE* out, Hunk& h
 						}
 						int size = InstructionSize(&insts[i], sizefill);
 
-						fprintf(out, "<td nowrap title='%.2f bytes' style='color: #%.6X;'>%s",
-							size / (float)(BIT_PRECISION*8), SizeToColor(size/insts[i].size), insts[i].mnemonic.p);
+						fprintf(out, "<td nowrap title='%.2f bytes' class='sc%d'>%s",
+							size / (float)(BIT_PRECISION*8), SizeToColorIndex(size/insts[i].size), insts[i].mnemonic.p);
 						for (int j = 0 ; j < OPCODE_WIDTH-(int)insts[i].mnemonic.length ; j++) {
 							fprintf(out, "&nbsp;");
 						}
@@ -877,8 +925,8 @@ static void HtmlReportRecursive(CompressionReportRecord* csr, FILE* out, Hunk& h
 							int size = sizefill[idx+4]-sizefill[idx];
 							int value = *((int*)&untransformedHunk.GetPtr()[idx]);
 							string label = GenerateLabel(jt->second, value, symbols);
-							fprintf(out, "<td title='%.2f bytes' style='color: #%.6X;' colspan='%d'>%s</td>",
-								size / (float)(BIT_PRECISION*8), SizeToColor(size/4), DATA_BYTE_COLUMNS, label.c_str());
+							fprintf(out, "<td title='%.2f bytes' class='sc%d' colspan='%d'>%s</td>",
+								size / (float)(BIT_PRECISION*8), SizeToColorIndex(size/4), DATA_BYTE_COLUMNS, label.c_str());
 						} else {
 							// Write ascii
 							PrintRow(out, hunk, sizefill, idx, rowLength, DATA_BYTE_COLUMNS, DATA_HEX_WIDTH, true, false);
