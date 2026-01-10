@@ -22,6 +22,7 @@ Hunk* const & Part::operator[] (unsigned idx) const {
 }
 
 void Part::AddHunkBack(Hunk* hunk) {
+	assert(m_initialized || hunk->GetRawSize() == 0);
 	m_hunks.push_back(hunk);
 }
 
@@ -244,12 +245,14 @@ Hunk* PartList::Link(const char* name, int baseAddress) {
 		Log::Error("", "Virtual size overflows 2GB limit");
 	}
 
+	assert(m_parts.size() > 0);
+
 	// Copy data
 	Hunk* newHunk = new Hunk(name, 0, flags, alignmentBits, rawsize, virtualsize);
 	int address = 0;
 	int numContinuationJumps = 0;
+	int prevPartIndex = -1;
 
-	Part* prevPart = nullptr;
 	ForEachHunk([&](Part& part, Hunk* hunk, Hunk* nextHunk) {
 		// Align
 		const int unalignedAddress = address;
@@ -257,12 +260,13 @@ Hunk* PartList::Link(const char* name, int baseAddress) {
 		address = Align(address, hunk->GetAlignmentBits());
 		address -= baseAddress - hunk->GetAlignmentOffset();
 
-		if (prevPart != &part) {
-			part.m_linkedOffset = address;
-
+		Part* prevPart = prevPartIndex >= 0 ? m_parts[prevPartIndex] : nullptr;
+		while (prevPart != &part) {
 			if (prevPart)
 				prevPart->m_linkedSize = address - prevPart->m_linkedOffset;
-			prevPart = &part;
+			
+			prevPart = m_parts[++prevPartIndex];
+			prevPart->m_linkedOffset = address;
 		}
 
 		// Copy symbols
@@ -303,9 +307,15 @@ Hunk* PartList::Link(const char* name, int baseAddress) {
 		}
 	});
 
-	
-	if (prevPart)
+	assert(prevPartIndex != -1);
+	Part* prevPart = m_parts[prevPartIndex];
+	while (prevPartIndex + 1 < (int)m_parts.size()) {
 		prevPart->m_linkedSize = address - prevPart->m_linkedOffset;
+		prevPart = m_parts[++prevPartIndex];
+		prevPart->m_linkedOffset = address;
+	}
+	prevPart->m_linkedSize = address - prevPart->m_linkedOffset;
+	
 
 	// Trim hunk
 	newHunk->Trim();
@@ -313,11 +323,14 @@ Hunk* PartList::Link(const char* name, int baseAddress) {
 	// Trim parts
 	{
 		int prevOffset = 0;
+		int totalSize = 0;
+		int totalInitializedSize = 0;
 		for (Part* part : m_parts) {
 			if (part->IsInitialized()) {
 				int end = std::min(part->GetLinkedOffset() + part->GetLinkedSize(), newHunk->GetRawSize());
 				part->m_linkedSize = std::max(end - part->GetLinkedOffset(), 0);
 				prevOffset = part->GetLinkedOffset() + part->GetLinkedSize();
+				totalInitializedSize += part->GetLinkedSize();
 			}
 			else
 			{
@@ -326,7 +339,10 @@ Hunk* PartList::Link(const char* name, int baseAddress) {
 				part->m_linkedSize = end - prevOffset;
 				prevOffset = end;
 			}
+			totalSize += part->GetLinkedSize();
 		}
+		assert(totalInitializedSize == newHunk->GetRawSize());
+		assert(totalSize == newHunk->GetVirtualSize());
 	}
 
 	return newHunk;

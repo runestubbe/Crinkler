@@ -151,7 +151,7 @@ void Crinkler::AddRuntimeLibrary() {
 		importHunk->MarkHunkAsLibrary();
 		stubHunk->MarkHunkAsLibrary();
 		m_parts.GetUninitializedPart().AddHunkBack(importHunk);
-		m_parts.GetUninitializedPart().AddHunkBack(stubHunk);
+		m_parts.GetCodePart().AddHunkBack(stubHunk);
 	});	
 }
 
