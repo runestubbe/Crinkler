@@ -195,8 +195,8 @@ function buildByteIndex() {
 	}
 }
 
-const CURSOR = '#dddddd';
-const SELECT = '#faedce';
+const CURSOR = '#bbb';
+const SELECT = '#ddd';
 
 var currentHover;
 var currentSelect;
@@ -333,11 +333,11 @@ body{
 	font-weight:bold;
 }
 .oldsection_symbol_row th{
-	background-color:#c88;
+	background-color:#77a;
 	font-weight:bold;
 }
 .section_symbol_row th{
-	background-color:#8c8;
+	background-color:#eda;
 	font-weight:bold;
 }
 
@@ -350,13 +350,13 @@ body{
 .oldsection_symbol_row_expandable th{
 	cursor: pointer;
 	cursor: hand;
-	background-color:#c88;
+	background-color:#77a;
 	font-weight:bold;
 }
 .section_symbol_row_expandable th{
 	cursor: pointer;
 	cursor: hand;
-	background-color:#8c8;
+	background-color:#eda;
 	font-weight:bold;
 }
 #overlay {
@@ -429,10 +429,10 @@ struct SizeColor {
 	const char *text;
 	unsigned color;
 } sizecols[] = {
-	{ 0.1f, "0.1", 0x80ff80 },
-	{ 0.5f, "0.5", 0x00ff00 },
-	{ 1.0f, "1", 0x00c000 },
-	{ 2.0f, "2", 0x008040 },
+	{ 0.1f, "0.1", 0x90f090 },
+	{ 0.5f, "0.5", 0x30e030 },
+	{ 1.0f, "1", 0x00b000 },
+	{ 2.0f, "2", 0x008050 },
 	{ 3.0f, "3", 0x006090 },
 	{ 5.0f, "5", 0x0020f0 },
 	{ 7.0f, "7", 0x0000a0 },
