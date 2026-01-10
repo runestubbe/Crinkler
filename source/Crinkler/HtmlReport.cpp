@@ -151,10 +151,15 @@ function getByteInterval(elem) {
 		return [base, base + parseInt(p[1])];
 	}
 }
+function isByteSpacing(elem) {
+	let byteSpacingAttr = elem.getAttribute('byte-spacing');
+	return byteSpacingAttr != null;
+}
 function findByteInterval(elem) {
 	while (elem instanceof HTMLElement) {
 		let interval = getByteInterval(elem);
 		if (interval) return interval;
+		if (isByteSpacing(elem)) return false;
 		elem = elem.parentNode;
 	}
 }
@@ -207,11 +212,13 @@ const CURSOR = 'var(--cursor-color)';
 const SELECT = 'var(--select-color)';
 
 var currentHover;
+var spacingHover;
 var currentSelect;
 var startSelect;
 function setHover(interval) {
 	const diff = intervalDiff(currentHover, interval);
 	currentHover = interval;
+	spacingHover = interval == false;
 	updateHighlight(diff);
 	updateOverlay();
 }
@@ -237,13 +244,18 @@ function updateOverlay() {
 		const size = (sizefill[end] - sizefill[start]) / BIT_PRECISION / 8;
 		const per_byte = size / length * 8;
 		const address = (CODEBASE + start).toString(16).toUpperCase().padStart(8, '0');
-		text = address+' +'+length+': '+size.toFixed(2)+' bytes ('+per_byte.toFixed(2)+' bits per byte).'
+		text = address+' +'+length+': '+size.toFixed(2)+' bytes ('+per_byte.toFixed(2)+' bits per byte).';
+		if (currentHover && !startSelect) text += ' Drag to measure interval.';
 	}
-	if (!selected) text += ' Drag to measure interval.';
 	let overlay = document.getElementById('overlay');
 	overlay.textContent = text;
 	overlay.style.color = 'var(--text-color)';
 	overlay.style.background = selected ? SELECT : CURSOR;
+	if (measure || spacingHover) {
+		overlay.style.display = 'block';
+	} else {
+		overlay.style.display = 'none';
+	}
 }
 function updateHighlight(interval) {
 	if (!interval) return;
@@ -516,11 +528,11 @@ static void PrintRow(FILE *out, Hunk& hunk, const int *sizefill, int index, int 
 	for(int x = 0; x < hex_columns; x++) {
 		if (spacing && x > 0 && (x & 3) == 0) {
 			// Spacing between blocks of 4
-			fprintf(out, "<td>&nbsp;</td>");
+			fprintf(out, "<td byte-spacing>&nbsp;</td>");
 		}
 		if (spacing && x == 16) {
 			// Extra space after first 16
-			fprintf(out, "<td>&nbsp;</td>");
+			fprintf(out, "<td byte-spacing>&nbsp;</td>");
 		}
 
 		if (x < n) {
