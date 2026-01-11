@@ -346,11 +346,11 @@ body{
 	cursor: pointer;
 	cursor: hand;
 }
-.oldsection_symbol_row_expandable th{
+.section_symbol_row_expandable th{
 	cursor: pointer;
 	cursor: hand;
 }
-.section_symbol_row_expandable th{
+.part_symbol_row_expandable th{
 	cursor: pointer;
 	cursor: hand;
 }
@@ -384,8 +384,8 @@ a:active { color: var(--link-color); }
 	--link-color: #444444;
 	--table-header-bg: #eef;
 	--public-sym-bg: #99c;
-	--old-section-bg: #77a;
-	--section-bg: #eda;
+	--section-bg: #77a;
+	--part-bg: #eda;
 	--cursor-color: #bbb;
 	--select-color: #ddd;
 	--label-weight: bold;
@@ -397,8 +397,8 @@ body.dark {
 	--link-color: #ffffff;
 	--table-header-bg: #234;
 	--public-sym-bg: #346;
-	--old-section-bg: #458;
-	--section-bg: #a7850f;
+	--section-bg: #458;
+	--part-bg: #a7850f;
 	--cursor-color: #383840;
 	--select-color: #282830;
 	--label-weight: normal;
@@ -416,12 +416,12 @@ body {
 	background-color: var(--public-sym-bg);
 	font-weight: var(--label-weight);
 }
-.oldsection_symbol_row th, .oldsection_symbol_row_expandable th{
-	background-color: var(--old-section-bg);
-	font-weight: var(--label-weight);
-}
 .section_symbol_row th, .section_symbol_row_expandable th{
 	background-color: var(--section-bg);
+	font-weight: var(--label-weight);
+}
+.part_symbol_row th, .part_symbol_row_expandable th{
+	background-color: var(--part-bg);
 	font-weight: var(--label-weight);
 }
 </style>
@@ -754,14 +754,14 @@ static void HtmlReportRecursive(CompressionReportRecord* csr, FILE* out, Hunk& h
 		char div_prefix = 0;
 		int level = csr->GetLevel();
 		switch(level) {
-			case 0:	// Section
+			case 0:	// Part
 				label = csr->name;
-				css_class = "section_symbol_row";
+				css_class = "part_symbol_row";
 				div_prefix = 's';
 				break;
-			case 1:	// Old section
+			case 1:	// Section
 				label = StripPath(csr->miscString) + ":" + StripCrinklerSymbolPrefix(csr->name.c_str());
-				css_class = "oldsection_symbol_row";
+				css_class = "section_symbol_row";
 				div_prefix  = 'o';
 				break;
 			case 2:	// Public symbol
@@ -775,7 +775,7 @@ static void HtmlReportRecursive(CompressionReportRecord* csr, FILE* out, Hunk& h
 				break;
 		}
 
-		if(level == 1) {	// Old section
+		if(level == 1) {	// Section
 			fprintf(out, "<tr><td nowrap colspan='5'><div id='h_%d'><table class='grptable'>", num_sections++);
 		}
 		if(csr->children.empty() && (csr->size == 0 || csr->compressedPos < 0))
@@ -815,7 +815,7 @@ static void HtmlReportRecursive(CompressionReportRecord* csr, FILE* out, Hunk& h
 						"<th nowrap class='c5'>&nbsp;</th>");
 		}
 		fprintf(out,"</tr>");
-		if(level == 1) {	// Old section
+		if(level == 1) {	// Section
 			fprintf(out, "</table></div></td></tr>");
 		}
 

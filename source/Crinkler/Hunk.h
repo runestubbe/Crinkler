@@ -19,9 +19,9 @@ class PartList;
 enum RelocationType {RELOCTYPE_ABS32, RELOCTYPE_REL32};
 
 const int RECORD_ROOT =			0x01;
-const int RECORD_SECTION =		0x02;
+const int RECORD_PART =			0x02;
 const int RECORD_PUBLIC	=		0x04;
-const int RECORD_OLD_SECTION =	0x10;
+const int RECORD_SECTION =		0x10;
 const int RECORD_CODE =			0x20;
 const int RECORD_DUMMY =		0x40;		// Record is a dummy record not in the actual file
 
@@ -61,11 +61,11 @@ struct CompressionReportRecord {
 		}
 	}
 
-	// Returns the level of the record. Level 0: section. Level 1: old section. Level 2: public symbol. Level 3: private symbol.
+	// Returns the level of the record. Level 0: part. Level 1: section. Level 2: public symbol. Level 3: private symbol.
 	int GetLevel() {
-		if(type & RECORD_SECTION)
+		if(type & RECORD_PART)
 			return 0;
-		if(type & RECORD_OLD_SECTION)
+		if(type & RECORD_SECTION)
 			return 1;
 		if(type & RECORD_PUBLIC)
 			return 2;

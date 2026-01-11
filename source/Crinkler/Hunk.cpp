@@ -30,9 +30,9 @@ static bool SymbolComparator(Symbol* first, Symbol* second) {
 static int GetType(int level) {
 	switch(level) {
 		case 0:
-			return RECORD_SECTION;
+			return RECORD_PART;
 		case 1:
-			return RECORD_OLD_SECTION;
+			return RECORD_SECTION;
 		case 2:
 			return RECORD_PUBLIC;
 	}
@@ -262,6 +262,10 @@ CompressionReportRecord* Hunk::GenerateCompressionSummary(PartList& parts, int* 
 	sort(symbols.begin(), symbols.end(), SymbolComparator);
 
 	CompressionReportRecord* root = new CompressionReportRecord("root", RECORD_ROOT, 0, 0);
+	CompressionReportRecord* section = new CompressionReportRecord(GetName(), RECORD_PART, 0, 0);
+	section->miscString = GetName();
+	CompressionReportRecord* oldSection = new CompressionReportRecord(GetName(), RECORD_SECTION, 0, 0);
+	oldSection->miscString = GetImportDll();
 
 	parts.ForEachPart([&](Part& part, int index)
 		{
@@ -270,9 +274,9 @@ CompressionReportRecord* Hunk::GenerateCompressionSummary(PartList& parts, int* 
 
 			CompressionReportRecord* record;
 			if (part.IsInitialized())
-				record = new CompressionReportRecord(desc, RECORD_SECTION, part.GetLinkedOffset(), sizefill[part.GetLinkedOffset()]);
+				record = new CompressionReportRecord(desc, RECORD_PART, part.GetLinkedOffset(), sizefill[part.GetLinkedOffset()]);
 			else
-				record = new CompressionReportRecord(desc, RECORD_SECTION, part.GetLinkedOffset(), -1);
+				record = new CompressionReportRecord(desc, RECORD_PART, part.GetLinkedOffset(), -1);
 
 			root->children.push_back(record);
 		});
@@ -286,7 +290,7 @@ CompressionReportRecord* Hunk::GenerateCompressionSummary(PartList& parts, int* 
 
 		// Set flags
 		if(sym->flags & SYMBOL_IS_SECTION) {
-			c->type |= RECORD_OLD_SECTION;
+			c->type |= RECORD_SECTION;
 		}
 		if(!(sym->flags & SYMBOL_IS_LOCAL)) {
 			c->type |= RECORD_PUBLIC;
@@ -322,7 +326,7 @@ CompressionReportRecord* Hunk::GenerateCompressionSummary(PartList& parts, int* 
 		bool less_than_next = (it + 1) == symbols.end() || sym->value < (*(it + 1))->value;
 
 		// Add public symbol to start of sections, if they don't have one already
-		if(sym->value < GetRawSize() && (c->type & RECORD_OLD_SECTION) && less_than_next) {
+		if(sym->value < GetRawSize() && (c->type & RECORD_SECTION) && less_than_next) {
 			CompressionReportRecord* dummy = new CompressionReportRecord(c->name.c_str(), 
 				RECORD_PUBLIC|RECORD_DUMMY, sym->value, sizefill[sym->value]);
 			c->children.push_back(dummy);

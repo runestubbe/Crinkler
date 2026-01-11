@@ -39,9 +39,9 @@ static void VerboseLabels(CompressionReportRecord* csr) {
 		printf("\nlabel name                                   pos comp-pos      size compsize");
 	} else {
 		string strippedName = StripCrinklerSymbolPrefix(csr->name.c_str());
-		if(csr->type & RECORD_SECTION)
+		if(csr->type & RECORD_PART)
 			printf("\n%-38.38s", strippedName.c_str());
-		else if(csr->type & RECORD_OLD_SECTION)
+		else if(csr->type & RECORD_SECTION)
 			printf("  %-36.36s", strippedName.c_str());
 		else if(csr->type & RECORD_PUBLIC)
 			printf("    %-34.34s", strippedName.c_str());
