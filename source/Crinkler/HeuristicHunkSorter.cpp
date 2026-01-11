@@ -21,14 +21,13 @@ static bool HunkRelation(Hunk* h1, Hunk* h2) {
 	if(strcmp(h2->GetName(), "ImportListHunk")==0)
 		return false;
 
-	if(h1->GetRawSize() == 0)
-		return h1->GetVirtualSize() < h2->GetVirtualSize();
-
-	if(h1->GetFlags() & HUNK_IS_LEADING)
+	if(strcmp(h1->GetName(), "DLLNamesHunk") == 0)
 		return true;
-	if(h2->GetFlags() & HUNK_IS_LEADING)
+	if (strcmp(h2->GetName(), "DLLNamesHunk") == 0)
 		return false;
 
+	if(h1->GetRawSize() == 0)
+		return h1->GetVirtualSize() < h2->GetVirtualSize();
 
 	if (h1->GetFlags() & HUNK_IS_TRAILING)
 		return false;
@@ -38,12 +37,8 @@ static bool HunkRelation(Hunk* h1, Hunk* h2) {
 	if(h1->GetAlignmentBits() == h2->GetAlignmentBits()) {
 		if(h1->GetRawSize() != h2->GetRawSize())
 			return h1->GetRawSize() < h2->GetRawSize();
-		else {
-			{
-				// Compare data
-				return memcmp(h1->GetPtr(), h2->GetPtr(), h1->GetRawSize()) > 0;
-			}
-		}				
+		else
+			return memcmp(h1->GetPtr(), h2->GetPtr(), h1->GetRawSize()) > 0;			
 	}
 	return h1->GetAlignmentBits() < h2->GetAlignmentBits();
 }

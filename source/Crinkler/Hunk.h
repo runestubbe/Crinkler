@@ -9,9 +9,9 @@
 const int HUNK_IS_CODE =		0x01;
 const int HUNK_IS_WRITEABLE =	0x02;
 const int HUNK_IS_IMPORT =		0x04;
-const int HUNK_IS_LEADING =		0x08;
-const int HUNK_IS_TRAILING =	0x10;
-const int HUNK_IS_ALIGNED =		0x20;
+const int HUNK_IS_TRAILING =	0x08;
+const int HUNK_IS_ALIGNED =		0x10;
+const int HUNK_IS_TEXT =		0x20;
 
 class Symbol;
 class Hunk;
@@ -119,6 +119,7 @@ public:
 	void		SetRawSize(int size);
 	void		SetAlignmentBits(int alignmentBits);
 	void		SetAlignmentOffset(int alignmentOffset)			{ m_alignmentOffset = alignmentOffset; }
+	void		SetFlags(unsigned int flags)					{ m_flags = flags; }
 	void		Trim();
 	void		RoundFloats(int defaultBits);
 	void		OverrideAlignment(int defaultBits);
@@ -134,6 +135,7 @@ public:
 	int				GetAlignmentOffset() const		{ return m_alignmentOffset; }
 	unsigned int	GetFlags() const				{ return m_flags; }
 	const char*		GetName() const					{ return m_name.c_str(); }
+	const unsigned char*  GetPtr() const			{ return m_data.data(); }
 	unsigned char*	GetPtr()						{ return m_data.data(); }
 	int				GetRawSize() const				{ return (int)m_data.size(); }
 	int				GetVirtualSize() const			{ return m_virtualsize; }
@@ -144,6 +146,8 @@ public:
 	std::map<int, Symbol*> GetOffsetToRelocationMap();
 	std::map<int, Symbol*> GetOffsetToSymbolMap();
 	const std::string& GetID();
+
+	bool			IsLikelyText() const;
 };
 
 #endif

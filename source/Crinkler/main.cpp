@@ -249,6 +249,8 @@ int main(int argc, char* argv[]) {
 	CmdParamSwitch tinyImport("TINYIMPORT", "use tiny import", 0);
 	CmdParamFlags subsystemArg("SUBSYSTEM", "select subsystem", PARAM_FORBID_MULTIPLE_DEFINITIONS, SUBSYSTEM_CONSOLE, 
 						"WINDOWS", SUBSYSTEM_WINDOWS, "CONSOLE", SUBSYSTEM_CONSOLE, NULL);
+	CmdParamFlags textPartArg("TEXTPART", "use separate part for text", PARAM_FORBID_MULTIPLE_DEFINITIONS, TEXT_PART_AUTO,	//RUNETODO: Consider making this a threshold for how much text is required to make a text part
+		"YES", TEXT_PART_YES, "NO", TEXT_PART_NO, "AUTO", TEXT_PART_AUTO, NULL);
 	CmdParamFlags largeAddressAwareArg("LARGEADDRESSAWARE", "allow addresses beyond 2gb", PARAM_ALLOW_NO_ARGUMENT_DEFAULT | PARAM_FORBID_MULTIPLE_DEFINITIONS, 1, "NO", 0, NULL);
 	CmdParamFlags priorityArg("PRIORITY", "select priority", PARAM_FORBID_MULTIPLE_DEFINITIONS, BELOW_NORMAL_PRIORITY_CLASS, 
 						"IDLE", IDLE_PRIORITY_CLASS, "BELOWNORMAL", BELOW_NORMAL_PRIORITY_CLASS, "NORMAL", NORMAL_PRIORITY_CLASS, NULL);
@@ -276,7 +278,7 @@ int main(int argc, char* argv[]) {
 	CmdLineInterface cmdline(CRINKLER_TITLE, CMDI_PARSE_FILES);
 
 	cmdline.AddParams(&crinklerFlag, &hashsizeArg, &hashtriesArg, &hunktriesArg, &noDefaultLibArg, &entryArg, &outArg, &summaryArg, &reuseFileArg, &reuseArg, &unsafeImportArg,
-						&subsystemArg, &largeAddressAwareArg, &truncateFloatsArg, &overrideAlignmentsArg, &unalignCodeArg, &compmodeArg, &saturateArg, &printArg, &transformArg, &libpathArg, 
+						&subsystemArg, &textPartArg, &largeAddressAwareArg, &truncateFloatsArg, &overrideAlignmentsArg, &unalignCodeArg, &compmodeArg, &saturateArg, &printArg, &transformArg, &libpathArg, 
 						&rangeImportArg, &replaceDllArg, &fallbackDllArg, &exportArg, &stripExportsArg, &noInitializersArg, &filesArg, &priorityArg, &showProgressArg, &recompressFlag,
 						&tinyHeader, &tinyImport,
 						NULL);
@@ -439,6 +441,7 @@ int main(int argc, char* argv[]) {
 	crinkler.SetEntry(entryArg.GetValue());
 	crinkler.SetHashsize(hashsizeArg.GetValue());
 	crinkler.SetSubsystem((SubsystemType)subsystemArg.GetValue());
+	crinkler.SetTextPart((TextPart)textPartArg.GetValue());
 	crinkler.SetLargeAddressAware(largeAddressAwareArg.GetValueIfPresent(0));
 	crinkler.SetCompressionType((CompressionType)compmodeArg.GetValue());
 	crinkler.SetHashtries(hashtriesArg.GetValue());

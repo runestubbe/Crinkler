@@ -593,7 +593,7 @@ void ImportHandler::AddImportHunks4K(Part& part, Hunk*& hashHunk, map<string, st
 	// Add new hunks
 	part.AddHunkBack(importList);
 
-	Hunk* dllNamesHunk = new Hunk("DllNames", dllNames, HUNK_IS_WRITEABLE | HUNK_IS_LEADING, 0, int(dllNamesPtr - dllNames), int(dllNamesPtr - dllNames));
+	Hunk* dllNamesHunk = new Hunk("DLLNamesHunk", dllNames, HUNK_IS_WRITEABLE, 0, int(dllNamesPtr - dllNames), int(dllNamesPtr - dllNames));
 	dllNamesHunk->AddSymbol(new Symbol(".data", 0, SYMBOL_IS_RELOCATEABLE|SYMBOL_IS_SECTION, dllNamesHunk, "crinkler import"));
 	dllNamesHunk->AddSymbol(new Symbol("_DLLNames", 0, SYMBOL_IS_RELOCATEABLE, dllNamesHunk));
 	part.AddHunkBack(dllNamesHunk);
@@ -692,7 +692,7 @@ void ImportHandler::AddImportHunks1K(Part& part, bool verbose, int& hash_bits, i
 		}
 	}
 
-	Hunk* dllNamesHunk = new Hunk("DllNames", dllnames.c_str(), HUNK_IS_WRITEABLE | HUNK_IS_LEADING, 0, (int)dllnames.size() + 1, (int)dllnames.size() + 1);
+	Hunk* dllNamesHunk = new Hunk("DLLNamesHunk", dllnames.c_str(), HUNK_IS_WRITEABLE, 0, (int)dllnames.size() + 1, (int)dllnames.size() + 1);
 	dllNamesHunk->AddSymbol(new Symbol("_DLLNames", 0, SYMBOL_IS_RELOCATEABLE, dllNamesHunk));
 	part.AddHunkBack(dllNamesHunk);
 	part.AddHunkBack(importList);

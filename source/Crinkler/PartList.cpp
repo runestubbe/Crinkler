@@ -198,6 +198,18 @@ Part const& PartList::operator[] (unsigned idx) const
 	return *m_parts[idx];
 }
 
+int PartList::GetPartIndex(const char* name) const
+{
+	for (int i = 0; i < (int)m_parts.size(); i++)
+	{
+		if (m_parts[i]->m_name == name)
+		{
+			return i;
+		}
+	}
+	return -1;
+}
+
 Part& PartList::GetOrAddPart(const char* name, bool initialized)
 {
 	for (Part* part : m_parts)
@@ -469,15 +481,32 @@ Symbol* PartList::FindSymbol(const char* name) {
 int	PartList::FindBestPartIndex(Hunk* hunk) const
 {
 	assert(m_parts.size() >= 2);
+	assert(m_parts[0]->m_initialized);
+	assert(!m_parts.back()->m_initialized);
 
+	// Uninitialized
 	if (hunk->GetRawSize() == 0) {
 		assert(!m_parts.back()->m_initialized);
 		return int(m_parts.size() - 1);
-	} else if (m_parts.size() == 2 || (hunk->GetFlags() & HUNK_IS_CODE)) {
-		assert(m_parts[0]->m_initialized);
+	}
+	
+	// Text
+	if (hunk->GetFlags() & HUNK_IS_TEXT) {
+		int index = GetPartIndex("Text");
+		if (index != -1)
+			return index;
+	}
+
+	// Code
+	if((hunk->GetFlags() & HUNK_IS_CODE)){
 		return 0;
-	} else {
+	}
+
+	// Data
+	if (m_parts.size() > 2) {
 		assert(m_parts[1]->m_initialized);
 		return 1;
 	}
+
+	return 0;
 }

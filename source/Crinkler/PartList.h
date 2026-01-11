@@ -77,6 +77,7 @@ public:
 	Part& operator[] (unsigned idx);
 	Part const& operator[] (unsigned idx) const;
 
+	int		GetPartIndex(const char* name) const;
 	Part&	GetOrAddPart(const char* name, bool initialized);
 
 	Part&	GetCodePart() const{ return *m_parts[0]; }

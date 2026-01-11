@@ -515,3 +515,40 @@ const string& Hunk::GetID() {
 	}
 	return m_cached_id;
 }
+
+bool Hunk::IsLikelyText() const
+{
+	const int size = GetRawSize();
+	if (size == 0)
+		return false;
+
+	if (m_name == "DLLNamesHunk")
+		return true;
+
+	const unsigned char* ptr = (const unsigned char*)GetPtr();
+	if (ptr[0] == 0)
+		return false;
+
+	unsigned int alignment = min(1u << m_alignmentBits, 16u);
+	unsigned int alignment_mask = (1u << alignment) - 1u;
+
+	bool prev_zero = false;
+	for (int i = 0; i < size; i++)
+	{
+		const unsigned char c = ptr[i];
+
+		// RUNETODO: Update heuristic to allow some amount of non-text data?
+		// See Nevada report
+		if ((c >= 32 && c < 127) || c == '\n' || c == '\t' || c == '\n' || c == '\r') {
+			prev_zero = false;
+		} else if (c == 0) {
+			if ((i & alignment_mask) == 0 && prev_zero)	// Zeros cross alignment boundary
+				return false;
+			prev_zero = true;
+		} else {
+			return false;
+		}
+	}
+
+	return true;
+}

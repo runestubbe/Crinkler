@@ -57,7 +57,7 @@ static void PermuteHunklist(PartList& parts, int strength) {
 				part.InsertHunk(h2i+n-1, hunk);
 			}
 		}
-		// RUNE_TODO: handle trailing hunks
+		// RUNE_TODO: handle trailing hunks (HUNK_IS_TRAILING). See old implementation
 	}
 }
 

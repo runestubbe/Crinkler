@@ -1280,8 +1280,22 @@ void Crinkler::Link(const char* filename) {
 	else
 	{
 		// Split hunks into separate parts
-		if (!m_useTinyHeader)
+		if (!m_useTinyHeader) {
 			parts.GetOrAddPart("Data", true);
+
+			if (m_textPart == TEXT_PART_YES || m_textPart == TEXT_PART_AUTO) {
+				int totalTextSize = 0;
+				m_hunkList.ForEachHunk([&totalTextSize](Hunk* hunk) {
+					if (hunk->IsLikelyText()) {
+						hunk->SetFlags(hunk->GetFlags() | HUNK_IS_TEXT);
+						totalTextSize += hunk->GetRawSize();
+					}
+					});
+
+				if(m_textPart == TEXT_PART_YES || totalTextSize >= 384)
+					parts.GetOrAddPart("Text", true);
+			}
+		}
 
 		m_hunkList.RemoveMatchingHunks([&parts](Hunk* hunk) {
 			int partIndex = parts.FindBestPartIndex(hunk);

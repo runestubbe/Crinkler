@@ -28,6 +28,7 @@ static const int CRINKLER_CODEBASE =	CRINKLER_IMAGEBASE+2*CRINKLER_SECTIONSIZE;
 static const int CRINKLER_BASEPROB =	DEFAULT_BASEPROB;
 
 enum SubsystemType {SUBSYSTEM_CONSOLE, SUBSYSTEM_WINDOWS};
+enum TextPart {TEXT_PART_YES, TEXT_PART_NO, TEXT_PART_AUTO};
 
 static const int PRINT_LABELS =		1;
 static const int PRINT_IMPORTS =	2;
@@ -44,6 +45,7 @@ class Crinkler {
 	std::string							m_summaryFilename;
 	std::string							m_reuseFilename;
 	SubsystemType						m_subsystem;
+	TextPart							m_textPart;
 	int									m_hashsize;
 	int									m_hashtries;
 	int									m_hunktries;
@@ -122,6 +124,7 @@ public:
 
 	void SetEntry(const char* entry)						{ m_entry = entry; }
 	void SetSubsystem(SubsystemType subsystem)				{ m_subsystem = subsystem; }
+	void SetTextPart(TextPart textPart)						{ m_textPart = textPart; }
 
 	void SetCompressionType(CompressionType compressionType){ m_compressionType = compressionType; }
 	void SetHashsize(int hashsize)							{ m_hashsize = hashsize*1024*1024; }
