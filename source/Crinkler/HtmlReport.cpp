@@ -682,14 +682,6 @@ static string CalculateInstructionOperands(_DecodedInst& inst, Hunk& hunk, map<i
 	return operands;
 }
 
-// Sorts pair<string, int> by greater<int> and then by name
-static bool OpcodeComparator(const pair<string, int>& a, const pair<string, int>& b) {
-	if(a.second != b.second)
-		return a.second > b.second;
-	else
-		return a.first < b.first;
-}
-
 static void HtmlReportRecursive(CompressionReportRecord* csr, FILE* out, Hunk& hunk, Hunk& untransformedHunk, const int* sizefill, bool iscode, map<int, Symbol*>& relocs, map<int, Symbol*>& symbols, map<string, int>& opcodeCounters,
 		const char *exefilename, int filesize, Crinkler *crinkler) {
 	string divstr;

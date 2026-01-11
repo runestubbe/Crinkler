@@ -275,7 +275,6 @@ Hunk* PartList::Link(const char* name, int baseAddress) {
 			s->hunk = newHunk;
 			if(s->flags & SYMBOL_IS_RELOCATEABLE) {
 				s->value += address;
-				s->hunkOffset = p.second->hunkOffset + address;
 			}
 			if (hunk->GetFlags() & HUNK_IS_CODE)
 				s->flags |= SYMBOL_IS_CODE;

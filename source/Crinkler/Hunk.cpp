@@ -1,4 +1,3 @@
-#include <memory>
 #include <vector>
 #include <algorithm>
 #include <cassert>
@@ -18,7 +17,7 @@ static bool SymbolComparator(Symbol* first, Symbol* second) {
 	if(first->value != second->value) {
 		return first->value < second->value;
 	} else if(first->hunkOffset != second->hunkOffset) {
-		return first->hunkOffset < second->hunkOffset;
+		return first->hunkOffset > second->hunkOffset;
 	} else {
 		if((first->flags & SYMBOL_IS_SECTION) != (second->flags & SYMBOL_IS_SECTION))
 			return (first->flags & SYMBOL_IS_SECTION) != 0;
@@ -300,7 +299,7 @@ CompressionReportRecord* Hunk::GenerateCompressionSummary(PartList& parts, int* 
 		CompressionReportRecord* r = root->children.back();
 		for (CompressionReportRecord* section : root->children)
 		{
-			if (sym->value >= section->pos)
+			if (sym->value - sym->hunkOffset >= section->pos)
 				r = section;
 			else
 				break;
