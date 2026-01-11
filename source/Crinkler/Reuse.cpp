@@ -87,6 +87,9 @@ Reuse* LoadReuseFile(const char *filename) {
 				Log::Warning(filename, "Unknown reuse file tag: %s", line.c_str());
 			}
 		} else switch (state) {
+		case INITIAL:
+			Log::Warning(filename, "Unexpected line: %s", line.c_str());
+			break;
 		case MODELS:
 			if (*current_models != nullptr) {
 				Log::Error(filename, "Duplicate models: %s", line.c_str());
