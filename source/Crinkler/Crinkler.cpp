@@ -1265,16 +1265,24 @@ void Crinkler::Link(const char* filename) {
 
 	PartList parts;
 
+	bool reuse_mismatch = false;
 	int reuse_filesize = 0;
 	Reuse *reuse = nullptr;
 	ReuseType reuseType = m_useTinyHeader ? REUSE_OFF : m_reuseType;
 	if (reuseType != REUSE_OFF && reuseType != REUSE_WRITE) {
 		reuse = LoadReuseFile(m_reuseFilename.c_str());
-		if (reuse != nullptr) {
-			reuse->PartsFromHunkList(parts, m_hunkList);
-			m_hunkList.Clear();
-			best_hashsize = reuse->GetHashSize();
-			printf("\nRead reuse file: %s\n", m_reuseFilename.c_str());
+		if (reuse == nullptr) {
+			reuseType = REUSE_WRITE;
+		}
+	}
+
+	if (reuse != nullptr) {
+		printf("\nRead reuse file: %s\n", m_reuseFilename.c_str());
+		reuse_mismatch = reuse->PartsFromHunkList(parts, m_hunkList);
+		best_hashsize = reuse->GetHashSize();
+		if (reuse_mismatch) {
+			delete reuse;
+			reuse = new Reuse(parts, best_hashsize);
 		}
 	}
 	else
@@ -1301,13 +1309,11 @@ void Crinkler::Link(const char* filename) {
 			int partIndex = parts.FindBestPartIndex(hunk);
 			parts[partIndex].AddHunkBack(hunk);
 			return true;
-			});
+		});
 
 		// Sort hunks heuristically
 		HeuristicHunkSorter::SortHunkList(parts);
 	}
-
-	assert(m_hunkList.IsEmpty());
 
 	// Create phase 1 data hunk
 	Hunk* phase1, *phase1Untransformed;
@@ -1323,13 +1329,13 @@ void Crinkler::Link(const char* filename) {
 	int maxsize = phase1->GetRawSize()*2+1000;	// Allocate plenty of memory	
 	unsigned char* data = new unsigned char[maxsize];
 
-	if (reuseType == REUSE_IMPROVE && reuse != nullptr) {
+	if (reuseType != REUSE_OFF && reuseType != REUSE_WRITE) {
 		int size = CompressParts4k(parts, phase1, data, maxsize, best_hashsize, nullptr);
 		Hunk *phase2 = FinalLink(parts, header, nullptr, hashHunk, phase1, data, size, best_hashsize);
 		reuse_filesize = phase2->GetRawSize();
 		delete phase2;
 
-		printf("\nFile size with reuse parameters: %d\n", reuse_filesize);
+		printf("\nFile size with reuse configuration: %d\n", reuse_filesize);
 	}
 
 	// Print uncompressed part sizes
@@ -1351,34 +1357,34 @@ void Crinkler::Link(const char* filename) {
 	int size, idealsize = 0;
 	if (m_useTinyHeader || m_compressionType != COMPRESSION_INSTANT)
 	{
-		if (reuseType == REUSE_STABLE && reuse != nullptr) {
+		if (reuseType != REUSE_ALL) InitProgressBar();
+
+		if (reuseType == REUSE_MODELS || reuseType == REUSE_ALL) {
 			// Calculate ideal size with reuse parameters
 			idealsize = EvaluatePartsSize4k(parts, phase1);
 		} else {
 			// Full size estimation and hunk reordering
-			InitProgressBar();
-
 			idealsize = EstimateModels(parts, phase1, false, m_useTinyHeader);
 
-			if (m_hunktries > 0)
+			if (m_hunktries > 0 && reuseType != REUSE_SECTIONS)
 			{
 				EmpiricalHunkSorter::SortHunkList(parts, *m_transform, m_saturate != 0, m_hunktries, m_showProgressBar ? &m_windowBar : NULL, m_useTinyHeader);
 				delete phase1;
 				delete phase1Untransformed;
-				m_transform->LinkAndTransform(parts, importSymbol, CRINKLER_CODEBASE, phase1, &phase1Untransformed, true);
+				m_transform->LinkAndTransform(parts, importSymbol, CRINKLER_CODEBASE, phase1, &phase1Untransformed, false);
 
 				idealsize = EstimateModels(parts, phase1, true, m_useTinyHeader);
 			}
-
-			// Hashing time
-			if (!m_useTinyHeader)
-			{
-				best_hashsize = PreviousPrime(m_hashsize / 2) * 2;
-				best_hashsize = OptimizeHashsize(parts, phase1, best_hashsize, m_hashtries);
-			}
-
-			DeinitProgressBar();
 		}
+
+		// Hashing time
+		if (!m_useTinyHeader && reuseType != REUSE_ALL)
+		{
+			best_hashsize = PreviousPrime(m_hashsize / 2) * 2;
+			best_hashsize = OptimizeHashsize(parts, phase1, best_hashsize, m_hashtries);
+		}
+
+		if (reuseType != REUSE_ALL) DeinitProgressBar();
 	}
 
 	if (m_useTinyHeader)
@@ -1401,6 +1407,46 @@ void Crinkler::Link(const char* filename) {
 	}
 
 	Hunk *phase2 = FinalLink(parts, header, nullptr, hashHunk, phase1, data, size, best_hashsize);
+
+	printf("\n");
+
+	if (reuseType != REUSE_OFF) {
+		bool save_reuse = false;
+		if (reuse == nullptr) {
+			printf("Writing reuse file: %s\n", m_reuseFilename.c_str());
+			reuse = new Reuse(parts, best_hashsize);
+			save_reuse = true;
+		} else if (reuseType != REUSE_ALL && phase2->GetRawSize() < reuse_filesize) {
+			printf("Overwriting reuse file: %s\n", m_reuseFilename.c_str());
+			delete reuse;
+			reuse = new Reuse(parts, best_hashsize);
+			save_reuse = true;
+		} else {
+			if (reuseType != REUSE_ALL) {
+				printf("File size: %d\n", phase2->GetRawSize());
+				printf("Reverting to reuse configuration.\n");
+				parts.Clear();
+				bool new_reuse_mismatch = reuse->PartsFromHunkList(parts, m_hunkList);
+				assert(!new_reuse_mismatch);
+				delete phase1;
+				delete phase1Untransformed;
+				m_transform->LinkAndTransform(parts, importSymbol, CRINKLER_CODEBASE, phase1, &phase1Untransformed, false);
+				int size = CompressParts4k(parts, phase1, data, maxsize, reuse->GetHashSize(), nullptr);
+				delete phase2;
+				phase2 = FinalLink(parts, header, nullptr, hashHunk, phase1, data, size, best_hashsize);
+			}
+
+			if (reuse_mismatch) {
+				printf("Updating reuse file: %s\n", m_reuseFilename.c_str());
+				save_reuse = true;
+			} else if (reuseType != REUSE_ALL) {
+				printf("Keeping reuse file: %s\n", m_reuseFilename.c_str());
+			}
+		}
+
+		if (save_reuse) reuse->Save(m_reuseFilename.c_str());
+	}
+
 	delete[] data;
 
 	CompressionReportRecord* csr = phase1->GenerateCompressionSummary(parts, sizefill);
@@ -1426,28 +1472,6 @@ void Crinkler::Link(const char* filename) {
 		}
 	}
 	printf("\n\n");
-
-	if (reuseType != REUSE_OFF) {
-		bool write = false;
-		if (reuse == nullptr) {
-			printf("Writing reuse file: %s\n\n", m_reuseFilename.c_str());
-			write = true;
-		}
-		else if (reuseType == REUSE_IMPROVE) {
-			if (phase2->GetRawSize() < reuse_filesize) {
-				printf("Overwriting reuse file: %s\n\n", m_reuseFilename.c_str());
-				write = true;
-				delete reuse;
-			}
-			else {
-				printf("Size not better than with reuse parameters - keeping reuse file: %s\n\n", m_reuseFilename.c_str());
-			}
-		}
-		if (write) {
-			reuse = new Reuse(parts, best_hashsize);
-			reuse->Save(m_reuseFilename.c_str());
-		}
-	}
 
 	if (phase2->GetRawSize() > 128*1024)
 	{

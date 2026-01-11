@@ -8,7 +8,7 @@
 #include "PartList.h"
 
 enum ReuseType {
-	REUSE_OFF, REUSE_WRITE, REUSE_IMPROVE, REUSE_STABLE
+	REUSE_OFF, REUSE_WRITE, REUSE_PARTS, REUSE_SECTIONS, REUSE_MODELS, REUSE_ALL
 };
 
 static const char *ReuseTypeName(ReuseType mode) {
@@ -17,10 +17,14 @@ static const char *ReuseTypeName(ReuseType mode) {
 		return "OFF";
 	case REUSE_WRITE:
 		return "WRITE";
-	case REUSE_IMPROVE:
-		return "IMPROVE";
-	case REUSE_STABLE:
-		return "STABLE";
+	case REUSE_PARTS:
+		return "PARTS";
+	case REUSE_SECTIONS:
+		return "SECTIONS";
+	case REUSE_MODELS:
+		return "MODELS";
+	case REUSE_ALL:
+		return "ALL";
 	}
 	return "";
 }
@@ -47,7 +51,7 @@ public:
 	Reuse();
 	Reuse(PartList& parts, int hashsize);
 
-	void				PartsFromHunkList(PartList& parts, Part& hunkList);
+	bool				PartsFromHunkList(PartList& parts, Part& hunkList);
 
 	int					GetHashSize() const { return m_hashsize; }
 

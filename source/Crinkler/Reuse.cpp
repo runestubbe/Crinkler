@@ -152,7 +152,7 @@ void Reuse::Save(const char *filename) const {
 	fclose(f);
 }
 
-static std::vector<Hunk*> PickHunks(const std::vector<std::string>& ids, std::unordered_map<std::string, Hunk*>& hunk_by_id) {
+static std::vector<Hunk*> PickHunks(const std::vector<std::string>& ids, std::unordered_map<std::string, Hunk*>& hunk_by_id, bool* mismatch) {
 	std::vector<Hunk*> hunks;
 	for (const std::string& id : ids) {
 		auto hunk_it = hunk_by_id.find(id);
@@ -161,29 +161,34 @@ static std::vector<Hunk*> PickHunks(const std::vector<std::string>& ids, std::un
 			hunk_by_id.erase(hunk_it);
 		} else {
 			Log::Warning("", "Reused section not present: %s", id.c_str());
+			*mismatch = true;
 		}
 	}
 	return hunks;
 }
 
-void Reuse::PartsFromHunkList(PartList& parts, Part& hunkList) {
+bool Reuse::PartsFromHunkList(PartList& parts, Part& hunkList) {
+	bool mismatch = false;
+
 	std::unordered_map<std::string, Hunk*> hunk_by_id;
 	hunkList.ForEachHunk([&hunk_by_id](Hunk* hunk) { hunk_by_id[hunk->GetID()] = hunk; });
 
 	std::vector<std::vector<Hunk*>> part_hunks;
 	for (ReusePart& reuse_part : m_parts) {
-		part_hunks.push_back(PickHunks(reuse_part.m_hunk_ids, hunk_by_id));
+		part_hunks.push_back(PickHunks(reuse_part.m_hunk_ids, hunk_by_id, &mismatch));
+		parts.GetOrAddPart(reuse_part.m_name.c_str(), reuse_part.m_initialized);
 	}
 	
-	hunkList.ForEachHunk([&parts, &part_hunks, &hunk_by_id](Hunk* hunk) {
+	hunkList.ForEachHunk([&parts, &part_hunks, &hunk_by_id, &mismatch](Hunk* hunk) {
 		const std::string& id = hunk->GetID();
 		auto hunk_it = hunk_by_id.find(id);
 		if (hunk_it != hunk_by_id.end()) {
-			int part_index = parts.FindBestPartIndex(hunk);			
+			int part_index = parts.FindBestPartIndex(hunk);
 			part_hunks[part_index].push_back(hunk);
 
 			Log::Warning("", "Section not present in reuse file: %s (added to %s)", id.c_str(), parts[part_index].GetName());
 			hunk_by_id.erase(hunk_it);
+			mismatch = true;
 		}
 	});
 	
@@ -199,4 +204,6 @@ void Reuse::PartsFromHunkList(PartList& parts, Part& hunkList) {
 			part.m_model4k = *reuse_part.m_models;
 		}
 	}
+
+	return mismatch;
 }

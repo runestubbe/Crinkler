@@ -179,8 +179,7 @@ void Part::DeleteUnreferencedHunks(vector<Hunk*> startHunks) {
 
 PartList::PartList()
 {
-	m_parts.push_back(new Part("Code", true));
-	m_parts.push_back(new Part("Uninitialized", false));
+	Clear();
 }
 
 PartList::~PartList()
@@ -196,6 +195,14 @@ Part& PartList::operator[] (unsigned idx)
 Part const& PartList::operator[] (unsigned idx) const
 {
 	return *m_parts[idx];
+}
+
+void PartList::Clear() {
+	for (Part* part : m_parts)
+		delete part;
+	m_parts.clear();
+	m_parts.push_back(new Part("Code", true));
+	m_parts.push_back(new Part("Uninitialized", false));
 }
 
 int PartList::GetPartIndex(const char* name) const

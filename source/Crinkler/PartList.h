@@ -77,6 +77,7 @@ public:
 	Part& operator[] (unsigned idx);
 	Part const& operator[] (unsigned idx) const;
 
+	void	Clear();
 	int		GetPartIndex(const char* name) const;
 	Part&	GetOrAddPart(const char* name, bool initialized);
 
