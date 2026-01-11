@@ -365,7 +365,7 @@ body{
 	font-size: 20px;
 	vertical-align: middle;
 	color: black;
-	display: block;
+	display: none;
 	box-shadow: 0 0 15px 2px rgb(0,0,0,0.8);
 }
 .c1{width:7em;text-align:left;white-space:nowrap;}
