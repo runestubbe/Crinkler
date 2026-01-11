@@ -272,7 +272,7 @@
     <None Include="modules\import20.asm">
       <Filter>modules</Filter>
     </None>
-    <None Include="modules\header20.asm">
+    <None Include="modules\header30.asm">
       <Filter>modules</Filter>
     </None>
     <None Include="modules\header20_compatibility.asm">
