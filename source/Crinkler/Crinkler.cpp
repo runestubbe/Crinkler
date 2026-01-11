@@ -14,7 +14,6 @@
 #include "ImportHandler.h"
 #include "Log.h"
 #include "HeuristicHunkSorter.h"
-#include "ExplicitHunkSorter.h"
 #include "EmpiricalHunkSorter.h"
 #include "misc.h"
 #include "data.h"
@@ -69,6 +68,7 @@ static void NotCrinklerFileError() {
 }
 
 Crinkler::Crinkler():
+	m_hunkList("HunkList", true),
 	m_subsystem(SUBSYSTEM_WINDOWS),
 	m_hashsize(100*1024*1024),
 	m_compressionType(COMPRESSION_FAST),
@@ -98,10 +98,10 @@ Crinkler::Crinkler():
 Crinkler::~Crinkler() {
 }
 
-void Crinkler::ReplaceDlls(PartList& parts) {
+void Crinkler::ReplaceDlls(Part& part) {
 	set<string> usedDlls;
 	// Replace DLL
-	parts.ForEachHunk([this, &usedDlls](Hunk* hunk)
+	part.ForEachHunk([this, &usedDlls](Hunk* hunk)
 		{
 			if(hunk->GetFlags() & HUNK_IS_IMPORT) {
 				map<string, string>::iterator it = m_replaceDlls.find(ToLower(hunk->GetImportDll()));
@@ -121,26 +121,26 @@ void Crinkler::ReplaceDlls(PartList& parts) {
 }
 
 
-void Crinkler::OverrideAlignments(PartList& parts) {
-	parts.ForEachHunk([this](Hunk* hunk) {
+void Crinkler::OverrideAlignments(Part& part) {
+	part.ForEachHunk([this](Hunk* hunk) {
 		hunk->OverrideAlignment(m_alignmentBits);
 		});
 }
 
 void Crinkler::Load(const char* filename) {
-	bool result = m_hunkLoader.LoadFromFile(m_parts, filename);
+	bool result = m_hunkLoader.LoadFromFile(m_hunkList, filename);
 	if(!result) {
 		Log::Error(filename, "Unsupported file type");
 	}
 }
 
 void Crinkler::Load(const char* data, int size, const char* module) {
-	m_hunkLoader.Load(m_parts, data, size, module);
+	m_hunkLoader.Load(m_hunkList, data, size, module);
 }
 
 void Crinkler::AddRuntimeLibrary() {
 	// Add minimal console entry point
-	m_hunkLoader.Load(m_parts, runtimeObj, int(runtimeObj_end - runtimeObj), "runtime", false);
+	m_hunkLoader.Load(m_hunkList, runtimeObj, int(runtimeObj_end - runtimeObj), "runtime", false);
 
 	// Add imports from msvcrt
 	ForEachExportInDLL("msvcrt", [&](const char* name) {
@@ -150,8 +150,8 @@ void Crinkler::AddRuntimeLibrary() {
 		Hunk* stubHunk = MakeCallStub(symbolName.c_str());
 		importHunk->MarkHunkAsLibrary();
 		stubHunk->MarkHunkAsLibrary();
-		m_parts.GetUninitializedPart().AddHunkBack(importHunk);
-		m_parts.GetCodePart().AddHunkBack(stubHunk);
+		m_hunkList.AddHunkBack(importHunk);
+		m_hunkList.AddHunkBack(stubHunk);
 	});	
 }
 
@@ -171,7 +171,7 @@ std::string Crinkler::GetEntrySymbolName() const {
 Symbol*	Crinkler::FindEntryPoint() {
 	// Place entry point in the beginning
 	string entryName = GetEntrySymbolName();
-	Symbol* entry = m_parts.FindUndecoratedSymbol(entryName.c_str());
+	Symbol* entry = m_hunkList.FindUndecoratedSymbol(entryName.c_str());
 	if(entry == NULL) {
 		Log::Error("", "Cannot find entry point '%s'. See manual for details.", entryName.c_str());
 		return NULL;
@@ -193,12 +193,12 @@ void Crinkler::RemoveUnreferencedHunks(Hunk* base)
 	// Keep hold of exported symbols
 	for (const Export& e : m_exports)  {
 		if (e.HasValue()) {
-			Symbol* sym = m_parts.FindSymbol(e.GetName().c_str());
+			Symbol* sym = m_hunkList.FindSymbol(e.GetName().c_str());
 			if (sym && !sym->fromLibrary) {
 				Log::Error("", "Cannot create integer symbol '%s' for export: symbol already exists.", e.GetName().c_str());
 			}
 		} else {
-			Symbol* sym = m_parts.FindSymbol(e.GetSymbol().c_str());
+			Symbol* sym = m_hunkList.FindSymbol(e.GetSymbol().c_str());
 			if (sym) {
 				if (sym->hunk->GetRawSize() == 0) {
 					sym->hunk->SetRawSize(sym->hunk->GetVirtualSize());
@@ -212,9 +212,9 @@ void Crinkler::RemoveUnreferencedHunks(Hunk* base)
 	}
 
 	// Hack to ensure that LoadLibrary & MessageBox is there to be used in the import code
-	Symbol* loadLibrary = m_parts.FindSymbol("__imp__LoadLibraryA@4"); 
-	Symbol* messageBox = m_parts.FindSymbol("__imp__MessageBoxA@16");
-	Symbol* dynamicInitializers = m_parts.FindSymbol("__DynamicInitializers");
+	Symbol* loadLibrary = m_hunkList.FindSymbol("__imp__LoadLibraryA@4"); 
+	Symbol* messageBox = m_hunkList.FindSymbol("__imp__MessageBoxA@16");
+	Symbol* dynamicInitializers = m_hunkList.FindSymbol("__DynamicInitializers");
 	if(loadLibrary != NULL)
 		startHunks.push_back(loadLibrary->hunk);
 	if(m_useSafeImporting && !m_useTinyImport && messageBox != NULL)
@@ -222,7 +222,7 @@ void Crinkler::RemoveUnreferencedHunks(Hunk* base)
 	if(dynamicInitializers != NULL)
 		startHunks.push_back(dynamicInitializers->hunk);
 
-	m_parts.RemoveUnreferencedHunks(startHunks);
+	m_hunkList.DeleteUnreferencedHunks(startHunks);
 }
 
 void Crinkler::LoadImportCode(bool use1kMode, bool useSafeImporting, bool useDllFallback, bool useRangeImport) {
@@ -342,23 +342,22 @@ int Crinkler::EstimateModels(PartList& parts, Hunk* phase1, bool reestimate, boo
 
 	if (use1kMode)
 	{
-		/*
-		// REFACTOR_TODO
+		assert(parts.GetNumInitializedParts() == 1);
+		Part& part = parts[0];
+
 		m_progressBar.BeginTask(reestimate ? "Reestimating models" : "Estimating models");
-		int size = target_size1;
-		int new_size;
-		ModelList1k new_modellist1k = ApproximateModels1k(data, datasize, &new_size, ProgressUpdateCallback, &m_progressBar);
-		if(new_size < size)
+		
+		int newCompressedSize;
+		ModelList1k newModels = ApproximateModels1k(phase1->GetPtr(), phase1->GetRawSize(), &newCompressedSize, ProgressUpdateCallback, &m_progressBar);
+		if(newCompressedSize < part.m_compressedSize)
 		{
-			size = new_size;
-			m_modellist1k = new_modellist1k;
+			part.m_compressedSize = newCompressedSize;
+			part.m_model1k = newModels;
 		}
 		m_progressBar.EndTask();
-		printf("\nEstimated compressed size: %.2f\n", size / (float)(BIT_PRECISION * 8));
-		if(verbose) m_modellist1k.Print();
-		return new_size;
-		*/
-		return 0;
+		printf("\nEstimated compressed size: %.2f\n", part.m_compressedSize / (float)(BIT_PRECISION * 8));
+		if(verbose) part.m_model1k.Print();
+		return newCompressedSize;
 	}
 	else
 	{
@@ -394,7 +393,7 @@ int Crinkler::EstimateModels(PartList& parts, Hunk* phase1, bool reestimate, boo
 			printf("Estimated compressed size of %s: %.2f\n", part.GetName(), part.m_compressedSize / (float)(BIT_PRECISION * 8));
 		}
 
-		return EvaluatePartsSize4k(phase1);
+		return EvaluatePartsSize4k(parts, phase1);
 	}
 }
 
@@ -1095,7 +1094,7 @@ void Crinkler::Recompress(const char* input_filename, const char* output_filenam
 Hunk* Crinkler::CreateDynamicInitializerHunk()
 {
 	std::vector<Symbol*> symbols;
-	m_parts.ForEachHunk([this, &symbols](Hunk* hunk)
+	m_hunkList.ForEachHunk([this, &symbols](Hunk* hunk)
 		{
 			if (EndsWith(hunk->GetName(), "CRT$XCU"))
 			{
@@ -1103,7 +1102,7 @@ Hunk* Crinkler::CreateDynamicInitializerHunk()
 				Relocation* relocations = hunk->GetRelocations();
 				for (int i = 0; i < num_relocations; i++)
 				{
-					symbols.push_back(m_parts.FindSymbol(relocations[i].symbolname.c_str()));
+					symbols.push_back(m_hunkList.FindSymbol(relocations[i].symbolname.c_str()));
 				}
 			}
 		});
@@ -1162,7 +1161,7 @@ void Crinkler::Link(const char* filename) {
 		dynamicInitializersHunk = CreateDynamicInitializerHunk();
 		if(dynamicInitializersHunk)
 		{
-			m_parts[0].AddHunkBack(dynamicInitializersHunk);
+			m_hunkList.AddHunkBack(dynamicInitializersHunk);
 		}
 	}
 
@@ -1170,9 +1169,9 @@ void Crinkler::Link(const char* filename) {
 	RemoveUnreferencedHunks(entry->hunk);
 
 	// Replace DLLs
-	ReplaceDlls(m_parts);
+	ReplaceDlls(m_hunkList);
 
-	if (m_overrideAlignments) OverrideAlignments(m_parts);
+	if (m_overrideAlignments) OverrideAlignments(m_hunkList);
 
 	// 1-byte align entry point and other sections
 	int n_unaligned = 0;
@@ -1183,7 +1182,7 @@ void Crinkler::Link(const char* filename) {
 		entry_point_unaligned = true;
 	}
 	if (m_unalignCode) {
-		m_parts.ForEachHunk([&n_unaligned](Hunk* hunk)
+		m_hunkList.ForEachHunk([&n_unaligned](Hunk* hunk)
 			{
 				if (hunk->GetFlags() & HUNK_IS_CODE && !(hunk->GetFlags() & HUNK_IS_ALIGNED) && hunk->GetAlignmentBits() > 0) {
 					hunk->SetAlignmentBits(0);
@@ -1200,14 +1199,14 @@ void Crinkler::Link(const char* filename) {
 	}
 
 	// Load appropriate header
-	PartList headerParts;
+	Part headerPart("Header", true);
 
 	if (m_useTinyHeader)
-		m_hunkLoader.Load(headerParts, header1KObj, int(header1KObj_end - header1KObj), "crinkler header");
+		m_hunkLoader.Load(headerPart, header1KObj, int(header1KObj_end - header1KObj), "crinkler header");
 	else
-		m_hunkLoader.Load(headerParts, headerObj, int(headerObj_end - headerObj), "crinkler header");
+		m_hunkLoader.Load(headerPart, headerObj, int(headerObj_end - headerObj), "crinkler header");
 
-	Hunk* header = headerParts.FindSymbol("_header")->hunk;
+	Hunk* header = headerPart.FindSymbol("_header")->hunk;
 
 	if(!m_useTinyHeader)
 		SetHeaderSaturation(header);
@@ -1218,26 +1217,26 @@ void Crinkler::Link(const char* filename) {
 	bool usesRangeImport=false;
 	{	// Add imports
 		if (m_useTinyImport)
-			ImportHandler::AddImportHunks1K(m_parts, (m_printFlags & PRINT_IMPORTS) != 0, hash_bits, max_dll_name_length);
+			ImportHandler::AddImportHunks1K(m_hunkList, (m_printFlags & PRINT_IMPORTS) != 0, hash_bits, max_dll_name_length);
 		else
-			ImportHandler::AddImportHunks4K(m_parts, hashHunk, m_fallbackDlls, m_rangeDlls, (m_printFlags & PRINT_IMPORTS) != 0, usesRangeImport);
+			ImportHandler::AddImportHunks4K(m_hunkList, hashHunk, m_fallbackDlls, m_rangeDlls, (m_printFlags & PRINT_IMPORTS) != 0, usesRangeImport);
 	}
 
 	LoadImportCode(m_useTinyImport, m_useSafeImporting, !m_fallbackDlls.empty(), usesRangeImport);
 
-	Symbol* importSymbol = m_parts.FindSymbol("_Import");
+	Symbol* importSymbol = m_hunkList.FindSymbol("_Import");
 
 	if(dynamicInitializersHunk)
 	{		
-		m_parts[0].RemoveHunk(dynamicInitializersHunk);
-		m_parts[0].AddHunkFront(dynamicInitializersHunk);
+		m_hunkList.RemoveHunk(dynamicInitializersHunk);
+		m_hunkList.AddHunkFront(dynamicInitializersHunk);
 		dynamicInitializersHunk->SetContinuation(entry);
 	}
 
 	Hunk* importHunk = importSymbol->hunk;
 
-	m_parts[0].RemoveHunk(importHunk);
-	m_parts[0].AddHunkFront(importHunk);
+	m_hunkList.RemoveHunk(importHunk);
+	m_hunkList.AddHunkFront(importHunk);
 	importHunk->SetAlignmentBits(0);
 	importHunk->SetContinuation(dynamicInitializersHunk ? dynamicInitializersHunk->FindSymbol("__DynamicInitializers") : entry);
 	
@@ -1255,17 +1254,16 @@ void Crinkler::Link(const char* filename) {
 	if(m_truncateFloats) {
 		printf("\nTruncating floats:\n");
 
-		m_parts.ForEachHunk([this](Hunk* hunk) { hunk->RoundFloats(m_truncateBits); });
+		m_hunkList.ForEachHunk([this](Hunk* hunk) { hunk->RoundFloats(m_truncateBits); });
 	}
 
 	if (!m_exports.empty()) {
-		m_parts[1].AddHunkBack(CreateExportTable(m_exports));
+		m_hunkList.AddHunkBack(CreateExportTable(m_exports));
 	}
 
-	// Sort hunks heuristically
-	HeuristicHunkSorter::SortHunkList(m_parts);
-
 	int best_hashsize = PreviousPrime(m_hashsize / 2) * 2;
+
+	PartList parts;
 
 	int reuse_filesize = 0;
 	Reuse *reuse = nullptr;
@@ -1273,78 +1271,96 @@ void Crinkler::Link(const char* filename) {
 	if (reuseType != REUSE_OFF && reuseType != REUSE_WRITE) {
 		reuse = LoadReuseFile(m_reuseFilename.c_str());
 		if (reuse != nullptr) {
-			ExplicitHunkSorter::SortHunks(m_parts, reuse);
+			reuse->PartsFromHunkList(parts, m_hunkList);
+			m_hunkList.Clear();
 			best_hashsize = reuse->GetHashSize();
 			printf("\nRead reuse file: %s\n", m_reuseFilename.c_str());
 		}
 	}
+	else
+	{
+		// Split hunks into separate parts
+		if (!m_useTinyHeader)
+			parts.GetOrAddPart("Data", true);
+
+		m_hunkList.RemoveMatchingHunks([&parts](Hunk* hunk) {
+			int partIndex = parts.FindBestPartIndex(hunk);
+			parts[partIndex].AddHunkBack(hunk);
+			return true;
+			});
+
+		// Sort hunks heuristically
+		HeuristicHunkSorter::SortHunkList(parts);
+	}
+
+	assert(m_hunkList.IsEmpty());
 
 	// Create phase 1 data hunk
 	Hunk* phase1, *phase1Untransformed;
-	m_parts.GetCodePart()[0]->AddSymbol(new Symbol("_HeaderHashes", CRINKLER_IMAGEBASE + header->GetRawSize(), SYMBOL_IS_SECTION, m_parts.GetCodePart()[0]));
+	parts.GetCodePart()[0]->AddSymbol(new Symbol("_HeaderHashes", CRINKLER_IMAGEBASE + header->GetRawSize(), SYMBOL_IS_SECTION, parts.GetCodePart()[0]));
 
-	if (!m_transform->LinkAndTransform(m_parts, importSymbol, CRINKLER_CODEBASE, phase1, &phase1Untransformed, true))
+	if (!m_transform->LinkAndTransform(parts, importSymbol, CRINKLER_CODEBASE, phase1, &phase1Untransformed, true))
 	{
 		// Transform failed, run again
 		delete phase1;
 		delete phase1Untransformed;
-		m_transform->LinkAndTransform(m_parts, importSymbol, CRINKLER_CODEBASE, phase1, &phase1Untransformed, false);
+		m_transform->LinkAndTransform(parts, importSymbol, CRINKLER_CODEBASE, phase1, &phase1Untransformed, false);
 	}
 	int maxsize = phase1->GetRawSize()*2+1000;	// Allocate plenty of memory	
 	unsigned char* data = new unsigned char[maxsize];
 
 	if (reuseType == REUSE_IMPROVE && reuse != nullptr) {
-		int size = CompressParts4k(phase1, data, maxsize, best_hashsize, nullptr);
-		Hunk *phase2 = FinalLink(m_parts, header, nullptr, hashHunk, phase1, data, size, best_hashsize);
+		int size = CompressParts4k(parts, phase1, data, maxsize, best_hashsize, nullptr);
+		Hunk *phase2 = FinalLink(parts, header, nullptr, hashHunk, phase1, data, size, best_hashsize);
 		reuse_filesize = phase2->GetRawSize();
 		delete phase2;
 
 		printf("\nFile size with reuse parameters: %d\n", reuse_filesize);
 	}
 
-	// Print uncompressed section sizes
+	// Print uncompressed part sizes
 	{
 		int longestName = 0;
-		m_parts.ForEachPart([&longestName](const Part& part, int index) {
+		parts.ForEachPart([&longestName](const Part& part, int index) {
 			longestName = std::max(longestName, (int)strlen(part.GetName()));
 			});
 
-		m_parts.ForEachPart([longestName](const Part& part, int index) {
+		parts.ForEachPart([longestName](const Part& part, int index) {
 			char nameWithColon[512];
 			sprintf(nameWithColon, "%s:", part.GetName());
 			printf("\nUncompressed size of %-*s %10d", longestName + 1, nameWithColon, part.GetLinkedSize());
 			});
 		printf("\n");
 	}
-	
+
 	int* sizefill = new int[maxsize];
 	int size, idealsize = 0;
 	if (m_useTinyHeader || m_compressionType != COMPRESSION_INSTANT)
 	{
 		if (reuseType == REUSE_STABLE && reuse != nullptr) {
 			// Calculate ideal size with reuse parameters
-			idealsize = EvaluatePartsSize4k(phase1);
+			idealsize = EvaluatePartsSize4k(parts, phase1);
 		} else {
 			// Full size estimation and hunk reordering
 			InitProgressBar();
 
-			idealsize = EstimateModels(m_parts, phase1, false, m_useTinyHeader);
+			idealsize = EstimateModels(parts, phase1, false, m_useTinyHeader);
 
 			if (m_hunktries > 0)
 			{
-				EmpiricalHunkSorter::SortHunkList(m_parts, *m_transform, m_saturate != 0, m_hunktries, m_showProgressBar ? &m_windowBar : NULL, m_useTinyHeader);
+				EmpiricalHunkSorter::SortHunkList(parts, *m_transform, m_saturate != 0, m_hunktries, m_showProgressBar ? &m_windowBar : NULL, m_useTinyHeader);
 				delete phase1;
 				delete phase1Untransformed;
-				m_transform->LinkAndTransform(m_parts, importSymbol, CRINKLER_CODEBASE, phase1, &phase1Untransformed, true);
+				m_transform->LinkAndTransform(parts, importSymbol, CRINKLER_CODEBASE, phase1, &phase1Untransformed, true);
 
-				idealsize = EstimateModels(m_parts, phase1, true, m_useTinyHeader);
+				idealsize = EstimateModels(parts, phase1, true, m_useTinyHeader);
 			}
 
 			// Hashing time
 			if (!m_useTinyHeader)
 			{
 				best_hashsize = PreviousPrime(m_hashsize / 2) * 2;
-				best_hashsize = OptimizeHashsize(m_parts, phase1, best_hashsize, m_hashtries);
+				best_hashsize = OptimizeHashsize(parts, phase1, best_hashsize, m_hashtries);
 			}
 
 			DeinitProgressBar();
@@ -1353,17 +1369,16 @@ void Crinkler::Link(const char* filename) {
 
 	if (m_useTinyHeader)
 	{
-		// REFACTOR_TODO
-		// size = Compress1k((unsigned char*)phase1->GetPtr(), phase1->GetRawSize(),data, maxsize, m_modellist1k, sizefill, nullptr);
+		size = Compress1k((unsigned char*)phase1->GetPtr(), phase1->GetRawSize(),data, maxsize, parts.GetCodePart().m_model1k, sizefill, nullptr);
 	}
 	else
 	{
-		size = CompressParts4k(phase1, data, maxsize, best_hashsize, sizefill);
+		size = CompressParts4k(parts, phase1, data, maxsize, best_hashsize, sizefill);
 	}
 	
 	if(!m_useTinyHeader && m_compressionType != COMPRESSION_INSTANT) {
 		int sizeIncludingModels = size;
-		m_parts.ForEachPart([&sizeIncludingModels](Part& part, int index) {
+		parts.ForEachPart([&sizeIncludingModels](Part& part, int index) {
 			if(part.IsInitialized())
 				sizeIncludingModels += 8 + part.m_model4k.nmodels;
 			});
@@ -1371,10 +1386,10 @@ void Crinkler::Link(const char* filename) {
 		printf("Real compressed total size: %d\nBytes lost to hashing: %.2f\n", sizeIncludingModels, byteslost);
 	}
 
-	Hunk *phase2 = FinalLink(m_parts, header, nullptr, hashHunk, phase1, data, size, best_hashsize);
+	Hunk *phase2 = FinalLink(parts, header, nullptr, hashHunk, phase1, data, size, best_hashsize);
 	delete[] data;
 
-	CompressionReportRecord* csr = phase1->GenerateCompressionSummary(m_parts, sizefill);
+	CompressionReportRecord* csr = phase1->GenerateCompressionSummary(parts, sizefill);
 	if(m_printFlags & PRINT_LABELS)
 		VerboseLabels(csr);
 	if(!m_summaryFilename.empty())
@@ -1415,7 +1430,7 @@ void Crinkler::Link(const char* filename) {
 			}
 		}
 		if (write) {
-			reuse = new Reuse(m_parts, best_hashsize);
+			reuse = new Reuse(parts, best_hashsize);
 			reuse->Save(m_reuseFilename.c_str());
 		}
 	}
@@ -1431,15 +1446,15 @@ void Crinkler::Link(const char* filename) {
 	delete phase2;
 }
 
-int	Crinkler::EvaluatePartsSize4k(Hunk* phase1) {
-	const int numInitializedParts = m_parts.GetNumInitializedParts();
+int	Crinkler::EvaluatePartsSize4k(PartList& parts, Hunk* phase1) {
+	const int numInitializedParts = parts.GetNumInitializedParts();
 	std::vector<ModelList4k*> modelLists(numInitializedParts);
 	std::vector<int> partSizes(numInitializedParts);
 	std::vector<int> compressedPartSizes(numInitializedParts);
 
 	for (int i = 0; i < numInitializedParts; i++)
 	{
-		Part& part = m_parts[i];
+		Part& part = parts[i];
 		modelLists[i] = &part.m_model4k;
 		partSizes[i] = part.GetLinkedSize();
 	}
@@ -1449,21 +1464,21 @@ int	Crinkler::EvaluatePartsSize4k(Hunk* phase1) {
 	printf("\n");
 	for (int i = 0; i < numInitializedParts; i++)
 	{
-		printf("Ideal compressed size of %s: %.2f\n", m_parts[i].GetName(), compressedPartSizes[i] / (float)(BIT_PRECISION * 8));
+		printf("Ideal compressed size of %s: %.2f\n", parts[i].GetName(), compressedPartSizes[i] / (float)(BIT_PRECISION * 8));
 	}
 	printf("Ideal compressed total size: %.2f\n", size / (float)(BIT_PRECISION * 8));
 
 	return size;
 }
 
-int Crinkler::CompressParts4k(Hunk* phase1, unsigned char* outCompressedData, int maxCompressedSize, int hashsize, int* sizefill) {
-	const int numInitializedParts = m_parts.GetNumInitializedParts();
+int Crinkler::CompressParts4k(PartList& parts, Hunk* phase1, unsigned char* outCompressedData, int maxCompressedSize, int hashsize, int* sizefill) {
+	const int numInitializedParts = parts.GetNumInitializedParts();
 	std::vector<ModelList4k*> modelLists(numInitializedParts);
 	std::vector<int> partSizes(numInitializedParts);
 
 	for (int i = 0; i < numInitializedParts; i++)
 	{
-		Part& part = m_parts[i];
+		Part& part = parts[i];
 		modelLists[i] = &part.m_model4k;
 		partSizes[i] = part.GetLinkedSize();
 	}
@@ -1485,11 +1500,14 @@ Hunk *Crinkler::FinalLink(PartList& parts, Hunk *header, Hunk *depacker, Hunk *h
 	}
 
 	PartList phase2parts;
-	phase2parts.GetCodePart().AddHunkBack(new Hunk(*header));
-	if (depacker) phase2parts.GetCodePart().AddHunkBack(new Hunk(*depacker));
-	if (hashHunk) phase2parts.GetDataPart().AddHunkBack(new Hunk(*hashHunk));
-	if (modelHunk) phase2parts.GetDataPart().AddHunkBack(modelHunk);
-	phase2parts[1].AddHunkBack(phase1Compressed);
+	Part& part = phase2parts.GetCodePart();
+
+	part.AddHunkBack(new Hunk(*header));
+	if (depacker) part.AddHunkBack(new Hunk(*depacker));
+	if (hashHunk) part.AddHunkBack(new Hunk(*hashHunk));
+	if (modelHunk) part.AddHunkBack(modelHunk);
+	part.AddHunkBack(phase1Compressed);
+
 	Hunk* phase2 = phase2parts.Link("final", CRINKLER_IMAGEBASE);
 	int subsystemVersion = (m_subsystem == SUBSYSTEM_WINDOWS ? IMAGE_SUBSYSTEM_WINDOWS_GUI : IMAGE_SUBSYSTEM_WINDOWS_CUI);
 

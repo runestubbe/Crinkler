@@ -9,7 +9,7 @@ bool LTCGLoader::Clicks(const char* data, int size) const {
 	return false;
 }
 
-bool LTCGLoader::Load(PartList& parts, const char* data, int size, const char* module, bool inLibrary) {
+bool LTCGLoader::Load(Part& part, const char* data, int size, const char* module, bool inLibrary) {
 	Log::Error(module, "Link-time code generation is not supported. Disable the 'Whole Program Optimization' option.");
 	return false;
 }

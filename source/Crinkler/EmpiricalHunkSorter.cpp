@@ -70,6 +70,8 @@ int EmpiricalHunkSorter::TryHunkCombination(PartList& parts, Transform& transfor
 	int totalsize = 0;
 	if (use1KMode)
 	{
+		assert(parts.GetNumInitializedParts() == 1);
+
 		int max_size = phase1->GetRawSize() * 2 + 1000;
 		unsigned char* compressed_data_ptr = new unsigned char[max_size];
 		Compress1k((unsigned char*)phase1->GetPtr(), phase1->GetRawSize(), compressed_data_ptr, max_size, parts[0].m_model1k, nullptr, &totalsize);	//TODO: Estimate instead of compress

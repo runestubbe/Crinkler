@@ -50,7 +50,7 @@ bool CoffObjectLoader::Clicks(const char* data, int size) const {
 	return *(unsigned short*)data == IMAGE_FILE_MACHINE_I386;
 }
 
-bool CoffObjectLoader::Load(PartList& parts, const char* data, int size, const char* module, bool inLibrary) {
+bool CoffObjectLoader::Load(Part& part, const char* data, int size, const char* module, bool inLibrary) {
 	const char* ptr = data;
 
 	// Header
@@ -69,7 +69,7 @@ bool CoffObjectLoader::Load(PartList& parts, const char* data, int size, const c
 		char hunkName[1000];
 		sprintf_s(hunkName, 1000, "c[%s]!constants", module);
 		constantsHunk = new Hunk(hunkName, 0, 0, 1, 0, 0);
-		parts.GetUninitializedPart().AddHunkBack(constantsHunk);
+		part.AddHunkBack(constantsHunk);
 	}
 
 	
@@ -97,14 +97,8 @@ bool CoffObjectLoader::Load(PartList& parts, const char* data, int size, const c
 
 		LinearHunkList[i] = hunk;
 
-		if (flags & HUNK_IS_CODE)
-			parts.GetCodePart().AddHunkBack(hunk);
-		else if (isInitialized)
-			parts.GetDataPart().AddHunkBack(hunk);
-		else
-			parts.GetUninitializedPart().AddHunkBack(hunk);
+		part.AddHunkBack(hunk);
 		
-
 		// Relocations
 		const IMAGE_RELOCATION* relocs = (const IMAGE_RELOCATION*) (data + sectionHeaders[i].PointerToRelocations);
 		int nRelocs = sectionHeaders[i].PointerToRelocations ? sectionHeaders[i].NumberOfRelocations : 0;
@@ -184,7 +178,7 @@ bool CoffObjectLoader::Load(PartList& parts, const char* data, int size, const c
 			uninitHunk->AddSymbol(s);
 			if (inLibrary)
 				constantsHunk->MarkHunkAsLibrary();
-			parts.GetUninitializedPart().AddHunkBack(uninitHunk);
+			part.AddHunkBack(uninitHunk);
 		} else if(sym->SectionNumber == 0 && sym->StorageClass == IMAGE_SYM_CLASS_WEAK_EXTERNAL && sym->Value == 0) {
 			// Weak external
 			const IMAGE_AUX_SYMBOL* aux = (const IMAGE_AUX_SYMBOL*) (sym+1);
@@ -206,6 +200,6 @@ bool CoffObjectLoader::Load(PartList& parts, const char* data, int size, const c
 	}
 
 	// Trim hunks	
-	parts.ForEachHunk([](Hunk* hunk) { hunk->Trim(); });
+	part.ForEachHunk([](Hunk* hunk) { hunk->Trim(); });
 	return true;
 }

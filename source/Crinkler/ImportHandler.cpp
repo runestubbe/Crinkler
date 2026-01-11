@@ -450,7 +450,7 @@ static Hunk* ForwardImport(Hunk* hunk) {
 	return hunk;
 }
 
-void ImportHandler::AddImportHunks4K(PartList& parts, Hunk*& hashHunk, map<string, string>& fallbackDlls, const vector<string>& rangeDlls, bool verbose, bool& enableRangeImport) {
+void ImportHandler::AddImportHunks4K(Part& part, Hunk*& hashHunk, map<string, string>& fallbackDlls, const vector<string>& rangeDlls, bool verbose, bool& enableRangeImport) {
 	if(verbose)
 		printf("\n-Imports----------------------------------\n");
 
@@ -459,7 +459,7 @@ void ImportHandler::AddImportHunks4K(PartList& parts, Hunk*& hashHunk, map<strin
 	
 	// Fill list for import hunks
 	enableRangeImport = false;
-	parts.ForEachHunk([&rangeDlls, &importHunks, &usedRangeDlls, &enableRangeImport](Hunk* hunk)
+	part.ForEachHunk([&rangeDlls, &importHunks, &usedRangeDlls, &enableRangeImport](Hunk* hunk)
 		{
 			if(hunk->GetFlags() & HUNK_IS_IMPORT) {
 				hunk = ForwardImport(hunk);
@@ -591,19 +591,23 @@ void ImportHandler::AddImportHunks4K(PartList& parts, Hunk*& hashHunk, map<strin
 	hashHunk = new Hunk("HashHunk", (char*)hashes.data(), 0, 0, int(hashes.size()*sizeof(unsigned int)), int(hashes.size()*sizeof(unsigned int)));
 	
 	// Add new hunks
-	parts.GetUninitializedPart().AddHunkBack(importList);
+	part.AddHunkBack(importList);
 
 	Hunk* dllNamesHunk = new Hunk("DllNames", dllNames, HUNK_IS_WRITEABLE | HUNK_IS_LEADING, 0, int(dllNamesPtr - dllNames), int(dllNamesPtr - dllNames));
 	dllNamesHunk->AddSymbol(new Symbol(".data", 0, SYMBOL_IS_RELOCATEABLE|SYMBOL_IS_SECTION, dllNamesHunk, "crinkler import"));
 	dllNamesHunk->AddSymbol(new Symbol("_DLLNames", 0, SYMBOL_IS_RELOCATEABLE, dllNamesHunk));
-	parts.GetDataPart().AddHunkBack(dllNamesHunk);
+	part.AddHunkBack(dllNamesHunk);
 
-	parts.RemoveMatchingHunks([](Hunk* hunk) {
-		return hunk->GetFlags() & HUNK_IS_IMPORT;
+	part.RemoveMatchingHunks([](Hunk* hunk) {
+		if (hunk->GetFlags() & HUNK_IS_IMPORT) {
+			delete hunk;
+			return true;
+		}
+		return false;
 		});
 }
 
-void ImportHandler::AddImportHunks1K(PartList& parts, bool verbose, int& hash_bits, int& max_dll_name_length) {
+void ImportHandler::AddImportHunks1K(Part& part, bool verbose, int& hash_bits, int& max_dll_name_length) {
 	if (verbose)
 	{
 		printf("\n-Imports----------------------------------\n");
@@ -615,7 +619,7 @@ void ImportHandler::AddImportHunks1K(PartList& parts, bool verbose, int& hash_bi
 	bool found_kernel32 = false;
 
 	// Fill list for import hunks
-	parts.ForEachHunk([&found_kernel32, &dll_set, &importHunks](Hunk* hunk) {
+	part.ForEachHunk([&found_kernel32, &dll_set, &importHunks](Hunk* hunk) {
 		if(hunk->GetFlags() & HUNK_IS_IMPORT)
 		{
 			hunk = ForwardImport(hunk);
@@ -690,8 +694,8 @@ void ImportHandler::AddImportHunks1K(PartList& parts, bool verbose, int& hash_bi
 
 	Hunk* dllNamesHunk = new Hunk("DllNames", dllnames.c_str(), HUNK_IS_WRITEABLE | HUNK_IS_LEADING, 0, (int)dllnames.size() + 1, (int)dllnames.size() + 1);
 	dllNamesHunk->AddSymbol(new Symbol("_DLLNames", 0, SYMBOL_IS_RELOCATEABLE, dllNamesHunk));
-	parts.GetDataPart().AddHunkBack(dllNamesHunk);
-	parts.GetUninitializedPart().AddHunkBack(importList);
+	part.AddHunkBack(dllNamesHunk);
+	part.AddHunkBack(importList);
 	max_dll_name_length = max_name_length;
 
 	printf(
@@ -703,7 +707,11 @@ void ImportHandler::AddImportHunks1K(PartList& parts, bool verbose, int& hash_bi
 		"normal import mechanism (without the TINYIMPORT option).\n"
 	);
 
-	parts.RemoveMatchingHunks([](Hunk* hunk) {
-		return hunk->GetFlags() & HUNK_IS_IMPORT;
+	part.RemoveMatchingHunks([](Hunk* hunk) {
+		if (hunk->GetFlags() & HUNK_IS_IMPORT) {
+			delete hunk;
+			return true;
+		}
+		return false;
 		});
 }

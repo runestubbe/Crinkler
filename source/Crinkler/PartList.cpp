@@ -40,6 +40,10 @@ void Part::RemoveHunk(Hunk* hunk) {
 		m_hunks.erase(it);
 }
 
+void Part::Clear() {
+	m_hunks.clear();
+}
+
 void Part::ForEachHunk(std::function<void(Hunk*)> fun)
 {
 	for(Hunk* hunk : m_hunks)
@@ -77,22 +81,105 @@ bool Part::ForEachHunkWithBreak(std::function<bool(Part&,Hunk*,Hunk*)> fun)
 	return false;
 }
 
+Symbol* Part::FindUndecoratedSymbol(const char* name, int* out_level) {
+	// Weak libs (0) < weak (1) < libs (2) < normal (3)
+	int best_level = -1;
+	Symbol* res = NULL;
+
+	ForEachHunk([&](Hunk* hunk) {
+		Symbol* s = hunk->FindUndecoratedSymbol(name);
+		if (s != NULL) {
+			int level = 0;
+			if (s->fromLibrary) {
+				if (s->secondaryName.empty()) {
+					level = 2;
+				} else {
+					level = 0;
+				}
+			} else {
+				if (s->secondaryName.empty()) {
+					level = 3;
+				} else {
+					level = 1;
+				}
+			}
+			if (level > best_level) {
+				best_level = level;
+				res = s;
+			}
+		}
+	});
+
+	if (out_level)
+		*out_level = best_level;
+
+	return res;
+}
+
+Symbol* Part::FindSymbol(const char* name) {
+	Symbol* res = NULL;
+	ForEachHunk([name, &res](Hunk* hunk) {
+		Symbol* s = hunk->FindSymbol(name);
+		if (s != NULL) {
+			res = s;
+			if (s->secondaryName.size() == 0)
+				return false;
+		}
+		return true;
+		});
+
+	return res;
+}
+
 void Part::RemoveMatchingHunks(std::function<bool(Hunk*)> fun)
 {
-	for (vector<Hunk*>::iterator it = m_hunks.begin(); it != m_hunks.end();) {
-		if (fun(*it)) {
-			delete* it;
-			it = m_hunks.erase(it);
-		} else {
-			it++;
+	m_hunks.erase(std::remove_if(m_hunks.begin(), m_hunks.end(), fun), m_hunks.end());
+}
+
+void Part::DeleteUnreferencedHunks(vector<Hunk*> startHunks) {
+	stack<Hunk*> stak;
+	for (Hunk* hunk : startHunks) {
+		hunk->m_numReferences++;
+		stak.push(hunk);
+	}
+
+	// Mark reachable hunks
+	while (stak.size() > 0) {
+		Hunk* h = stak.top();
+		stak.pop();
+
+		for (Relocation& relocation : h->m_relocations) {
+			Symbol* s = FindSymbol(relocation.symbolname.c_str());
+
+			if (s) {
+				if (s->secondaryName.size() > 0) {	// Weak symbol
+					s->hunk->m_numReferences++;
+					s = FindSymbol(s->secondaryName.c_str());
+					if (s == NULL)
+						continue;
+				}
+				if (s->hunk->m_numReferences++ == 0) {
+					stak.push(s->hunk);
+				}
+			}
 		}
 	}
+
+	// Delete unreferenced hunks
+	RemoveMatchingHunks([&](Hunk* hunk) {
+		if (hunk->GetNumReferences() == 0) {
+			delete hunk;
+			return true;
+		}
+		return false;
+		});
+
 }
+
 
 PartList::PartList()
 {
 	m_parts.push_back(new Part("Code", true));
-	m_parts.push_back(new Part("Data", true));
 	m_parts.push_back(new Part("Uninitialized", false));
 }
 
@@ -100,13 +187,6 @@ PartList::~PartList()
 {
 	for (Part* part : m_parts)
 		delete part;
-}
-
-void PartList::Clear()
-{
-	for (Part* part : m_parts)
-		delete part;
-	m_parts.clear();
 }
 
 Part& PartList::operator[] (unsigned idx)
@@ -182,6 +262,14 @@ void PartList::ForEachPart(std::function<void(const Part&, int)> fun) const
 	{
 		fun(*part, index++);
 	}
+}
+
+bool PartList::IsEmpty() const
+{
+	for (Part* part : m_parts)
+		if (!part->IsEmpty())
+			return false;
+	return true;
 }
 
 void PartList::RemoveMatchingHunks(std::function<bool(Hunk*)> fun)
@@ -348,35 +436,17 @@ Hunk* PartList::Link(const char* name, int baseAddress) {
 }
 
 Symbol* PartList::FindUndecoratedSymbol(const char* name) {
-	// Weak libs (0) < weak (1) < libs (2) < normal (3)
 	int best_level = -1;
 	Symbol* res = NULL;
 
-	ForEachHunk([&](Hunk* hunk)
-	{
-		Symbol* s = hunk->FindUndecoratedSymbol(name);
-		if(s != NULL) {
-			int level = 0;
-			if(s->fromLibrary) {
-				if(s->secondaryName.empty()) {
-					level = 2;
-				} else {
-					level = 0;
-				}
-			} else {
-				if(s->secondaryName.empty()) {
-					level = 3;
-				} else {
-					level = 1;
-				}
-			}
-			if(level > best_level) {
-				best_level = level;
-				res = s;
-			}
+	for (Part* part : m_parts) {
+		int new_level;
+		Symbol* new_symbol = part->FindUndecoratedSymbol(name, &new_level);
+		if (new_level > best_level) {
+			res = new_symbol;
+			best_level = new_level;
 		}
-		return true;
-	});
+	}
 
 	return res;
 }
@@ -396,38 +466,18 @@ Symbol* PartList::FindSymbol(const char* name) {
 	return res;
 }
 
-void PartList::RemoveUnreferencedHunks(vector<Hunk*> startHunks) {
-	stack<Hunk*> stak;
-	for(Hunk* hunk : startHunks) {
-		hunk->m_numReferences++;
-		stak.push(hunk);
+int	PartList::FindBestPartIndex(Hunk* hunk) const
+{
+	assert(m_parts.size() >= 2);
+
+	if (hunk->GetRawSize() == 0) {
+		assert(!m_parts.back()->m_initialized);
+		return int(m_parts.size() - 1);
+	} else if (m_parts.size() == 2 || (hunk->GetFlags() & HUNK_IS_CODE)) {
+		assert(m_parts[0]->m_initialized);
+		return 0;
+	} else {
+		assert(m_parts[1]->m_initialized);
+		return 1;
 	}
-
-	// Mark reachable hunks
-	while(stak.size() > 0) {
-		Hunk* h = stak.top();
-		stak.pop();
-
-		for(Relocation& relocation : h->m_relocations) {
-			Symbol* s = FindSymbol(relocation.symbolname.c_str());
-			
-			if(s) {
-				if(s->secondaryName.size() > 0)	{	// Weak symbol
-					s->hunk->m_numReferences++;
-					s = FindSymbol(s->secondaryName.c_str());
-					if(s == NULL)
-						continue;
-				}
-				if(s->hunk->m_numReferences++ == 0) {
-					stak.push(s->hunk);
-				}
-			}
-		}
-	}
-
-	// Delete unreferenced hunks
-	RemoveMatchingHunks([&](Hunk* hunk) {
-		return hunk->GetNumReferences() == 0;
-		});
-	
 }

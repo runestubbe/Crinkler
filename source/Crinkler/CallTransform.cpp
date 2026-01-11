@@ -9,8 +9,8 @@
 Hunk* CallTransform::GetDetransformer() {
 	CoffObjectLoader loader;
 	PartList partlist;
-	loader.Load(partlist, calltransObj, int(calltransObj_end - calltransObj), "call detransform");
-	return partlist.Link("call detransformer", 0);	// RUNE_TODO
+	loader.Load(partlist.GetCodePart(), calltransObj, int(calltransObj_end - calltransObj), "call detransform");
+	return partlist.Link("call detransformer", 0);
 }
 
 bool CallTransform::DoTransform(Hunk* hunk, int codeSize, bool verbose) {

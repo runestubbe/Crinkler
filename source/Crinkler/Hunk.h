@@ -81,6 +81,7 @@ struct Relocation {
 };
 
 class Hunk {
+	friend class Part;
 	friend class PartList;
 
 	int				m_alignmentBits;

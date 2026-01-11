@@ -2,7 +2,7 @@
 #include "MemoryFile.h"
 #include "HunkLoader.h"
 
-bool HunkLoader::LoadFromFile(PartList& parts, const char* filename) {
+bool HunkLoader::LoadFromFile(Part& part, const char* filename) {
 	MemoryFile mf(filename);
-	return Load(parts, mf.GetPtr(), mf.GetSize(), filename, false);
+	return Load(part, mf.GetPtr(), mf.GetSize(), filename, false);
 }

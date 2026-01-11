@@ -242,7 +242,6 @@
       <Optimization Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">MaxSpeed</Optimization>
       <Optimization Condition="'$(Configuration)|$(Platform)'=='Release|x64'">MaxSpeed</Optimization>
     </ClCompile>
-    <ClCompile Include="ExplicitHunkSorter.cpp" />
     <ClCompile Include="Export.cpp" />
     <ClCompile Include="Fix.cpp" />
     <ClCompile Include="HtmlReport.cpp" />
@@ -282,7 +281,6 @@
     <ClInclude Include="Crinkler.h" />
     <ClInclude Include="data.h" />
     <ClInclude Include="distorm.h" />
-    <ClInclude Include="ExplicitHunkSorter.h" />
     <ClInclude Include="Export.h" />
     <ClInclude Include="Fix.h" />
     <ClInclude Include="HtmlReport.h" />

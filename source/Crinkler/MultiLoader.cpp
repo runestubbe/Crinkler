@@ -25,10 +25,10 @@ bool MultiLoader::Clicks(const char* data, int size) const {
 	return false;
 }
 
-bool MultiLoader::Load(PartList& parts, const char* data, int size, const char* module, bool inLibrary) {
+bool MultiLoader::Load(Part& part, const char* data, int size, const char* module, bool inLibrary) {
 	for(HunkLoader* loader : m_loaders) {
 		if(loader->Clicks(data, size))
-			return loader->Load(parts, data, size, module, inLibrary);
+			return loader->Load(part, data, size, module, inLibrary);
 	}
 	return false;
 }

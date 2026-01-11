@@ -34,7 +34,7 @@ public:
 	ModelList4k		m_model4k;
 	bool			m_initialized;
 
-	int				m_compressedSize;	//TODO: fix me
+	int				m_compressedSize;
 
 	Hunk*&			operator[] (unsigned idx);
 	Hunk* const&	operator[] (unsigned idx) const;
@@ -42,10 +42,10 @@ public:
 	void			AddHunkBack(Hunk* hunk);
 	void			AddHunkFront(Hunk* hunk);
 
-	void			Clear();
-	
 	void			InsertHunk(int index, Hunk* hunk);
 	void			RemoveHunk(Hunk* hunk);
+
+	void			Clear();
 
 	const char*		GetName() const { return m_name.c_str(); }
 	int				GetNumHunks() const { return (int)m_hunks.size(); }
@@ -54,22 +54,24 @@ public:
 	int				GetCompressedSize() const { return m_compressedSize; }
 
 	bool			IsInitialized() const { return m_initialized; }
+	bool			IsEmpty() const { return m_hunks.size() == 0; }
 
 	void			ForEachHunk(std::function<void(Hunk*)> fun);
 	void			ForEachHunk(std::function<void(Part&, Hunk*, Hunk*)> fun);
 	bool			ForEachHunkWithBreak(std::function<bool(Hunk*)> fun);
 	bool			ForEachHunkWithBreak(std::function<bool(Part&, Hunk*, Hunk*)> fun);
 
+	Symbol*			FindSymbol(const char* name);
+	Symbol*			FindUndecoratedSymbol(const char* name, int* out_level = nullptr);
+
+	void			DeleteUnreferencedHunks(std::vector<Hunk*> startHunks);
+
 	void			RemoveMatchingHunks(std::function<bool(Hunk*)> fun);
 };
 
-// Invariant: part list always contains at least code, data and bss parts
 class PartList {
 	std::vector<Part*>	m_parts;
 public:
-	static const size_t CODE_PART_INDEX = 0;
-	static const size_t DATA_PART_INDEX = 1;
-
 	PartList();
 	~PartList();
 	Part& operator[] (unsigned idx);
@@ -77,10 +79,7 @@ public:
 
 	Part&	GetOrAddPart(const char* name, bool initialized);
 
-	void	Clear();
-
-	Part&	GetCodePart() const{ return *m_parts[CODE_PART_INDEX]; }
-	Part&	GetDataPart() const { return *m_parts[DATA_PART_INDEX]; }
+	Part&	GetCodePart() const{ return *m_parts[0]; }
 	Part&	GetUninitializedPart() const{ return *m_parts.back(); }
 
 	int		GetNumParts() const { return (int)m_parts.size(); }
@@ -94,6 +93,8 @@ public:
 	void	ForEachPart(std::function<void(Part&, int)> fun);
 	void	ForEachPart(std::function<void(const Part&, int)> fun) const;
 
+	bool	IsEmpty() const;
+
 	Hunk*	Link(const char* name, int baseAddress);
 
 	Symbol* FindSymbol(const char* name);
@@ -101,7 +102,8 @@ public:
 
 	void	RemoveMatchingHunks(std::function<bool(Hunk*)> fun);
 	void	RemoveHunk(Hunk* hunk);
-	void	RemoveUnreferencedHunks(std::vector<Hunk*> startHunks);
+
+	int		FindBestPartIndex(Hunk* hunk) const;
 
 	bool	NeedsContinuationJump(Hunk* hunk, Hunk* nextHunk) const;
 };

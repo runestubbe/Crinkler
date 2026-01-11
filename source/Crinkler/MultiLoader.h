@@ -12,7 +12,7 @@ public:
 	~MultiLoader();
 
 	bool	Clicks(const char* data, int size) const;
-	bool	Load(PartList& parts, const char* data, int size, const char* module, bool inLibrary = false);
+	bool	Load(Part& part, const char* data, int size, const char* module, bool inLibrary = false);
 };
 
 #endif

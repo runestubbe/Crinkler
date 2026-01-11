@@ -6,7 +6,6 @@
 #include "../Compressor/ModelList.h"
 #include "Hunk.h"
 #include "PartList.h"
-#include "ExplicitHunkSorter.h"
 
 enum ReuseType {
 	REUSE_OFF, REUSE_WRITE, REUSE_IMPROVE, REUSE_STABLE
@@ -43,15 +42,18 @@ class Reuse {
 	int m_hashsize;
 
 	friend Reuse* LoadReuseFile(const char *filename);
-	friend void ExplicitHunkSorter::SortHunks(PartList& parts, Reuse *reuse);
 
 public:
 	Reuse();
 	Reuse(PartList& parts, int hashsize);
 
+	void				PartsFromHunkList(PartList& parts, Part& hunkList);
+
 	int					GetHashSize() const { return m_hashsize; }
 
 	void				Save(const char* filename) const;
+
+	
 };
 
 Reuse* LoadReuseFile(const char *filename);

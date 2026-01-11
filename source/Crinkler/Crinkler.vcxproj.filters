@@ -131,9 +131,6 @@
     <ClCompile Include="Reuse.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="ExplicitHunkSorter.cpp">
-      <Filter>HunkSorters</Filter>
-    </ClCompile>
     <ClCompile Include="LTCGLoader.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -249,9 +246,6 @@
     </ClInclude>
     <ClInclude Include="Reuse.h">
       <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="ExplicitHunkSorter.h">
-      <Filter>HunkSorters</Filter>
     </ClInclude>
     <ClInclude Include="Misc.h">
       <Filter>Utility</Filter>

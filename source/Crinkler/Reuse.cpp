@@ -5,6 +5,7 @@
 #include "StringMisc.h"
 
 #include <algorithm>
+#include <unordered_map>
 
 enum State {
 	INITIAL, MODELS, SECTIONS, HASHSIZE
@@ -146,4 +147,53 @@ void Reuse::Save(const char *filename) const {
 		fprintf(f, "%d\n", m_hashsize);
 	}
 	fclose(f);
+}
+
+static std::vector<Hunk*> PickHunks(const std::vector<std::string>& ids, std::unordered_map<std::string, Hunk*>& hunk_by_id) {
+	std::vector<Hunk*> hunks;
+	for (const std::string& id : ids) {
+		auto hunk_it = hunk_by_id.find(id);
+		if (hunk_it != hunk_by_id.end()) {
+			hunks.push_back(hunk_it->second);
+			hunk_by_id.erase(hunk_it);
+		} else {
+			Log::Warning("", "Reused section not present: %s", id.c_str());
+		}
+	}
+	return hunks;
+}
+
+void Reuse::PartsFromHunkList(PartList& parts, Part& hunkList) {
+	std::unordered_map<std::string, Hunk*> hunk_by_id;
+	hunkList.ForEachHunk([&hunk_by_id](Hunk* hunk) { hunk_by_id[hunk->GetID()] = hunk; });
+
+	std::vector<std::vector<Hunk*>> part_hunks;
+	for (ReusePart& reuse_part : m_parts) {
+		part_hunks.push_back(PickHunks(reuse_part.m_hunk_ids, hunk_by_id));
+	}
+	
+	hunkList.ForEachHunk([&parts, &part_hunks, &hunk_by_id](Hunk* hunk) {
+		const std::string& id = hunk->GetID();
+		auto hunk_it = hunk_by_id.find(id);
+		if (hunk_it != hunk_by_id.end()) {
+			int part_index = parts.FindBestPartIndex(hunk);			
+			part_hunks[part_index].push_back(hunk);
+
+			Log::Warning("", "Section not present in reuse file: %s (added to %s)", id.c_str(), parts[part_index].GetName());
+			hunk_by_id.erase(hunk_it);
+		}
+	});
+	
+	// Copy hunks back to parts
+	assert(parts.IsEmpty());
+	for (size_t i = 0; i < m_parts.size(); i++) {
+		ReusePart& reuse_part = m_parts[i];
+		Part& part = parts.GetOrAddPart(reuse_part.m_name.c_str(), reuse_part.m_initialized);
+		for (Hunk* hunk : part_hunks[i]) {
+			part.AddHunkBack(hunk);
+		}
+		if (part.m_initialized) {
+			part.m_model4k = *reuse_part.m_models;
+		}
+	}
 }

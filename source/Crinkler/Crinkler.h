@@ -39,7 +39,7 @@ static const int CRINKLER_LINKER_VERSION = 0x3033;
 
 class Crinkler {
 	MultiLoader							m_hunkLoader;
-	PartList							m_parts;
+	Part								m_hunkList;
 	std::string							m_entry;
 	std::string							m_summaryFilename;
 	std::string							m_reuseFilename;
@@ -76,8 +76,8 @@ class Crinkler {
 	Symbol*	FindEntryPoint();
 	void RemoveUnreferencedHunks(Hunk* base);
 	std::string GetEntrySymbolName() const;
-	void ReplaceDlls(PartList& parts);
-	void OverrideAlignments(PartList& parts);
+	void ReplaceDlls(Part& part);
+	void OverrideAlignments(Part& part);
 
 	void LoadImportCode(bool use1kMode, bool useSafeImporting, bool useDllFallback, bool useRangeImport);
 	Hunk* CreateModelHunk4k(PartList& parts);
@@ -85,8 +85,8 @@ class Crinkler {
 	void InitProgressBar();
 	void DeinitProgressBar();
 
-	int EvaluatePartsSize4k(Hunk* phase1);
-	int CompressParts4k(Hunk* phase1, unsigned char* outCompressedData, int maxCompressedSize, int hashsize, int* sizefill);
+	int EvaluatePartsSize4k(PartList& parts, Hunk* phase1);
+	int CompressParts4k(PartList& parts, Hunk* phase1, unsigned char* outCompressedData, int maxCompressedSize, int hashsize, int* sizefill);
 	Hunk *FinalLink(PartList& parts, Hunk *header, Hunk *depacker, Hunk *hashHunk, Hunk *phase1, unsigned char *data, int size, int hashsize);
 
 	int OptimizeHashsize(PartList& parts, Hunk* phase1, int hashsize, int tries);

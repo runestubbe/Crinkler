@@ -9,7 +9,7 @@ class Hunk;
 class CoffLibraryLoader : public HunkLoader {
 public:
 	virtual bool	Clicks(const char* data, int size) const;
-	virtual bool	Load(PartList& parts, const char* data, int size, const char* module, bool inLibrary = false);
+	virtual bool	Load(Part& part, const char* data, int size, const char* module, bool inLibrary = false);
 };
 
 Hunk* MakeCallStub(const char* name);
