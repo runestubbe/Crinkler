@@ -1,16 +1,26 @@
 
 Manual:
+	Reformulate code/data into parts
+	/TEXTPART
+	New reuse modes
+	Report measure
 	describe model masks
 	test standard library chapter validity
 	/QIfist?
 
 License:
 
+Test:
+	The Explorer?
+	More?
+
 Report:
-	size of selected range
-	print number of models
-	print time spent
 	Choose label belonging to section of origin
+	Unfold target of label when clicked
+	Drop tooltip?
+	Models for each part
+	Reuse mode?
+	Time spent
 	Copy calltrans header to untransformed for correct disassembly of number
 	highlight of truncated floats and absolute jump offsets
 	automatic labels at referred positions unless inside instruction
@@ -32,6 +42,7 @@ Output/UI:
 	ProgressGUI crashes if you have DisplayFusion installed
 
 Linker:
+	Eliminate trailing jump to next section
 	Test for name containing crinkler instead of exact
 	Load obj files before lib files
 	Broken MASM lib files from jin_x
