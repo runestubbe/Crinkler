@@ -7,6 +7,9 @@
 #include <algorithm>
 #include <unordered_map>
 
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
+
 enum State {
 	INITIAL, MODELS, SECTIONS, HASHSIZE
 };
@@ -206,4 +209,140 @@ bool Reuse::PartsFromHunkList(PartList& parts, Part& hunkList) {
 	}
 
 	return mismatch;
+}
+
+
+static INT_PTR CALLBACK ReuseDialogProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
+	switch (uMsg) {
+	case WM_INITDIALOG:
+		return TRUE;
+	case WM_COMMAND:
+		{
+			int id = LOWORD(wParam);
+			if (id == IDCANCEL) {
+				EndDialog(hwnd, REUSE_DEFAULT);
+				return TRUE;
+			}
+			if (id >= 100) {
+				EndDialog(hwnd, id - 100);
+				return TRUE;
+			}
+		}
+		break;
+	case WM_CLOSE:
+		EndDialog(hwnd, REUSE_DEFAULT);
+		return TRUE;
+	}
+	return FALSE;
+}
+
+// Helper to align data on DWORD boundary
+static LPWORD lpwAlign(LPWORD lpIn) {
+	ULONG_PTR ul = (ULONG_PTR)lpIn;
+	ul += 3;
+	ul >>= 2;
+	ul <<= 2;
+	return (LPWORD)ul;
+}
+
+#pragma pack(push, 1)
+typedef struct {
+	DWORD style;
+	DWORD dwExtendedStyle;
+	WORD cdit;
+	short x;
+	short y;
+	short cx;
+	short cy;
+} MyDLGTEMPLATE;
+
+typedef struct {
+	DWORD style;
+	DWORD dwExtendedStyle;
+	short x;
+	short y;
+	short cx;
+	short cy;
+	WORD id;
+} MyDLGITEMTEMPLATE;
+#pragma pack(pop)
+
+ReuseType AskForReuseMode() {
+	HGLOBAL hgbl;
+	MyDLGTEMPLATE* lpdt;
+	MyDLGITEMTEMPLATE* lpdit;
+	LPWORD lpw;
+	LPWSTR lpwsz;
+	int nchar;
+
+	hgbl = GlobalAlloc(GMEM_ZEROINIT, 4096);
+	if (!hgbl) return REUSE_DEFAULT;
+
+	lpdt = (MyDLGTEMPLATE*)GlobalLock(hgbl);
+
+	// Define a dialog box.
+	lpdt->style = WS_POPUP | WS_BORDER | WS_SYSMENU | DS_MODALFRAME | WS_CAPTION | DS_CENTER | WS_VISIBLE;
+	lpdt->cdit = (REUSE_ALL - REUSE_OFF + 1) * 2;         // Number of controls
+	lpdt->x = 0;  lpdt->y = 0;
+	lpdt->cx = 190; lpdt->cy = 110;
+
+	lpw = (LPWORD)(lpdt + 1);
+	*lpw++ = 0;             // No menu
+	*lpw++ = 0;             // Predefined dialog box class (by default)
+
+	lpwsz = (LPWSTR)lpw;
+	nchar = MultiByteToWideChar(CP_ACP, 0, "Select Reuse Mode", -1, lpwsz, 50);
+	lpw += nchar;
+
+	for (int i = REUSE_OFF; i <= REUSE_ALL; i++) {
+		ReuseType type = (ReuseType)i;
+		const char* text = ReuseTypeName(type);
+		const char* desc = ReuseTypeDescription(type);
+		int y = 8 + i * 16;
+
+		// Button
+		lpw = lpwAlign(lpw);
+		lpdit = (MyDLGITEMTEMPLATE*)lpw;
+		lpdit->x = 10; lpdit->y = (short)y;
+		lpdit->cx = 50; lpdit->cy = 13;
+		lpdit->id = (WORD)(i + 100);
+		lpdit->style = WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON;
+
+		lpw = (LPWORD)(lpdit + 1);
+		*lpw++ = 0xFFFF;
+		*lpw++ = 0x0080;        // Button class
+
+		std::string buttonText = "&";
+		buttonText += text;
+		lpwsz = (LPWSTR)lpw;
+		nchar = MultiByteToWideChar(CP_ACP, 0, buttonText.c_str(), -1, lpwsz, 50);
+		lpw += nchar;
+		*lpw++ = 0;             // No creation data
+
+		// Description
+		lpw = lpwAlign(lpw);
+		lpdit = (MyDLGITEMTEMPLATE*)lpw;
+		lpdit->x = 68; lpdit->y = (short)(y + 2);
+		lpdit->cx = 150; lpdit->cy = 14;
+		lpdit->id = -1;
+		lpdit->style = WS_CHILD | WS_VISIBLE | SS_LEFT;
+
+		lpw = (LPWORD)(lpdit + 1);
+		*lpw++ = 0xFFFF;
+		*lpw++ = 0x0082;        // Static class
+
+		lpwsz = (LPWSTR)lpw;
+		nchar = MultiByteToWideChar(CP_ACP, 0, desc, -1, lpwsz, 100);
+		lpw += nchar;
+		*lpw++ = 0;             // No creation data
+	}
+
+	GlobalUnlock(hgbl);
+	INT_PTR ret = DialogBoxIndirect(GetModuleHandle(NULL),
+		(LPDLGTEMPLATE)hgbl,
+		NULL,
+		(DLGPROC)ReuseDialogProc);
+	GlobalFree(hgbl);
+
+	return (ReuseType)ret;
 }

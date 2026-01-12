@@ -239,7 +239,7 @@ int main(int argc, char* argv[]) {
 	CmdParamString reuseFileArg("REUSE", "reuse html filename", "filename",
 		PARAM_IS_SWITCH | PARAM_FORBID_MULTIPLE_DEFINITIONS, "");
 	CmdParamFlags reuseArg("REUSEMODE", "select reuse mode", PARAM_FORBID_MULTIPLE_DEFINITIONS, REUSE_ALL,
-		"OFF", REUSE_OFF, "WRITE", REUSE_WRITE, "PARTS", REUSE_PARTS, "SECTIONS", REUSE_SECTIONS, "MODELS", REUSE_MODELS, "ALL", REUSE_ALL, NULL);
+		"OFF", REUSE_OFF, "NOTHING", REUSE_NOTHING, "PARTS", REUSE_PARTS, "SECTIONS", REUSE_SECTIONS, "MODELS", REUSE_MODELS, "ALL", REUSE_ALL, "ASK", REUSE_ASK, NULL);
 	CmdParamSwitch crinklerFlag("CRINKLER", "enables Crinkler", 0);
 	CmdParamSwitch recompressFlag("RECOMPRESS", "recompress a Crinkler file", 0);
 	CmdParamSwitch unsafeImportArg("UNSAFEIMPORT", "crash if a DLL is missing", 0);
