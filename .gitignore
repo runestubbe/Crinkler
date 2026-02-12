@@ -3,7 +3,8 @@
 /build/
 *.user
 /test/libs
+/test/*.dmp
 /test/*.exe
 /test/*.html
-/test/testlog.txt
+/test/*.txt
 /source/ExportScraper/SystemDLLs
