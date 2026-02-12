@@ -2,6 +2,7 @@
 #ifndef _PART_LIST_H_
 #define _PART_LIST_H_
 
+#include <string>
 #include <vector>
 #include <functional>
 #include "../Compressor/Compressor.h"
