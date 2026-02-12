@@ -269,9 +269,6 @@
     <None Include="modules\header30.asm">
       <Filter>modules</Filter>
     </None>
-    <None Include="modules\header20_compatibility.asm">
-      <Filter>modules</Filter>
-    </None>
     <None Include="modules\import20_1k.asm">
       <Filter>modules</Filter>
     </None>
@@ -279,6 +276,9 @@
       <Filter>modules</Filter>
     </None>
     <None Include="modules\header22_1k.asm">
+      <Filter>modules</Filter>
+    </None>
+    <None Include="modules\header30_compatibility.asm">
       <Filter>modules</Filter>
     </None>
   </ItemGroup>
