@@ -20,8 +20,6 @@ global	_SaturatePtr
 global	_SaturateAdjust1Ptr
 global	_SaturateAdjust2Ptr
 
-HASH_MULTIPLIER	equ 111
-
 BaseProbDummy	equ	10
 ModelSkipDummy	equ	23
 
@@ -181,8 +179,8 @@ _DepackEntry:
 EndCheck:
 	pusha
 
-	lodsd
-	add		eax, edi
+	lodsw
+	add		ax, di
 	je		InitHash            ; block_end == unpacked_byte_offset
 	; carry = 1
 
@@ -224,10 +222,7 @@ NotModelEnd:
 	mov		dl, al				; edx = mask
 
 .hashloop:
-	xor		al, [edi]
-	imul	eax, byte HASH_MULTIPLIER
-	add		al, [edi]
-	dec		eax
+	crc32	eax, byte [edi]
 .next:
 	dec		edi					; Next byte
 	add		dl, dl				; Hash byte?

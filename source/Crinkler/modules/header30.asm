@@ -21,8 +21,6 @@ global	_SaturateAdjust2Ptr
 global	_NumberOfDataDirectoriesPtr
 global	_ExportTableRVAPtr
 
-HASH_MULTIPLIER	equ 111
-
 BaseProbDummy	equ	10
 
 zero_offset	equ	20
@@ -183,8 +181,8 @@ _DepackEntry:
 
 EndCheck:
 	pusha																;1
-	lodsd																;1
-	add		eax, edi													;2
+	lodsw																;2
+	add		ax, di														;3
 	je		short InitHash		; block_end == unpacked_byte_offset		;2
 	; carry = 1
 
@@ -228,11 +226,7 @@ IncreaseWeight:
 	mov		dl, al				; dl = mask								;2
 
 .hashloop:
-	xor		al, [edi]													;2
-	imul	eax, byte HASH_MULTIPLIER									;3
-	add		al, [dword edi + 0]											;6
-
-	dec		eax
+	crc32	eax, byte [dword edi + 0]									;9
 .next:
 	dec		edi					; Next byte
 	add		dl, dl				; Hash byte?

@@ -258,7 +258,7 @@ Hunk* Crinkler::CreateModelHunk4k(PartList& parts) {
 	int modelsSize = 0;
 	for (int i = 0; i < numInitializedParts; i++)
 	{
-		modelsSize += 8 + parts[i].m_model4k.nmodels;
+		modelsSize += 6 + parts[i].m_model4k.nmodels;
 	}
 	
 	Hunk* models = new Hunk("models", 0, 0, 0, modelsSize, modelsSize);
@@ -269,10 +269,12 @@ Hunk* Crinkler::CreateModelHunk4k(PartList& parts) {
 	{
 		Part& part = parts[i];
 		const bool terminate = ((i + 1) == numInitializedParts);
-		const unsigned int w = part.m_model4k.GetMaskList(ptr + 8, terminate);
+		const unsigned int w = part.m_model4k.GetMaskList(ptr + 6, terminate);
 		const int partEndPos = part.GetLinkedOffset() + part.GetLinkedSize();
-		*(unsigned int*)ptr = -(CRINKLER_CODEBASE + partEndPos);	ptr += sizeof(unsigned int);
-		*(unsigned int*)ptr = w;									ptr += sizeof(unsigned int);
+		*(unsigned short*)ptr = -partEndPos;
+		ptr += sizeof(unsigned short);
+		*(unsigned int*)ptr = w;
+		ptr += sizeof(unsigned int);
 		ptr += part.m_model4k.nmodels;
 	}
 
