@@ -16,6 +16,6 @@ You are welcome to integrate Crinkler into your own tools or toolchains. If you 
 
 ## Building
 
-Build Crinkler using Visual Studio 2017 or later. The custom build rules for the assembly files require that `nasmw.exe` is in the executable path.
+Build Crinkler using Visual Studio 2017 or later. The custom build rules for the assembly files require that `nasm.exe` is in the executable path.
 
 The data compressor itself is separated out into its own library, located in the `Compressor` project. This library enables tools to estimate how big a particular piece of data would be after being compressed by Crinkler. Take a look at the `CompressorExample` project for a description of its usage.

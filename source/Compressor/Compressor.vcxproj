@@ -186,17 +186,17 @@
     <CustomBuild Include="log_table.asm">
       <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Assembling %(Filename).obj</Message>
       <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Assembling %(Filename).obj</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">nasmw -f win32 -Xvc "%(RootDir)%(Directory)\%(Filename)%(Extension)" -o "$(IntermediateOutputPath)%(Filename).obj"
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">nasm -f win32 -Xvc "%(RootDir)%(Directory)\%(Filename)%(Extension)" -o "$(IntermediateOutputPath)%(Filename).obj"
 </Command>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">nasmw -f win64 -Xvc "%(RootDir)%(Directory)\%(Filename)%(Extension)" -o "$(IntermediateOutputPath)%(Filename).obj"
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">nasm -f win64 -Xvc "%(RootDir)%(Directory)\%(Filename)%(Extension)" -o "$(IntermediateOutputPath)%(Filename).obj"
 </Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntermediateOutputPath)%(Filename).obj;%(Outputs)</Outputs>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(IntermediateOutputPath)%(Filename).obj;%(Outputs)</Outputs>
       <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Assembling %(Filename).obj</Message>
       <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Assembling %(Filename).obj</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">nasmw -f win32 -Xvc "%(RootDir)%(Directory)\%(Filename)%(Extension)" -o "$(IntermediateOutputPath)%(Filename).obj"
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">nasm -f win32 -Xvc "%(RootDir)%(Directory)\%(Filename)%(Extension)" -o "$(IntermediateOutputPath)%(Filename).obj"
 </Command>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">nasmw -f win64 -Xvc "%(RootDir)%(Directory)\%(Filename)%(Extension)" -o "$(IntermediateOutputPath)%(Filename).obj"
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">nasm -f win64 -Xvc "%(RootDir)%(Directory)\%(Filename)%(Extension)" -o "$(IntermediateOutputPath)%(Filename).obj"
 </Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntermediateOutputPath)%(Filename).obj;%(Outputs)</Outputs>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(IntermediateOutputPath)%(Filename).obj;%(Outputs)</Outputs>
