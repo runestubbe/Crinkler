@@ -26,7 +26,7 @@ in:
 static HashEntry *FindEntry(HashEntry *table, unsigned int hashsize, unsigned char mask, const unsigned char *data, int bitpos) {
 	const unsigned char *datapos = &data[bitpos/8];
 	unsigned char bitnum = (unsigned char)(bitpos & 7);
-	for (unsigned int hash = ModelHash(data, bitpos, mask, HASH_MULTIPLIER) ;; hash = hash+1) {
+	for (unsigned int hash = ModelHash(data, bitpos, mask) ;; hash = hash+1) {
 		HashEntry *e = &table[hash % hashsize];
 		if (e->datapos == 0) {
 			e->mask = mask;

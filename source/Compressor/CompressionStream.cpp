@@ -64,7 +64,7 @@ HashBits ComputeHashBits(const unsigned char* d, int size, unsigned char* contex
 
 		// Query models
 		for (int m = 0; m < nmodels; m++) {
-			unsigned int hash = ModelHashStart(weightmasks[m], HASH_MULTIPLIER);
+			unsigned int hash = ModelHashStart(weightmasks[m]);
 			out.hashes.push_back(hash);
 		}
 		out.bits.push_back(bit);
@@ -75,7 +75,7 @@ HashBits ComputeHashBits(const unsigned char* d, int size, unsigned char* contex
 
 		// Query models
 		for (int m = 0; m < nmodels; m++) {
-			unsigned int hash = ModelHash(data, bitpos, weightmasks[m], HASH_MULTIPLIER);
+			unsigned int hash = ModelHash(data, bitpos, weightmasks[m]);
 			out.hashes.push_back(hash);
 		}
 		out.bits.push_back(bit);

@@ -2,7 +2,7 @@
 
 #include <nmmintrin.h>
 
-unsigned int ModelHashStart(unsigned int mask, int hashmul)
+unsigned int ModelHashStart(unsigned int mask)
 {
 	unsigned char dl = mask;
 	unsigned int hash = mask;
@@ -18,7 +18,7 @@ unsigned int ModelHashStart(unsigned int mask, int hashmul)
 	return hash;
 }
 
-unsigned int ModelHash(const unsigned char* data, int bitpos, unsigned int mask, int hashmul)
+unsigned int ModelHash(const unsigned char* data, int bitpos, unsigned int mask)
 {
 	unsigned char dl = mask;
 	const unsigned char* ptr = data + (bitpos >> 3);
