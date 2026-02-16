@@ -26,6 +26,7 @@ public:
 		m_initialized(initialized),
 		m_compressedSize(INT_MAX)
 	{
+		m_model4k = InstantModels4k();
 	}
 	~Part();
 
