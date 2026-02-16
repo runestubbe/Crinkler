@@ -31,7 +31,7 @@ Export ParseExport(const std::string& name, const std::string& value) {
 			v = strtol(&value[0], &end, 10);
 		}
 		if (end != &value[value.length()]) {
-			fprintf(stderr, "error: illegal numeric value for export %s: %s\n", name.c_str(), value.c_str());
+			printf("Error: illegal numeric value for export %s: %s\n", name.c_str(), value.c_str());
 			exit(1);
 		}
 		return Export(name, v);

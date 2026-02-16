@@ -12,7 +12,7 @@ For general discussion, questions and comments, use the [Pouët.net forum](http:
 
 Crinkler is mainly being developed by Rune L. H. Stubbe (Mentor/TBC) and Aske Simon Christensen (Blueberry/Loonies). It is distributed under the [Zlib license](https://en.wikipedia.org/wiki/Zlib_License).
 
-You are welcome to integrate Crinkler into your own tools or toolchains. If you do so, preferably base your work on a commit tagged by a release version. This way, the Crinkler version identifier written into output executables (two digits at offset 2 in the file) will match the actual contents produced by Crinkler.
+You are welcome to integrate Crinkler into your own tools or toolchains. If you do so, preferably base your work on the `master` branch. This way, the Crinkler version identifier written into output executables (two digits at offset 2 in the file) will match the actual contents produced by Crinkler. All feature development that significantly affects the output from Crinkler will generally take place on other branches.
 
 ## Building
 
