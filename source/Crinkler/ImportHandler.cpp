@@ -98,7 +98,7 @@ static const char *GetForwardRVA(const char* dll, const char* function) {
 	}
 
 	Log::Error("", "Import '%s' cannot be found in '%s'", function, dll);
-	return false;
+	return nullptr;
 }
 
 
