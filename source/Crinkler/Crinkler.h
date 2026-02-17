@@ -6,6 +6,8 @@
 #include <set>
 #include <string>
 #include <cstdio>
+#include <vector>
+#include <iterator>
 
 #include "MultiLoader.h"
 #include "PartList.h"
@@ -144,7 +146,7 @@ public:
 	void SetTransform(Transform* transform)					{ m_transform = transform; }
 	void SetPrintFlags(int printFlags)						{ m_printFlags = printFlags; }
 
-	void PrintOptions(FILE *out);
+	void PrintOptions(std::back_insert_iterator<std::vector<char>> out);
 };
 
 #endif

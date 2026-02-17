@@ -22,6 +22,10 @@
 #include "NameMangling.h"
 #include "MemoryFile.h"
 
+#include <memory>
+#include <format>
+#include <iterator>
+
 using namespace std;
 
 static int PreviousPrime(int n) {
@@ -1579,74 +1583,74 @@ Hunk *Crinkler::FinalLink(PartList& parts, Hunk *header, Hunk *depacker, Hunk *h
 	return phase2;
 }
 
-void Crinkler::PrintOptions(FILE *out) {
-	fprintf(out, " /SUBSYSTEM:%s", m_subsystem == SUBSYSTEM_CONSOLE ? "CONSOLE" : "WINDOWS");
+void Crinkler::PrintOptions(back_insert_iterator<vector<char>> out) {
+	format_to(out, " /SUBSYSTEM:{}", m_subsystem == SUBSYSTEM_CONSOLE ? "CONSOLE" : "WINDOWS");
 	if (m_largeAddressAware) {
-		fprintf(out, " /LARGEADDRESSAWARE");
+		format_to(out, " /LARGEADDRESSAWARE");
 	}
 	if (!m_entry.empty()) {
-		fprintf(out, " /ENTRY:%s", m_entry.c_str());
+		format_to(out, " /ENTRY:{}", m_entry);
 	}
 	if(m_useTinyHeader) {
-		fprintf(out, " /TINYHEADER");
+		format_to(out, " /TINYHEADER");
 	}
 	if(m_useTinyImport) {
-		fprintf(out, " /TINYIMPORT");
+		format_to(out, " /TINYIMPORT");
 	}
 	
 	if(!m_useTinyHeader)
 	{
-		fprintf(out, " /COMPMODE:%s", CompressionTypeName(m_compressionType));
+		format_to(out, " /COMPMODE:{}", CompressionTypeName(m_compressionType));
 		if (m_saturate) {
-			fprintf(out, " /SATURATE");
+			format_to(out, " /SATURATE");
 		}
-		fprintf(out, " /HASHSIZE:%d", m_hashsize / 1048576);
+		format_to(out, " /HASHSIZE:{}", m_hashsize / 1048576);
 	}
 	
 	if (m_compressionType != COMPRESSION_INSTANT) {
-		if(!m_useTinyHeader)
+		if (m_hashtries != 500)
 		{
-			fprintf(out, " /HASHTRIES:%d", m_hashtries);
+			format_to(out, " /HASHTRIES:{}", m_hashtries);
 		}
-		fprintf(out, " /ORDERTRIES:%d", m_hunktries);
+		format_to(out, " /ORDERTRIES:{}", m_hunktries);
 	}
 	for(int i = 0; i < (int)m_rangeDlls.size(); i++) {
-		fprintf(out, " /RANGE:%s", m_rangeDlls[i].c_str());
+		format_to(out, " /RANGE:{}", m_rangeDlls[i]);
 	}
 	for(const auto& p : m_replaceDlls) {
-		fprintf(out, " /REPLACEDLL:%s=%s", p.first.c_str(), p.second.c_str());
+		format_to(out, " /REPLACEDLL:{}={}", p.first, p.second);
 	}
 	for (const auto& p : m_fallbackDlls) {
-		fprintf(out, " /FALLBACKDLL:%s=%s", p.first.c_str(), p.second.c_str());
+		format_to(out, " /FALLBACKDLL:{}={}", p.first, p.second);
 	}
 	if (!m_useTinyHeader && !m_useSafeImporting) {
-		fprintf(out, " /UNSAFEIMPORT");
+		format_to(out, " /UNSAFEIMPORT");
 	}
 	if (m_transform->GetDetransformer() != NULL) {
-		fprintf(out, " /TRANSFORM:CALLS");
+		format_to(out, " /TRANSFORM:CALLS");
 	}
 	if (m_truncateFloats) {
-		fprintf(out, " /TRUNCATEFLOATS:%d", m_truncateBits);
+		format_to(out, " /TRUNCATEFLOATS:{}", m_truncateBits);
 	}
 	if (m_overrideAlignments) {
-		fprintf(out, " /OVERRIDEALIGNMENTS");
+		format_to(out, " /OVERRIDEALIGNMENTS");
 		if (m_alignmentBits != -1) {
-			fprintf(out, ":%d", m_alignmentBits);
+			format_to(out, ":{}", m_alignmentBits);
 		}
 	}
 	if (m_unalignCode) {
-		fprintf(out, " /UNALIGNCODE");
+		format_to(out, " /UNALIGNCODE");
 	}
 	if (!m_runInitializers) {
-		fprintf(out, " /NOINITIALIZERS");
+		format_to(out, " /NOINITIALIZERS");
 	}
 	for (const Export& e : m_exports) {
 		if (e.HasValue()) {
-			fprintf(out, " /EXPORT:%s=0x%08X", e.GetName().c_str(), e.GetValue());
+			format_to(out, " /EXPORT:{}=0x{:08X}", e.GetName(), e.GetValue());
 		} else if (e.GetName() == e.GetSymbol()) {
-			fprintf(out, " /EXPORT:%s", e.GetName().c_str());
+			format_to(out, " /EXPORT:{}", e.GetName());
 		} else {
-			fprintf(out, " /EXPORT:%s=%s", e.GetName().c_str(), e.GetSymbol().c_str());
+			format_to(out, " /EXPORT:{}={}", e.GetName(), e.GetSymbol());
 		}
 	}
 }
