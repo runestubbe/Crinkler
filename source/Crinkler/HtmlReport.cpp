@@ -552,7 +552,7 @@ static void PrintRow(back_insert_iterator<vector<char>> out, Hunk& hunk, const i
 					SizeToColorIndex(size), idx, ToAscii(c));
 			}
 			else {
-				format_to(out, "<td class='sc{}' name='byte' byte='{}'>{}</td>",
+				format_to(out, "<td class='sc{}' name='byte' byte='{}'>{:02X}</td>",
 					SizeToColorIndex(size), idx, c);
 			}
 		} else {
@@ -856,8 +856,8 @@ static void HtmlReportRecursive(CompressionReportRecord* csr, back_insert_iterat
 						}
 						int size = InstructionSize(&insts[i], sizefill);
 
-						format_to(out, "<td nowrap title='{:.2f} bytes' class='sc{}'>{}",
-							size / (float)(BIT_PRECISION*8), SizeToColorIndex(size/insts[i].size), (char*)insts[i].mnemonic.p);
+						format_to(out, "<td nowrap class='sc{}'>{}",
+							SizeToColorIndex(size/insts[i].size), (char*)insts[i].mnemonic.p);
 						for (int j = 0 ; j < OPCODE_WIDTH-(int)insts[i].mnemonic.length ; j++) {
 							format_to(out, "&nbsp;");
 						}
@@ -922,8 +922,8 @@ static void HtmlReportRecursive(CompressionReportRecord* csr, back_insert_iterat
 							int size = sizefill[idx+4]-sizefill[idx];
 							int value = *((int*)&untransformedHunk.GetPtr()[idx]);
 							string label = GenerateLabel(jt->second, value, symbols);
-							format_to(out, "<td title='{:.2f} bytes' class='sc{}' colspan='{}'>{}</td>",
-								size / (float)(BIT_PRECISION*8), SizeToColorIndex(size/4), DATA_BYTE_COLUMNS, label);
+							format_to(out, "<td class='sc{}' colspan='{}'>{}</td>",
+								SizeToColorIndex(size/4), DATA_BYTE_COLUMNS, label);
 						} else {
 							// Write ascii
 							PrintRow(out, hunk, sizefill, idx, rowLength, DATA_BYTE_COLUMNS, DATA_HEX_WIDTH, true, false);
