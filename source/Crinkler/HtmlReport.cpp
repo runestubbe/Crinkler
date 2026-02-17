@@ -580,31 +580,43 @@ static Symbol* getRelocationSymbol(_DecodedInst& inst, int offset, map<int, Symb
 	return it != relocs.end() ? it->second : NULL;
 }
 
-static string GenerateLabel(Symbol* symbol, int value, map<int, Symbol*>& symbols) {
-	char buff[1024];
+static string GenerateLabel(Symbol* symbol, int value, Hunk& hunk) {
 	int offset = 0;
+	Symbol* target_symbol = symbol;
 	if(symbol->flags & SYMBOL_IS_RELOCATEABLE) {
-		offset = value - (symbol->value+CRINKLER_CODEBASE);
+		offset = value - (CRINKLER_CODEBASE + symbol->value);
 
-		// Prefer label over label+offset, eventhough it makes us change symbol
-		if(offset != 0) {
-			map<int, Symbol*>::iterator it = symbols.find(value-CRINKLER_CODEBASE);
-			if(it != symbols.end()) {
-				symbol = it->second;
-				offset = 0;
+		for (auto it : hunk.GetNameToSymbolMap()) {
+			Symbol* sym = it.second;
+			// Only consider symbols in the same section
+			if (sym->value - sym->hunkOffset == symbol->value - symbol->hunkOffset) {
+				if (offset != 0) {
+					// Prefer label over label+offset, eventhough it makes us change symbol
+					if (sym->value == value - CRINKLER_CODEBASE) {
+						symbol = sym;
+						target_symbol = sym;
+						offset = 0;
+					}
+				}
+				if (sym->value == symbol->value) {
+					// Prefer public over private for name
+					if (sym->IsPublic() && symbol->IsPrivate()) {
+						symbol = sym;
+					}
+					// Prefer private over public for target
+					if (sym->IsPrivate() && target_symbol->IsPublic()) {
+						target_symbol = sym;
+					}
+				}
 			}
 		}
 	}
 	string name = StripCrinklerSymbolPrefix(symbol->name.c_str());
-	string ident = ToIdent(symbol->name);
+	string ident = ToIdent(target_symbol->name);
 	name = "<a href='#" + ident + "' onclick='recursiveExpand(\"" + ident + "\")'>" + name + "</a>";	// Add link
-	if(offset > 0)
-		sprintf_s(buff, sizeof(buff), "%s+0x%X", name.c_str(), offset);
-	else if(offset < 0)
-		sprintf_s(buff, sizeof(buff), "%s-0x%X", name.c_str(), -offset);
-	else
-		sprintf_s(buff, sizeof(buff), "%s", name.c_str());
-	return buff;
+	return offset > 0 ? format("{}+0x{:X}", name, offset)
+		: offset < 0 ? format("{}-0x{:X}", name, -offset)
+		: name;
 }
 
 // Finds a hexnumber, removes it from the string and returns its position. Value is set to the value of the number
@@ -659,7 +671,7 @@ static string CalculateInstructionOperands(_DecodedInst& inst, Hunk& hunk, map<i
 
 		int delta = 0;	// The amount label2 will need to be displaced
 		if(reloc_symbol1) {
-			string label = GenerateLabel(reloc_symbol1, number1_value, symbols);
+			string label = GenerateLabel(reloc_symbol1, number1_value, hunk);
 			delta = int(label.size() - (number1_endpos-number1_startpos));
 			operands.erase(number1_startpos, number1_endpos-number1_startpos);
 			operands.insert(number1_startpos, label);
@@ -667,7 +679,7 @@ static string CalculateInstructionOperands(_DecodedInst& inst, Hunk& hunk, map<i
 		if(reloc_symbol2) {
 			if(number2_startpos < number1_startpos)
 				delta = 0;
-			string label = GenerateLabel(reloc_symbol2, number2_value, symbols);
+			string label = GenerateLabel(reloc_symbol2, number2_value, hunk);
 			operands.erase(number2_startpos+delta, number2_endpos-number2_startpos);
 			operands.insert(number2_startpos+delta, label);
 		}
@@ -678,7 +690,7 @@ static string CalculateInstructionOperands(_DecodedInst& inst, Hunk& hunk, map<i
 	if(sscanf_s(operands.c_str(), "%X", &value)) {
 		map<int, Symbol*>::iterator it = symbols.find(value-CRINKLER_CODEBASE);
 		if(it != symbols.end()) {
-			operands = GenerateLabel(it->second, value, symbols);
+			operands = GenerateLabel(it->second, value, hunk);
 		}
 	}
 
@@ -758,28 +770,28 @@ static void HtmlReportRecursive(CompressionReportRecord* csr, back_insert_iterat
 		char div_prefix = 0;
 		int level = csr->GetLevel();
 		switch(level) {
-			case 0:	// Part
+			case LEVEL_PART:	// Part
 				label = csr->name;
 				css_class = "part_symbol_row";
 				div_prefix = 's';
 				break;
-			case 1:	// Section
+			case LEVEL_SECTION:	// Section
 				label = StripPath(csr->miscString) + ":" + StripCrinklerSymbolPrefix(csr->name.c_str());
 				css_class = "section_symbol_row";
 				div_prefix  = 'o';
 				break;
-			case 2:	// Public symbol
+			case LEVEL_PUBLIC:	// Public symbol
 				label = StripCrinklerSymbolPrefix(csr->name.c_str());
 				css_class = "public_symbol_row";
 				div_prefix = 'p';
 				break;
-			case 3:	// Private symbol
+			case LEVEL_PRIVATE:	// Private symbol
 				label = StripCrinklerSymbolPrefix(csr->name.c_str());
 				css_class = "private_symbol_row";
 				break;
 		}
 
-		if(level == 1) {	// Section
+		if(level == LEVEL_SECTION) {	// Section
 			format_to(out, "<tr><td nowrap colspan='5'><div id='h_{}'><table class='grptable'>", num_sections++);
 		}
 		if(csr->children.empty() && (csr->size == 0 || csr->compressedPos < 0))
@@ -792,7 +804,7 @@ static void HtmlReportRecursive(CompressionReportRecord* csr, back_insert_iterat
 		}
 
 		// Make the label an anchor
-		if(!(csr->type & RECORD_DUMMY)) {	// Don't put anchors on dummy records
+		if(!(csr->type & RECORD_NOANCHOR)) { // Don't put anchors on records that have dummy records
 			label = "<a id='" + ToIdent(csr->name) + "'>" + label + "</a>";
 		}
 		
@@ -816,7 +828,7 @@ static void HtmlReportRecursive(CompressionReportRecord* csr, back_insert_iterat
 						"<th nowrap class='c5'>&nbsp;</th>");
 		}
 		format_to(out,"</tr>");
-		if(level == 1) {	// Section
+		if(level == LEVEL_SECTION) {	// Section
 			format_to(out, "</table></div></td></tr>");
 		}
 
@@ -921,7 +933,7 @@ static void HtmlReportRecursive(CompressionReportRecord* csr, back_insert_iterat
 							// Write label
 							int size = sizefill[idx+4]-sizefill[idx];
 							int value = *((int*)&untransformedHunk.GetPtr()[idx]);
-							string label = GenerateLabel(jt->second, value, symbols);
+							string label = GenerateLabel(jt->second, value, hunk);
 							format_to(out, "<td class='sc{}' colspan='{}'>{}</td>",
 								SizeToColorIndex(size/4), DATA_BYTE_COLUMNS, label);
 						} else {

@@ -26,6 +26,9 @@ public:
 
 	// Demangle the VC decorations
 	std::string GetUndecoratedName() const;
+
+	bool IsPublic() const { return !(flags & SYMBOL_IS_LOCAL) && !(flags & SYMBOL_IS_SECTION); }
+	bool IsPrivate() const { return (flags & SYMBOL_IS_LOCAL) && !(flags & SYMBOL_IS_SECTION); }
 };
 
 #endif

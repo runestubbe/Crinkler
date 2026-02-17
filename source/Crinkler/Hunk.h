@@ -24,7 +24,12 @@ const int RECORD_PART =			0x02;
 const int RECORD_PUBLIC	=		0x04;
 const int RECORD_SECTION =		0x10;
 const int RECORD_CODE =			0x20;
-const int RECORD_DUMMY =		0x40;		// Record is a dummy record not in the actual file
+const int RECORD_NOANCHOR =		0x40;
+
+const int LEVEL_PART =			0;
+const int LEVEL_SECTION =		1;
+const int LEVEL_PUBLIC =		2;
+const int LEVEL_PRIVATE =		3;
 
 struct CompressionReportRecord {
 	std::string name;
@@ -65,12 +70,12 @@ struct CompressionReportRecord {
 	// Returns the level of the record. Level 0: part. Level 1: section. Level 2: public symbol. Level 3: private symbol.
 	int GetLevel() {
 		if(type & RECORD_PART)
-			return 0;
+			return LEVEL_PART;
 		if(type & RECORD_SECTION)
-			return 1;
+			return LEVEL_SECTION;
 		if(type & RECORD_PUBLIC)
-			return 2;
-		return 3;
+			return LEVEL_PUBLIC;
+		return LEVEL_PRIVATE;
 	}
 };
 
@@ -147,6 +152,7 @@ public:
 	void			SetImportDll(const char* dll)	{ m_importDll = dll; }
 	std::map<int, Symbol*> GetOffsetToRelocationMap();
 	std::map<int, Symbol*> GetOffsetToSymbolMap();
+	std::map<std::string, Symbol*>& GetNameToSymbolMap();
 	const std::string& GetID();
 
 	bool			IsLikelyText() const;

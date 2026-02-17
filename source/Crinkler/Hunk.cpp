@@ -29,11 +29,11 @@ static bool SymbolComparator(Symbol* first, Symbol* second) {
 
 static int GetType(int level) {
 	switch(level) {
-		case 0:
+		case LEVEL_PART:
 			return RECORD_PART;
-		case 1:
+		case LEVEL_SECTION:
 			return RECORD_SECTION;
-		case 2:
+		case LEVEL_PUBLIC:
 			return RECORD_PUBLIC;
 	}
 	return 0;
@@ -315,8 +315,9 @@ CompressionReportRecord* Hunk::GenerateCompressionSummary(PartList& parts, int* 
 				int level = r->GetLevel()+1;
 				string name = c->pos == r->pos ? c->name : r->name;
 				CompressionReportRecord* dummy = new CompressionReportRecord(name.c_str(), 
-					GetType(level)|RECORD_DUMMY, sym->value, (sym->value < GetRawSize()) ? sizefill[sym->value] : -1);
-				if(level == 1)
+					GetType(level), sym->value, (sym->value < GetRawSize()) ? sizefill[sym->value] : -1);
+				r->type |= RECORD_NOANCHOR;
+				if(level == LEVEL_SECTION)
 					dummy->miscString = ".dummy";
 				r->children.push_back(dummy);
 			}
@@ -328,15 +329,17 @@ CompressionReportRecord* Hunk::GenerateCompressionSummary(PartList& parts, int* 
 		// Add public symbol to start of sections, if they don't have one already
 		if(sym->value < GetRawSize() && (c->type & RECORD_SECTION) && less_than_next) {
 			CompressionReportRecord* dummy = new CompressionReportRecord(c->name.c_str(), 
-				RECORD_PUBLIC|RECORD_DUMMY, sym->value, sizefill[sym->value]);
+				RECORD_PUBLIC, sym->value, sizefill[sym->value]);
 			c->children.push_back(dummy);
+			c->type |= RECORD_NOANCHOR;
 		}
 
 		// Add public symbol to start of sections, if they don't have one already
 		if(sym->value < GetRawSize() && (c->type & RECORD_PUBLIC) && less_than_next) {
 			CompressionReportRecord* dummy = new CompressionReportRecord(c->name.c_str(), 
-				RECORD_DUMMY, sym->value, sizefill[sym->value]);
+				0, sym->value, sizefill[sym->value]);
 			c->children.push_back(dummy);
+			c->type |= RECORD_NOANCHOR;
 		}
 
 
@@ -366,13 +369,17 @@ map<int, Symbol*> Hunk::GetOffsetToSymbolMap() {
 	for(const auto& p : m_symbols) {
 		Symbol* s = p.second;
 		if(s->flags & SYMBOL_IS_RELOCATEABLE) {
-			if(offsetmap.find(s->value) != offsetmap.end() && s->flags & SYMBOL_IS_SECTION)	// Favor non-sections
+			if(offsetmap.find(s->value) != offsetmap.end() && s->flags & (SYMBOL_IS_SECTION | SYMBOL_IS_LOCAL)) // Favor globals
 				continue;
 
 			offsetmap[s->value] = s;
 		}
 	}
 	return offsetmap;
+}
+
+map<string, Symbol*>& Hunk::GetNameToSymbolMap() {
+	return m_symbols;
 }
 
 // roundFloats
