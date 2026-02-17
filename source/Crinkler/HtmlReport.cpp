@@ -548,12 +548,12 @@ static void PrintRow(back_insert_iterator<vector<char>> out, Hunk& hunk, const i
 			}
 
 			if (ascii) {
-				format_to(out, "<td title='{:.2f} bits' class='sc{}' name='byte' byte='{}'>"
-					"&#x{:02X};</td>", size / (float)BIT_PRECISION, SizeToColorIndex(size), idx, ToAscii(c));
+				format_to(out, "<td class='sc{}' name='byte' byte='{}'>&#x{:02X};</td>",
+					SizeToColorIndex(size), idx, ToAscii(c));
 			}
 			else {
-				format_to(out, "<td title='{:.2f} bits' class='sc{}' name='byte' byte='{}'>"
-					"{:02X}</td>", size / (float)BIT_PRECISION, SizeToColorIndex(size), idx, c);
+				format_to(out, "<td class='sc{}' name='byte' byte='{}'>{}</td>",
+					SizeToColorIndex(size), idx, c);
 			}
 		} else {
 			if (ascii) {
