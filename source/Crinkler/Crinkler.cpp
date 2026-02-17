@@ -186,6 +186,8 @@ Symbol*	Crinkler::FindEntryPoint() {
 
 void Crinkler::RemoveUnreferencedHunks(Hunk* base)
 {
+	SymbolMap symbol_map(m_hunkList);
+
 	// Check dependencies and remove unused hunks
 	vector<Hunk*> startHunks;
 	startHunks.push_back(base);
@@ -193,12 +195,12 @@ void Crinkler::RemoveUnreferencedHunks(Hunk* base)
 	// Keep hold of exported symbols
 	for (const Export& e : m_exports)  {
 		if (e.HasValue()) {
-			Symbol* sym = m_hunkList.FindSymbol(e.GetName().c_str());
+			Symbol* sym = symbol_map.FindSymbol(e.GetName());
 			if (sym && !sym->fromLibrary) {
 				Log::Error("", "Cannot create integer symbol '%s' for export: symbol already exists.", e.GetName().c_str());
 			}
 		} else {
-			Symbol* sym = m_hunkList.FindSymbol(e.GetSymbol().c_str());
+			Symbol* sym = symbol_map.FindSymbol(e.GetSymbol().c_str());
 			if (sym) {
 				if (sym->hunk->GetRawSize() == 0) {
 					sym->hunk->SetRawSize(sym->hunk->GetVirtualSize());
@@ -212,9 +214,9 @@ void Crinkler::RemoveUnreferencedHunks(Hunk* base)
 	}
 
 	// Hack to ensure that LoadLibrary & MessageBox is there to be used in the import code
-	Symbol* loadLibrary = m_hunkList.FindSymbol("__imp__LoadLibraryA@4"); 
-	Symbol* messageBox = m_hunkList.FindSymbol("__imp__MessageBoxA@16");
-	Symbol* dynamicInitializers = m_hunkList.FindSymbol("__DynamicInitializers");
+	Symbol* loadLibrary = symbol_map.FindSymbol("__imp__LoadLibraryA@4");
+	Symbol* messageBox = symbol_map.FindSymbol("__imp__MessageBoxA@16");
+	Symbol* dynamicInitializers = symbol_map.FindSymbol("__DynamicInitializers");
 	if(loadLibrary != NULL)
 		startHunks.push_back(loadLibrary->hunk);
 	if(m_useSafeImporting && !m_useTinyImport && messageBox != NULL)
@@ -222,7 +224,7 @@ void Crinkler::RemoveUnreferencedHunks(Hunk* base)
 	if(dynamicInitializers != NULL)
 		startHunks.push_back(dynamicInitializers->hunk);
 
-	m_hunkList.DeleteUnreferencedHunks(startHunks);
+	m_hunkList.DeleteUnreferencedHunks(symbol_map, startHunks);
 }
 
 void Crinkler::LoadImportCode(bool use1kMode, bool useSafeImporting, bool useDllFallback, bool useRangeImport) {

@@ -4,12 +4,14 @@
 
 #include <string>
 #include <vector>
+#include <map>
 #include <functional>
 #include "../Compressor/Compressor.h"
 
 class Hunk;
 class Symbol;
 class PartList;
+class SymbolMap;
 
 class Part
 {
@@ -66,7 +68,7 @@ public:
 	Symbol*			FindSymbol(const char* name);
 	Symbol*			FindUndecoratedSymbol(const char* name, int* out_level = nullptr);
 
-	void			DeleteUnreferencedHunks(std::vector<Hunk*> startHunks);
+	void			DeleteUnreferencedHunks(const SymbolMap& symbolMap, const std::vector<Hunk*>& startHunks);
 
 	void			RemoveMatchingHunks(std::function<bool(Hunk*)> fun);
 };
@@ -110,6 +112,20 @@ public:
 	int		FindBestPartIndex(Hunk* hunk) const;
 
 	bool	NeedsContinuationJump(Hunk* hunk, Hunk* nextHunk) const;
+};
+
+class SymbolMap
+{
+	std::map<std::string, Symbol*> m_symbolMap;
+public:
+	SymbolMap(Part& part);
+
+	Symbol* FindSymbol(const std::string& name) const {
+		auto it = m_symbolMap.find(name);
+		if (it != m_symbolMap.end())
+			return it->second;
+		return nullptr;
+	}
 };
 
 #endif

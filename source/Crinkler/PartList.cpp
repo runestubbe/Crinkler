@@ -123,9 +123,8 @@ Symbol* Part::FindSymbol(const char* name) {
 		if (s != NULL) {
 			res = s;
 			if (s->secondaryName.size() == 0)
-				return false;
+				return;
 		}
-		return true;
 		});
 
 	return res;
@@ -136,7 +135,7 @@ void Part::RemoveMatchingHunks(std::function<bool(Hunk*)> fun)
 	m_hunks.erase(std::remove_if(m_hunks.begin(), m_hunks.end(), fun), m_hunks.end());
 }
 
-void Part::DeleteUnreferencedHunks(vector<Hunk*> startHunks) {
+void Part::DeleteUnreferencedHunks(const SymbolMap& symbolMap, const vector<Hunk*>& startHunks) {
 	stack<Hunk*> stak;
 	for (Hunk* hunk : startHunks) {
 		hunk->m_numReferences++;
@@ -149,12 +148,12 @@ void Part::DeleteUnreferencedHunks(vector<Hunk*> startHunks) {
 		stak.pop();
 
 		for (Relocation& relocation : h->m_relocations) {
-			Symbol* s = FindSymbol(relocation.symbolname.c_str());
+			Symbol* s = symbolMap.FindSymbol(relocation.symbolname.c_str());
 
 			if (s) {
 				if (s->secondaryName.size() > 0) {	// Weak symbol
 					s->hunk->m_numReferences++;
-					s = FindSymbol(s->secondaryName.c_str());
+					s = symbolMap.FindSymbol(s->secondaryName.c_str());
 					if (s == NULL)
 						continue;
 				}
@@ -516,4 +515,23 @@ int	PartList::FindBestPartIndex(Hunk* hunk) const
 	}
 
 	return 0;
+}
+
+SymbolMap::SymbolMap(Part& part)
+{
+	part.ForEachHunk([this](Hunk* hunk) {
+		for (auto& pair : hunk->m_symbols) {
+			auto it = m_symbolMap.find(pair.first);
+			Symbol* new_symbol = pair.second;
+
+			if (it != m_symbolMap.end()) {
+				Symbol* old_symbol = it->second;
+				if (!old_symbol->secondaryName.empty() && new_symbol->secondaryName.empty()) {
+					it->second = new_symbol;
+				}
+			} else {
+				m_symbolMap.insert(std::make_pair(pair.first, new_symbol));
+			}
+		}
+	});
 }

@@ -16,6 +16,7 @@ const int HUNK_IS_TEXT =		0x20;
 class Symbol;
 class Hunk;
 class PartList;
+class SymbolMap;
 enum RelocationType {RELOCTYPE_ABS32, RELOCTYPE_REL32};
 
 const int RECORD_ROOT =			0x01;
@@ -83,6 +84,7 @@ struct Relocation {
 class Hunk {
 	friend class Part;
 	friend class PartList;
+	friend class SymbolMap;
 
 	int				m_alignmentBits;
 	int				m_alignmentOffset;
