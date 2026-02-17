@@ -139,7 +139,7 @@ function switchTheme() {
 function recursiveExpand(id) {
 	var el = document.getElementById(id);
 	while (el != null) {
-		if (el.localName == 'DIV' && el.id.match('h_') == null) {
+		if (el.tagName == 'DIV' && el.id.indexOf('h_') != 0) {
 			expand(el);
 		}
 		el = el.parentNode;
