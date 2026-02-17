@@ -38,7 +38,7 @@ struct ModelPredictions {
 };
 
 class CompressionStateEvaluator {
-	int					m_weights[256];
+	int*				m_weights;
 	ModelPredictions*	m_models;
 
 	int					m_length;

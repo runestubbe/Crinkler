@@ -8,7 +8,7 @@
 #include "Compressor.h"
 
 struct HashEntry {
-	unsigned char mask;
+	unsigned int mask;
 	unsigned char bitnum;
 	Weights w;
 	const unsigned char* datapos;
@@ -23,9 +23,11 @@ in:
 	return n;
 }
 
-static HashEntry *FindEntry(HashEntry *table, unsigned int hashsize, unsigned char mask, const unsigned char *data, int bitpos) {
+static HashEntry *FindEntry(HashEntry *table, unsigned int hashsize, unsigned int mask, const unsigned char *data, int bitpos) {
+	
 	const unsigned char *datapos = &data[bitpos/8];
 	unsigned char bitnum = (unsigned char)(bitpos & 7);
+
 	for (unsigned int hash = ModelHash(data, bitpos, mask) ;; hash = hash+1) {
 		HashEntry *e = &table[hash % hashsize];
 		if (e->datapos == 0) {
@@ -37,8 +39,8 @@ static HashEntry *FindEntry(HashEntry *table, unsigned int hashsize, unsigned ch
 		if (e->mask == mask && e->bitnum == bitnum &&
 			(datapos[0] & (0xFF00 >> bitnum)) == (e->datapos[0] & (0xFF00 >> bitnum))) {
 				int all = 1;
-				for (int i = 0 ; i < 8 ; i++) {
-					if (((mask >> i) & 1) && datapos[i-8] != e->datapos[i-8]) {
+				for (int i = 0 ; i < 32 ; i++) {
+					if (((mask >> i) & 1) && datapos[-i-1] != e->datapos[-i-1]) {
 						all = 0;
 						break;
 					}
@@ -53,7 +55,7 @@ void UpdateWeights(Weights *w, int bit, bool saturate) {
 	if (w->prob[!bit] > 1) w->prob[!bit] >>= 1;
 }
 
-ModelPredictions CompressionState::ApplyModel(const unsigned char* data, int bitlength, unsigned char mask) {
+ModelPredictions CompressionState::ApplyModel(const unsigned char* data, int bitlength, unsigned int mask) {
 	int hashsize = PreviousPrime(bitlength*2);
 	
 	int maxPackages = (bitlength + PACKAGE_SIZE - 1) / PACKAGE_SIZE;
@@ -109,6 +111,8 @@ ModelPredictions CompressionState::ApplyModel(const unsigned char* data, int bit
 CompressionState::CompressionState(const unsigned char* data, int size, int baseprob, bool saturate, CompressionStateEvaluator* evaluator, const unsigned char* context) :
 	m_size(size*8), m_saturate(saturate), m_stateEvaluator(evaluator)
 {
+	m_models = new ModelPredictions[MAX_MODELS];
+
 	// Create temporary data buffer with leading zeros
 	unsigned char* data2 = new unsigned char[size+MAX_CONTEXT_LENGTH];
 	memcpy(data2, context, MAX_CONTEXT_LENGTH);
@@ -120,13 +124,27 @@ CompressionState::CompressionState(const unsigned char* data, int size, int base
 	// Apply models
 #if USE_OPENMP
 	#pragma omp parallel for
-	for(int mask = 0; mask <= 0xff; mask++) {
-		m_models[mask] = ApplyModel(data2+MAX_CONTEXT_LENGTH, m_size, (unsigned char)mask);
+	for(int i = 0; i <= MAX_MODELS; i++) {
+		unsigned int mask = i;
+		m_models[i] = ApplyModel(data2+MAX_CONTEXT_LENGTH, m_size, mask);
 	}
 #else
-	concurrency::parallel_for(0, 0x100, [&](int mask)
+	concurrency::parallel_for(0, MAX_MODELS, [&](int i)
 	{
-		m_models[mask] = ApplyModel(data2+MAX_CONTEXT_LENGTH, m_size, (unsigned char)mask);
+		// 0xFF: 1361.85, 2493.04, 3960.19
+		// 0x7F: 1362.52, 2539.08, 3974.84
+		// 0xBF: 1363.99, 2506.17, 3965.37
+		// 0xDF: 1364.27, 2499.97, 3967.06
+		// 0xEF: 1375.16, 2503.53, 3971.17
+		// 0xF7: 1370.03, 2536.03, 3986.07
+		// 0xFB: 1377.27, 2514.48, 4013.48
+		// 0xFD: 1404.10, 2583.03, 4268.61
+		// 0xFE: 1528.14, 2622.68, 5209.78
+
+		// masked (based on bit 7): 1362.67, 2510.51, 3961.13
+		// masked (based on bit 6): 1361.74, 2488.61, 3958.26
+		unsigned int mask = i;
+		m_models[i] = ApplyModel(data2+MAX_CONTEXT_LENGTH, m_size, mask);
 	});
 #endif
 	delete[] data2;
@@ -136,10 +154,11 @@ CompressionState::CompressionState(const unsigned char* data, int size, int base
 }
 
 CompressionState::~CompressionState() {
-	for(int i = 0; i < 256; i++) {
+	for(int i = 0; i < MAX_MODELS; i++) {
 		_aligned_free(m_models[i].packages);
 		delete[] m_models[i].packageOffsets;
 	}
+	delete[] m_models;
 }
 
 int CompressionState::SetModels(const ModelList4k& models) {

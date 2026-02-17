@@ -16,12 +16,14 @@
 CompressionStateEvaluator::CompressionStateEvaluator() :
 	m_models(NULL), m_packages(NULL), m_packageSizes(NULL)
 {
-	memset(m_weights, 0, sizeof(m_weights));
+	m_weights = new int[MAX_MODELS];
+	memset(m_weights, 0, MAX_MODELS*sizeof(m_weights[0]));
 }
 
 CompressionStateEvaluator::~CompressionStateEvaluator() {
 	_aligned_free(m_packages);
 	delete[] m_packageSizes;
+	delete[] m_weights;
 }
 
 bool CompressionStateEvaluator::Init(ModelPredictions* models, int length, int baseprob, float logScale)
@@ -193,9 +195,9 @@ long long CompressionStateEvaluator::Evaluate(const ModelList4k& ml) {
 		if(newWeights[i] != m_weights[i]) {
 			long long diffsize = ChangeWeight(i, newWeights[i] - m_weights[i]);
 			if(m_weights[i] == 0)
-				m_compressedSize += 8 * TABLE_BIT_PRECISION;
+				m_compressedSize += (i < 128 ? 8 : 16) * TABLE_BIT_PRECISION;
 			else if(newWeights[i] == 0)
-				m_compressedSize -= 8 * TABLE_BIT_PRECISION;
+				m_compressedSize -= (i < 128 ? 8 : 16) * TABLE_BIT_PRECISION;
 			m_weights[i] = newWeights[i];
 			m_compressedSize += diffsize;
 		}
@@ -203,3 +205,4 @@ long long CompressionStateEvaluator::Evaluate(const ModelList4k& ml) {
 	}
 	return m_compressedSize;	// Compressed size including model cost
 }
+

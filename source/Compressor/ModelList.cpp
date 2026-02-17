@@ -57,6 +57,15 @@ void ModelList4k::Print(FILE *f) const {
 		fprintf(f, "%s%02X:%d", m == 0 ? "" : " ", m_models[m].mask, m_models[m].weight);
 	}
 	fprintf(f, "\n");
+	for (int m = 0; m < nmodels; m++) {
+		for (int i = 0; i < 32; i++) {
+			if (i != 0 && (i & 7) == 0) fprintf(f, " ");
+			fprintf(f, "%d", (m_models[m].mask >> i) & 1);
+		}
+			
+		printf(": %d\n", m_models[m].weight);
+	}
+	fprintf(f, "\n");
 }
 
 // Copy a sorted model list to masks and return the corresponding weight mask

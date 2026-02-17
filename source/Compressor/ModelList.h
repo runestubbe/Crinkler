@@ -7,15 +7,15 @@
 class Compressor;
 enum CompressionType;
 
-static const int MAX_MODELS = 256;
+static const int MAX_MODELS = 32768;
 
 struct Model {
 	unsigned char weight;
-	unsigned char mask;
+	unsigned int mask;
 };
 
 class ModelList4k {
-	Model	m_models[MAX_MODELS];
+	Model	m_models[256];
 public:
 	int		nmodels;
 	int		size;

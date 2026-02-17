@@ -65,7 +65,7 @@ const char *CompressionTypeName(CompressionType ct)
 unsigned int ApproximateWeights(CompressionState& cs, ModelList4k& models) {
 	for (int i = 0 ; i < models.nmodels ; i++) {
 		unsigned char w = 0;
-		for (int b = 0 ; b < 8 ; b++) {
+		for (int b = 0 ; b < 32 ; b++) {
 			if (models[i].mask & (1 << b)) {
 				w++;
 			}
@@ -171,23 +171,14 @@ ModelList4k ApproximateModels4k(const unsigned char* data, int datasize, const u
 
 	CompressionState cs(data, datasize, baseprob, saturate, &evaluator, context);
 
-	unsigned char masks[256];
-	for (int m = 0 ; m <= 255 ; m++) {
-		int mask = m;
-		mask = ((mask&0x0f)<<4)|((mask&0xf0)>>4);
-		mask = ((mask&0x33)<<2)|((mask&0xcc)>>2);
-		mask = ((mask&0x55)<<1)|((mask&0xaa)>>1);
-		masks[m] = (unsigned char)mask;
-	}
-
 	modelsets[0].size = cs.GetCompressedSize() | ELITE_FLAG;
 	for (int s = 1; s < width; s++) {
 		modelsets[s].size = INT_MAX;
 	}
 
-	for (int maski = 0 ; maski <= 255 ; maski++) {
-		int mask = masks[maski];
+	for (unsigned int maski = 0 ; maski < MAX_MODELS ; maski++) {
 
+		unsigned int mask = maski;
 		for (int s = 0; s < width; s++) {
 			ModelList4k& models = modelsets[s];
 			ModelList4k& new_models = modelsets[width + s];
@@ -204,7 +195,7 @@ ModelList4k ApproximateModels4k(const unsigned char* data, int datasize, const u
 
 			if (!used && models.nmodels < MAX_N_MODELS) {
 				new_models = models;
-				new_models[models.nmodels].mask = (unsigned char)mask;
+				new_models[models.nmodels].mask = mask;
 				new_models[models.nmodels].weight = 0;
 				new_models.nmodels++;
 
@@ -243,7 +234,7 @@ ModelList4k ApproximateModels4k(const unsigned char* data, int datasize, const u
 		});
 
 		if(progressCallback)
-			progressCallback(progressUserData, maski+1, 256);
+			progressCallback(progressUserData, maski+1, MAX_MODELS);
 	}
 
 	assert((modelsets[0].size & ELITE_FLAG) != 0);
