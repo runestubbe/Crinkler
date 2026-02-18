@@ -10,14 +10,7 @@ Manual:
 
 License:
 
-Test:
-	The Explorer?
-	More?
-
 Report:
-	Choose label belonging to section of origin
-	Unfold target of label when clicked
-	Drop tooltip?
 	Models for each part
 	Reuse mode?
 	Time spent
@@ -28,6 +21,7 @@ Report:
 	Upgrade to newest diStorm (BSD license)
 
 Compressor:
+	Cache hashes in reordering
 	Obfuscate headers to prevent Crinkler.exe being flagged as malware
 	Only one size estimator
 	Better reordering??
@@ -42,6 +36,7 @@ Output/UI:
 	ProgressGUI crashes if you have DisplayFusion installed
 
 Linker:
+	Err on parts bigger than 64k
 	Eliminate trailing jump to next section
 	Test for name containing crinkler instead of exact
 	Load obj files before lib files
