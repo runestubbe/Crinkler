@@ -46,7 +46,7 @@ bool CompressionStateEvaluator::Init(ModelPredictions* models, int length, int b
 		m_packageSizes[i] = std::min(length - i * PACKAGE_SIZE, PACKAGE_SIZE) * (TABLE_BIT_PRECISION << EXTRA_BITS);
 	}
 	m_compressedSize = (long long)length << TABLE_BIT_PRECISION_BITS;
-	m_compressedSize += (8 * 8) << TABLE_BIT_PRECISION_BITS;	// account for model mask and length
+	m_compressedSize += (6 * 8) << TABLE_BIT_PRECISION_BITS;	// account for model mask and length
 
 	return true;
 }

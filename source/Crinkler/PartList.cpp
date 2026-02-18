@@ -517,6 +517,16 @@ int	PartList::FindBestPartIndex(Hunk* hunk) const
 	return 0;
 }
 
+int	PartList::CalcTotalPartAndModelOverhead()
+{
+	int total = 0;
+	ForEachPart([&total](Part& part, int index) {
+		if (part.IsInitialized())
+			total += 2 + 4 + part.m_model4k.nmodels;
+		});
+	return total;
+}
+
 SymbolMap::SymbolMap(Part& part)
 {
 	part.ForEachHunk([this](Hunk* hunk) {

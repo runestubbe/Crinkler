@@ -29,7 +29,7 @@ public:
 	const Model&	operator[] (unsigned idx) const;
 
 	void			AddModel(Model model);
-	void			SetFromModelsAndMask(const unsigned char* models, int weightmask);
+	void			SetFromModelsAndMask(const unsigned char* models, int weightmask, bool* terminate = nullptr);
 	void			Print(FILE *f) const;
 	unsigned int	GetMaskList(unsigned char* masks, bool terminate) const;
 	CompressionType DetectCompressionType() const;

@@ -57,6 +57,9 @@ public:
 	int				GetLinkedSize() const { return m_linkedSize; }
 	int				GetCompressedSize() const { return m_compressedSize; }
 
+	void			SetLinkedOffset(int offset) { m_linkedOffset = offset; }
+	void			SetLinkedSize(int size) { m_linkedSize = size; }
+
 	bool			IsInitialized() const { return m_initialized; }
 	bool			IsEmpty() const { return m_hunks.size() == 0; }
 
@@ -112,6 +115,8 @@ public:
 	int		FindBestPartIndex(Hunk* hunk) const;
 
 	bool	NeedsContinuationJump(Hunk* hunk, Hunk* nextHunk) const;
+
+	int		CalcTotalPartAndModelOverhead();
 };
 
 class SymbolMap

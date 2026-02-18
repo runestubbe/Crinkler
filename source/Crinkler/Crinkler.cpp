@@ -471,8 +471,6 @@ void Crinkler::SetHeaderConstants4k(Hunk* header, Hunk* phase1, PartList& parts,
 }
 
 void Crinkler::Recompress(const char* input_filename, const char* output_filename) {
-#if 0
-	// REFACTOR_TODO
 	MemoryFile file(input_filename);
 	unsigned char* indata = (unsigned char*)file.GetPtr();
 
@@ -561,7 +559,9 @@ void Crinkler::Recompress(const char* input_filename, const char* output_filenam
 			break;
 	}
 
+	PartList parts;
 
+	CompressionType compmode = COMPRESSION_INSTANT;
 	int virtualSize = (*(int*)&indata[pe_header_offset+0x50]) - 0x20000;
 	int hashtable_size = -1;
 	int return_offset = -1;
@@ -583,14 +583,15 @@ void Crinkler::Recompress(const char* input_filename, const char* output_filenam
 				rawsize_start = i + 3;
 			}
 
+			ModelList1k& models = parts.GetCodePart().m_model1k;
 			if(version <= 21)
 			{
 				if(indata[i] == 0xB9 && indata[i + 1] == 0x00 && indata[i + 2] == 0x00 && indata[i + 3] == 0x00 && indata[i + 4] == 0x00 &&
 					indata[i + 5] == 0x59 && indata[i + 6] == 0x6a)
 				{
-					m_modellist1k.baseprob0 = indata[i + 7];
-					m_modellist1k.baseprob1 = indata[i + 9];
-					m_modellist1k.modelmask = *(unsigned int*)&indata[i + 11];
+					models.baseprob0 = indata[i + 7];
+					models.baseprob1 = indata[i + 9];
+					models.modelmask = *(unsigned int*)&indata[i + 11];
 				}
 			}
 			else
@@ -598,15 +599,15 @@ void Crinkler::Recompress(const char* input_filename, const char* output_filenam
 				if(indata[i] == 0x6a && indata[i + 2] == 0x3d && indata[i + 3] == 0x00 && indata[i + 4] == 0x00 && indata[i + 5] == 0x00 &&
 					indata[i + 6] == 0x00 && indata[i + 7] == 0x6a )
 				{
-					m_modellist1k.baseprob0 = indata[i + 1];
-					m_modellist1k.baseprob1 = indata[i + 8];
-					m_modellist1k.modelmask = *(unsigned int*)&indata[i + 10];
+					models.baseprob0 = indata[i + 1];
+					models.baseprob1 = indata[i + 8];
+					models.modelmask = *(unsigned int*)&indata[i + 10];
 				}
 			}
 
 			if(indata[i] == 0x7F && indata[i + 2] == 0xB1 && indata[i + 4] == 0x89 && indata[i + 5] == 0xE6)
 			{
-				m_modellist1k.boost = indata[i + 3];
+				models.boost = indata[i + 3];
 			}
 
 			if(indata[i] == 0x0F && indata[i + 1] == 0xA3 && indata[i + 2] == 0x2D && compressed_data_rva == -1)
@@ -619,14 +620,25 @@ void Crinkler::Recompress(const char* input_filename, const char* output_filenam
 			if(indata[i] == 0xbf && indata[i + 5] == 0xb9 && hashtable_size == -1) {
 				hashtable_size = (*(int*)&indata[i + 6]) * 2;
 			}
-			if(indata[i] == 0x5A && indata[i + 1] == 0x7B && indata[i + 3] == 0xC3 && return_offset == -1) {
-				return_offset = i + 3;
-				indata[return_offset] = 0xCC;
+			if (version >= 30)
+			{
+				if (indata[i] == 0x61 && indata[i + 1] == 0x5E && indata[i + 2] == 0x7B && indata[i + 4] == 0xC3 && return_offset == -1) {
+					return_offset = i + 4;
+					indata[return_offset] = 0xCC;
+				}
 			}
-			else if(indata[i] == 0x8D && indata[i + 3] == 0x7B && indata[i + 5] == 0xC3 && return_offset == -1) {
-				return_offset = i + 5;
-				indata[return_offset] = 0xCC;
+			else
+			{
+				if (indata[i] == 0x5A && indata[i + 1] == 0x7B && indata[i + 3] == 0xC3 && return_offset == -1) {
+					return_offset = i + 3;
+					indata[return_offset] = 0xCC;
+				}
+				else if (indata[i] == 0x8D && indata[i + 3] == 0x7B && indata[i + 5] == 0xC3 && return_offset == -1) {
+					return_offset = i + 5;
+					indata[return_offset] = 0xCC;
+				}
 			}
+			
 
 			if(version < 13)
 			{
@@ -656,7 +668,7 @@ void Crinkler::Recompress(const char* input_filename, const char* output_filenam
 	int models_offset = -1;
 
 	int rawsize = 0;
-	int splittingPoint = 0;
+	std::vector<int> part_sizes;
 	if(is_tiny_header)
 	{
 		if(return_offset == -1 && compressed_data_rva != -1)
@@ -665,7 +677,7 @@ void Crinkler::Recompress(const char* input_filename, const char* output_filenam
 		}
 
 		rawsize = *(unsigned short*)&indata[rawsize_start];
-		splittingPoint = rawsize;
+		part_sizes.push_back(rawsize);
 	}
 	else
 	{
@@ -675,27 +687,85 @@ void Crinkler::Recompress(const char* input_filename, const char* output_filenam
 		}
 
 		models_offset = models_address - CRINKLER_IMAGEBASE;
-		unsigned int weightmask1 = *(unsigned int*)&indata[models_offset + 4];
-		unsigned char* models1 = &indata[models_offset + 8];
-		m_modellist1.SetFromModelsAndMask(models1, weightmask1);
-		int modelskip = 8 + m_modellist1.nmodels;
-		unsigned int weightmask2 = *(unsigned int*)&indata[models_offset + modelskip + 4];
-		unsigned char* models2 = &indata[models_offset + modelskip + 8];
-		m_modellist2.SetFromModelsAndMask(models2, weightmask2);
 
-		if(version >= 13) {
-			rawsize = -(*(int*)&indata[models_offset + modelskip]) - CRINKLER_CODEBASE;
-			splittingPoint = -(*(int*)&indata[models_offset]) - CRINKLER_CODEBASE;
+		if (version >= 30)
+		{
+			int offset = models_offset;
+			unsigned short prev_part_end_pos = 0;
+
+			bool done = false;
+			int part_index = 0;
+			while(!done)
+			{
+				char custom_name[128];
+				if (part_index >= 1) {
+					sprintf(custom_name, "Part%d", part_index);
+				}
+				
+				Part& part = parts.GetOrAddPart(	part_index == 0 ? "Code" :
+													custom_name, true);
+
+				unsigned short part_end_pos = -*(unsigned short*)&indata[offset];
+				unsigned int weightmask = *(unsigned int*)&indata[offset + 2];
+
+				unsigned short part_size = part_end_pos - prev_part_end_pos;
+				prev_part_end_pos = part_end_pos;
+
+				part.m_model4k.SetFromModelsAndMask(indata + offset + 6, weightmask, &done);
+				offset += 6 + part.m_model4k.nmodels;
+				rawsize += part_size;
+				part_index++;
+				
+				part_sizes.push_back(part_size);
+			}
 		}
-		else {
-			rawsize = (*(int*)&indata[models_offset + modelskip]) / 8;
-			splittingPoint = (*(int*)&indata[models_offset]) / 8;
+		else
+		{
+			ModelList4k& codeModels = parts.GetCodePart().m_model4k;
+			ModelList4k& dataModels = parts.GetOrAddPart("Data", true).m_model4k;
+	
+			unsigned int weightmask1 = *(unsigned int*)&indata[models_offset + 4];
+			unsigned char* models1 = &indata[models_offset + 8];
+			codeModels.SetFromModelsAndMask(models1, weightmask1);
+			int modelskip = 8 + codeModels.nmodels;
+			unsigned int weightmask2 = *(unsigned int*)&indata[models_offset + modelskip + 4];
+			unsigned char* models2 = &indata[models_offset + modelskip + 8];
+			dataModels.SetFromModelsAndMask(models2, weightmask2);
+
+			int splittingPoint;
+			if (version >= 13) {
+				rawsize = -(*(int*)&indata[models_offset + modelskip]) - CRINKLER_CODEBASE;
+				splittingPoint = -(*(int*)&indata[models_offset]) - CRINKLER_CODEBASE;
+			}
+			else
+			{
+				rawsize = (*(int*)&indata[models_offset + modelskip]) / 8;
+				splittingPoint = (*(int*)&indata[models_offset]) / 8;
+			}
+			part_sizes.push_back(splittingPoint);
+			part_sizes.push_back(rawsize - splittingPoint);
 		}
+
+		compmode = parts.GetCodePart().m_model4k.DetectCompressionType();
+	}
+
+	// Update parts with part sizes
+	{
+		int offset = 0;
+		for(int part_index = 0; part_index < part_sizes.size(); part_index++) {
+			Part& part = parts[part_index];
+			const int part_size = part_sizes[part_index];
+			part.SetLinkedOffset(offset);
+			part.SetLinkedSize(part_size);
+			offset += part_size;
+		}
+		Part& part = parts.GetUninitializedPart();
+		part.SetLinkedOffset(offset);
+		part.SetLinkedSize(virtualSize - offset);
 	}
 
 	SetUseTinyHeader(is_tiny_header);
 	
-	CompressionType compmode = m_modellist1.DetectCompressionType();
 	int subsystem_version = indata[pe_header_offset+0x5C];
 	int large_address_aware = (*(unsigned short *)&indata[pe_header_offset+0x16] & 0x0020) != 0;
 
@@ -708,8 +778,7 @@ void Crinkler::Recompress(const char* input_filename, const char* output_filenam
 	{
 		exports_rva = *(int*)&indata[pe_header_offset + 0x78];
 	}
-		
-
+	
 	printf("Original file size: %d\n", length);
 	printf("Original Tiny Header: %s\n", is_tiny_header ? "YES" : "NO");
 	printf("Original Virtual size: %d\n", virtualSize);
@@ -729,12 +798,13 @@ void Crinkler::Recompress(const char* input_filename, const char* output_filenam
 	}
 	else
 	{
-		printf("Code size: %d\n", splittingPoint);
-		printf("Data size: %d\n", rawsize - splittingPoint);
+		parts.ForEachPart([](const Part& part, int index) {
+			printf("%s size: %d\n", part.GetName(), part.GetLinkedSize());
+			});
+		
 		printf("\n");
 	}
 	
-
 	STARTUPINFO startupInfo = {0};
 	startupInfo.cb = sizeof(startupInfo);
 
@@ -813,7 +883,7 @@ void Crinkler::Recompress(const char* input_filename, const char* output_filenam
 	int dll_names_address = -1;
 	bool is_tiny_import = false;
 
-	for (int i = import_offset ; i < splittingPoint-(int)sizeof(old_import_code) ; i++) {		
+	for (int i = import_offset ; i < part_sizes[0] - (int)sizeof(old_import_code); i++) {
 		if (rawdata[i] == 0xBB) {
 			hashes_address_offset = i + 1;
 			hashes_address = *(int*)&rawdata[hashes_address_offset];
@@ -852,12 +922,6 @@ void Crinkler::Recompress(const char* input_filename, const char* output_filenam
 		Log::Error("", "Cannot find old import code to patch\n");
 	}
 
-	// Make the 1k report a little more readable
-	if(is_tiny_header && dll_names_address - CRINKLER_CODEBASE < splittingPoint)
-	{
-		splittingPoint = dll_names_address - CRINKLER_CODEBASE;	
-	}
-
 	SetUseTinyImport(is_tiny_import);
 
 	printf("\n");
@@ -892,27 +956,28 @@ void Crinkler::Recompress(const char* input_filename, const char* output_filenam
 		}
 	}
 
+	Part headerPart("Header", true);
 	if(is_tiny_header)
 	{
-		m_hunkLoader.Load(m_parts, header1KObj, int(header1KObj_end - header1KObj), "crinkler header", false);
+		m_hunkLoader.Load(headerPart, header1KObj, int(header1KObj_end - header1KObj), "crinkler header", false);
 	}
 	else
 	{
 		if(is_compatibility_header)
 		{
-			m_hunkLoader.Load(m_parts, headerCompatibilityObj, int(headerCompatibilityObj_end - headerCompatibilityObj), "crinkler header");
+			m_hunkLoader.Load(headerPart, headerCompatibilityObj, int(headerCompatibilityObj_end - headerCompatibilityObj), "crinkler header");
 		}
 		else
 		{
-			m_hunkLoader.Load(m_parts, headerObj, int(headerObj_end - headerObj), "crinkler header");
+			m_hunkLoader.Load(headerPart, headerObj, int(headerObj_end - headerObj), "crinkler header");
 		}
 	}
 	
-	Hunk* header = m_parts.FindSymbol("_header")->hunk;
+	Hunk* header = headerPart.FindSymbol("_header")->hunk;
 	Hunk* depacker = nullptr;
 	
 	if (is_compatibility_header) {
-		depacker = m_parts.FindSymbol("_DepackEntry")->hunk;
+		depacker = headerPart.FindSymbol("_DepackEntry")->hunk;
 		SetHeaderSaturation(depacker);
 	}
 
@@ -922,8 +987,8 @@ void Crinkler::Recompress(const char* input_filename, const char* output_filenam
 		*(int*)&rawdata[hashes_address_offset] = new_hashes_address;
 	}
 	
-
 	Hunk* phase1 = new Hunk("linked", (char*)rawdata, HUNK_IS_CODE|HUNK_IS_WRITEABLE, 0, rawsize, virtualSize);
+
 	delete[] rawdata;
 
 	if(!is_tiny_header)
@@ -956,15 +1021,14 @@ void Crinkler::Recompress(const char* input_filename, const char* output_filenam
 					}
 				}
 			}
-
+			
 			int padding = exports_rva ? 0 : 16;
 			phase1->SetVirtualSize(phase1->GetRawSize() + padding);
 			Hunk* export_hunk = CreateExportTable(m_exports);
-			HunkList hl;
-			hl[0].AddHunkBack(phase1);
-			hl[0].AddHunkBack(export_hunk);
-			Hunk* with_exports = hl.Link("linked", CRINKLER_CODEBASE, nullptr);
-			hl.Clear();
+			PartList temp_partlist;
+			temp_partlist.GetCodePart().AddHunkBack(phase1);
+			temp_partlist.GetCodePart().AddHunkBack(export_hunk);
+			Hunk* with_exports = temp_partlist.Link("linked", CRINKLER_CODEBASE);
 			with_exports->SetVirtualSize(virtualSize);
 			with_exports->Relocate(CRINKLER_CODEBASE);
 			delete phase1;
@@ -975,6 +1039,16 @@ void Crinkler::Recompress(const char* input_filename, const char* output_filenam
 		}
 	}
 	
+
+	parts.ForEachPart([phase1](const Part& part, int index) {
+		int flags = SYMBOL_IS_RELOCATEABLE | SYMBOL_IS_SECTION | SYMBOL_IS_LOCAL;
+		if (index == 0)
+			flags |= SYMBOL_IS_CODE;
+		Symbol* s = new Symbol(part.GetName(), part.GetLinkedOffset(), flags, phase1);
+		s->hunkOffset = 0;
+		phase1->AddSymbol(s);
+		});
+
 	phase1->Trim();
 
 	printf("\nRecompressing...\n");
@@ -988,7 +1062,7 @@ void Crinkler::Recompress(const char* input_filename, const char* output_filenam
 	int size;
 	if(is_tiny_header)
 	{
-		size = Compress1k((unsigned char*)phase1->GetPtr(), phase1->GetRawSize(), data, maxsize, m_modellist1k, sizefill, nullptr);
+		size = Compress1k((unsigned char*)phase1->GetPtr(), phase1->GetRawSize(), data, maxsize, parts.GetCodePart().m_model1k, sizefill, nullptr);
 		printf("Real compressed total size: %d\n", size);
 	}
 	else
@@ -1008,7 +1082,7 @@ void Crinkler::Recompress(const char* input_filename, const char* output_filenam
 				InitProgressBar();
 
 				// Rehash
-				best_hashsize = OptimizeHashsize((unsigned char*)phase1->GetPtr(), phase1->GetRawSize(), best_hashsize, splittingPoint, m_hashtries);
+				best_hashsize = OptimizeHashsize(parts, phase1, best_hashsize, m_hashtries);
 				DeinitProgressBar();
 			}
 		}
@@ -1019,24 +1093,22 @@ void Crinkler::Recompress(const char* input_filename, const char* output_filenam
 			best_hashsize = PreviousPrime(m_hashsize / 2) * 2;
 			if(m_compressionType != COMPRESSION_INSTANT) {
 				InitProgressBar();
-				idealsize = EstimateModels((unsigned char*)phase1->GetPtr(), phase1->GetRawSize(), splittingPoint, false, false);
+				idealsize = EstimateModels(parts, phase1, false, false);
 
 				// Hashing
-				best_hashsize = OptimizeHashsize((unsigned char*)phase1->GetPtr(), phase1->GetRawSize(), best_hashsize, splittingPoint, m_hashtries);
+				best_hashsize = OptimizeHashsize(parts, phase1, best_hashsize, m_hashtries);
 				DeinitProgressBar();
 			}
 		}
-
-		ModelList4k* modelLists[] = { &m_modellist1, &m_modellist2 };
-		int segmentSizes[] = { splittingPoint, phase1->GetRawSize() - splittingPoint };
-		size = Compress4k((unsigned char*)phase1->GetPtr(), 2, segmentSizes, data, maxsize, modelLists, m_saturate != 0, CRINKLER_BASEPROB, best_hashsize, sizefill);
+		
+		size = CompressParts4k(parts, phase1, data, maxsize, best_hashsize, sizefill);
 
 		if(m_compressionType != -1 && m_compressionType != COMPRESSION_INSTANT) {
-			int sizeIncludingModels = size + m_modellist1.nmodels + m_modellist2.nmodels;
+			int sizeIncludingModels = size + parts.CalcTotalPartAndModelOverhead();
 			float byteslost = sizeIncludingModels - idealsize / (float)(BIT_PRECISION * 8);
 			printf("Real compressed total size: %d\nBytes lost to hashing: %.2f\n", sizeIncludingModels, byteslost);
 		}
-
+		
 		SetCompressionType(compmode);
 	}
 
@@ -1070,10 +1142,10 @@ void Crinkler::Recompress(const char* input_filename, const char* output_filenam
 	}
 	SetSubsystem((subsystem_version == IMAGE_SUBSYSTEM_WINDOWS_GUI) ? SUBSYSTEM_WINDOWS : SUBSYSTEM_CONSOLE);
 
-	Hunk *phase2 = FinalLink(header, depacker, hashHunk, phase1, data, size, splittingPoint, best_hashsize);
+	Hunk* phase2 = FinalLink(parts, header, depacker, hashHunk, phase1, data, size, best_hashsize);
 	delete[] data;
-
-	CompressionReportRecord* csr = phase1->GetCompressionSummary(sizefill, splittingPoint);
+	
+	CompressionReportRecord* csr = phase1->GenerateCompressionSummary(parts, sizefill);
 	if(m_printFlags & PRINT_LABELS)
 		VerboseLabels(csr);
 	if(!m_summaryFilename.empty())
@@ -1096,7 +1168,6 @@ void Crinkler::Recompress(const char* input_filename, const char* output_filenam
 
 	delete phase1;
 	delete phase2;
-#endif
 }
 
 Hunk* Crinkler::CreateDynamicInitializerHunk()
@@ -1414,11 +1485,7 @@ void Crinkler::Link(const char* filename) {
 	}
 	
 	if(!m_useTinyHeader && m_compressionType != COMPRESSION_INSTANT) {
-		int sizeIncludingModels = size;
-		parts.ForEachPart([&sizeIncludingModels](Part& part, int index) {
-			if(part.IsInitialized())
-				sizeIncludingModels += 8 + part.m_model4k.nmodels;
-			});
+		int sizeIncludingModels = size + parts.CalcTotalPartAndModelOverhead();
 		float byteslost = sizeIncludingModels - idealsize / (float) (BIT_PRECISION * 8);
 		printf("Real compressed total size: %d\nBytes lost to hashing: %.2f\n", sizeIncludingModels, byteslost);
 	}

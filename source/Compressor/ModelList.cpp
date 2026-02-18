@@ -86,8 +86,12 @@ unsigned int ModelList4k::GetMaskList(unsigned char* masks, bool terminate) cons
 	return weightmask & (-2 + (int(terminate) ^ Parity(weightmask)));
 }
 
-void ModelList4k::SetFromModelsAndMask(const unsigned char* models, int weightmask) {
+void ModelList4k::SetFromModelsAndMask(const unsigned char* models, int weightmask, bool* terminate) {
 	nmodels = 0;
+
+	if (terminate)
+		*terminate = !Parity(weightmask);
+
 	int weight = 0;
 	do {
 		while(weightmask & 0x80000000) {
