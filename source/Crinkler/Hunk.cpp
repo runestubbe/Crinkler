@@ -262,28 +262,24 @@ CompressionReportRecord* Hunk::GenerateCompressionSummary(PartList& parts, int* 
 	sort(symbols.begin(), symbols.end(), SymbolComparator);
 
 	CompressionReportRecord* root = new CompressionReportRecord("root", RECORD_ROOT, 0, 0);
-	CompressionReportRecord* section = new CompressionReportRecord(GetName(), RECORD_PART, 0, 0);
-	section->miscString = GetName();
-	CompressionReportRecord* oldSection = new CompressionReportRecord(GetName(), RECORD_SECTION, 0, 0);
-	oldSection->miscString = GetImportDll();
+
+	auto makeRecord = [&](const char* name, int type, int pos) {
+		return new CompressionReportRecord(name, type, pos, (pos < GetRawSize()) ? sizefill[pos] : -1);
+	};
 
 	parts.ForEachPart([&](Part& part, int index)
 		{
 			char desc[512];
 			sprintf(desc, "%s sections", part.GetName());
 
-			CompressionReportRecord* record;
-			if (part.IsInitialized())
-				record = new CompressionReportRecord(desc, RECORD_PART, part.GetLinkedOffset(), sizefill[part.GetLinkedOffset()]);
-			else
-				record = new CompressionReportRecord(desc, RECORD_PART, part.GetLinkedOffset(), -1);
+			CompressionReportRecord* record = makeRecord(desc, RECORD_PART, part.GetLinkedOffset());
 
 			root->children.push_back(record);
 		});
 
 	for(vector<Symbol*>::iterator it = symbols.begin(); it != symbols.end(); it++) {
 		Symbol* sym = *it;
-		CompressionReportRecord* c = new CompressionReportRecord(sym->name.c_str(), 0, sym->value, (sym->value < GetRawSize()) ? sizefill[sym->value] : -1);
+		CompressionReportRecord* c = makeRecord(sym->name.c_str(), 0, sym->value);
 
 		// Copy misc string
 		c->miscString = sym->miscString;
@@ -314,8 +310,7 @@ CompressionReportRecord* Hunk::GenerateCompressionSummary(PartList& parts, int* 
 			if(r->children.empty()) {	// Add a dummy element if we skip a level
 				int level = r->GetLevel()+1;
 				string name = c->pos == r->pos ? c->name : r->name;
-				CompressionReportRecord* dummy = new CompressionReportRecord(name.c_str(), 
-					GetType(level), sym->value, (sym->value < GetRawSize()) ? sizefill[sym->value] : -1);
+				CompressionReportRecord* dummy = makeRecord(name.c_str(), GetType(level), sym->value);
 				r->type |= RECORD_NOANCHOR;
 				if(level == LEVEL_SECTION)
 					dummy->miscString = ".dummy";
@@ -323,27 +318,24 @@ CompressionReportRecord* Hunk::GenerateCompressionSummary(PartList& parts, int* 
 			}
 			r = r->children.back();
 		}
+		r->children.push_back(c);
 
 		bool less_than_next = (it + 1) == symbols.end() || sym->value < (*(it + 1))->value;
 
-		// Add public symbol to start of sections, if they don't have one already
-		if(sym->value < GetRawSize() && (c->type & RECORD_SECTION) && less_than_next) {
-			CompressionReportRecord* dummy = new CompressionReportRecord(c->name.c_str(), 
-				RECORD_PUBLIC, sym->value, sizefill[sym->value]);
+		// Add public label to start of sections, if there isn't one already
+		if((c->type & RECORD_SECTION) && less_than_next) {
+			CompressionReportRecord* dummy = makeRecord(c->name.c_str(), RECORD_PUBLIC, sym->value);
 			c->children.push_back(dummy);
 			c->type |= RECORD_NOANCHOR;
+			c = dummy;
 		}
 
-		// Add public symbol to start of sections, if they don't have one already
+		// Add private label after public ones, if there isn't one already
 		if(sym->value < GetRawSize() && (c->type & RECORD_PUBLIC) && less_than_next) {
-			CompressionReportRecord* dummy = new CompressionReportRecord(c->name.c_str(), 
-				0, sym->value, sizefill[sym->value]);
+			CompressionReportRecord* dummy = makeRecord(c->name.c_str(), 0, sym->value);
 			c->children.push_back(dummy);
 			c->type |= RECORD_NOANCHOR;
 		}
-
-
-		r->children.push_back(c);
 	}
 
 	root->CalculateSize(m_virtualsize, sizefill[GetRawSize()]);
