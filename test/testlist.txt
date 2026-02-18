@@ -1,6 +1,7 @@
 als		/SUBSYSTEM:WINDOWS als\main.obj als\midi.obj als\miniglsl.obj /RANGE:opengl32
 benitoite	/SUBSYSTEM:CONSOLE /ENTRY:tinyentry benitoite\comcall.obj benitoite\data.obj benitoite\DXInit.obj benitoite\main.obj benitoite\meshasm.obj benitoite\misc.obj benitoite\resources.obj benitoite\SimpleEdgeBreaker.obj benitoite\texturegen2.obj /TRANSFORM:CALLS /REPLACEDLL:d3dx9_43=d3dx9_25 /RANGE:d3dx9_25
 diffusion	/SUBSYSTEM:WINDOWS diffusion\comcall.obj diffusion\draw.obj diffusion\DXinit.obj diffusion\effect.obj diffusion\Main.obj diffusion\picture.obj
+explorer	/SUBSYSTEM:WINDOWS /ENTRY:entrypoint explorer\main_rel.obj explorer\4klang.obj /TRANSFORM:CALLS /RANGE:opengl32
 fallty		/SUBSYSTEM:WINDOWS fallty\main.obj fallty\kzgwave.obj fallty\module.obj fallty\miniglsl.obj
 galv		/SUBSYSTEM:CONSOLE /ENTRY:tinyentry galv\comcall.obj galv\DXinit.obj galv\intro.obj galv\intro_asm.obj galv\font_asm.obj galv\texturegen2.obj galv\shader.obj galv\resources.obj galv\text.obj galv\beatdata.obj galv\timing.obj /REPLACEDLL:d3dx9_43=d3dx9_25
 micropolis	/SUBSYSTEM:WINDOWS micropolis\startup.obj micropolis\render.obj micropolis\render-asm.obj micropolis\sound.obj micropolis\sound-asm.obj /TRANSFORM:CALLS /RANGE:opengl32
