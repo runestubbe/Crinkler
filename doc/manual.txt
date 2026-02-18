@@ -4,7 +4,7 @@ CRINKLER - Compressing linker for Windows specialized for 4k intros
 Aske Simon Christensen "Blueberry/Loonies"
 Rune L. H. Stubbe "Mentor/TBC"
 
-Version 2.3 (July 21, 2020)
+Version 3.0 (February ??, 2026)
 
 Web:    http://crinkler.net/
 GitHub: https://github.com/runestubbe/Crinkler
@@ -14,6 +14,25 @@ Mail:   authors@crinkler.net
 
 VERSION HISTORY
 ---------------
+??.02.26: 3.0:  Support any number of parts, instead of just code and data.
+                Improved model hashing using CRC32, saving 3 bytes in header.
+                Crinkler and the EXE files it produces now require SSE4.2.
+                Uncompressed size is now limited to 64k per part.
+                /TEXTPART option to control creating a part with text data.
+                Move sections between parts by moving them in the reuse file.
+                Revamped set of reuse modes, specifying how much is reused.
+                /REUSEMODE:ASK to pop up a dialog to select reuse mode.
+                Always update reuse file when sections are added or removed.
+                Always revert if size did not improve compared to reuse file.
+                /COMPMODE:INSTANT and /REUSEMODE:ALL runs are now much faster.
+                Ideal and real compressed sizes now include model overhead.
+                Widened progress GUI to make room for longer part names.
+                Light and dark themes for the compression report.
+                Hover or select bytes in report to measure size of region.
+                Removed size tooltips from report, as these are now redundant.
+                Fixed local labels sometimes being shown in the wrong section.
+                Expand target label when clicking on a label reference.
+
 21.07.20: 2.3:  Crinkler is now open source under the Zlib license!
                 /TINYHEADER size reduced by another 3 bytes.
                 Faster hash size optimization, especially with many cores.
