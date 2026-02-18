@@ -540,22 +540,22 @@ bool Hunk::IsLikelyText() const
 	unsigned int alignment_mask = (1u << alignment) - 1u;
 
 	bool prev_zero = false;
+	int num_invalid = 0;
 	for (int i = 0; i < size; i++)
 	{
 		const unsigned char c = ptr[i];
 
-		// RUNETODO: Update heuristic to allow some amount of non-text data?
-		// See Nevada report
 		if ((c >= 32 && c < 127) || c == '\n' || c == '\t' || c == '\n' || c == '\r') {
 			prev_zero = false;
 		} else if (c == 0) {
 			if ((i & alignment_mask) == 0 && prev_zero)	// Zeros cross alignment boundary
-				return false;
+				num_invalid++;
 			prev_zero = true;
 		} else {
-			return false;
+			num_invalid++;
+			prev_zero = false;
 		}
 	}
 
-	return true;
+	return num_invalid <= size / 16;
 }
