@@ -13,13 +13,11 @@
 #undef APSTUDIO_READONLY_SYMBOLS
 
 /////////////////////////////////////////////////////////////////////////////
-// English (U.S.) resources
+// English (United States) resources
 
 #if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENU)
-#ifdef _WIN32
 LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
 #pragma code_page(1252)
-#endif //_WIN32
 
 #ifdef APSTUDIO_INVOKED
 /////////////////////////////////////////////////////////////////////////////
@@ -52,14 +50,14 @@ END
 // Dialog
 //
 
-IDD_PROGRESS_DIALOG DIALOGEX 0, 0, 217, 30
+IDD_PROGRESS_DIALOG DIALOGEX 0, 0, 256, 29
 STYLE DS_SETFONT | DS_MODALFRAME | DS_SETFOREGROUND | DS_FIXEDSYS | DS_NOFAILCREATE | WS_MINIMIZEBOX | WS_POPUP | WS_VISIBLE | WS_CAPTION | WS_SYSMENU
 CAPTION "Crinkler"
 FONT 8, "MS Shell Dlg", 400, 0, 0x1
 BEGIN
-    DEFPUSHBUTTON   "Abort",ID_KILL,179,7,31,15,NOT WS_TABSTOP
-    RTEXT           "",IDC_ELAPSED_TIME,147,7,29,15,SS_CENTERIMAGE
-    CONTROL         "",IDC_PROGRESS1,"msctls_progress32",WS_BORDER | 0x1,7,7,140,15
+    DEFPUSHBUTTON   "Abort",ID_KILL,218,7,31,14,NOT WS_TABSTOP
+    RTEXT           "",IDC_ELAPSED_TIME,183,7,29,14,SS_CENTERIMAGE
+    CONTROL         "",IDC_PROGRESS1,"msctls_progress32",PBS_SMOOTH | WS_BORDER,7,7,175,14
 END
 
 IDD_COMPRESSION_SUMMARY_DIALOG DIALOGEX 0, 0, 451, 298
@@ -78,14 +76,14 @@ END
 //
 
 #ifdef APSTUDIO_INVOKED
-GUIDELINES DESIGNINFO 
+GUIDELINES DESIGNINFO
 BEGIN
     IDD_PROGRESS_DIALOG, DIALOG
     BEGIN
         LEFTMARGIN, 7
-        RIGHTMARGIN, 210
+        RIGHTMARGIN, 249
         TOPMARGIN, 7
-        BOTTOMMARGIN, 22
+        BOTTOMMARGIN, 21
     END
 
     IDD_COMPRESSION_SUMMARY_DIALOG, DIALOG
@@ -98,7 +96,18 @@ BEGIN
 END
 #endif    // APSTUDIO_INVOKED
 
-#endif    // English (U.S.) resources
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// AFX_DIALOG_LAYOUT
+//
+
+IDD_PROGRESS_DIALOG AFX_DIALOG_LAYOUT
+BEGIN
+    0
+END
+
+#endif    // English (United States) resources
 /////////////////////////////////////////////////////////////////////////////
 
 
