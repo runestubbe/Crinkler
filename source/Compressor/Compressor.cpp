@@ -2,7 +2,6 @@
 #include <windows.h>
 #include <cstdio>
 #include <ppl.h>
-#include <algorithm>
 
 #include "Compressor.h"
 #include "CompressionState.h"

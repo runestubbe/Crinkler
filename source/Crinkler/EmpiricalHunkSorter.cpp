@@ -19,7 +19,7 @@ static void PermuteHunklist(PartList& parts, int strength) {
 		numTotalHunks += numHunks;
 	}
 	
-	int numPermutes = (rand() % strength) + 1;	//TODO
+	int numPermutes = (rand() % strength) + 1;
 	for (int p = 0 ; p < numPermutes; p++)
 	{
 		int t = rand() % numTotalHunks;

@@ -259,7 +259,7 @@ int CompressionStream::EvaluateSize(const unsigned char* d, int size, const Mode
 		pos_threshold += size;
 	}
 
-	uint64_t totalsize = (8 + models.nmodels) * TABLE_BIT_PRECISION;
+	uint64_t totalsize = (6 + models.nmodels) * TABLE_BIT_PRECISION;
 	for(int pos = 0; pos < size; pos++) {
 		int bit = (data[pos] >> inverted_bitpos) & 1;
 		totalsize += AritSize2(sums[pos * 2 + bit], sums[pos * 2 + !bit]);
