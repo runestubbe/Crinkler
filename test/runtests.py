@@ -20,7 +20,8 @@ LIBS = [
     'opengl32.lib',
     'user32.lib',
     'winmm.lib',
-    'xinput.lib'
+    'xinput.lib',
+    'msvcrt_old.lib'
 ]
 
 FIXED_OPTIONS = [
@@ -40,6 +41,7 @@ FIXED_OPTIONS = [
     '/LIBPATH:""C:\\Program Files (x86)\\Windows Kits\\10\\Lib\\10.0.10240.0\\um\\x86""',
     '/LIBPATH:""C:\\Program Files (x86)\\Windows Kits\\10\\Lib\\10.0.10150.0\\um\\x86""',
     '/LIBPATH:""C:\\Program Files (x86)\\Microsoft DirectX SDK (June 2010)\\Lib\\x86""',
+    '/LIBPATH:libs',
 ]
 
 EXTRA_OPTIONS =  ['/COMPMODE:SLOW', '/ORDERTRIES:10000', '/HASHSIZE:500', '/HASHTRIES:1000',]
@@ -77,10 +79,13 @@ def runtests(crinkler_exe, testlist, logfile, chosen, makename, options, report 
 
         rval = subprocess.call(cmdline, stdout=logfile, stderr=logfile)
         if rval == 0:
-            size = os.stat(exefile).st_size
-            print("\t%5d" % size, end='')
-            if post:
-                post(name)
+            try:
+                size = os.stat(exefile).st_size
+                print("\t%5d" % size, end='')
+                if post:
+                    post(name)
+            except Exception:
+                print("\terror", end='')
         else:
             print("\terror", end='')
         sys.stdout.flush()
