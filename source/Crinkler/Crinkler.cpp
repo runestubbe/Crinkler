@@ -1388,7 +1388,8 @@ void Crinkler::Link(const char* filename) {
 					}
 					});
 
-				if(m_textPart == TEXT_PART_YES || totalTextSize >= 384)
+				printf("Total text size: %d\n", totalTextSize);
+				if(m_textPart == TEXT_PART_YES || totalTextSize >= 500)
 					parts.GetOrAddPart("Text", true);
 			}
 		}

@@ -1,7 +1,5 @@
 
 Manual:
-	Reformulate code/data into parts
-	/TEXTPART
 	New reuse modes
 	Report measure
 	describe model masks
@@ -32,7 +30,6 @@ Output/UI:
 	button in progressgui to skip phase
 	Target size option
 	Parameter combination validity
-	Icon
 	ProgressGUI crashes if you have DisplayFusion installed
 
 Linker:

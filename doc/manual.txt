@@ -253,12 +253,12 @@ COMPATIBILITY
 
 The goal of Crinkler is for the produced EXE files to be compatible
 with all widely used Windows versions and configurations. As of
-version 2.0a, the EXE files produced by Crinkler are, to the best of
-our knowledge, compatible with Windows XP, Windows Vista, Windows 7,
-Windows 8 and Windows 10, both 32 bit and 64 bit versions. They are
-compatible with Data Execution Prevention and with execution hooks
-that inspect the import or export table of launched executables
-(graphics drivers are known to do this).
+version 2.0a and later, the EXE files produced by Crinkler are, to
+the best of our knowledge, compatible with Windows XP, Windows Vista,
+Windows 7, Windows 8, Windows 10 and Windows 11, both 32 bit and
+64 bit versions. They are compatible with Data Execution Prevention
+and with execution hooks that inspect the import or export table of
+launched executables (graphics drivers are known to do this).
 
 It is not a primary goal of Crinkler to anticipate incompatibilities
 that may arise in the future as a consequence of new Windows versions,
@@ -317,11 +317,11 @@ compression:
   results in slower compression, but this is usually a reasonable
   price to pay for the extra bytes gained on the file size.
 
-- The contents of the executable are split into two parts - a code
-  part and a data part - and each of these are compressed
-  individually. This leads to better compression, as code and data are
-  usually very different in structure and so do not benefit from being
-  compressed together.
+- The contents of the executable are split into multiple parts - by
+  default a code part, a text data part and a general data part - and
+  each of these are compressed individually. This leads to better
+  compression, as code, text and other data are usually very different
+  in structure and so do not benefit from being compressed together.
 
 - DLL functions are imported by hash code. This is robust to
   structural changes to the DLL between different versions while being
@@ -615,6 +615,16 @@ Linker/Command Line/Additional Options:
     since Crinkler has to calculate the compressed size anew on every
     reordering. Usually, the size does not improve noticeably after a
     few thousand iterations.
+
+/TEXTPART:AUTO
+/TEXTPART:NO
+/TEXTPART:YES
+
+    Specifies whether Crinkler should create a part consisting of all
+    sections that look like text data (according to an internal
+    heuristic). With AUTO (the default), the text part will be created
+    if the total uncompressed size of all sections that look like text
+    data is at least 500 bytes.
 
 /REUSE:[reuse parameter file name]
 /REUSEMODE:STABLE
