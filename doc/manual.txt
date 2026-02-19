@@ -18,6 +18,7 @@ VERSION HISTORY
                 Improved model hashing using CRC32, saving 3 bytes in header.
                 Crinkler and the EXE files it produces now require SSE4.2.
                 Uncompressed size is now limited to 64k per part.
+                Dropped support for /REPLACEDLL during recompression.
                 /TEXTPART option to control creating a part with text data.
                 Move sections between parts by moving them in the reuse file.
                 Revamped set of reuse modes, specifying how much is reused.
@@ -29,7 +30,7 @@ VERSION HISTORY
                 Widened progress GUI to make room for longer part names.
                 Light and dark themes plus icon for the compression report.
                 Show filename and size in the title of the compression report.
-                Hover or select bytes in report to measure size of region.
+                Select range of bytes in report to measure size of region.
                 Removed size tooltips from report, as these are now redundant.
                 Fixed local labels sometimes being shown in the wrong section.
                 Expand target label when clicking on a label reference.
@@ -627,55 +628,65 @@ Linker/Command Line/Additional Options:
     data is at least 500 bytes.
 
 /REUSE:[reuse parameter file name]
-/REUSEMODE:STABLE
-/REUSEMODE:IMPROVE
-/REUSEMODE:WRITE
 /REUSEMODE:OFF
+/REUSEMODE:NOTHING
+/REUSEMODE:PARTS
+/REUSEMODE:SECTIONS
+/REUSEMODE:MODELS
+/REUSEMODE:ALL
+/REUSEMODE:ASK
 
-    After compression, write information about the selected models,
-    the ordering of sections and the optimized hash table size to a
-    text file with the specified name. If the file exists already,
-    use the parameters in the file as input to the compression in a
-    manner dependent on the chosen REUSEMODE:
+    After compression, write information about the parts, the
+    ordering of sections within parts, the selected models and the
+    optimized hash table size to a text file with the specified name.
+    If the file exists already, use some or all of the parameters in
+    the file as input to the compression, according to the chosen
+    REUSEMODE (described below).
 
-    With STABLE (the default), skip all model estimation, section
-    reordering and hash table size optimization and simply use the
-    parameters exactly as in the file. Keep the reuse file as is.
-    This option can be used to try out small changes to the contents
-    of the code and data with a stable compression. Thus, it gives
-    a much more reliable estimation of whether the change was an
-    improvement or not. It is also useful as a way to compress very
-    quickly after the first time with a similar compression ratio.
+    Editing the reuse file by hand can be used to create new parts,
+    to move sections between parts and (with reuse modes SECTIONS and
+    above) to experiment with section reordering manually.
 
-    With IMPROVE, only the section ordering from the file is reused,
-    and a normal compression procedure is performed. If section
-    reordering is enabled, it starts from the ordering in the reuse
-    file and tries to optimize the ordering based on that. The file is
-    written back only if the final file size is smaller than what
-    the parameters in the reuse file would have given (which is not
-    necessarily the size of the existing file, depending on what
-    changes and operations are performed in the meantime).
-    The option can be used to check whether better parameters can be
-    found than the ones cached in the reuse file. It is also a way to
-    run some extra reordering iterations (if reordering is enabled)
-    to see if this improves compression.
+    If sections are added or removed compared to the ones mentioned
+    in the reuse file, they are added/removed and the reuse file is
+    updated accordingly.
 
-    For both modes, it can be useful to edit the reuse file by hand
-    to try out parameters manually or to nudge Crinkler in some
-    direction.
+    Parameters that are not selected for reuse are inferred as
+    normally be the compression process. If the resulting compression
+    improves the size compared to what it would be with the parameters
+    from the reuse file, the reuse file is updated with the new
+    parameters. Otherwise, the compression result is discarded, and
+    the file is compressed with the parameters from the reuse file.
 
-    With WRITE, the reuse file is not read, but is still written
-    after compression, overwriting the file if it exists. This can be
-    conveniently used when reuse is not desired, such that it can be
-    switched on at any time (by changing the reuse mode to STABLE or
-    IMPROVE) without needing another compression run.
+    The REUSEMODE specifies which parameters are reused:
 
-    With OFF, it is as if no reuse file is specified. This is simply
+    OFF: This is as if no reuse file is specified. This is simply
     a way to disable the option without removing the file from the
     commandline.
 
-    If COMPMODE is set to INSTANT, the reuse mode is also considered
-    to be OFF.
+    NOTHING: The contents of the reuse file are ignored, and
+    the reuse file is always overwritten.
+
+    PARTS: The parts from the reuse file are used, but the
+    ordering of sections within parts, the models for each part,
+    and the hash table size are recalculated.
+
+    SECTIONS: The ordering of the sections is reused, but the models
+    for each part and the hash table size are recalculated.
+
+    MODELS: Only the hash table size is recalculated.
+
+    ALL (default): Everything is reused. This mode can be used to try
+    out small changes to the contents of the code and data with a
+    stable compression, as it gives a more reliable estimation of
+    whether the change was an improvement or not. It is also useful as
+    a way to compress very quickly after the first time with a similar
+    compression ratio.
+
+    ASK: Pop up a dialog to select the reuse mode interactively.
+    Closing the window or pressing escape will select ALL.
+
+    If COMPMODE is INSTANT, the reuse mode is considered to be OFF.
 
 /RANGE:[DLL name]
 
@@ -743,10 +754,10 @@ Linker/Command Line/Additional Options:
     table after decompression has taken place.
 
     For PE header technical reasons, all exports must be placed earlier
-    in memory than the export table. Thus, only symbols in the code and
+    in memory than the export table. Thus, only symbols in code and
     data sections can be exported. If an uninitialized (BSS) symbol is
-    exported, it will be automatically moved to the data section (with
-    a warning). Beware that this will move the whole section containing
+    exported, it will be automatically moved to a data section (with a
+    warning). Beware that this will move the whole section containing
     the symbol, so other symbols might be moved along with it.
 
     The EXPORT option can be used to signal to the graphics driver that
@@ -908,12 +919,12 @@ specified under Linker/Command Line/Additional Options:
 /REPORT:[HTML file name]
 
     Write an HTML file with a detailed, colorful, interactive report
-    on the compression result. The code section will be shown as hex
-    dump and disassembly of the code, and the data section will be
-    shown as hex and ascii dump. All bytes will be colored to show how
-    much that byte was compressed. This report can be useful in
-    determining which parts of the executable take up the most space
-    and which things to change to reduce the size.
+    on the compression result. Code sections will be shown as hex dump
+    and disassembly of the code, and data sections will be shown as
+    hex and ascii dump. All bytes will be colored to show how much
+    that byte was compressed. This report can be useful in determining
+    which parts of the executable take up the most space and which
+    things to change to reduce the size.
 
 /PRINT:LABELS
 
@@ -972,12 +983,8 @@ be an EXE file produced by Crinkler 0.4 or newer. Most options then
 take on slightly different meanings, as described here.
 
 The /CRINKLER, /PRIORITY, @commandfile and /PROGRESSGUI options work
-as normally. The /ENTRY, /LIBPATH, /ORDERTRIES, /RANGE, /FALLBACKDLL,
-/UNSAFEIMPORT, /TRANSFORM:CALLS, /NOINITIALIZERS, /TRUNCATEFLOATS,
-/OVERRIDEALIGNMENTS, /UNALIGNCODE, /TINYHEADER and /TINYIMPORT options
-are ignored, as the parameters specified by these options cannot be
-changed via recompression. The /PRINT options are also ignored. The
-remaining options work as follows:
+as normally. Below are described the options that have special meaning
+during recompression. All other options are ignored.
 
 /SUBSYSTEM:CONSOLE
 /SUBSYSTEM:WINDOWS
@@ -1034,11 +1041,6 @@ remaining options work as follows:
 
     If hash size optimization takes place, this option specifies the
     number of tries as normally. Otherwise it is ignored.
-
-/REPLACEDLL:[oldDLL]=[newDLL]
-
-    Replaces an original DLL by a new one. Only works if the names
-    of the DLLs are exactly the same length.
 
 /STRIPEXPORTS
 

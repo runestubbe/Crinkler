@@ -1,7 +1,5 @@
 
 Manual:
-	New reuse modes
-	Report measure
 	describe model masks
 	test standard library chapter validity
 	/QIfist?
