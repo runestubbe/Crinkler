@@ -27,7 +27,7 @@ VERSION HISTORY
                 /COMPMODE:INSTANT and /REUSEMODE:ALL runs are now much faster.
                 Ideal and real compressed sizes now include model overhead.
                 Widened progress GUI to make room for longer part names.
-                Light and dark themes for the compression report.
+                Light and dark themes plus icon for the compression report.
                 Hover or select bytes in report to measure size of region.
                 Removed size tooltips from report, as these are now redundant.
                 Fixed local labels sometimes being shown in the wrong section.

@@ -12,6 +12,7 @@
 #include "Crinkler.h"
 #include "StringMisc.h"
 #include "../../external/distorm/distorm.h"
+#include "data.h"
 
 #include <format>
 #include <vector>
@@ -24,7 +25,6 @@ static const char* htmlHeader0 = R""""(
 <html><head>
 <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
 <title>Crinkler compression report</title>
-<script type='text/javascript'>
 )"""";
 
 static const char* script = R""""(
@@ -307,7 +307,6 @@ function initialize() {
 )"""";
 
 static const char* htmlHeader1 = R""""(
-</script>
 <style type='text/css'>
 body{
 	font-family:monospace;
@@ -705,7 +704,12 @@ static void HtmlReportRecursive(CompressionReportRecord* csr, back_insert_iterat
 		// Header until script
 		format_to(out, "{}", htmlHeader0);
 
+		// Icon
+		string icon_base64 = Base64Encode(iconImage, (int)(iconImage_end - iconImage));
+		format_to(out, "<link rel='icon' href='data:image/png;base64,{}'>", icon_base64);
+
 		// Script
+		format_to(out, "<script type='text/javascript'>");
 		format_to(out, "const CODEBASE = {};\n", CRINKLER_CODEBASE);
 		format_to(out, "const BIT_PRECISION = {};\n", BIT_PRECISION);
 		format_to(out, "const sizefill = [");
@@ -714,6 +718,7 @@ static void HtmlReportRecursive(CompressionReportRecord* csr, back_insert_iterat
 		}
 		format_to(out, "];\n");
 		format_to(out, "{}", script);
+		format_to(out, "</script>");
 
 		// Header after script
 		time_t rawtime;

@@ -71,3 +71,20 @@ std::vector<std::string> IntoLines(const char *data, int length) {
 	}
 	return lines;
 }
+
+string Base64Encode(const char *data, int length) {
+	static const char alphabet[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+	string out;
+	out.reserve((length + 2) / 3 * 4);
+	for (int i = 0; i < length; i += 3) {
+		unsigned int val = ((unsigned char)data[i]) << 16;
+		if (i + 1 < length) val |= ((unsigned char)data[i + 1]) << 8;
+		if (i + 2 < length) val |= (unsigned char)data[i + 2];
+
+		out += alphabet[(val >> 18) & 0x3F];
+		out += alphabet[(val >> 12) & 0x3F];
+		out += (i + 1 < length) ? alphabet[(val >> 6) & 0x3F] : '=';
+		out += (i + 2 < length) ? alphabet[val & 0x3F] : '=';
+	}
+	return out;
+}

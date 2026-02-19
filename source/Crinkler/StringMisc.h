@@ -15,4 +15,5 @@ bool StartsWith(const char* str, const char* start);
 bool EndsWith(const char* str, const char* ending);
 
 std::vector<std::string> IntoLines(const char *data, int length);
+std::string Base64Encode(const char *data, int length);
 #endif

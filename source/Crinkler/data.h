@@ -41,6 +41,9 @@ extern "C" {
 
 	char knownDllExports[];
 	char knownDllExports_end[];
+
+	char iconImage[];
+	char iconImage_end[];
 };
 
 #endif

@@ -39,3 +39,13 @@ _knownDllExports:
 	incbin "known_dll_exports.dat"
 knownDllExports_end:
 _knownDllExports_end:
+
+global iconImage
+global _iconImage
+global iconImage_end
+global _iconImage_end
+iconImage:
+_iconImage:
+	incbin "icon.png"
+iconImage_end:
+_iconImage_end:
