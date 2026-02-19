@@ -455,8 +455,8 @@ void Crinkler::SetHeaderConstants4k(Hunk* header, Hunk* phase1, PartList& parts,
 	*(header->GetPtr() + header->FindSymbol("_BaseProbPtr")->value) = CRINKLER_BASEPROB;
 	Symbol* modelSkipPtr = header->FindSymbol("_ModelSkipPtr");
 	if (modelSkipPtr != nullptr) {
-		assert(parts.GetNumParts() == 2);
-		*(header->GetPtr() + modelSkipPtr->value) = parts.GetCodePart().m_model4k.nmodels + 8;
+		assert(parts.GetNumInitializedParts() == 2);
+		*(header->GetPtr() + modelSkipPtr->value) = parts.GetCodePart().m_model4k.nmodels + 2 + 4;
 	}
 	if (exportsRVA) {
 		*(int*)(header->GetPtr() + header->FindSymbol("_ExportTableRVAPtr")->value) = exportsRVA;
@@ -622,9 +622,19 @@ void Crinkler::Recompress(const char* input_filename, const char* output_filenam
 			}
 			if (version >= 30)
 			{
-				if (indata[i] == 0x61 && indata[i + 1] == 0x5E && indata[i + 2] == 0x7B && indata[i + 4] == 0xC3 && return_offset == -1) {
-					return_offset = i + 4;
-					indata[return_offset] = 0xCC;
+				if (is_compatibility_header)
+				{
+					if (indata[i] == 0x8D && indata[i + 3] == 0x7B && indata[i + 5] == 0xC3 && return_offset == -1) {
+						return_offset = i + 5;
+						indata[return_offset] = 0xCC;
+					}
+				}
+				else
+				{
+					if (indata[i] == 0x61 && indata[i + 1] == 0x5E && indata[i + 2] == 0x7B && indata[i + 4] == 0xC3 && return_offset == -1) {
+						return_offset = i + 4;
+						indata[return_offset] = 0xCC;
+					}
 				}
 			}
 			else
@@ -652,9 +662,15 @@ void Crinkler::Recompress(const char* input_filename, const char* output_filenam
 					depacker_start = i;
 				}
 			}
-			else
+			else if(version < 30)
 			{
 				if(indata[i] == 0xE8 && indata[i + 5] == 0x60 && indata[i + 6] == 0xAD) {
+					depacker_start = i;
+				}
+			}
+			else
+			{
+				if (indata[i] == 0xE8 && indata[i + 5] == 0x60 && indata[i + 6] == 0x66 && indata[i + 7] == 0xAD) {
 					depacker_start = i;
 				}
 			}
@@ -880,19 +896,12 @@ void Crinkler::Recompress(const char* input_filename, const char* output_filenam
 	bool found_import = false;
 	int hashes_address = -1;
 	int hashes_address_offset = -1;
-	int dll_names_address = -1;
 	bool is_tiny_import = false;
 
 	for (int i = import_offset ; i < part_sizes[0] - (int)sizeof(old_import_code); i++) {
 		if (rawdata[i] == 0xBB) {
 			hashes_address_offset = i + 1;
 			hashes_address = *(int*)&rawdata[hashes_address_offset];
-		}
-		if (rawdata[i] == 0xBE) {
-			dll_names_address = *(int*)&rawdata[i + 1];
-		}
-		if(rawdata[i] == 0xBF) {
-			dll_names_address = *(int*)&rawdata[i + 1];
 		}
 
 		if (memcmp(rawdata+i, old_import_code, sizeof(old_import_code)) == 0) {			// No calltrans
@@ -917,7 +926,7 @@ void Crinkler::Recompress(const char* input_filename, const char* output_filenam
 		}
 	}
 	
-	if(!found_import || dll_names_address == -1)
+	if(!found_import)
 	{
 		Log::Error("", "Cannot find old import code to patch\n");
 	}
@@ -925,36 +934,6 @@ void Crinkler::Recompress(const char* input_filename, const char* output_filenam
 	SetUseTinyImport(is_tiny_import);
 
 	printf("\n");
-
-	if (!m_replaceDlls.empty())
-	{
-		if(is_tiny_header)
-		{
-			char* start_ptr = (char*)&rawdata[dll_names_address - CRINKLER_CODEBASE];
-			char* end_ptr = (char*)&rawdata[rawsize];
-			for(const auto& kv : m_replaceDlls)
-			{
-				char* pos = std::search(start_ptr, end_ptr, kv.first.begin(), kv.first.end());
-				if(pos != end_ptr)
-				{
-					strcpy(pos, kv.second.c_str());
-				}
-			}
-		}
-		else
-		{
-			char* name = (char*)&rawdata[dll_names_address + 1 - CRINKLER_CODEBASE];
-			while(name[0] != (char)0xFF)
-			{
-				if(m_replaceDlls.count(name))
-				{
-					assert(m_replaceDlls[name].length() == strlen(name));
-					strcpy(name, m_replaceDlls[name].c_str());
-				}
-				name += strlen(name) + 2;
-			}
-		}
-	}
 
 	Part headerPart("Header", true);
 	if(is_tiny_header)
