@@ -15,6 +15,7 @@
 #include "data.h"
 
 #include <format>
+#include <filesystem>
 #include <vector>
 #include <iterator>
 
@@ -24,7 +25,6 @@ static const char* htmlHeader0 = R""""(
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
 <html><head>
 <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
-<title>Crinkler compression report</title>
 )"""";
 
 static const char* script = R""""(
@@ -703,6 +703,10 @@ static void HtmlReportRecursive(CompressionReportRecord* csr, back_insert_iterat
 	if(csr->type & RECORD_ROOT) {
 		// Header until script
 		format_to(out, "{}", htmlHeader0);
+
+		// Title
+		string titlename = filesystem::path(exefilename).stem().string();
+		format_to(out, "<title>{}: {} - Crinkler compression report</title>", titlename, filesize);
 
 		// Icon
 		string icon_base64 = Base64Encode(iconImage, (int)(iconImage_end - iconImage));
