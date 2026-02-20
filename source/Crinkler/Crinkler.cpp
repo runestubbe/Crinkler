@@ -1017,7 +1017,15 @@ void Crinkler::Recompress(const char* input_filename, const char* output_filenam
 			printf(" NONE\n");
 		}
 	}
-	
+
+	{
+		phase1->Trim();
+		
+		Part& lastInitializedPart = parts[parts.GetNumInitializedParts() - 1];
+		lastInitializedPart.SetLinkedSize(phase1->GetRawSize() - lastInitializedPart.GetLinkedOffset());
+		parts.GetUninitializedPart().SetLinkedOffset(phase1->GetRawSize());
+		parts.GetUninitializedPart().SetLinkedSize(phase1->GetVirtualSize() - phase1->GetRawSize());
+	}
 
 	parts.ForEachPart([phase1](const Part& part, int index) {
 		int flags = SYMBOL_IS_RELOCATEABLE | SYMBOL_IS_SECTION | SYMBOL_IS_LOCAL;
@@ -1027,8 +1035,6 @@ void Crinkler::Recompress(const char* input_filename, const char* output_filenam
 		s->hunkOffset = 0;
 		phase1->AddSymbol(s);
 		});
-
-	phase1->Trim();
 
 	printf("\nRecompressing...\n");
 
