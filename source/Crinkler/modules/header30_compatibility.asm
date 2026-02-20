@@ -19,6 +19,8 @@ global	_CharacteristicsPtr
 global	_SaturatePtr
 global	_SaturateAdjust1Ptr
 global	_SaturateAdjust2Ptr
+global	_NumberOfDataDirectoriesPtr
+global	_ExportTableRVAPtr
 
 BaseProbDummy	equ	10
 ModelSkipDummy	equ	23
@@ -108,9 +110,12 @@ _SubsystemTypePtr:
 
 LoaderFlags:
 	db		"HASH"				; Loader flags
+
+_NumberOfDataDirectoriesPtr:
 	dd		0					; Number of RVAs and Sizes
 
 ; Data directories
+_ExportTableRVAPtr:
 	dd		0					; Export Table RVA
 
 ; 8 bytes:
