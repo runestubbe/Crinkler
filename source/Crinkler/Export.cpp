@@ -18,23 +18,11 @@ Export ParseExport(const std::string& name, const std::string& value) {
 	if (value.empty()) {
 		return Export(name, name);
 	}
-	if (value[0] >= '0' && value[0] <= '9') {
-		int v;
-		char *end;
-		if (value[0] == '0') {
-			if (value.length() > 2 && (value[1] == 'x' || value[1] == 'X')) {
-				v = strtol(&value[2], &end, 16);
-			} else {
-				v = strtol(&value[0], &end, 8);
-			}
-		} else {
-			v = strtol(&value[0], &end, 10);
-		}
-		if (end != &value[value.length()]) {
-			printf("Error: illegal numeric value for export %s: %s\n", name.c_str(), value.c_str());
-			exit(1);
-		}
-		return Export(name, v);
+	
+	char* end;
+	long long v = strtoll(value.c_str(), &end, 0);
+	if (end != value.c_str() && *end == 0) {
+		return Export(name, (int)v);
 	}
 	return Export(name, value);
 }
