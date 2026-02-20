@@ -29,11 +29,6 @@ static bool HunkRelation(Hunk* h1, Hunk* h2) {
 	if(h1->GetRawSize() == 0)
 		return h1->GetVirtualSize() < h2->GetVirtualSize();
 
-	if (h1->GetFlags() & HUNK_IS_TRAILING)
-		return false;
-	if (h2->GetFlags() & HUNK_IS_TRAILING)
-		return true;
-
 	if(h1->GetAlignmentBits() == h2->GetAlignmentBits()) {
 		if(h1->GetRawSize() != h2->GetRawSize())
 			return h1->GetRawSize() < h2->GetRawSize();

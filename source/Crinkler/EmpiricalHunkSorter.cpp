@@ -10,36 +10,32 @@
 
 using namespace std;
 
-static void PermuteHunklist(PartList& parts, int strength) {
+static void PermuteHunklist(PartList& parts, const int* numHunksPerPart, int numTotalHunks, int strength) {
 
 	const int numParts = parts.GetNumParts();
-	int numTotalHunks = 0;
-	for (int partIndex = 0; partIndex < numParts; partIndex++) {
-		const int numHunks = parts[partIndex].GetNumHunks();
-		numTotalHunks += numHunks;
-	}
-	
+
 	int numPermutes = (rand() % strength) + 1;
 	for (int p = 0 ; p < numPermutes; p++)
 	{
 		int t = rand() % numTotalHunks;
 		int partIndex = 0;
-		while (t >= parts[partIndex].GetNumHunks()) {
-			t -= parts[partIndex].GetNumHunks();
+		while (t >= numHunksPerPart[partIndex]) {
+			t -= numHunksPerPart[partIndex];
 			partIndex++;
 		}
 
 		Part& part = parts[partIndex];
-		if (part.GetNumHunks() < 2)
+		const int numHunks = numHunksPerPart[partIndex];
+		if (numHunks < 2)
 			continue;
 
-		int maxN = part.GetNumHunks() / 2;
+		int maxN = numHunks / 2;
 		if (maxN > strength) maxN = strength;
 		int n = (rand() % maxN) + 1;
-		int h1i = rand() % (part.GetNumHunks() - n + 1);
+		int h1i = rand() % (numHunks - n + 1);
 		int h2i;
 		do {
-			h2i = rand() % (part.GetNumHunks() - n + 1);
+			h2i = rand() % (numHunks - n + 1);
 		} while (h2i == h1i);
 
 		if (h2i < h1i) {
@@ -57,7 +53,6 @@ static void PermuteHunklist(PartList& parts, int strength) {
 				part.InsertHunk(h2i+n-1, hunk);
 			}
 		}
-		// RUNE_TODO: handle trailing hunks (HUNK_IS_TRAILING). See old implementation
 	}
 }
 
@@ -140,16 +135,24 @@ int EmpiricalHunkSorter::SortHunkList(PartList& parts, Transform& transform, boo
 	if(progress)
 		progress->BeginTask("Reordering sections");
 
+	// Compute permutable hunk counts per part, excluding trailing hunks pinned at the end
 	int numTotalHunks = 0;
-	parts.ForEachPart([&numTotalHunks](Part& part, int index) {
+	int numPermutableHunks = 0;
+	int* numHunksPerPart = new int[parts.GetNumParts()];
+	parts.ForEachPart([&](Part& part, int index) {
 		numTotalHunks += part.GetNumHunks();
+		int n = part.GetNumHunks();
+		if (n > 0 && (part[n - 1]->GetFlags() & HUNK_IS_TRAILING))
+			n--;
+		numHunksPerPart[index] = n;
+		numPermutableHunks += n;
 		});
 
 	Hunk** backup = new Hunk*[numTotalHunks];
 	for(int i = 1; i < numIterations; i++) {
-		
+
 		{
-			//TODO: this is ugly
+			// Back up hunk order
 			int offset = 0;
 			parts.ForEachPart([&](Part& part, int index) {
 				const int numHunks = part.GetNumHunks();
@@ -160,7 +163,7 @@ int EmpiricalHunkSorter::SortHunkList(PartList& parts, Transform& transform, boo
 				});
 		}
 
-		PermuteHunklist(parts, 2);
+		PermuteHunklist(parts, numHunksPerPart, numPermutableHunks, 2);
 		
 		int totalSize = TryHunkCombination(parts, transform, saturate, use1KMode);
 		if(totalSize < bestTotalSize) {
@@ -171,22 +174,21 @@ int EmpiricalHunkSorter::SortHunkList(PartList& parts, Transform& transform, boo
 		}
 		else
 		{
-			{
-				//TODO: this is ugly
-				int offset = 0;
-				parts.ForEachPart([&](Part& part, int index) {
-					const int numHunks = part.GetNumHunks();
-					for (int i = 0; i < numHunks; i++) {
-						part[i] = backup[offset + i];
-					}
-					offset += numHunks;
-					});
-			}
+			// Restore hunk order from backup
+			int offset = 0;
+			parts.ForEachPart([&](Part& part, int index) {
+				const int numHunks = part.GetNumHunks();
+				for (int i = 0; i < numHunks; i++) {
+					part[i] = backup[offset + i];
+				}
+				offset += numHunks;
+				});
 		}
 		if(progress)
 			progress->Update(i+1, numIterations);
 	}
 	delete[] backup;
+	delete[] numHunksPerPart;
 	if(progress)
 		progress->EndTask();
 

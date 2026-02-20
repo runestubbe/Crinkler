@@ -1321,10 +1321,6 @@ void Crinkler::Link(const char* filename) {
 		m_hunkList.ForEachHunk([this](Hunk* hunk) { hunk->RoundFloats(m_truncateBits); });
 	}
 
-	if (!m_exports.empty()) {
-		m_hunkList.AddHunkBack(CreateExportTable(m_exports));
-	}
-
 	int best_hashsize = PreviousPrime(m_hashsize / 2) * 2;
 
 	PartList parts;
@@ -1387,6 +1383,11 @@ void Crinkler::Link(const char* filename) {
 
 		// Sort hunks heuristically
 		HeuristicHunkSorter::SortHunkList(parts);
+	}
+
+	// Add export table after heuristic sorting and reuse to make sure it is last
+	if (!m_exports.empty()) {
+		parts[parts.GetNumParts() - 2].AddHunkBack(CreateExportTable(m_exports));
 	}
 
 	// Create phase 1 data hunk
