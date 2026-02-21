@@ -5,7 +5,7 @@
 #include "Symbol.h"
 #include "Crinkler.h"
 
-bool Transform::LinkAndTransform(PartList& parts, Symbol *entryLabel, int baseAddress, Hunk* &transformedHunk, Hunk** untransformedHunk, bool verbose)
+bool Transform::LinkAndTransform(PartList& parts, Symbol *entryLabel, int baseAddress, Hunk** transformedHunk, Hunk** untransformedHunk, bool verbose)
 {
 	Hunk* detrans = nullptr;
 	if (m_enabled)
@@ -26,16 +26,16 @@ bool Transform::LinkAndTransform(PartList& parts, Symbol *entryLabel, int baseAd
 	codePart.AddHunkFront(detrans);
 	detrans->SetContinuation(entryLabel);
 
-	transformedHunk = parts.Link("linked", baseAddress);
-	transformedHunk->Relocate(baseAddress);
+	*transformedHunk = parts.Link("linked", baseAddress);
+	(*transformedHunk)->Relocate(baseAddress);
 
 	if (untransformedHunk)
 	{
-		*untransformedHunk = new Hunk(*transformedHunk);
+		*untransformedHunk = new Hunk(**transformedHunk);
 	}
 
 	codePart.RemoveHunk(detrans);
 	delete detrans;
 
-	return m_enabled ? DoTransform(transformedHunk, codePart.GetLinkedSize(), verbose) : false;
+	return m_enabled ? DoTransform(*transformedHunk, codePart.GetLinkedSize(), verbose) : false;
 }

@@ -60,7 +60,7 @@ int EmpiricalHunkSorter::TryHunkCombination(PartList& parts, Transform& transfor
 {
 	Hunk* phase1;
 	Symbol* import = parts.FindSymbol("_Import");
-	transform.LinkAndTransform(parts, import, CRINKLER_CODEBASE, phase1, NULL, false);
+	transform.LinkAndTransform(parts, import, CRINKLER_CODEBASE, &phase1, NULL, false);
 
 	int totalsize = 0;
 	if (use1KMode)

@@ -768,7 +768,7 @@ void Crinkler::Recompress(const char* input_filename, const char* output_filenam
 	// Update parts with part sizes
 	{
 		int offset = 0;
-		for(int part_index = 0; part_index < part_sizes.size(); part_index++) {
+		for(unsigned part_index = 0; part_index < part_sizes.size(); part_index++) {
 			Part& part = parts[part_index];
 			const int part_size = part_sizes[part_index];
 			part.SetLinkedOffset(offset);
@@ -1364,7 +1364,6 @@ void Crinkler::Link(const char* filename) {
 				int totalTextSize = 0;
 				m_hunkList.ForEachHunk([&totalTextSize](Hunk* hunk) {
 					if (hunk->IsLikelyText()) {
-						hunk->SetFlags(hunk->GetFlags() | HUNK_IS_TEXT);
 						totalTextSize += hunk->GetRawSize();
 					}
 					});
@@ -1394,12 +1393,12 @@ void Crinkler::Link(const char* filename) {
 	Hunk* phase1, *phase1Untransformed;
 	parts.GetCodePart()[0]->AddSymbol(new Symbol("_HeaderHashes", CRINKLER_IMAGEBASE + header->GetRawSize(), SYMBOL_IS_SECTION, parts.GetCodePart()[0]));
 
-	if (!m_transform->LinkAndTransform(parts, importSymbol, CRINKLER_CODEBASE, phase1, &phase1Untransformed, true))
+	if (!m_transform->LinkAndTransform(parts, importSymbol, CRINKLER_CODEBASE, &phase1, &phase1Untransformed, true))
 	{
 		// Transform failed, run again
 		delete phase1;
 		delete phase1Untransformed;
-		m_transform->LinkAndTransform(parts, importSymbol, CRINKLER_CODEBASE, phase1, &phase1Untransformed, false);
+		m_transform->LinkAndTransform(parts, importSymbol, CRINKLER_CODEBASE, &phase1, &phase1Untransformed, false);
 	}
 	int maxsize = phase1->GetRawSize()*2+1000;	// Allocate plenty of memory	
 	unsigned char* data = new unsigned char[maxsize];
@@ -1446,7 +1445,7 @@ void Crinkler::Link(const char* filename) {
 				EmpiricalHunkSorter::SortHunkList(parts, *m_transform, m_saturate != 0, m_hunktries, m_showProgressBar ? &m_windowBar : NULL, m_useTinyHeader);
 				delete phase1;
 				delete phase1Untransformed;
-				m_transform->LinkAndTransform(parts, importSymbol, CRINKLER_CODEBASE, phase1, &phase1Untransformed, false);
+				m_transform->LinkAndTransform(parts, importSymbol, CRINKLER_CODEBASE, &phase1, &phase1Untransformed, false);
 
 				idealsize = EstimateModels(parts, phase1, true, m_useTinyHeader);
 			}
@@ -1501,7 +1500,7 @@ void Crinkler::Link(const char* filename) {
 				assert(!new_reuse_mismatch);
 				delete phase1;
 				delete phase1Untransformed;
-				m_transform->LinkAndTransform(parts, importSymbol, CRINKLER_CODEBASE, phase1, &phase1Untransformed, false);
+				m_transform->LinkAndTransform(parts, importSymbol, CRINKLER_CODEBASE, &phase1, &phase1Untransformed, false);
 				int size = CompressParts4k(parts, phase1, data, maxsize, reuse->GetHashSize(), nullptr);
 				delete phase2;
 				phase2 = FinalLink(parts, header, nullptr, hashHunk, phase1, data, size, best_hashsize);

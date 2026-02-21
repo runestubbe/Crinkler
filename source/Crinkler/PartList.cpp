@@ -497,7 +497,7 @@ int	PartList::FindBestPartIndex(Hunk* hunk) const
 	}
 	
 	// Text
-	if (hunk->GetFlags() & HUNK_IS_TEXT) {
+	if (hunk->IsLikelyText()) {
 		int index = GetPartIndex("Text");
 		if (index != -1)
 			return index;

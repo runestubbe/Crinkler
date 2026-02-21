@@ -12,6 +12,7 @@ const int HUNK_IS_IMPORT =		0x04;
 const int HUNK_IS_TRAILING =	0x08;
 const int HUNK_IS_ALIGNED =		0x10;
 const int HUNK_IS_TEXT =		0x20;
+const int HUNK_IS_NOT_TEXT =	0x40;
 
 class Symbol;
 class Hunk;
@@ -155,7 +156,8 @@ public:
 	std::map<std::string, Symbol*>& GetNameToSymbolMap();
 	const std::string& GetID();
 
-	bool			IsLikelyText() const;
+	bool			IsLikelyText();
+	bool			IsLikelyTextInternal() const;
 };
 
 #endif

@@ -29,8 +29,11 @@ static ModelList4k *ParseModelList(const char *line) {
 	return ml;
 }
 
-ReusePart::ReusePart(Part& part)
-	: m_name(part.GetName()), m_models(part.m_initialized ? &part.m_model4k : nullptr), m_initialized(part.IsInitialized()) {
+ReusePart::ReusePart(Part& part):
+	m_name(part.GetName()),
+	m_models(part.m_initialized ? new ModelList4k(part.m_model4k) : nullptr),
+	m_initialized(part.IsInitialized())
+{
 	part.ForEachHunk([this](Hunk* hunk) {
 		m_hunk_ids.push_back(hunk->GetID());
 	});
@@ -84,10 +87,10 @@ Reuse* LoadReuseFile(const char *filename) {
 					state = SECTIONS;
 					reuse->m_parts.emplace_back(name, initialized);
 				} else {
-					Log::Warning(filename, "Unknown reuse file tag: %s", line.c_str());
+					Log::Error(filename, "Unknown reuse file tag: %s", line.c_str());
 				}
 			} else {
-				Log::Warning(filename, "Unknown reuse file tag: %s", line.c_str());
+				Log::Error(filename, "Unknown reuse file tag: %s", line.c_str());
 			}
 		} else switch (state) {
 		case INITIAL:

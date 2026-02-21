@@ -515,7 +515,20 @@ const string& Hunk::GetID() {
 	return m_cached_id;
 }
 
-bool Hunk::IsLikelyText() const
+bool Hunk::IsLikelyText()
+{
+	if ((m_flags & (HUNK_IS_TEXT | HUNK_IS_NOT_TEXT)) == 0) {
+		if (IsLikelyTextInternal()) {
+			m_flags |= HUNK_IS_TEXT;
+		} else {
+			m_flags |= HUNK_IS_NOT_TEXT;
+		}
+	}
+
+	return (m_flags & HUNK_IS_TEXT) != 0;
+}
+
+bool Hunk::IsLikelyTextInternal() const
 {
 	const int size = GetRawSize();
 	if (size == 0)
@@ -537,7 +550,7 @@ bool Hunk::IsLikelyText() const
 	{
 		const unsigned char c = ptr[i];
 
-		if ((c >= 32 && c < 127) || c == '\n' || c == '\t' || c == '\n' || c == '\r') {
+		if ((c >= 32 && c < 127) || c == '\t' || c == '\n' || c == '\r') {
 			prev_zero = false;
 		} else if (c == 0) {
 			if ((i & alignment_mask) == 0 && prev_zero)	// Zeros cross alignment boundary
