@@ -319,10 +319,11 @@ compression:
   price to pay for the extra bytes gained on the file size.
 
 - The contents of the executable are split into multiple parts - by
-  default a code part, a text data part and a general data part - and
-  each of these are compressed individually. This leads to better
-  compression, as code, text and other data are usually very different
-  in structure and so do not benefit from being compressed together.
+  default a code part, an optional text data part and a general data
+  part - and each of these are compressed individually. This leads to
+  better compression, as code, text and other data are usually very
+  different in structure and so do not benefit from being compressed
+  together.
 
 - DLL functions are imported by hash code. This is robust to
   structural changes to the DLL between different versions while being
@@ -649,10 +650,13 @@ Linker/Command Line/Additional Options:
 
     If sections are added or removed compared to the ones mentioned
     in the reuse file, they are added/removed and the reuse file is
-    updated accordingly.
+    updated accordingly. If the section looks like text data, and there
+    is a part called Text, it is added to that part. Otherwise, if the
+    section is code, it is added to the first part. Otherwise, it is
+    added to the second part.
 
     Parameters that are not selected for reuse are inferred as
-    normally be the compression process. If the resulting compression
+    normally by the compression process. If the resulting compression
     improves the size compared to what it would be with the parameters
     from the reuse file, the reuse file is updated with the new
     parameters. Otherwise, the compression result is discarded, and

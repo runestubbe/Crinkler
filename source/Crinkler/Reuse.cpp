@@ -121,7 +121,8 @@ Reuse* LoadReuseFile(const char *filename) {
 			part.m_models = models_by_name[part.m_name];
 			models_by_name.erase(part.m_name);
 		} else if (part.m_initialized) {
-			Log::Error(filename, "Models missing for part '%s'", part.m_name.c_str());
+			Log::Warning(filename, "Models missing for part '%s', using INSTANT models", part.m_name.c_str());
+			part.m_models = new ModelList4k(InstantModels4k());
 		}
 	}
 	for (auto models : models_by_name) {
