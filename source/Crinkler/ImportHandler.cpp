@@ -693,6 +693,7 @@ void ImportHandler::AddImportHunks1K(Part& part, bool verbose, int& hash_bits, i
 	}
 
 	Hunk* dllNamesHunk = new Hunk("DLLNamesHunk", dllnames.c_str(), HUNK_IS_WRITEABLE, 0, (int)dllnames.size() + 1, (int)dllnames.size() + 1);
+	dllNamesHunk->AddSymbol(new Symbol(".data", 0, SYMBOL_IS_RELOCATEABLE | SYMBOL_IS_SECTION, dllNamesHunk, "crinkler import"));
 	dllNamesHunk->AddSymbol(new Symbol("_DLLNames", 0, SYMBOL_IS_RELOCATEABLE, dllNamesHunk));
 	part.AddHunkBack(dllNamesHunk);
 	part.AddHunkBack(importList);
