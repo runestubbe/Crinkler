@@ -320,17 +320,27 @@ int Crinkler::OptimizeHashsize(PartList& parts, Hunk* phase1, int hashsize, int 
 
 	int* sizes = new int[tries];
 
-	int progress = 0;
+	std::atomic<int> progress{ 0 };
+	std::atomic<bool> done{ false };
+
+	std::thread progressThread([&]() {
+		while (!done.load(std::memory_order_relaxed)) {
+			m_progressBar.Update(progress.load(std::memory_order_relaxed), m_hashtries);
+			Sleep(100);
+		}
+	});
+
 	concurrency::combinable<vector<unsigned char>> buffers([maxsize]() { return vector<unsigned char>(maxsize, 0); });
 	concurrency::combinable<vector<TinyHashEntry>> hashtabledata([&maxTinyHashSize]() { return vector<TinyHashEntry>(maxTinyHashSize); });
-	concurrency::critical_section cs;
 
 	concurrency::parallel_for(0, tries, [&](int i) {
 		sizes[i] = CompressFromHashBits4k(hashbits.data(), hashtabledata.local().data(), numInitializedParts, buffers.local().data(), maxsize, m_saturate != 0, CRINKLER_BASEPROB, hashsizes[i], nullptr);
-
-		Concurrency::critical_section::scoped_lock l(cs);
-		m_progressBar.Update(++progress, m_hashtries);
+		++progress;
 	});
+
+	done.store(true);
+	progressThread.join();
+	m_progressBar.Update(tries, m_hashtries);
 
 	for (int i = 0; i < tries; i++) {
 		if (sizes[i] <= bestsize) {
