@@ -93,7 +93,7 @@ Hunk* CreateExportTable(const std::set<Export>& exports) {
 	assert(names == &data[0] + hunk_size);
 
 	// Create hunk
-	Hunk* hunk = new Hunk("Exports", &data[0], HUNK_IS_TRAILING, 2, hunk_size, hunk_size);
+	Hunk* hunk = new Hunk("Exports", &data[0], HUNK_IS_EXPORT | HUNK_IS_TRAILING, 2, hunk_size, hunk_size);
 	std::string object_name = "EXPORT";
 
 	// Add labels

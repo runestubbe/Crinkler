@@ -9,10 +9,11 @@
 const int HUNK_IS_CODE =		0x01;
 const int HUNK_IS_WRITEABLE =	0x02;
 const int HUNK_IS_IMPORT =		0x04;
-const int HUNK_IS_TRAILING =	0x08;
-const int HUNK_IS_ALIGNED =		0x10;
-const int HUNK_IS_TEXT =		0x20;
-const int HUNK_IS_NOT_TEXT =	0x40;
+const int HUNK_IS_EXPORT =		0x08;
+const int HUNK_IS_TRAILING =	0x10;
+const int HUNK_IS_ALIGNED =		0x20;
+const int HUNK_IS_TEXT =		0x40;
+const int HUNK_IS_NOT_TEXT =	0x80;
 
 class Symbol;
 class Hunk;

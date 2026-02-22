@@ -668,7 +668,8 @@ Linker/Command Line/Additional Options:
     commandline.
 
     NOTHING: The contents of the reuse file are ignored, and
-    the reuse file is always overwritten.
+    the reuse file is always overwritten. This is also the behaviour
+    of all reuse modes below when the reuse file does not exist.
 
     PARTS (default): The parts from the reuse file are used, but the
     ordering of sections within parts, the models for each part,
@@ -690,10 +691,14 @@ Linker/Command Line/Additional Options:
 
 /REUSEGUI
 
-    Show a dialog to select the reuse mode interactively. The reuse
-    mode selected by the /REUSEMODE option determines the initially
-    active button, which will be chosen if Enter is pressed. Closing
-    the window or pressing Esc will select ALL.
+    Show a dialog to select the reuse mode interactively. Each mode
+    can be selected by pressing the first letter of the mode name.
+    The reuse mode selected by the /REUSEMODE option determines the
+    initially active button, which will be chosen if Enter is pressed.
+    Closing the window or pressing Esc will select ALL.
+
+    The dialog is only shown if the reuse file exists. Otherwise, the
+    reuse mode is considered to be NOTHING (unless set to OFF).
 
 /RANGE:[DLL name]
 

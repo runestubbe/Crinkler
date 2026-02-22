@@ -35,7 +35,9 @@ ReusePart::ReusePart(Part& part):
 	m_initialized(part.IsInitialized())
 {
 	part.ForEachHunk([this](Hunk* hunk) {
-		m_hunk_ids.push_back(hunk->GetID());
+		if (!(hunk->GetFlags() & HUNK_IS_EXPORT)) {
+			m_hunk_ids.push_back(hunk->GetID());
+		}
 	});
 }
 

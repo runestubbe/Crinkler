@@ -1504,6 +1504,9 @@ void Crinkler::Link(const char* filename) {
 				assert(!new_reuse_mismatch);
 				delete phase1;
 				delete phase1Untransformed;
+				if (!m_exports.empty()) {
+					parts[parts.GetNumParts() - 2].AddHunkBack(CreateExportTable(m_exports));
+				}
 				m_transform->LinkAndTransform(parts, importSymbol, CRINKLER_CODEBASE, &phase1, &phase1Untransformed, false);
 				int size = CompressParts4k(parts, phase1, data, maxsize, reuse->GetHashSize(), nullptr);
 				delete phase2;
