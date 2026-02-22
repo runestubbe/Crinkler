@@ -118,13 +118,14 @@ Symbol* Part::FindUndecoratedSymbol(const char* name, int* out_level) {
 
 Symbol* Part::FindSymbol(const char* name) {
 	Symbol* res = NULL;
-	ForEachHunk([name, &res](Hunk* hunk) {
+	ForEachHunkWithBreak([name, &res](Hunk* hunk) {
 		Symbol* s = hunk->FindSymbol(name);
 		if (s != NULL) {
 			res = s;
 			if (s->secondaryName.size() == 0)
-				return;
+				return true;
 		}
+		return false;
 		});
 
 	return res;

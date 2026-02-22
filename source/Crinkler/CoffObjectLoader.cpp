@@ -191,17 +191,15 @@ bool CoffObjectLoader::Load(Part& part, const char* data, int size, const char* 
 			delete s;
 		}
 		
-
 		i += sym->NumberOfAuxSymbols;	// Skip aux symbols
 	}
 
-	if (inLibrary) {
-		for (int i = startHunkCount; i < part.GetNumHunks(); i++) {
+	for (int i = startHunkCount; i < part.GetNumHunks(); i++) {
+		if (inLibrary) {
 			part[i]->MarkHunkAsLibrary();
 		}
+		part[i]->Trim();
 	}
-
-	// Trim hunks
-	part.ForEachHunk([](Hunk* hunk) { hunk->Trim(); });
+	
 	return true;
 }
