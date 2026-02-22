@@ -8,10 +8,8 @@
 #include "PartList.h"
 
 enum ReuseType {
-	REUSE_OFF, REUSE_NOTHING, REUSE_PARTS, REUSE_SECTIONS, REUSE_MODELS, REUSE_ALL, REUSE_ASK
+	REUSE_OFF, REUSE_NOTHING, REUSE_PARTS, REUSE_SECTIONS, REUSE_MODELS, REUSE_ALL
 };
-
-const ReuseType REUSE_DEFAULT = REUSE_ALL;
 
 static const char *ReuseTypeName(ReuseType mode) {
 	switch (mode) {
@@ -27,8 +25,6 @@ static const char *ReuseTypeName(ReuseType mode) {
 		return "MODELS";
 	case REUSE_ALL:
 		return "ALL";
-	case REUSE_ASK:
-		return "ASK";
 	}
 	return "";
 }
@@ -47,8 +43,6 @@ static const char *ReuseTypeDescription(ReuseType mode) {
 		return "Reuse parts, sections and models";
 	case REUSE_ALL:
 		return "Reuse everything";
-	case REUSE_ASK:
-		return "Ask for reuse mode";
 	}
 	return "";
 }
@@ -86,4 +80,4 @@ public:
 
 Reuse* LoadReuseFile(const char *filename);
 
-ReuseType AskForReuseMode();
+ReuseType AskForReuseMode(ReuseType active);

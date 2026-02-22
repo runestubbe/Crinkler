@@ -238,8 +238,9 @@ int main(int argc, char* argv[]) {
 						PARAM_IS_SWITCH|PARAM_FORBID_MULTIPLE_DEFINITIONS, "");
 	CmdParamString reuseFileArg("REUSE", "reuse html filename", "filename",
 		PARAM_IS_SWITCH | PARAM_FORBID_MULTIPLE_DEFINITIONS, "");
-	CmdParamFlags reuseArg("REUSEMODE", "select reuse mode", PARAM_FORBID_MULTIPLE_DEFINITIONS, REUSE_ALL,
-		"OFF", REUSE_OFF, "NOTHING", REUSE_NOTHING, "PARTS", REUSE_PARTS, "SECTIONS", REUSE_SECTIONS, "MODELS", REUSE_MODELS, "ALL", REUSE_ALL, "ASK", REUSE_ASK, NULL);
+	CmdParamFlags reuseArg("REUSEMODE", "select reuse mode", PARAM_FORBID_MULTIPLE_DEFINITIONS, REUSE_PARTS,
+		"OFF", REUSE_OFF, "NOTHING", REUSE_NOTHING, "PARTS", REUSE_PARTS, "SECTIONS", REUSE_SECTIONS, "MODELS", REUSE_MODELS, "ALL", REUSE_ALL, NULL);
+	CmdParamSwitch reuseDialogFlag("REUSEGUI", "Show a dialog to select reuse mode", 0);
 	CmdParamSwitch helpFlag("?", "help", 0);
 	CmdParamSwitch crinklerFlag("CRINKLER", "enables Crinkler", 0);
 	CmdParamSwitch recompressFlag("RECOMPRESS", "recompress a Crinkler file", 0);
@@ -278,7 +279,7 @@ int main(int argc, char* argv[]) {
 	CmdParamString filesArg("FILES", "list of filenames", "", PARAM_HIDE_IN_PARAM_LIST, 0);
 	CmdLineInterface cmdline(CRINKLER_TITLE, CMDI_PARSE_FILES);
 
-	cmdline.AddParams(&helpFlag, &crinklerFlag, &hashsizeArg, &hashtriesArg, &hunktriesArg, &noDefaultLibArg, &entryArg, &outArg, &summaryArg, &reuseFileArg, &reuseArg, &unsafeImportArg,
+	cmdline.AddParams(&helpFlag, &crinklerFlag, &hashsizeArg, &hashtriesArg, &hunktriesArg, &noDefaultLibArg, &entryArg, &outArg, &summaryArg, &reuseFileArg, &reuseArg, &reuseDialogFlag, &unsafeImportArg,
 						&subsystemArg, &textPartArg, &largeAddressAwareArg, &truncateFloatsArg, &overrideAlignmentsArg, &unalignCodeArg, &compmodeArg, &saturateArg, &printArg, &transformArg, &libpathArg, 
 						&rangeImportArg, &replaceDllArg, &fallbackDllArg, &exportArg, &stripExportsArg, &noInitializersArg, &filesArg, &priorityArg, &showProgressArg, &recompressFlag,
 						&tinyHeader, &tinyImport,
@@ -459,6 +460,7 @@ int main(int argc, char* argv[]) {
 	crinkler.SetSummary(summaryArg.GetValue());
 	if (reuseFileArg.GetNumMatches() > 0) {
 		crinkler.SetReuse((ReuseType)reuseArg.GetValue(), reuseFileArg.GetValue());
+		crinkler.ShowReuseDialog(reuseDialogFlag.GetValue());
 	}
 	ParseExports(exportArg, crinkler);
 

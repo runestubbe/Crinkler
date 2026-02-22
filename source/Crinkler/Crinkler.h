@@ -55,6 +55,7 @@ class Crinkler {
 	bool								m_useSafeImporting;
 	CompressionType						m_compressionType;
 	ReuseType							m_reuseType;
+	bool								m_showReuseDialog;
 	std::vector<std::string>			m_rangeDlls;
 	std::map<std::string, std::string>	m_replaceDlls;
 	std::map<std::string, std::string>	m_fallbackDlls;
@@ -120,6 +121,7 @@ public:
 	const std::set<Export>& GetExports()					{ return m_exports; }
 	void SetStripExports(bool strip)						{ m_stripExports = strip; }
 	void ShowProgressBar(bool show)							{ m_showProgressBar = show; }
+	void ShowReuseDialog(bool show)							{ m_showReuseDialog = show; }
 
 	void SetUseTinyHeader(bool useTinyHeader)				{ m_useTinyHeader = useTinyHeader; }
 	void SetUseTinyImport(bool useTinyImport)				{ m_useTinyImport = useTinyImport; }

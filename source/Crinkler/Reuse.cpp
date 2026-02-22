@@ -94,7 +94,7 @@ Reuse* LoadReuseFile(const char *filename) {
 			}
 		} else switch (state) {
 		case INITIAL:
-			Log::Warning(filename, "Unexpected line: %s", line.c_str());
+			Log::Error(filename, "Unexpected line: %s", line.c_str());
 			break;
 		case MODELS:
 			if (*current_models != nullptr) {
@@ -219,12 +219,19 @@ bool Reuse::PartsFromHunkList(PartList& parts, Part& hunkList) {
 static INT_PTR CALLBACK ReuseDialogProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
 	switch (uMsg) {
 	case WM_INITDIALOG:
-		return TRUE;
+		{
+			int active = (int)lParam;
+			HWND hwndButton = GetDlgItem(hwnd, active + 100);
+			if (hwndButton) {
+				SetFocus(hwndButton);
+			}
+		}
+		return FALSE;
 	case WM_COMMAND:
 		{
 			int id = LOWORD(wParam);
 			if (id == IDCANCEL) {
-				EndDialog(hwnd, REUSE_DEFAULT);
+				EndDialog(hwnd, REUSE_ALL);
 				return TRUE;
 			}
 			if (id >= 100) {
@@ -234,7 +241,7 @@ static INT_PTR CALLBACK ReuseDialogProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPA
 		}
 		break;
 	case WM_CLOSE:
-		EndDialog(hwnd, REUSE_DEFAULT);
+		EndDialog(hwnd, REUSE_ALL);
 		return TRUE;
 	}
 	return FALSE;
@@ -271,7 +278,7 @@ typedef struct {
 } MyDLGITEMTEMPLATE;
 #pragma pack(pop)
 
-ReuseType AskForReuseMode() {
+ReuseType AskForReuseMode(ReuseType active) {
 	HGLOBAL hgbl;
 	MyDLGTEMPLATE* lpdt;
 	MyDLGITEMTEMPLATE* lpdit;
@@ -280,7 +287,7 @@ ReuseType AskForReuseMode() {
 	int nchar;
 
 	hgbl = GlobalAlloc(GMEM_ZEROINIT, 4096);
-	if (!hgbl) return REUSE_DEFAULT;
+	if (!hgbl) return active;
 
 	lpdt = (MyDLGTEMPLATE*)GlobalLock(hgbl);
 
@@ -310,7 +317,7 @@ ReuseType AskForReuseMode() {
 		lpdit->x = 10; lpdit->y = (short)y;
 		lpdit->cx = 50; lpdit->cy = 13;
 		lpdit->id = (WORD)(i + 100);
-		lpdit->style = WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON;
+		lpdit->style = WS_CHILD | WS_VISIBLE | WS_TABSTOP | (i == active ? BS_DEFPUSHBUTTON : BS_PUSHBUTTON);
 
 		lpw = (LPWORD)(lpdit + 1);
 		*lpw++ = 0xFFFF;
@@ -342,10 +349,11 @@ ReuseType AskForReuseMode() {
 	}
 
 	GlobalUnlock(hgbl);
-	INT_PTR ret = DialogBoxIndirect(GetModuleHandle(NULL),
+	INT_PTR ret = DialogBoxIndirectParam(GetModuleHandle(NULL),
 		(LPDLGTEMPLATE)hgbl,
 		NULL,
-		(DLGPROC)ReuseDialogProc);
+		(DLGPROC)ReuseDialogProc,
+		(LPARAM)active);
 	GlobalFree(hgbl);
 
 	return (ReuseType)ret;

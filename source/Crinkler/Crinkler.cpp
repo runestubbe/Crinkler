@@ -21,6 +21,7 @@
 #include "HtmlReport.h"
 #include "NameMangling.h"
 #include "MemoryFile.h"
+#include "Reuse.h"
 
 #include <memory>
 #include <format>
@@ -77,6 +78,7 @@ Crinkler::Crinkler():
 	m_hashsize(100*1024*1024),
 	m_compressionType(COMPRESSION_FAST),
 	m_reuseType(REUSE_OFF),
+	m_showReuseDialog(false),
 	m_useSafeImporting(true),
 	m_hashtries(0),
 	m_hunktries(0),
@@ -1328,22 +1330,24 @@ void Crinkler::Link(const char* filename) {
 	bool reuse_mismatch = false;
 	int reuse_filesize = 0;
 	Reuse *reuse = nullptr;
-	ReuseType reuseType = m_useTinyHeader ? REUSE_OFF : m_reuseType;
-	if (reuseType != REUSE_OFF && reuseType != REUSE_NOTHING) {
+	ReuseType reuseType = m_reuseType;
+	if (!m_useTinyHeader && m_compressionType != COMPRESSION_INSTANT && (reuseType != REUSE_OFF || m_showReuseDialog)) {
 		reuse = LoadReuseFile(m_reuseFilename.c_str());
-		if (reuse == nullptr) {
-			reuseType = REUSE_NOTHING;
-		} else {
+		if (reuse != nullptr) {
 			printf("\nRead reuse file: %s\n", m_reuseFilename.c_str());
-			if (reuseType == REUSE_ASK) {
-				reuseType = AskForReuseMode();
+			if (m_showReuseDialog) {
+				reuseType = AskForReuseMode(reuseType);
 				printf("\nSelected reuse mode: %s\n", ReuseTypeName(reuseType));
 				if (reuseType == REUSE_OFF || reuseType == REUSE_NOTHING) {
 					delete reuse;
 					reuse = nullptr;
 				}
 			}
+		} else if (reuseType != REUSE_OFF) {
+			reuseType = REUSE_NOTHING;
 		}
+	} else {
+		reuseType = REUSE_OFF;
 	}
 
 	if (reuse != nullptr) {
@@ -1403,7 +1407,7 @@ void Crinkler::Link(const char* filename) {
 	int maxsize = phase1->GetRawSize()*2+1000;	// Allocate plenty of memory	
 	unsigned char* data = new unsigned char[maxsize];
 
-	if (reuseType != REUSE_OFF && reuseType != REUSE_NOTHING) {
+	if (reuse != nullptr) {
 		int size = CompressParts4k(parts, phase1, data, maxsize, best_hashsize, nullptr);
 		Hunk *phase2 = FinalLink(parts, header, nullptr, hashHunk, phase1, data, size, best_hashsize);
 		reuse_filesize = phase2->GetRawSize();
