@@ -51,6 +51,7 @@ bool CoffObjectLoader::Clicks(const char* data, int size) const {
 }
 
 bool CoffObjectLoader::Load(Part& part, const char* data, int size, const char* module, bool inLibrary) {
+	int startHunkCount = part.GetNumHunks();
 	const char* ptr = data;
 
 	// Header
@@ -92,9 +93,6 @@ bool CoffObjectLoader::Load(Part& part, const char* data, int size, const char* 
 								flags, GetAlignmentBitsFromCharacteristics(chars),	// Alignment
 								isInitialized ? sectionHeaders[i].SizeOfRawData : 0,
 								sectionHeaders[i].SizeOfRawData);	// Virtual size
-		if (inLibrary)
-			constantsHunk->MarkHunkAsLibrary();
-
 		LinearHunkList[i] = hunk;
 
 		part.AddHunkBack(hunk);
@@ -176,8 +174,6 @@ bool CoffObjectLoader::Load(Part& part, const char* data, int size, const char* 
 			s->hunk = uninitHunk;
 			s->value = 0;
 			uninitHunk->AddSymbol(s);
-			if (inLibrary)
-				constantsHunk->MarkHunkAsLibrary();
 			part.AddHunkBack(uninitHunk);
 		} else if(sym->SectionNumber == 0 && sym->StorageClass == IMAGE_SYM_CLASS_WEAK_EXTERNAL && sym->Value == 0) {
 			// Weak external
@@ -199,7 +195,13 @@ bool CoffObjectLoader::Load(Part& part, const char* data, int size, const char* 
 		i += sym->NumberOfAuxSymbols;	// Skip aux symbols
 	}
 
-	// Trim hunks	
+	if (inLibrary) {
+		for (int i = startHunkCount; i < part.GetNumHunks(); i++) {
+			part[i]->MarkHunkAsLibrary();
+		}
+	}
+
+	// Trim hunks
 	part.ForEachHunk([](Hunk* hunk) { hunk->Trim(); });
 	return true;
 }
