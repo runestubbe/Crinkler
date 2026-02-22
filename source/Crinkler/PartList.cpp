@@ -318,7 +318,6 @@ Hunk* PartList::Link(const char* name, int baseAddress) {
 	unsigned int flags = 0;
 	bool overflow = false;
 
-	//for(vector<Hunk*>::const_iterator it = m_hunks.begin(); it != m_hunks.end(); it++) {
 	ForEachHunkWithBreak([this, baseAddress, &rawsize, &virtualsize, &alignmentBits, &flags, &overflow](Part& part, Hunk* hunk, Hunk* nextHunk) {
 		// Align
 		virtualsize += baseAddress - hunk->GetAlignmentOffset();
@@ -361,7 +360,6 @@ Hunk* PartList::Link(const char* name, int baseAddress) {
 
 	ForEachHunk([&](Part& part, Hunk* hunk, Hunk* nextHunk) {
 		// Align
-		const int unalignedAddress = address;
 		address += baseAddress - hunk->GetAlignmentOffset();
 		address = Align(address, hunk->GetAlignmentBits());
 		address -= baseAddress - hunk->GetAlignmentOffset();
@@ -471,14 +469,14 @@ Symbol* PartList::FindUndecoratedSymbol(const char* name) {
 
 Symbol* PartList::FindSymbol(const char* name) {
 	Symbol* res = NULL;
-	ForEachHunk([name, &res](Hunk* hunk) {
+	ForEachHunkWithBreak([name, &res](Hunk* hunk) {
 		Symbol* s = hunk->FindSymbol(name);
 		if(s != NULL) {
 			res = s;
 			if(s->secondaryName.size() == 0)
-				return false;
+				return true;
 		}
-		return true;
+		return false;
 	});
 
 	return res;
