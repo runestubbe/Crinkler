@@ -35,7 +35,7 @@ bool CallTransform::DoTransform(Hunk* hunk, int codeSize, bool verbose) {
 	} else {
 		int start = hunk->FindSymbol("_CallTrans")->value;
 		int size = hunk->FindSymbol("_CallTransSize")->value;
-		memset(hunk->GetPtr()+start, 0x90, codeSize);
+		memset(hunk->GetPtr()+start, 0x90, size);
 		if (verbose)
 			Log::Warning("", "No calls - call transformation not applied");
 		// Do not run call trans next time
