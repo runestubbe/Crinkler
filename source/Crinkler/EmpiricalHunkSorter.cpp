@@ -91,9 +91,8 @@ int EmpiricalHunkSorter::TryHunkCombination(PartList& parts, Transform& transfor
 		for (int i = 0; i < numInitializedParts; i++) {
 			parts[i].m_compressedSize = compressedSizes[i];
 		}
-		
-		delete phase1;
 	}
+	delete phase1;
 
 	return totalsize;
 }
