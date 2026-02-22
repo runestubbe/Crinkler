@@ -129,12 +129,17 @@ void WindowProgressBar::Update(int n, int max) {
 	sprintf_s(buff,sizeof(buff), "%d%% - %s", (100*n)/max, m_name.c_str());
 	SetWindowText(g_WndDlg, buff);
 
+	//shift down to make sure max fits in uint16
+	int shift = 0;
+	while ((max >> shift) > 65535)
+		shift++;
+
 	//update progress bar
 	if(max != m_maxValue) {
-		SendMessage(g_WndProgress, PBM_SETRANGE, 0, MAKELPARAM(0, max));
+		SendMessage(g_WndProgress, PBM_SETRANGE, 0, MAKELPARAM(0, max>>shift));
 		m_maxValue = max;
 	}
-	SendMessage(g_WndProgress, PBM_SETPOS, n, 0);
+	SendMessage(g_WndProgress, PBM_SETPOS, n>>shift, 0);
 
 	//update elapsed time
 	int secs = (clock()-m_stime) / CLOCKS_PER_SEC;
