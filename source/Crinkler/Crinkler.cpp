@@ -1407,7 +1407,7 @@ void Crinkler::Link(const char* filename) {
 	int maxsize = phase1->GetRawSize()*2+1000;	// Allocate plenty of memory	
 	unsigned char* data = new unsigned char[maxsize];
 
-	if (reuse != nullptr) {
+	if (reuse != nullptr && reuseType != REUSE_ALL) {
 		int size = CompressParts4k(parts, phase1, data, maxsize, best_hashsize, nullptr);
 		Hunk *phase2 = FinalLink(parts, header, nullptr, hashHunk, phase1, data, size, best_hashsize);
 		reuse_filesize = phase2->GetRawSize();
