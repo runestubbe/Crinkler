@@ -113,7 +113,7 @@ ModelEndJumpPad:
 DepackInit:
 	push	ebx					; ebx = PEB								;1
 	xor		ebp, ebp			; ebp = 0								;2
-	db		0xBB				; mov ebx, const						;1
+	db		0xB8				; mov eax, const						;1
 
 _SubsystemTypePtr:
 	dw		2					; Subsystem
@@ -125,13 +125,13 @@ _SubsystemTypePtr:
 ; Size of heap reserve
 ; Size of heap commit
 ; (must all have reasonable sizes, since these are allocated)
+	nop							; 90									;1
+	mov		esi, _Models		; BE xx 01 40 00						;5
+	mov		edi, _UnpackedData	; BF 00 00 42 00						;5
+	add		ecx, ecx			; 01 C9									;2
 _SpareNopPtr:
 	nop							; push edi when using call transform	;1
-	mov		esi, _Models		; BE 7C 01 40 00						;5
-	push	byte 1				; 6A 01									;2
-	pop		eax					; 58									;1
-	mov		edi, _UnpackedData	; BF 00 00 42 00						;5
-	mov		cl, 0				; B1 00									;2
+	mov		al, 1				; B0 01									;2
 
 ; 4 bytes:
 ; Loader flags
@@ -142,9 +142,9 @@ NextPart:
 	; edi = _UnpackedData
 	; esi = _Models
 	; ebp = 0
-	; ecx = 0
+	; ecx even
 	; eax = 1
-	; ebx = subsystem version
+	; ebx = PEB
 	; Stack: _UnpackedData (twice when using call transform), PEB
 	jmp		short _DepackEntry											;2
 
