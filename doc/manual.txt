@@ -34,6 +34,8 @@ VERSION HISTORY
                 Removed size tooltips from report, as these are now redundant.
                 Fixed local labels sometimes being shown in the wrong section.
                 Expand target label when clicking on a label reference.
+                Fixed excessive memory usage of hash table size optimization.
+                Fixed progress bar not updating properly beyond 65535.
 
 21.07.20: 2.3:  Crinkler is now open source under the Zlib license!
                 /TINYHEADER size reduced by another 3 bytes.
