@@ -1151,6 +1151,12 @@ void Crinkler::Recompress(const char* input_filename, const char* output_filenam
 	delete csr;
 	delete[] sizefill;
 
+	parts.ForEachPart([](Part& part, int i) {
+		if (part.IsInitialized() && part.GetLinkedSize() >= 0x10000) {
+			Log::Error("", "Part '%s' is larger than 64k.", part.GetName());
+		}
+	});
+
 	if (!outfile) {
 		if(fopen_s(&outfile, output_filename, "wb")) {
 			Log::Error("", "Cannot open '%s' for writing", output_filename);
@@ -1544,7 +1550,13 @@ void Crinkler::Link(const char* filename) {
 			filename, phase2->GetRawSize(), this);
 	delete csr;
 	delete[] sizefill;
-	
+
+	parts.ForEachPart([](Part& part, int i) {
+		if (part.IsInitialized() && part.GetLinkedSize() >= 0x10000) {
+			Log::Error("", "Part '%s' is larger than 64k. Split up the part by modifying the reuse file.", part.GetName());
+		}
+	});
+
 	fwrite(phase2->GetPtr(), 1, phase2->GetRawSize(), outfile);
 	fclose(outfile);
 
