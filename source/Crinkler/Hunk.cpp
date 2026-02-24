@@ -541,8 +541,7 @@ bool Hunk::IsLikelyTextInternal() const
 	if (ptr[0] == 0)
 		return false;
 
-	unsigned int alignment = min(1u << m_alignmentBits, 16u);
-	unsigned int alignment_mask = (1u << alignment) - 1u;
+	unsigned int alignment_mask = (1u << m_alignmentBits) - 1u;
 
 	bool prev_zero = false;
 	int num_invalid = 0;
