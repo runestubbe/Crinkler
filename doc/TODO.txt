@@ -1,5 +1,6 @@
 
 Manual:
+	LinkToolPath?
 	describe model masks
 	test standard library chapter validity
 	/QIfist?
@@ -25,13 +26,16 @@ Compressor:
 
 Output/UI:
 	include header in sizes
+	total time in progressgui
 	button in progressgui to skip phase
 	Target size option
 	Parameter combination validity
 	ProgressGUI crashes if you have DisplayFusion installed
 
 Linker:
-	Err on parts bigger than 64k
+	Reuse with 1k
+	/DLLPATH
+	Forwarding through "API set" DLLs
 	Eliminate trailing jump to next section
 	Test for name containing crinkler instead of exact
 	Load obj files before lib files
