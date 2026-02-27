@@ -4,7 +4,7 @@ CRINKLER - Compressing linker for Windows specialized for 4k intros
 Aske Simon Christensen "Blueberry/Loonies"
 Rune L. H. Stubbe "Mentor/TBC"
 
-Version 3.0 (February ??, 2026)
+Version 3.0 (February 27, 2026)
 
 Web:    http://crinkler.net/
 GitHub: https://github.com/runestubbe/Crinkler
@@ -14,7 +14,7 @@ Mail:   authors@crinkler.net
 
 VERSION HISTORY
 ---------------
-??.02.26: 3.0:  Support any number of parts, instead of just code and data.
+27.02.26: 3.0:  Support any number of parts, instead of just code and data.
                 Improved model hashing using CRC32, saving 3 bytes in header.
                 Crinkler and the EXE files it produces now require SSE4.2.
                 Uncompressed size is now limited to 64k per part.
@@ -33,7 +33,8 @@ VERSION HISTORY
                 Select range of bytes in report to measure size of region.
                 Removed size tooltips from report, as these are now redundant.
                 Fixed local labels sometimes being shown in the wrong section.
-                Expand target label when clicking on a label reference.
+                Fixed label links sometimes pointing to a local label instead.
+                Expand target label when clicking on a label link.
                 Fixed excessive memory usage of hash table size optimization.
                 Fixed progress bar not updating properly beyond 65535.
 
