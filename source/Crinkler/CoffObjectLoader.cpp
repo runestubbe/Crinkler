@@ -1,12 +1,183 @@
 #include "CoffObjectLoader.h"
 
 #include <windows.h>
+#include <algorithm>
+#include <cstring>
 #include "Hunk.h"
 #include "PartList.h"
 #include "Symbol.h"
 #include "StringMisc.h"
 
 using namespace std;
+
+// CodeView debug subsection types
+static const unsigned int DEBUG_S_LINES      = 0xF2;
+static const unsigned int DEBUG_S_STRINGTABLE = 0xF3;
+static const unsigned int DEBUG_S_FILECHKSMS = 0xF4;
+
+// CV_SIGNATURE for debug$S
+static const unsigned int CV_SIGNATURE_C13   = 4;
+
+struct CV_DebugSLinesHeader {
+	unsigned int offCon;      // Offset of the contributed code in the section
+	unsigned short segCon;    // Section index
+	unsigned short flags;
+	unsigned int cbCon;       // Size of the contributed code
+};
+
+struct CV_Line {
+	unsigned int offset;      // Offset from start of contributed code
+	unsigned int flags;       // Line number in low 24 bits, delta/statement in high bits
+};
+
+struct CV_Column {
+	unsigned short offColumnStart;
+	unsigned short offColumnEnd;
+};
+
+// File block header within DEBUG_S_LINES
+struct CV_LinesFileBlockHeader {
+	unsigned int offFile;     // Offset into file checksums subsection
+	unsigned int nLines;
+	unsigned int cbBlock;     // Size of this block (including this header)
+};
+
+struct CV_FileChecksum {
+	unsigned int offFilename;   // Offset into string table
+	unsigned char cbChecksum;
+	unsigned char checksumType;
+	// Followed by cbChecksum bytes of checksum data, then padding to align to 4
+};
+
+struct DebugSectionLineInfo {
+	int sectionIndex;         // Which COFF section this applies to
+	int offsetInSection;      // Offset within the section
+	int fileChecksumOffset;   // Offset into file checksums table
+	int line;
+};
+
+// Parse .debug$S section to extract file/line info and store it on the target hunks
+static void ParseDebugS(const char* debugData, int debugSize,
+	const IMAGE_SECTION_HEADER* sectionHeaders, int numSections,
+	std::vector<Hunk*>& hunkList) {
+
+	if (debugSize < 4) return;
+	unsigned int signature = *(unsigned int*)debugData;
+	if (signature != CV_SIGNATURE_C13) return;
+
+	const char* stringTable = nullptr;
+	int stringTableSize = 0;
+	const char* fileChecksums = nullptr;
+	int fileChecksumsSize = 0;
+
+	// Collected line info to process after we have file tables
+	struct RawLineEntry {
+		int sectionIndex;
+		int offset;
+		int fileChecksumOffset;
+		int line;
+	};
+	std::vector<RawLineEntry> rawLines;
+
+	// First pass: find string table, file checksums, and line info
+	const char* p = debugData + 4;
+	const char* end = debugData + debugSize;
+	while (p + 8 <= end) {
+		unsigned int subsectionType = *(unsigned int*)p;
+		unsigned int subsectionSize = *(unsigned int*)(p + 4);
+		const char* subsectionData = p + 8;
+		const char* subsectionEnd = subsectionData + subsectionSize;
+		if (subsectionEnd > end) break;
+
+		if (subsectionType == DEBUG_S_STRINGTABLE) {
+			stringTable = subsectionData;
+			stringTableSize = subsectionSize;
+		} else if (subsectionType == DEBUG_S_FILECHKSMS) {
+			fileChecksums = subsectionData;
+			fileChecksumsSize = subsectionSize;
+		} else if (subsectionType == DEBUG_S_LINES) {
+			if (subsectionSize >= sizeof(CV_DebugSLinesHeader)) {
+				const CV_DebugSLinesHeader* header = (const CV_DebugSLinesHeader*)subsectionData;
+				bool hasColumns = (header->flags & 1) != 0;
+				int sectionIndex = header->segCon - 1; // Convert 1-based to 0-based
+
+				const char* blockPtr = subsectionData + sizeof(CV_DebugSLinesHeader);
+				while (blockPtr + sizeof(CV_LinesFileBlockHeader) <= subsectionEnd) {
+					const CV_LinesFileBlockHeader* fileBlock = (const CV_LinesFileBlockHeader*)blockPtr;
+					const CV_Line* lines = (const CV_Line*)(blockPtr + sizeof(CV_LinesFileBlockHeader));
+
+					for (unsigned int i = 0; i < fileBlock->nLines; i++) {
+						if ((const char*)&lines[i + 1] > subsectionEnd) break;
+						int lineNum = lines[i].flags & 0x00FFFFFF;
+						RawLineEntry entry;
+						entry.sectionIndex = sectionIndex;
+						entry.offset = header->offCon + lines[i].offset;
+						entry.fileChecksumOffset = fileBlock->offFile;
+						entry.line = lineNum;
+						rawLines.push_back(entry);
+					}
+
+					blockPtr += fileBlock->cbBlock;
+				}
+			}
+		}
+
+		// Advance to next subsection (aligned to 4 bytes)
+		p = subsectionData + ((subsectionSize + 3) & ~3);
+	}
+
+	if (!stringTable || !fileChecksums || rawLines.empty()) return;
+
+	// Build file checksum offset -> filename mapping
+	// Also build per-hunk file index mapping
+	struct HunkFileMapping {
+		std::map<int, int> checksumOffsetToLocalIndex; // fileChecksumOffset -> index in hunk's m_debugFiles
+	};
+	std::map<int, HunkFileMapping> hunkFileMappings; // sectionIndex -> mapping
+
+	for (const RawLineEntry& entry : rawLines) {
+		if (entry.sectionIndex < 0 || entry.sectionIndex >= (int)hunkList.size()) continue;
+		Hunk* hunk = hunkList[entry.sectionIndex];
+		if (!hunk) continue;
+
+		HunkFileMapping& mapping = hunkFileMappings[entry.sectionIndex];
+		if (mapping.checksumOffsetToLocalIndex.find(entry.fileChecksumOffset) == mapping.checksumOffsetToLocalIndex.end()) {
+			// Resolve filename from checksum offset
+			if (entry.fileChecksumOffset + (int)sizeof(CV_FileChecksum) <= fileChecksumsSize) {
+				const CV_FileChecksum* checksum = (const CV_FileChecksum*)(fileChecksums + entry.fileChecksumOffset);
+				if ((int)checksum->offFilename < stringTableSize) {
+					const char* filename = stringTable + checksum->offFilename;
+					int localIndex = (int)hunk->GetDebugFiles().size();
+					hunk->AddDebugFile(filename);
+					mapping.checksumOffsetToLocalIndex[entry.fileChecksumOffset] = localIndex;
+				}
+			}
+		}
+	}
+
+	// Now add line entries to hunks
+	for (const RawLineEntry& entry : rawLines) {
+		if (entry.sectionIndex < 0 || entry.sectionIndex >= (int)hunkList.size()) continue;
+		Hunk* hunk = hunkList[entry.sectionIndex];
+		if (!hunk) continue;
+
+		auto& mapping = hunkFileMappings[entry.sectionIndex];
+		auto it = mapping.checksumOffsetToLocalIndex.find(entry.fileChecksumOffset);
+		if (it != mapping.checksumOffsetToLocalIndex.end()) {
+			hunk->AddDebugLine(entry.offset, it->second, entry.line);
+		}
+	}
+
+	// Sort debug lines by offset for each hunk
+	for (Hunk* hunk : hunkList) {
+		if (hunk && !hunk->GetDebugLines().empty()) {
+			auto& lines = const_cast<std::vector<DebugLineEntry>&>(hunk->GetDebugLines());
+			std::sort(lines.begin(), lines.end(), [](const DebugLineEntry& a, const DebugLineEntry& b) {
+				return a.offset < b.offset;
+			});
+		}
+	}
+}
 
 static int GetAlignmentBitsFromCharacteristics(int chars) {
 	return max(((chars & 0x00F00000)>>20) - 1, 0);
@@ -126,6 +297,16 @@ bool CoffObjectLoader::Load(Part& part, const char* data, int size, const char* 
 			r.objectname = StripNumeral(StripPath(module));
 			
 			hunk->AddRelocation(r);
+		}
+	}
+
+	// Parse .debug$S sections for source file/line info
+	for (int i = 0; i < header->NumberOfSections; i++) {
+		string sectionName = GetSectionName(&sectionHeaders[i], stringTable);
+		if (sectionName == ".debug$S" && sectionHeaders[i].PointerToRawData != 0) {
+			int debugSize = sectionHeaders[i].SizeOfRawData;
+			const char* debugData = data + sectionHeaders[i].PointerToRawData;
+			ParseDebugS(debugData, debugSize, sectionHeaders, header->NumberOfSections, LinearHunkList);
 		}
 	}
 

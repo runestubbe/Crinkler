@@ -45,6 +45,7 @@ class Crinkler {
 	Part								m_hunkList;
 	std::string							m_entry;
 	std::string							m_summaryFilename;
+	std::string							m_kkpReportFilename;
 	std::string							m_reuseFilename;
 	SubsystemType						m_subsystem;
 	TextPart							m_textPart;
@@ -138,6 +139,7 @@ public:
 	
 	void SetImportingType(bool safe)						{ m_useSafeImporting = safe; }
 	void SetSummary(const char* summaryFilename)			{ m_summaryFilename = summaryFilename; }
+	void SetKkpReport(const char* kkpFilename)				{ m_kkpReportFilename = kkpFilename; }
 	void SetReuse(ReuseType type, const char* filename)		{ m_reuseType = type;	m_reuseFilename = filename; }
 	void SetTruncateFloats(bool enabled)					{ m_truncateFloats = enabled; }
 	void SetTruncateBits(int bits)							{ m_truncateBits = bits; }

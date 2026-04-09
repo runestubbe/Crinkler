@@ -234,7 +234,9 @@ int main(int argc, char* argv[]) {
 						PARAM_IS_SWITCH|PARAM_FORBID_MULTIPLE_DEFINITIONS, "");
 	CmdParamString outArg("OUT", "output filename", "filename", 
 						PARAM_IS_SWITCH|PARAM_FORBID_MULTIPLE_DEFINITIONS, "out.exe");
-	CmdParamString summaryArg("REPORT", "report html filename", "filename", 
+	CmdParamString summaryArg("REPORT", "report html filename", "filename",
+						PARAM_IS_SWITCH|PARAM_FORBID_MULTIPLE_DEFINITIONS, "");
+	CmdParamString kkpReportArg("KKPREPORT", "kkp compression report filename", "filename",
 						PARAM_IS_SWITCH|PARAM_FORBID_MULTIPLE_DEFINITIONS, "");
 	CmdParamString reuseFileArg("REUSE", "reuse html filename", "filename",
 		PARAM_IS_SWITCH | PARAM_FORBID_MULTIPLE_DEFINITIONS, "");
@@ -279,8 +281,8 @@ int main(int argc, char* argv[]) {
 	CmdParamString filesArg("FILES", "list of filenames", "", PARAM_HIDE_IN_PARAM_LIST, 0);
 	CmdLineInterface cmdline(CRINKLER_TITLE, CMDI_PARSE_FILES);
 
-	cmdline.AddParams(&helpFlag, &crinklerFlag, &hashsizeArg, &hashtriesArg, &hunktriesArg, &noDefaultLibArg, &entryArg, &outArg, &summaryArg, &reuseFileArg, &reuseArg, &reuseDialogFlag, &unsafeImportArg,
-						&subsystemArg, &textPartArg, &largeAddressAwareArg, &truncateFloatsArg, &overrideAlignmentsArg, &unalignCodeArg, &compmodeArg, &saturateArg, &printArg, &transformArg, &libpathArg, 
+	cmdline.AddParams(&helpFlag, &crinklerFlag, &hashsizeArg, &hashtriesArg, &hunktriesArg, &noDefaultLibArg, &entryArg, &outArg, &summaryArg, &kkpReportArg, &reuseFileArg, &reuseArg, &reuseDialogFlag, &unsafeImportArg,
+						&subsystemArg, &textPartArg, &largeAddressAwareArg, &truncateFloatsArg, &overrideAlignmentsArg, &unalignCodeArg, &compmodeArg, &saturateArg, &printArg, &transformArg, &libpathArg,
 						&rangeImportArg, &replaceDllArg, &fallbackDllArg, &exportArg, &stripExportsArg, &noInitializersArg, &filesArg, &priorityArg, &showProgressArg, &recompressFlag,
 						&tinyHeader, &tinyImport,
 						NULL);
@@ -314,7 +316,7 @@ int main(int argc, char* argv[]) {
 		subsystemArg.SetDefault(-1);
 		compmodeArg.SetDefault(-1);
 
-		cmdline2.AddParams(&crinklerFlag, &recompressFlag, &outArg, &hashsizeArg, &hashtriesArg, &subsystemArg, &largeAddressAwareArg, &compmodeArg, &saturateArg, &replaceDllArg, &summaryArg, &exportArg, &stripExportsArg, &priorityArg, &showProgressArg, &filesArg, NULL);
+		cmdline2.AddParams(&crinklerFlag, &recompressFlag, &outArg, &hashsizeArg, &hashtriesArg, &subsystemArg, &largeAddressAwareArg, &compmodeArg, &saturateArg, &replaceDllArg, &summaryArg, &kkpReportArg, &exportArg, &stripExportsArg, &priorityArg, &showProgressArg, &filesArg, NULL);
 		cmdline2.SetCmdParameters(argc, argv);
 		if(cmdline2.Parse()) {
 			crinkler.SetHashsize(hashsizeArg.GetValue());
@@ -325,6 +327,7 @@ int main(int argc, char* argv[]) {
 			crinkler.SetHashtries(hashtriesArg.GetValue());
 			crinkler.ShowProgressBar(showProgressArg.GetValue());
 			crinkler.SetSummary(summaryArg.GetValue());
+			crinkler.SetKkpReport(kkpReportArg.GetValue());
 			ParseExports(exportArg, crinkler);
 			crinkler.SetStripExports(stripExportsArg.GetValue());
 
@@ -373,6 +376,7 @@ int main(int argc, char* argv[]) {
 				printf("Hash tries: %d\n", hashtriesArg.GetValue());
 			}
 			printf("Report: %s\n", strlen(summaryArg.GetValue()) > 0 ? summaryArg.GetValue() : "NONE");
+				printf("KKP report: %s\n", strlen(kkpReportArg.GetValue()) > 0 ? kkpReportArg.GetValue() : "NONE");
 
 			// Replace DLL
 			{
@@ -458,6 +462,7 @@ int main(int argc, char* argv[]) {
 	crinkler.SetAlignmentBits(overrideAlignmentsArg.GetValue());
 	crinkler.SetRunInitializers(!noInitializersArg.GetValue());
 	crinkler.SetSummary(summaryArg.GetValue());
+	crinkler.SetKkpReport(kkpReportArg.GetValue());
 	if (reuseFileArg.GetNumMatches() > 0) {
 		crinkler.SetReuse((ReuseType)reuseArg.GetValue(), reuseFileArg.GetValue());
 		crinkler.ShowReuseDialog(reuseDialogFlag.GetValue());
@@ -493,6 +498,7 @@ int main(int argc, char* argv[]) {
 		printf("Reuse mode: OFF (no file specified)\n");
 	}
 	printf("Report: %s\n", strlen(summaryArg.GetValue()) > 0 ? summaryArg.GetValue() : "NONE");
+	printf("KKP report: %s\n", strlen(kkpReportArg.GetValue()) > 0 ? kkpReportArg.GetValue() : "NONE");
 	printf("Transforms: %s\n", (transformArg.GetValue() & TRANSFORM_CALLS) ? "CALLS" : "NONE");
 
 	// Replace DLL

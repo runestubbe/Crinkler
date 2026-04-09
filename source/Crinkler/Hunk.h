@@ -21,6 +21,16 @@ class PartList;
 class SymbolMap;
 enum RelocationType {RELOCTYPE_ABS32, RELOCTYPE_REL32};
 
+struct DebugLineEntry {
+	int offset;
+	int fileIndex;		// Index into the hunk's debug file list
+	int line;
+};
+
+struct DebugFileEntry {
+	std::string filename;
+};
+
 const int RECORD_ROOT =			0x01;
 const int RECORD_PART =			0x02;
 const int RECORD_PUBLIC	=		0x04;
@@ -108,6 +118,9 @@ class Hunk {
 	std::string m_cached_id;
 
 	int			m_numReferences;
+
+	std::vector<DebugFileEntry> m_debugFiles;
+	std::vector<DebugLineEntry> m_debugLines;	// Sorted by offset
 public:
 	Hunk(const Hunk& h);
 	Hunk(const char* symbolName, const char* importName, const char* importDll);
@@ -159,6 +172,11 @@ public:
 
 	bool			IsLikelyText();
 	bool			IsLikelyTextInternal() const;
+
+	void			AddDebugFile(const char* filename);
+	void			AddDebugLine(int offset, int fileIndex, int line);
+	const std::vector<DebugFileEntry>& GetDebugFiles() const { return m_debugFiles; }
+	const std::vector<DebugLineEntry>& GetDebugLines() const { return m_debugLines; }
 };
 
 #endif

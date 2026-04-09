@@ -250,6 +250,7 @@
     <ClCompile Include="Fix.cpp" />
     <ClCompile Include="HtmlReport.cpp" />
     <ClCompile Include="Hunk.cpp" />
+    <ClCompile Include="KkpReport.cpp" />
     <ClCompile Include="ImportHandler.cpp" />
     <ClCompile Include="LTCGLoader.cpp" />
     <ClCompile Include="main.cpp" />
@@ -289,6 +290,7 @@
     <ClInclude Include="Fix.h" />
     <ClInclude Include="HtmlReport.h" />
     <ClInclude Include="Hunk.h" />
+    <ClInclude Include="KkpReport.h" />
     <ClInclude Include="ImportHandler.h" />
     <ClInclude Include="LTCGLoader.h" />
     <ClInclude Include="PartList.h" />

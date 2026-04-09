@@ -19,6 +19,7 @@
 #include "data.h"
 #include "Symbol.h"
 #include "HtmlReport.h"
+#include "KkpReport.h"
 #include "NameMangling.h"
 #include "MemoryFile.h"
 #include "Reuse.h"
@@ -87,6 +88,7 @@ Crinkler::Crinkler():
 	m_useTinyHeader(false),
 	m_useTinyImport(false),
 	m_summaryFilename(""),
+	m_kkpReportFilename(""),
 	m_truncateFloats(false),
 	m_truncateBits(64),
 	m_overrideAlignments(false),
@@ -1148,6 +1150,8 @@ void Crinkler::Recompress(const char* input_filename, const char* output_filenam
 	if(!m_summaryFilename.empty())
 		HtmlReport(csr, m_summaryFilename.c_str(), *phase1, *phase1, sizefill,
 			output_filename, phase2->GetRawSize(), this);
+	if(!m_kkpReportFilename.empty())
+		KkpReport(csr, m_kkpReportFilename.c_str(), *phase1, sizefill);
 	delete csr;
 	delete[] sizefill;
 
@@ -1551,6 +1555,8 @@ void Crinkler::Link(const char* filename) {
 	if(!m_summaryFilename.empty())
 		HtmlReport(csr, m_summaryFilename.c_str(), *phase1, *phase1Untransformed, sizefill,
 			filename, phase2->GetRawSize(), this);
+	if(!m_kkpReportFilename.empty())
+		KkpReport(csr, m_kkpReportFilename.c_str(), *phase1, sizefill);
 	delete csr;
 	delete[] sizefill;
 

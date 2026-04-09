@@ -39,11 +39,12 @@ static int GetType(int level) {
 	return 0;
 }
 
-Hunk::Hunk(const Hunk& h) : 
+Hunk::Hunk(const Hunk& h) :
 	m_alignmentBits(h.m_alignmentBits), m_flags(h.m_flags), m_data(h.m_data),
 	m_virtualsize(h.m_virtualsize), m_relocations(h.m_relocations), m_name(h.m_name),
 	m_importName(h.m_importName), m_importDll(h.m_importDll), m_numReferences(0),
-	m_alignmentOffset(0), m_continuation(NULL)
+	m_alignmentOffset(0), m_continuation(NULL),
+	m_debugFiles(h.m_debugFiles), m_debugLines(h.m_debugLines)
 {
 	// Deep copy symbols
 	for(const auto& p : h.m_symbols) {
@@ -562,4 +563,12 @@ bool Hunk::IsLikelyTextInternal() const
 	}
 
 	return num_invalid <= size / 16;
+}
+
+void Hunk::AddDebugFile(const char* filename) {
+	m_debugFiles.push_back({filename});
+}
+
+void Hunk::AddDebugLine(int offset, int fileIndex, int line) {
+	m_debugLines.push_back({offset, fileIndex, line});
 }

@@ -47,6 +47,9 @@
     <ClCompile Include="Hunk.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="KkpReport.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="ImportHandler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -155,6 +158,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Hunk.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="KkpReport.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="ImportHandler.h">

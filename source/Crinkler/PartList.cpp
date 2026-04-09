@@ -392,6 +392,17 @@ Hunk* PartList::Link(const char* name, int baseAddress) {
 			newHunk->AddRelocation(relocation);
 		}
 
+		// Copy debug line info
+		if (!hunk->GetDebugLines().empty()) {
+			int fileBase = (int)newHunk->GetDebugFiles().size();
+			for (const DebugFileEntry& f : hunk->GetDebugFiles()) {
+				newHunk->AddDebugFile(f.filename.c_str());
+			}
+			for (const DebugLineEntry& e : hunk->GetDebugLines()) {
+				newHunk->AddDebugLine(e.offset + address, e.fileIndex + fileBase, e.line);
+			}
+		}
+
 		memcpy(&newHunk->GetPtr()[address], hunk->GetPtr(), hunk->GetRawSize());
 		address += hunk->GetVirtualSize();
 		
