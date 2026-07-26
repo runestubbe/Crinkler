@@ -263,7 +263,7 @@
     </CustomBuild>
   </ItemGroup>
   <ItemGroup>
-    <None Include="modules\import20.asm">
+    <None Include="modules\import31.asm">
       <Filter>modules</Filter>
     </None>
     <None Include="modules\header30.asm">
