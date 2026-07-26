@@ -1304,7 +1304,7 @@ void Crinkler::Link(const char* filename) {
 		if (m_useTinyImport)
 			ImportHandler::AddImportHunks1K(m_hunkList, (m_printFlags & PRINT_IMPORTS) != 0, hash_bits, max_dll_name_length);
 		else
-			ImportHandler::AddImportHunks4K(m_hunkList, hashHunk, m_fallbackDlls, m_rangeDlls, (m_printFlags & PRINT_IMPORTS) != 0, usesRangeImport);
+			ImportHandler::AddImportHunks4K(m_hunkList, hashHunk, header, entry->hunk, m_fallbackDlls, m_rangeDlls, (m_printFlags & PRINT_IMPORTS) != 0, usesRangeImport);
 	}
 
 	LoadImportCode(m_useTinyImport, m_useSafeImporting, !m_fallbackDlls.empty(), usesRangeImport);
@@ -1325,10 +1325,6 @@ void Crinkler::Link(const char* filename) {
 	importHunk->SetAlignmentBits(0);
 	importHunk->SetContinuation(dynamicInitializersHunk ? dynamicInitializersHunk->FindSymbol("__DynamicInitializers") : entry);
 	
-	// Make sure import and startup code has access to the _ImageBase address
-	importHunk->AddSymbol(new Symbol("_ImageBase", CRINKLER_IMAGEBASE, 0, importHunk));
-	importHunk->AddSymbol(new Symbol("___ImageBase", CRINKLER_IMAGEBASE, 0, importHunk));
-
 	if(m_useTinyImport)
 	{
 		*(importHunk->GetPtr() + importHunk->FindSymbol("_HashShiftPtr")->value) = 32 - hash_bits;
@@ -1423,8 +1419,6 @@ void Crinkler::Link(const char* filename) {
 
 	// Create phase 1 data hunk
 	Hunk* phase1, *phase1Untransformed;
-	parts.GetCodePart()[0]->AddSymbol(new Symbol("_HeaderHashes", CRINKLER_IMAGEBASE + header->GetRawSize(), SYMBOL_IS_SECTION, parts.GetCodePart()[0]));
-
 	if (!m_transform->LinkAndTransform(parts, importSymbol, CRINKLER_CODEBASE, &phase1, &phase1Untransformed, true))
 	{
 		// Transform failed, run again

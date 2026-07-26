@@ -7,6 +7,7 @@
 #include "Log.h"
 #include "Symbol.h"
 #include "data.h"
+#include "Crinkler.h"
 
 #include <vector>
 #include <set>
@@ -450,13 +451,13 @@ static Hunk* ForwardImport(Hunk* hunk) {
 	return hunk;
 }
 
-void ImportHandler::AddImportHunks4K(Part& part, Hunk*& hashHunk, map<string, string>& fallbackDlls, const vector<string>& rangeDlls, bool verbose, bool& enableRangeImport) {
+void ImportHandler::AddImportHunks4K(Part& part, Hunk*& hashHunk, Hunk* header, Hunk* headerRefHunk, map<string, string>& fallbackDlls, const vector<string>& rangeDlls, bool verbose, bool& enableRangeImport) {
 	if(verbose)
 		printf("\n-Imports----------------------------------\n");
 
 	vector<Hunk*> importHunks;
 	vector<bool> usedRangeDlls(rangeDlls.size());
-	
+
 	// Fill list for import hunks
 	enableRangeImport = false;
 	part.ForEachHunk([&rangeDlls, &importHunks, &usedRangeDlls, &enableRangeImport](Hunk* hunk)
@@ -479,14 +480,17 @@ void ImportHandler::AddImportHunks4K(Part& part, Hunk*& hashHunk, map<string, st
 	// Sort import hunks
 	sort(importHunks.begin(), importHunks.end(), ImportHunkRelation);
 
+	// Address of hashes and function pointers
+	int addr = CRINKLER_IMAGEBASE + header->GetRawSize();
+	headerRefHunk->AddSymbol(new Symbol("_HeaderHashes", addr, SYMBOL_IS_SECTION, headerRefHunk));
+	headerRefHunk->AddSymbol(new Symbol("_ImportList", addr, 0, headerRefHunk));
+
 	set<string> usedFallbackDlls;
 	vector<unsigned int> hashes;
-	Hunk* importList = new Hunk("ImportListHunk", 0, HUNK_IS_WRITEABLE, 16, 0, 0);
 	char dllNames[1024] = {0};
 	char* dllNamesPtr = dllNames+1;
 	char* hashCounter = dllNames;
 	string currentDllName;
-	int pos = 0;
 	for(vector<Hunk*>::const_iterator it = importHunks.begin(); it != importHunks.end();) {
 		Hunk* importHunk = *it;
 		bool useRange = false;
@@ -543,7 +547,7 @@ void ImportHandler::AddImportHunks4K(Part& part, Hunk*& hashHunk, map<string, st
 			printf("  %s (ordinal %d, hash %08X)\n", (*it)->GetImportName(), startOrdinal, hashcode);
 		}
 
-		importList->AddSymbol(new Symbol(importHunk->GetName(), pos*4, SYMBOL_IS_RELOCATEABLE, importList));
+		headerRefHunk->AddSymbol(new Symbol(importHunk->GetName(), addr, 0, headerRefHunk));
 		it++;
 
 		while(useRange && it != importHunks.end() && currentDllName.compare((*it)->GetImportDll()) == 0)	// Import the rest of the range
@@ -557,7 +561,7 @@ void ImportHandler::AddImportHunks4K(Part& part, Hunk*& hashHunk, map<string, st
 			}
 
 			ordinal = o;
-			importList->AddSymbol(new Symbol((*it)->GetName(), (pos+ordinal-startOrdinal)*4, SYMBOL_IS_RELOCATEABLE, importList));
+			headerRefHunk->AddSymbol(new Symbol((*it)->GetName(), addr+(ordinal-startOrdinal)*4, 0, headerRefHunk));
 			it++;
 		}
 
@@ -566,7 +570,7 @@ void ImportHandler::AddImportHunks4K(Part& part, Hunk*& hashHunk, map<string, st
 
 		if(enableRangeImport)
 			*dllNamesPtr++ = ordinal - startOrdinal + 1;
-		pos += ordinal - startOrdinal + 1;
+		addr += (ordinal - startOrdinal + 1)*4;
 	}
 	*dllNamesPtr++ = -1;
 
@@ -584,17 +588,11 @@ void ImportHandler::AddImportHunks4K(Part& part, Hunk*& hashHunk, map<string, st
 		}
 	}
 
-	importList->SetVirtualSize(pos*4);
-	importList->AddSymbol(new Symbol("_ImportList", 0, SYMBOL_IS_RELOCATEABLE, importList));
-	importList->AddSymbol(new Symbol(".bss", 0, SYMBOL_IS_RELOCATEABLE|SYMBOL_IS_SECTION, importList, "crinkler import"));
-
 	hashHunk = new Hunk("HashHunk", (char*)hashes.data(), 0, 0, int(hashes.size()*sizeof(unsigned int)), int(hashes.size()*sizeof(unsigned int)));
 	
-	// Add new hunks
-	part.AddHunkBack(importList);
-
+	// Add DLL names hunk
 	Hunk* dllNamesHunk = new Hunk("DLLNamesHunk", dllNames, HUNK_IS_WRITEABLE, 0, int(dllNamesPtr - dllNames), int(dllNamesPtr - dllNames));
-	dllNamesHunk->AddSymbol(new Symbol(".data", 0, SYMBOL_IS_RELOCATEABLE|SYMBOL_IS_SECTION, dllNamesHunk, "crinkler import"));
+	dllNamesHunk->AddSymbol(new Symbol(".data", 0, SYMBOL_IS_RELOCATEABLE|SYMBOL_IS_SECTION, dllNamesHunk, "DLL Names"));
 	dllNamesHunk->AddSymbol(new Symbol("_DLLNames", 0, SYMBOL_IS_RELOCATEABLE, dllNamesHunk));
 	part.AddHunkBack(dllNamesHunk);
 
