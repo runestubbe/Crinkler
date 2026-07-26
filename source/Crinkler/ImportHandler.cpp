@@ -483,13 +483,11 @@ void ImportHandler::AddImportHunks4K(Part& part, Hunk*& hashHunk, Hunk* header, 
 	// Address of hashes and function pointers
 	int addr = CRINKLER_IMAGEBASE + header->GetRawSize();
 	headerRefHunk->AddSymbol(new Symbol("_HeaderHashes", addr, SYMBOL_IS_SECTION, headerRefHunk));
-	headerRefHunk->AddSymbol(new Symbol("_ImportList", addr, 0, headerRefHunk));
 
 	set<string> usedFallbackDlls;
 	vector<unsigned int> hashes;
 	char dllNames[1024] = {0};
-	char* dllNamesPtr = dllNames+1;
-	char* hashCounter = dllNames;
+	char* dllNamesPtr = dllNames;
 	string currentDllName;
 	for(vector<Hunk*>::const_iterator it = importHunks.begin(); it != importHunks.end();) {
 		Hunk* importHunk = *it;
@@ -523,9 +521,6 @@ void ImportHandler::AddImportHunks4K(Part& part, Hunk*& hashHunk, Hunk* header, 
 					dllNamesPtr += dll.size() + 1;
 					if (seen.count(dll) != 0) Log::Error("", "Cyclic DLL fallback");
 				}
-				hashCounter = dllNamesPtr;
-				*hashCounter = 0;
-				dllNamesPtr += 1;
 			}
 
 
@@ -534,7 +529,6 @@ void ImportHandler::AddImportHunks4K(Part& part, Hunk*& hashHunk, Hunk* header, 
 				printf("%s\n", currentDllName.c_str());
 		}
 
-		(*hashCounter)++;
 		int hashcode = HashCode(importHunk->GetImportName());
 		hashes.push_back(hashcode);
 		int startOrdinal = GetOrdinal(importHunk->GetImportName(), importHunk->GetImportDll());

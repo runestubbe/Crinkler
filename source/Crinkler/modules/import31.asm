@@ -4,29 +4,15 @@ bits	32
 	global	_Import
 
 	extern __imp__LoadLibraryA@4
-	extern __imp__MessageBoxA@16
 
 	extern	_HeaderHashes
 	extern	_DLLNames
-	extern	_ImportList
 
-; Format of DLL names:
-; For each DLL
-;   Zero-terminated DLL name (omitted for kernel32)
-;   While fallback DLL
-;     byte: 0
-;     Zero-terminated DLL name
-;   byte: Number of hash-entries for this DLL including dummies
-;   If range import
-;     For each entry
-;       byte: Number of ordinals imported from this hash, minus one
-; byte: -1
 section .text	align=1
 
 _Import:
-	mov		ebx, _HeaderHashes
+	mov		edi, _HeaderHashes
 	mov		esi, _DLLNames
-	mov		edi, _ImportList
 
 	pop		eax						; eax = PEB
 	mov		eax, [eax+0ch]			; goto PEB_LDR_DATA
@@ -36,105 +22,50 @@ _Import:
 	mov		ebp, [eax+18h]			; Kernel32 base memory
 
 DLLLoop:
-%ifdef IMPORT_FALLBACK
-	xor		eax, eax
-	lodsb
-%endif
-
-%ifdef IMPORT_SAFE
-	test	ebp, ebp
-	jne		.dontEnd
-
-%ifdef IMPORT_FALLBACK
-	test	eax, eax
-	jz		LoadDLL
-%endif
-
-	push	byte 0
-	push	byte 0
-	push	edx
-	push	byte 0
-	call	[__imp__MessageBoxA@16]
-	ret
-.dontEnd:
-%endif
-
-%ifdef IMPORT_FALLBACK
-	test	eax, eax
-	jz		NextDLL
-%else
-	xor		eax, eax
-	lodsb
-%endif
-	xchg	ecx, eax
 
 HashLoop:
-	pusha
-
-GetProcAddress:
-	mov		eax, [ebp + 3ch]		; eax = PE header offset
-	add		eax, ebp
-	mov		edx, [eax + 78h]		; edx = exports directory table offset
-	add		edx, ebp				; edx = exports directory table address
-	mov		ecx, [edx + 18h]		; ecx = number of names
+	mov		eax, [ebp + 3ch]		; eax = PE header RVA
+	add		eax, ebp				; eax = PE header address
+	mov		ebx, [eax + 78h]		; ebx = exports directory table RVA
+	add		ebx, ebp				; ebx = exports directory table address
+	mov		ecx, [ebx + 18h]		; ecx = number of names
 
 	; Check all names of procedures for the right hash
 
 ScanProcedureNamesLoop:
-	mov		eax, [edx + 20h]		; edx = name pointers table offset
-	add		eax, ebp				; edx = name pointers table address
-	mov		esi, [eax + ecx*4 - 4]	; esi = name pointer offset
-	add		esi, ebp				; esi = name pointer address
-	xor		edi, edi
+	mov		eax, [ebx + 20h]		; eax = name pointers table RVA
+	add		eax, ebp				; eax = name pointers table address
+	mov		eax, [eax + ecx*4 - 4]	; eax = name pointer RVA
+	add		eax, ebp				; eax = name pointer address
+	xor		edx, edx
 
 CalculateHashLoop:
-	rol		edi, 6
-	xor		eax, eax
-	lodsb
-	xor		edi, eax
-	dec		eax
-	jge		CalculateHashLoop
+	rol		edx, 6
+	xor		dl, [eax]
+	cmp		byte [eax], 1
+	inc		eax
+	jnc		CalculateHashLoop
 
-	cmp		edi, [ebx]				; check computed hash
+	cmp		edx, [edi]				; check computed hash
 	loopne	ScanProcedureNamesLoop
+	jne		short LoadDLL
 
 	; Found, get the address from the table
-	mov		eax, [edx + 24h]		; ebx = ordinals table RNA offset
-	add		eax, ebp				; ebx = ordinals table RNA address
+	mov		eax, [ebx + 24h]		; eax = ordinals table RVA
+	add		eax, ebp				; eax = ordinals table address
 	mov		cx, [eax + ecx*2]		; ecx = function ordinal
-	mov		eax, [edx + 1ch]		; ebx = address table RVA offset
-	add		eax, ebp				; ebx = address table RVA address
-
-%ifdef IMPORT_RANGE
-	lea		eax, [eax + ecx*4]		; ebp = address of function RVA address
-	mov		[esp + 20], eax			; stack position of edx
-	popa
-OrdinalLoop:
-	mov		eax, [edx]
-	add		eax, ebp
-	add		edx, byte 4
+	mov		eax, [ebx + 1ch]		; eax = address table RVA
+	add		eax, ebp				; eax = address table address
+	mov		eax, [eax + ecx*4]		; eax = function RVA
+	add		eax, ebp				; eax = function address
 	stosd
-	dec		byte [esi]
-	jnz		OrdinalLoop
-	inc		esi
-%else
-	mov		eax, [eax + ecx*4]		; ebp = function RVA address
-	mov		[esp + 28], eax			; stack position of eax
-	popa
-	add		eax, ebp
-	stosd
-%endif
 	
-	add		ebx, byte 4
-	loop	HashLoop
+	jmp		short HashLoop
 
 LoadDLL:
 	push	esi
 	call	[__imp__LoadLibraryA@4]
 	xchg	ebp, eax
-%ifdef IMPORT_SAFE
-	mov		edx, esi
-%endif
 
 NextDLL:
 	lodsb
