@@ -1280,13 +1280,13 @@ void Crinkler::Link(const char* filename) {
 
 	int hash_bits;
 	int max_dll_name_length;
-	bool usesRangeImport=false;
+	bool usesRangeImport = false;
 	int dllSkip = 0;
 	{	// Add imports
 		if (m_useTinyImport)
 			ImportHandler::AddImportHunks1K(m_hunkList, (m_printFlags & PRINT_IMPORTS) != 0, hash_bits, max_dll_name_length);
 		else
-			ImportHandler::AddImportHunks4K(m_hunkList, hashHunk, header, entry->hunk, m_rangeDlls, (m_printFlags & PRINT_IMPORTS) != 0, usesRangeImport, dllSkip);
+			ImportHandler::AddImportHunks4K(m_hunkList, hashHunk, header, entry->hunk, m_rangeDll, (m_printFlags & PRINT_IMPORTS) != 0, usesRangeImport, dllSkip);
 	}
 
 	LoadImportCode(m_useTinyImport, usesRangeImport);
@@ -1686,8 +1686,8 @@ void Crinkler::PrintOptions(back_insert_iterator<vector<char>> out) {
 		}
 		format_to(out, " /ORDERTRIES:{}", m_hunktries);
 	}
-	for(int i = 0; i < (int)m_rangeDlls.size(); i++) {
-		format_to(out, " /RANGE:{}", m_rangeDlls[i]);
+	if (!m_rangeDll.empty()) {
+		format_to(out, " /RANGE:{}", m_rangeDll);
 	}
 	for(const auto& p : m_replaceDlls) {
 		format_to(out, " /REPLACEDLL:{}={}", p.first, p.second);

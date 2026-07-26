@@ -273,7 +273,7 @@ int main(int argc, char* argv[]) {
 							NULL);
 	CmdParamFlags saturateArg("SATURATE", "saturate counters (for highly repetitive data)", PARAM_ALLOW_NO_ARGUMENT_DEFAULT | PARAM_FORBID_MULTIPLE_DEFINITIONS, 1, "NO", 0, NULL);
 	CmdParamString libpathArg("LIBPATH", "adds a path to the library search path", "dirs", PARAM_IS_SWITCH, 0);
-	CmdParamString rangeImportArg("RANGE", "use range importing for this dll", "dllname", PARAM_IS_SWITCH, 0);
+	CmdParamString rangeImportArg("RANGE", "use range importing for this dll", "dllname", PARAM_IS_SWITCH | PARAM_FORBID_MULTIPLE_DEFINITIONS, 0);
 	CmdParamMultiAssign replaceDllArg("REPLACEDLL", "replace a dll with another", "oldDLL=newDLL", PARAM_IS_SWITCH);
 	CmdParamMultiAssign exportArg("EXPORT", "export value by name", "name=value/label", PARAM_IS_SWITCH | PARAM_ALLOW_MISSING_VALUE);
 	CmdParamSwitch stripExportsArg("STRIPEXPORTS", "remove exports from executable", 0);
@@ -524,18 +524,13 @@ int main(int argc, char* argv[]) {
 
 	// Range
 	{
-		printf("Range DLLs: ");
-		if(!rangeImportArg.HasNext())
+		printf("Range DLL: ");
+		const char* rangeDll = rangeImportArg.GetValue();
+		if (rangeDll != nullptr) {
+			crinkler.SetRangeDll(rangeDll);
+			printf("%s", rangeDll);
+		} else {
 			printf("NONE");
-
-		bool first = true;
-		while(rangeImportArg.HasNext()) {
-			if (!first) printf(", ");
-			printf("%s", rangeImportArg.GetValue());
-
-			crinkler.AddRangeDll(rangeImportArg.GetValue());
-			rangeImportArg.Next();
-			first = false;
 		}
 		printf("\n");
 	}

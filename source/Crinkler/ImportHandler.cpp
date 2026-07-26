@@ -57,6 +57,17 @@ static int GetOrdinal(const char* function, const char* dll) {
 	return -1;
 }
 
+static int GetOrdinalBase(const char* dll) {
+	const char* module = LoadDLL(dll);
+
+	const IMAGE_DOS_HEADER* dh = (const IMAGE_DOS_HEADER*)module;
+	const IMAGE_FILE_HEADER* coffHeader = (const IMAGE_FILE_HEADER*)(module + dh->e_lfanew + 4);
+	const IMAGE_OPTIONAL_HEADER32* pe = (const IMAGE_OPTIONAL_HEADER32*)(coffHeader + 1);
+	const IMAGE_EXPORT_DIRECTORY* exportdir = (const IMAGE_EXPORT_DIRECTORY*) (module + RVAToFileOffset(module, pe->DataDirectory[IMAGE_DIRECTORY_ENTRY_EXPORT].VirtualAddress));
+
+	return exportdir->Base;
+}
+
 void ForEachExportInDLL(const char *dll, std::function<void (const char*)> fun) {
 	const char* module = LoadDLL(dll);
 
@@ -105,17 +116,22 @@ static const char *GetForwardRVA(const char* dll, const char* function) {
 
 static bool ImportHunkRelation(const Hunk* h1, const Hunk* h2) {
 	// Sort by DLL name
-	if(strcmp(h1->GetImportDll(), h2->GetImportDll()) != 0) {
+	if (strcmp(h1->GetImportDll(), h2->GetImportDll()) != 0) {
 		// kernel32 always first
-		if(strcmp(h1->GetImportDll(), "kernel32") == 0)
+		if (strcmp(h1->GetImportDll(), "kernel32") == 0)
 			return true;
-		if(strcmp(h2->GetImportDll(), "kernel32") == 0)
+		if (strcmp(h2->GetImportDll(), "kernel32") == 0)
 			return false;
+
+		// Imports from range DLL are marked as trailing
+		if ((h1->GetFlags() & HUNK_IS_TRAILING) != (h2->GetFlags() & HUNK_IS_TRAILING)) {
+			return (h2->GetFlags() & HUNK_IS_TRAILING) != 0;
+		}
 
 		// Then by length to have the longest one last
 		size_t l1 = strlen(h1->GetImportDll());
 		size_t l2 = strlen(h2->GetImportDll());
-		if(l1 != l2) return l1 < l2;
+		if (l1 != l2) return l1 < l2;
 
 		return strcmp(h1->GetImportDll(), h2->GetImportDll()) < 0;
 	}
@@ -449,31 +465,32 @@ static Hunk* ForwardImport(Hunk* hunk) {
 	return hunk;
 }
 
-void ImportHandler::AddImportHunks4K(Part& part, Hunk*& hashHunk, Hunk* header, Hunk* headerRefHunk, const vector<string>& rangeDlls, bool verbose, bool& enableRangeImport, int& dllSkip) {
+void ImportHandler::AddImportHunks4K(Part& part, Hunk*& hashHunk, Hunk* header, Hunk* headerRefHunk, const string& rangeDll, bool verbose, bool& enableRangeImport, int& dllSkip) {
 	if(verbose)
 		printf("\n-Imports----------------------------------\n");
 
 	vector<Hunk*> importHunks;
-	vector<bool> usedRangeDlls(rangeDlls.size());
 
 	// Fill list for import hunks
 	enableRangeImport = false;
-	part.ForEachHunk([&rangeDlls, &importHunks, &usedRangeDlls, &enableRangeImport](Hunk* hunk)
+	part.ForEachHunk([&rangeDll, &importHunks, &enableRangeImport](Hunk* hunk)
 		{
 			if(hunk->GetFlags() & HUNK_IS_IMPORT) {
 				hunk = ForwardImport(hunk);
 
 				// Is the DLL a range DLL?
-				for(int i = 0; i < (int)rangeDlls.size(); i++) {
-					if(ToUpper(rangeDlls[i]) == ToUpper(hunk->GetImportDll())) {
-						usedRangeDlls[i] = true;
-						enableRangeImport = true;
-						break;
-					}
+				if (ToUpper(rangeDll) == ToUpper(hunk->GetImportDll())) {
+					hunk->SetFlags(HUNK_IS_IMPORT | HUNK_IS_TRAILING);
+					enableRangeImport = true;
 				}
 				importHunks.push_back(hunk);
 			}
 		});
+
+	// Warn about unused range DLL
+	if (!rangeDll.empty() && !enableRangeImport) {
+		Log::Warning("", "No functions were imported from range DLL '%s'", rangeDll.c_str());
+	}
 
 	// Sort import hunks
 	sort(importHunks.begin(), importHunks.end(), ImportHunkRelation);
@@ -510,67 +527,35 @@ void ImportHandler::AddImportHunks4K(Part& part, Hunk*& hashHunk, Hunk* header, 
 
 	vector<unsigned int> hashes;
 	string currentDllName;
-	for(vector<Hunk*>::const_iterator it = importHunks.begin(); it != importHunks.end();) {
+	for(vector<Hunk*>::const_iterator it = importHunks.begin(); it != importHunks.end(); it++) {
 		Hunk* importHunk = *it;
-		bool useRange = false;
-
-		// Is the DLL a range DLL?
-		for(int i = 0; i < (int)rangeDlls.size(); i++) {
-			if(ToUpper(rangeDlls[i]) == ToUpper(importHunk->GetImportDll())) {
-				usedRangeDlls[i] = true;
-				useRange = true;
-				break;
-			}
-		}
-
-		// Skip non hashes
-		if(currentDllName.compare(importHunk->GetImportDll()))
-		{
-			currentDllName = importHunk->GetImportDll();
-			if(verbose)
-				printf("%s\n", currentDllName.c_str());
-		}
 
 		int hashcode = HashCode(importHunk->GetImportName());
-		hashes.push_back(hashcode);
-		int startOrdinal = GetOrdinal(importHunk->GetImportName(), importHunk->GetImportDll());
-		int ordinal = startOrdinal;
+		int ordinal = GetOrdinal(importHunk->GetImportName(), importHunk->GetImportDll());
+		bool useRange = ToUpper(rangeDll) == ToUpper(importHunk->GetImportDll());
 
-		// Add import
-		if(verbose) {
-			if(useRange)
-				printf("  ordinal range {\n  ");
-			printf("  %s (ordinal %d, hash %08X)\n", (*it)->GetImportName(), startOrdinal, hashcode);
+		int functionAddr;
+		if (useRange) {
+			int base = GetOrdinalBase(importHunk->GetImportDll());
+			functionAddr = addr + (ordinal - base) * 4;
+		} else {
+			functionAddr = addr;
+			hashes.push_back(hashcode);
+			addr += 4;
 		}
+		headerRefHunk->AddSymbol(new Symbol(importHunk->GetName(), functionAddr, 0, headerRefHunk));
 
-		headerRefHunk->AddSymbol(new Symbol(importHunk->GetName(), addr, 0, headerRefHunk));
-		it++;
-
-		while(useRange && it != importHunks.end() && currentDllName.compare((*it)->GetImportDll()) == 0)	// Import the rest of the range
-		{
-			int o = GetOrdinal((*it)->GetImportName(), (*it)->GetImportDll());
-			if(o - startOrdinal >= 254)
-				break;
-
-			if(verbose) {
-				printf("    %s (ordinal %d)\n", (*it)->GetImportName(), o);
+		// Print if verbose
+		if (verbose) {
+			if(currentDllName.compare(importHunk->GetImportDll())) {
+				currentDllName = importHunk->GetImportDll();
+				printf("%s\n", currentDllName.c_str());
 			}
-
-			ordinal = o;
-			headerRefHunk->AddSymbol(new Symbol((*it)->GetName(), addr+(ordinal-startOrdinal)*4, 0, headerRefHunk));
-			it++;
-		}
-
-		if(verbose && useRange)
-			printf("  }\n");
-
-		addr += (ordinal - startOrdinal + 1)*4;
-	}
-
-	// Warn about unused range DLLs
-	for (int i = 0; i < (int)rangeDlls.size(); i++) {
-		if (!usedRangeDlls[i]) {
-			Log::Warning("", "No functions were imported from range DLL '%s'", rangeDlls[i].c_str());
+			if (useRange) {
+				printf("  %s (ordinal %d)\n", (*it)->GetImportName(), ordinal);
+			} else {
+				printf("  %s (ordinal %d, hash %08X)\n", (*it)->GetImportName(), ordinal, hashcode);
+			}
 		}
 	}
 

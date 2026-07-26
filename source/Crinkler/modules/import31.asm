@@ -3,6 +3,7 @@ bits	32
 
 	global	_Import
 	global	_DllSkipPtr
+	global	_ImportRange
 
 	extern __imp__LoadLibraryA@4
 
@@ -22,9 +23,10 @@ _Import:
 	mov		eax, [eax+0ch]			; InLoadOrderModuleList
 	mov		eax, [eax]				; forward to next LIST_ENTRY
 	mov		eax, [eax]				; forward to next LIST_ENTRY
-	mov		ebp, [eax+18h]			; Kernel32 base memory
+	mov		eax, [eax+18h]			; Kernel32 base memory
 
 DLLLoop:
+	xchg	ebp, eax
 
 HashLoop:
 	mov		eax, [ebp + 3ch]		; eax = PE header RVA
@@ -71,7 +73,18 @@ LoadDLL:
 DllSkipPtrP1:
 	call	[__imp__LoadLibraryA@4]
 	test	eax, eax
-	xchg	ebp, eax
 	jnz		DLLLoop
+
+%ifdef IMPORT_RANGE
+_ImportRange:
+	mov		esi, [ebx + 1ch]		; eax = address table RVA
+	add		esi, ebp				; eax = address table address
+	mov		ecx, [ebx + 18h]		; ecx = number of names
+CopyFunctionRange:
+	lodsd
+	add		eax, ebp
+	stosd
+	loop	CopyFunctionRange
+%endif
 
 _DllSkipPtr		equ	DllSkipPtrP1-1

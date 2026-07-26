@@ -56,7 +56,7 @@ class Crinkler {
 	CompressionType						m_compressionType;
 	ReuseType							m_reuseType;
 	bool								m_showReuseDialog;
-	std::vector<std::string>			m_rangeDlls;
+	std::string							m_rangeDll;
 	std::map<std::string, std::string>	m_replaceDlls;
 	std::set<Export>					m_exports;
 	bool								m_stripExports;
@@ -113,9 +113,8 @@ public:
 	void Link(const char* filename);
 
 	void SetUnalignCode(bool unalign)						{ m_unalignCode = unalign; }
-	void AddRangeDll(const char* dllname)					{ m_rangeDlls.push_back(dllname); }
+	void SetRangeDll(const char* dllname)					{ m_rangeDll = dllname; }
 	void AddReplaceDll(const char* dll1, const char* dll2)	{ m_replaceDlls.insert(make_pair(ToLower(dll1), ToLower(dll2))); }
-	void ClearRangeDlls()									{ m_rangeDlls.clear(); }
 	void AddExport(Export e)								{ if (m_exports.count(e) == 0) m_exports.insert(std::move(e)); }
 	const std::set<Export>& GetExports()					{ return m_exports; }
 	void SetStripExports(bool strip)						{ m_stripExports = strip; }
