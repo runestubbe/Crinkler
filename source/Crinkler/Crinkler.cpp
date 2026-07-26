@@ -1281,11 +1281,12 @@ void Crinkler::Link(const char* filename) {
 	int hash_bits;
 	int max_dll_name_length;
 	bool usesRangeImport=false;
+	int dllSkip = 0;
 	{	// Add imports
 		if (m_useTinyImport)
 			ImportHandler::AddImportHunks1K(m_hunkList, (m_printFlags & PRINT_IMPORTS) != 0, hash_bits, max_dll_name_length);
 		else
-			ImportHandler::AddImportHunks4K(m_hunkList, hashHunk, header, entry->hunk, m_rangeDlls, (m_printFlags & PRINT_IMPORTS) != 0, usesRangeImport);
+			ImportHandler::AddImportHunks4K(m_hunkList, hashHunk, header, entry->hunk, m_rangeDlls, (m_printFlags & PRINT_IMPORTS) != 0, usesRangeImport, dllSkip);
 	}
 
 	LoadImportCode(m_useTinyImport, usesRangeImport);
@@ -1303,6 +1304,7 @@ void Crinkler::Link(const char* filename) {
 
 	m_hunkList.RemoveHunk(importHunk);
 	m_hunkList.AddHunkFront(importHunk);
+	*(importHunk->GetPtr() + importHunk->FindSymbol("_DllSkipPtr")->value) = dllSkip;
 	importHunk->SetAlignmentBits(0);
 	importHunk->SetContinuation(dynamicInitializersHunk ? dynamicInitializersHunk->FindSymbol("__DynamicInitializers") : entry);
 	

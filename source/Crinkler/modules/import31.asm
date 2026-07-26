@@ -2,11 +2,14 @@
 bits	32
 
 	global	_Import
+	global	_DllSkipPtr
 
 	extern __imp__LoadLibraryA@4
 
 	extern	_HeaderHashes
 	extern	_DLLNames
+
+DllSkipDummy	equ	7
 
 section .text	align=1
 
@@ -37,8 +40,8 @@ ScanProcedureNamesLoop:
 	add		eax, ebp				; eax = name pointers table address
 	mov		eax, [eax + ecx*4 - 4]	; eax = name pointer RVA
 	add		eax, ebp				; eax = name pointer address
-	xor		edx, edx
 
+	xor		edx, edx
 CalculateHashLoop:
 	rol		edx, 6
 	xor		dl, [eax]
@@ -64,13 +67,11 @@ CalculateHashLoop:
 
 LoadDLL:
 	push	esi
+	add		esi, byte DllSkipDummy
+DllSkipPtrP1:
 	call	[__imp__LoadLibraryA@4]
+	test	eax, eax
 	xchg	ebp, eax
+	jnz		DLLLoop
 
-NextDLL:
-	lodsb
-	dec		al
-	jns		NextDLL
-	
-	inc		al
-	jz		DLLLoop
+_DllSkipPtr		equ	DllSkipPtrP1-1
