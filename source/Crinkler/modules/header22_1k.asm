@@ -36,7 +36,7 @@ AritDecodeLoop:
 	bt		[_PackedData], ebp	; Test bit								;7
 	adc		esi, esi			; Shift bit in							;2
 	inc		ebp					; Next bit								;1
-	jmp		short AritDecodeLoop2										;2
+	jmp		short AritDecode											;2
 	dw		8					; Size of optional header
 _CharacteristicsPtr:
 	dw		2					; Characteristics
@@ -80,24 +80,23 @@ _skip:
 ; 8 bytes:
 ; Major/minor OS version
 ; Major/minor image version
-AritDecodeLoop2:
-	add		eax, eax			; Shift interval						;2
 AritDecode:
-	test	eax, eax			; MSB of interval != 0					;2
+	test	esi, esi			; MSB of interval != 0					;2
 	jns		short AritDecodeLoop; Loop while msb of interval == 0		;2
 	add		ebx, edx			; ebx = p0 + p1							;2
+	div		ebx					; eax = p								;2
 
 ; 8 bytes:
 ; Major subsystem version
 ; Minor subsystem version
 ; Reserved (Must be 0)
 	add		al, 0				; 04 00									;2
-	push	eax					; Push interval_size					;1
+	push	eax															;1
 	cmp		eax, strict dword 0											;5
 
 ; 4 bytes:
-; Size of imnage
-	jmp		short _AritDecode2											;2
+; Size of image
+	jmp		short _AritDecode											;2
 	db		0x00														;1
 _VirtualSizeHighBytePtr:
 	db		0x01														;1
@@ -125,23 +124,23 @@ _SubsystemTypePtr:
 DepackInit:
 	; ebx = PEB
 	push	ebx					; 53									;1
-	mov		edi, _UnpackedData	; BF 00 00 42 00						;5
-	push 	byte 1				; 6A 01									;2
-	pop 	eax					; 58									;1
+	mov		edi, _UnpackedData	; BF 00 00* 42 00						;5
+	push 	byte 1				; 6A 01*								;2
+	pop 	esi					; 58									;1
 	xor		ebp, ebp			; 31 ED									;2
-	add		esi, esi			; 01 F6									;2
+	add		al, 0				; 04* 00								;2
 	push 	edi					; 57									;1
 
 	; edi = dst ptr
 	; esi = data
 	; ebp = source bit index
-	; eax = interval size
+	; eax = *scratch*
 	; ebx = one prob
 	; ecx = dest bit index
 	; edx = zero prob
 
 _DepackEntry:
-	push	byte 8														;2
+	push	byte 8				; 6A 08*								;2
 
 ; 8 bytes:
 ; Loader flags
@@ -162,16 +161,14 @@ BaseProbPtrP0:
 BaseProbPtrP1:
 	mov		edx, _ModelMask		; BA ?? ?? ?? ??						;5
 	mov		bl, 31														;2
+	and		eax, byte 0			; eax = 0								;3
 model_loop:
 	pusha																;1
-	add		al, 0				; 04 00									;2
 
 ; 8 bytes:
 ; Import Table Size
 ; Resource Table RVA
-	xor		eax, eax			; eax = 0								;2
 	cdq 						; edx = 0								;1
-	
 	mov		esi, dword [esp+10*4]; esi = UnpackedData					;4
 	dec		esi															;1
 	; esi = start
@@ -215,6 +212,7 @@ BoostFactorPtrP:
 	mov		esi, esp													;2
 .add_loop:
 	add		dword [esi+9*4], edx										;3
+	nop																	;1
 	cmp		eax, strict dword 0											;5
 
 	jz		.loop
@@ -233,17 +231,13 @@ BoostFactorPtrP:
 	cmp		di, strict word 0
 DepackEndPositionP:
 	jmp		short _AritDecodeJumpPad
-_AritDecode2:
-	mul		edx					; edx:eax = p0 * interval_size
-	div		ebx					; eax = (p0 * interval_size) / (p0 + p1)
-	pop		edx					; edx = interval_size
-	cmp		esi, eax			; data < threshold?
-	jb		short one
-	xchg	eax, edx			; eax = interval_size, edx = threshold
-	sub		esi, edx			; data -= threshold
-	sub		eax, edx			; eax = interval_size - threshold, cf=0
-one:
-	rcl		byte [edi], 1
+_AritDecode:
+	pop		ebx					; ebx = p									;1
+	mul		esi					; edx = (x*p)>>32, eax = (x*p)&0xFFFFFFFF	;2
+	sub		esi, edx			; x -= ((x*p)>>32)							;2
+	add		eax, ebx			; cf = bit									;2
+	cmovc	esi, edx			; if(cf) x = ((x*p)>>32)					;3
+	rcl		byte [edi], 1													;2
 
 	loop	_DontInc
 	inc		edi

@@ -10,6 +10,7 @@
 #include "AritCode.h"
 #include "Model.h"
 #include "CounterState.h"
+#include "../../external/libdivide.h"
 
 static const unsigned int MAX_N_MODELS = 21;
 static const unsigned int MAX_MODEL_WEIGHT = 9;
@@ -611,6 +612,185 @@ int Compress1k(const unsigned char* orgInputData, int inputSize, unsigned char* 
 
 	delete[] hash_table_data;
 
+#if 1
+	struct BestResult
+	{
+		uint32_t initial_state;
+		uint32_t saving;
+	};
+
+	auto better_result = [=](const BestResult& a, const BestResult& b)
+	{
+		if (a.saving != b.saving)
+			return (a.saving > b.saving) ? a : b;
+
+		return (a.initial_state < b.initial_state) ? a : b;
+	};
+
+	struct Entry	//TODO: Better name
+	{
+		uint32_t add;
+		uint32_t div;
+		libdivide::libdivide_u64_branchfree_t fast_d;
+	};
+
+	int init_start_time = GetTickCount();
+
+	std::vector<Entry> entries;
+	entries.reserve(inputSize * 8);
+	for (int bytepos = inputSize - 1; bytepos >= 0; bytepos--)
+	{
+		for (int bitpos = 7; bitpos >= 0; bitpos--)
+		{
+			int bit = (((data[bytepos] << bitpos) & 0x80) == 0x80);
+			const SEncodeEntry& entry = encode_entries[bitpos * inputSize + bytepos];
+
+			uint32_t c0 = entry.n[0] + b1;
+			uint32_t c1 = entry.n[1] + b0;
+
+			uint32_t p = (uint64_t(c1) << 32) / (c0 + c1);
+			
+
+			if (bit)
+				entries.emplace_back(Entry{ 0xFFFFFFFFu, p, libdivide::libdivide_u64_branchfree_gen(p)});
+			else
+				entries.emplace_back(Entry{ 0u, 0u - p, libdivide::libdivide_u64_branchfree_gen(0u - p) });
+		}
+	}
+
+	printf("init time spent: %dms\n", GetTickCount() - init_start_time);
+
+	const BestResult initial_best{
+		static_cast<uint32_t>(0x80000000ul),
+		0
+	};
+
+	int starttime = GetTickCount();
+
+	concurrency::combinable<BestResult> thread_best([=] { return initial_best; });
+
+	const uint32_t BLOCK_SIZE = 4096;
+	const uint32_t NUM_BLOCKS = 0x80000000u / BLOCK_SIZE;
+
+	concurrency::parallel_for<uint32_t>(
+		0,
+		NUM_BLOCKS,
+		[&](uint32_t block_index)
+	{
+		uint32_t best_saving = 0;
+		uint32_t best_initial_state = 0x80000000u;
+		const uint32_t first_initial_state = 0x80000000u + block_index * BLOCK_SIZE;
+		for (uint32_t i = 0; i < BLOCK_SIZE; i++)
+		{
+			const uint32_t initial_state = first_initial_state + i;
+			uint32_t state = initial_state;
+			uint32_t saving = 0;
+			
+			for (const Entry& entry : entries)
+			{
+				const uint32_t add = entry.add;
+				const uint32_t div = entry.div;
+
+				while (state >= div)
+				{
+					if ((state & 1) == 1)
+					{
+						goto end;
+					}
+					saving++;
+					state >>= 1;
+				}
+
+				state = libdivide::libdivide_u64_branchfree_do((uint64_t(state) << 32) + add, &entry.fast_d);
+
+			}
+		end:
+			if (saving > best_saving)
+			{
+				best_saving = saving;
+				best_initial_state = initial_state;
+			}
+		}
+		
+		const BestResult candidate{
+			best_initial_state,
+			best_saving
+		};
+
+		BestResult& local_best = thread_best.local();
+		local_best = better_result(local_best, candidate);
+	});
+
+	const BestResult result =
+		thread_best.combine(
+			[&](const BestResult& a, const BestResult& b)
+	{
+		return better_result(a, b);
+	});
+
+	uint32_t state = result.initial_state;
+	std::vector<char> bitstack;
+	for (int bytepos = inputSize - 1; bytepos >= 0; bytepos--)
+	{
+		for (int bitpos = 7; bitpos >= 0; bitpos--)
+		{
+			int bit = (((data[bytepos] << bitpos) & 0x80) == 0x80);
+
+			const SEncodeEntry& entry = encode_entries[bitpos * inputSize + bytepos];
+
+			uint32_t c0 = entry.n[0] + b1;
+			uint32_t c1 = entry.n[1] + b0;
+
+			uint64_t p = (uint64_t(c1) << 32) / (c0 + c1);
+
+			uint64_t total = 0x100000000ull;
+			uint64_t new_state;
+			if (bit)
+				new_state = (state * total + (total - 1)) / p;
+			else
+				new_state = (state * total) / (total - p);
+
+			while (new_state >= total)
+			{
+				bitstack.push_back(state & 1);
+				state >>= 1;
+				if (bit)
+					new_state = (state * total + (total - 1)) / p;
+				else
+					new_state = (state * total) / (total - p);
+			}
+			state = uint32_t(new_state);
+		}
+	}
+
+	for (int i = 0; i < 31; i++)
+	{
+		bitstack.push_back((state >> i) & 1);
+	}
+	
+	printf("State: %8x\n", state);
+
+	const int num_bits = bitstack.size();
+	for (int i = 0; i < num_bits; i++)
+	{
+		int bit = bitstack[num_bits - i - 1];
+		int byte_idx = i >> 3;
+		int bit_idx = i & 7;
+		if (bit_idx == 0)
+		{
+			outCompressedData[byte_idx] = 0;
+		}
+		outCompressedData[byte_idx] |= bit << bit_idx;
+	}
+	int num_bytes = (num_bits + 7) / 8;
+
+	
+	printf("time spent: %dms\n", GetTickCount() - starttime);
+
+	// TODO: sizefill
+	// TODO: Figure out b0/b1 swap
+#else
+	// Arithmetic coding
 	AritState as;
 	memset(outCompressedData, 0, maxCompressedSize);
 	AritCodeInit(&as, outCompressedData);
@@ -630,11 +810,6 @@ int Compress1k(const unsigned char* orgInputData, int inputSize, unsigned char* 
 		}
 	}
 
-	delete[] encode_entries;
-
-	data -= 32;
-	delete[] data;
-
 	if (sizefill)
 	{
 		*sizefill++ = AritCodePos(&as) / (TABLE_BIT_PRECISION / BIT_PRECISION);
@@ -645,7 +820,16 @@ int Compress1k(const unsigned char* orgInputData, int inputSize, unsigned char* 
 		*outInternalSize = AritCodePos(&as) / (TABLE_BIT_PRECISION / BIT_PRECISION);
 	}
 
-	return (AritCodeEnd(&as) + 7) / 8;
+	int num_bytes = (AritCodeEnd(&as) + 7) / 8;
+#endif
+
+	delete[] encode_entries;
+
+	data -= 32;
+	delete[] data;
+
+
+	return num_bytes;
 }
 
 int Evaluate1K(unsigned char* data, int size, int* modeldata, int* out_b0, int* out_b1, int* out_boost_factor, unsigned int modelmask)
