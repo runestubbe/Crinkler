@@ -451,7 +451,7 @@ static Hunk* ForwardImport(Hunk* hunk) {
 	return hunk;
 }
 
-void ImportHandler::AddImportHunks4K(Part& part, Hunk*& hashHunk, Hunk* header, Hunk* headerRefHunk, map<string, string>& fallbackDlls, const vector<string>& rangeDlls, bool verbose, bool& enableRangeImport) {
+void ImportHandler::AddImportHunks4K(Part& part, Hunk*& hashHunk, Hunk* header, Hunk* headerRefHunk, const vector<string>& rangeDlls, bool verbose, bool& enableRangeImport) {
 	if(verbose)
 		printf("\n-Imports----------------------------------\n");
 
@@ -484,7 +484,6 @@ void ImportHandler::AddImportHunks4K(Part& part, Hunk*& hashHunk, Hunk* header, 
 	int addr = CRINKLER_IMAGEBASE + header->GetRawSize();
 	headerRefHunk->AddSymbol(new Symbol("_HeaderHashes", addr, SYMBOL_IS_SECTION, headerRefHunk));
 
-	set<string> usedFallbackDlls;
 	vector<unsigned int> hashes;
 	char dllNames[1024] = {0};
 	char* dllNamesPtr = dllNames;
@@ -511,16 +510,6 @@ void ImportHandler::AddImportHunks4K(Part& part, Hunk*& hashHunk, Hunk* header, 
 				string dll = importHunk->GetImportDll();
 				strcpy_s(dllNamesPtr, sizeof(dllNames)-(dllNamesPtr-dllNames), dll.c_str());
 				dllNamesPtr += dll.size() + 1;
-				while (fallbackDlls.count(dll) != 0) {
-					usedFallbackDlls.insert(dll);
-					seen.insert(dll);
-					*dllNamesPtr = 0;
-					dllNamesPtr += 1;
-					dll = fallbackDlls[dll];
-					strcpy_s(dllNamesPtr, sizeof(dllNames) - (dllNamesPtr - dllNames), dll.c_str());
-					dllNamesPtr += dll.size() + 1;
-					if (seen.count(dll) != 0) Log::Error("", "Cyclic DLL fallback");
-				}
 			}
 
 
@@ -572,13 +561,6 @@ void ImportHandler::AddImportHunks4K(Part& part, Hunk*& hashHunk, Hunk* header, 
 	for (int i = 0; i < (int)rangeDlls.size(); i++) {
 		if (!usedRangeDlls[i]) {
 			Log::Warning("", "No functions were imported from range DLL '%s'", rangeDlls[i].c_str());
-		}
-	}
-
-	// Warn about unused fallback DLLs
-	for (auto fallback : fallbackDlls) {
-		if (usedFallbackDlls.count(fallback.first) == 0) {
-			Log::Warning("", "No functions were imported from fallback DLL '%s'", fallback.first.c_str());
 		}
 	}
 

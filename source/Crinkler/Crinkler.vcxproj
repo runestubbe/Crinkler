@@ -330,10 +330,6 @@ nasm -f win32 -Xvc modules\header30_compatibility.asm -o $(IntermediateOutputPat
 nasm -f win32 -Xvc modules\header22_1k.asm -o $(IntermediateOutputPath)\header22_1k.obj
 nasm -f win32 -Xvc modules\import31.asm -o $(IntermediateOutputPath)\import31.obj
 nasm -f win32 -Xvc -dIMPORT_RANGE modules\import31.asm -o $(IntermediateOutputPath)\import31-range.obj
-nasm -f win32 -Xvc -dIMPORT_SAFE modules\import31.asm -o $(IntermediateOutputPath)\import31-safe.obj
-nasm -f win32 -Xvc -dIMPORT_SAFE -dIMPORT_RANGE modules\import31.asm -o $(IntermediateOutputPath)\\import31-safe-range.obj
-nasm -f win32 -Xvc -dIMPORT_SAFE -dIMPORT_FALLBACK modules\import31.asm -o $(IntermediateOutputPath)\import31-safe-fallback.obj
-nasm -f win32 -Xvc -dIMPORT_SAFE -dIMPORT_FALLBACK -dIMPORT_RANGE modules\import31.asm -o $(IntermediateOutputPath)\import31-safe-fallback-range.obj
 nasm -f win32 -Xvc modules\import20_1k.asm -o $(IntermediateOutputPath)\import20_1k.obj
 nasm -f win32 -Xvc modules\runtime.asm -o $(IntermediateOutputPath)\runtime.obj
 nasm -f win32 -Xvc -dPATH=$(IntermediateOutputPath) %(FullPath) -o $(IntermediateOutputPath)\%(Filename).obj</Command>
@@ -343,10 +339,6 @@ nasm -f win32 -Xvc modules\header30_compatibility.asm -o $(IntermediateOutputPat
 nasm -f win32 -Xvc modules\header22_1k.asm -o $(IntermediateOutputPath)\header22_1k.obj
 nasm -f win32 -Xvc modules\import31.asm -o $(IntermediateOutputPath)\import31.obj
 nasm -f win32 -Xvc -dIMPORT_RANGE modules\import31.asm -o $(IntermediateOutputPath)\import31-range.obj
-nasm -f win32 -Xvc -dIMPORT_SAFE modules\import31.asm -o $(IntermediateOutputPath)\import31-safe.obj
-nasm -f win32 -Xvc -dIMPORT_SAFE -dIMPORT_RANGE modules\import31.asm -o $(IntermediateOutputPath)\\import31-safe-range.obj
-nasm -f win32 -Xvc -dIMPORT_SAFE -dIMPORT_FALLBACK modules\import31.asm -o $(IntermediateOutputPath)\import31-safe-fallback.obj
-nasm -f win32 -Xvc -dIMPORT_SAFE -dIMPORT_FALLBACK -dIMPORT_RANGE modules\import31.asm -o $(IntermediateOutputPath)\import31-safe-fallback-range.obj
 nasm -f win32 -Xvc modules\import20_1k.asm -o $(IntermediateOutputPath)\import20_1k.obj
 nasm -f win32 -Xvc modules\runtime.asm -o $(IntermediateOutputPath)\runtime.obj
 nasm -f win64 -Xvc -dPATH=$(IntermediateOutputPath) %(FullPath) -o $(IntermediateOutputPath)\%(Filename).obj</Command>
@@ -362,10 +354,6 @@ nasm -f win32 -Xvc modules\header30_compatibility.asm -o $(IntermediateOutputPat
 nasm -f win32 -Xvc modules\header22_1k.asm -o $(IntermediateOutputPath)\header22_1k.obj
 nasm -f win32 -Xvc modules\import31.asm -o $(IntermediateOutputPath)\import31.obj
 nasm -f win32 -Xvc -dIMPORT_RANGE modules\import31.asm -o $(IntermediateOutputPath)\import31-range.obj
-nasm -f win32 -Xvc -dIMPORT_SAFE modules\import31.asm -o $(IntermediateOutputPath)\import31-safe.obj
-nasm -f win32 -Xvc -dIMPORT_SAFE -dIMPORT_RANGE modules\import31.asm -o $(IntermediateOutputPath)\\import31-safe-range.obj
-nasm -f win32 -Xvc -dIMPORT_SAFE -dIMPORT_FALLBACK modules\import31.asm -o $(IntermediateOutputPath)\import31-safe-fallback.obj
-nasm -f win32 -Xvc -dIMPORT_SAFE -dIMPORT_FALLBACK -dIMPORT_RANGE modules\import31.asm -o $(IntermediateOutputPath)\import31-safe-fallback-range.obj
 nasm -f win32 -Xvc modules\import20_1k.asm -o $(IntermediateOutputPath)\import20_1k.obj
 nasm -f win32 -Xvc modules\runtime.asm -o $(IntermediateOutputPath)\runtime.obj
 nasm -f win32 -Xvc -dPATH=$(IntermediateOutputPath) %(FullPath) -o $(IntermediateOutputPath)\%(Filename).obj</Command>
@@ -375,10 +363,6 @@ nasm -f win32 -Xvc modules\header30_compatibility.asm -o $(IntermediateOutputPat
 nasm -f win32 -Xvc modules\header22_1k.asm -o $(IntermediateOutputPath)\header22_1k.obj
 nasm -f win32 -Xvc modules\import31.asm -o $(IntermediateOutputPath)\import31.obj
 nasm -f win32 -Xvc -dIMPORT_RANGE modules\import31.asm -o $(IntermediateOutputPath)\import31-range.obj
-nasm -f win32 -Xvc -dIMPORT_SAFE modules\import31.asm -o $(IntermediateOutputPath)\import31-safe.obj
-nasm -f win32 -Xvc -dIMPORT_SAFE -dIMPORT_RANGE modules\import31.asm -o $(IntermediateOutputPath)\\import31-safe-range.obj
-nasm -f win32 -Xvc -dIMPORT_SAFE -dIMPORT_FALLBACK modules\import31.asm -o $(IntermediateOutputPath)\import31-safe-fallback.obj
-nasm -f win32 -Xvc -dIMPORT_SAFE -dIMPORT_FALLBACK -dIMPORT_RANGE modules\import31.asm -o $(IntermediateOutputPath)\import31-safe-fallback-range.obj
 nasm -f win32 -Xvc modules\import20_1k.asm -o $(IntermediateOutputPath)\import20_1k.obj
 nasm -f win32 -Xvc modules\runtime.asm -o $(IntermediateOutputPath)\runtime.obj
 nasm -f win64 -Xvc -dPATH=$(IntermediateOutputPath) %(FullPath) -o $(IntermediateOutputPath)\%(Filename).obj</Command>

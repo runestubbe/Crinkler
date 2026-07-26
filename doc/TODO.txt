@@ -41,8 +41,6 @@ Linker:
 	Load obj files before lib files
 	Broken MASM lib files from jin_x
 	Bogus messages about alignment of imports with default alignment override
-	FALLBACK checks
-	FALLBACKDLL vs RANGE ?
 	combine identical read-only symbols
 	Remove 128k limit on compressed size (Adjustable CodeBase)
 	Don't crash on big input files

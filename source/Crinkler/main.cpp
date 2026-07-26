@@ -248,7 +248,6 @@ int main(int argc, char* argv[]) {
 	CmdParamSwitch helpFlag("?", "help", 0);
 	CmdParamSwitch crinklerFlag("CRINKLER", "enables Crinkler", 0);
 	CmdParamSwitch recompressFlag("RECOMPRESS", "recompress a Crinkler file", 0);
-	CmdParamSwitch unsafeImportArg("UNSAFEIMPORT", "crash if a DLL is missing", 0);
 	CmdParamSwitch showProgressArg("PROGRESSGUI", "show a graphical progress bar", 0);
 
 	CmdParamSwitch tinyHeader("TINYHEADER", "use tiny header", 0);
@@ -276,16 +275,15 @@ int main(int argc, char* argv[]) {
 	CmdParamString libpathArg("LIBPATH", "adds a path to the library search path", "dirs", PARAM_IS_SWITCH, 0);
 	CmdParamString rangeImportArg("RANGE", "use range importing for this dll", "dllname", PARAM_IS_SWITCH, 0);
 	CmdParamMultiAssign replaceDllArg("REPLACEDLL", "replace a dll with another", "oldDLL=newDLL", PARAM_IS_SWITCH);
-	CmdParamMultiAssign fallbackDllArg("FALLBACKDLL", "try opening another dll if the first one fails", "firstDLL=otherDLL", PARAM_IS_SWITCH);
 	CmdParamMultiAssign exportArg("EXPORT", "export value by name", "name=value/label", PARAM_IS_SWITCH | PARAM_ALLOW_MISSING_VALUE);
 	CmdParamSwitch stripExportsArg("STRIPEXPORTS", "remove exports from executable", 0);
 	CmdParamSwitch noInitializersArg("NOINITIALIZERS", "do not run dynamic initializers", 0);
 	CmdParamString filesArg("FILES", "list of filenames", "", PARAM_HIDE_IN_PARAM_LIST, 0);
 	CmdLineInterface cmdline(CRINKLER_TITLE, CMDI_PARSE_FILES);
 
-	cmdline.AddParams(&helpFlag, &crinklerFlag, &hashsizeArg, &hashtriesArg, &hunktriesArg, &noDefaultLibArg, &entryArg, &outArg, &summaryArg, &reportThemeArg, &reuseFileArg, &reuseArg, &reuseDialogFlag, &unsafeImportArg,
+	cmdline.AddParams(&helpFlag, &crinklerFlag, &hashsizeArg, &hashtriesArg, &hunktriesArg, &noDefaultLibArg, &entryArg, &outArg, &summaryArg, &reportThemeArg, &reuseFileArg, &reuseArg, &reuseDialogFlag,
 						&subsystemArg, &textPartArg, &largeAddressAwareArg, &truncateFloatsArg, &overrideAlignmentsArg, &unalignCodeArg, &compmodeArg, &saturateArg, &printArg, &transformArg, &libpathArg,
-						&rangeImportArg, &replaceDllArg, &fallbackDllArg, &exportArg, &stripExportsArg, &noInitializersArg, &filesArg, &priorityArg, &showProgressArg, &recompressFlag,
+						&rangeImportArg, &replaceDllArg, &exportArg, &stripExportsArg, &noInitializersArg, &filesArg, &priorityArg, &showProgressArg, &recompressFlag,
 						&tinyHeader, &tinyImport,
 						NULL);
 	
@@ -447,7 +445,6 @@ int main(int argc, char* argv[]) {
 	// Set Crinkler options
 	crinkler.SetUseTinyHeader(tinyHeader.GetValue());
 	crinkler.SetUseTinyImport(tinyImport.GetValue());
-	crinkler.SetImportingType(!unsafeImportArg.GetValue());
 	crinkler.SetEntry(entryArg.GetValue());
 	crinkler.SetHashsize(hashsizeArg.GetValue());
 	crinkler.SetSubsystem((SubsystemType)subsystemArg.GetValue());
@@ -520,24 +517,6 @@ int main(int argc, char* argv[]) {
 			
 			crinkler.AddReplaceDll(replaceDllArg.GetValue1(), replaceDllArg.GetValue2());
 			replaceDllArg.Next();
-			first = false;
-		}
-		printf("\n");
-	}
-
-	// Fallback DLL
-	{
-		printf("Fallback DLLs: ");
-		if (!fallbackDllArg.HasNext())
-			printf("NONE");
-
-		bool first = true;
-		while (fallbackDllArg.HasNext()) {
-			if (!first) printf(", ");
-			printf("%s -> %s", fallbackDllArg.GetValue1(), fallbackDllArg.GetValue2());
-
-			crinkler.AddFallbackDll(fallbackDllArg.GetValue1(), fallbackDllArg.GetValue2());
-			fallbackDllArg.Next();
 			first = false;
 		}
 		printf("\n");

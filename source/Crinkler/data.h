@@ -20,18 +20,6 @@ extern "C" {
 
 	extern char importRangeObj[];
 	extern char importRangeObj_end[];
-	
-	extern char importSafeObj[];
-	extern char importSafeObj_end[];
-
-	extern char importSafeRangeObj[];
-	extern char importSafeRangeObj_end[];
-
-	extern char importSafeFallbackObj[];
-	extern char importSafeFallbackObj_end[];
-
-	extern char importSafeFallbackRangeObj[];
-	extern char importSafeFallbackRangeObj_end[];
 
 	extern char calltransObj[];
 	extern char calltransObj_end[];

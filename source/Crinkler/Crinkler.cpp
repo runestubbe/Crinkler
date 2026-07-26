@@ -79,7 +79,6 @@ Crinkler::Crinkler():
 	m_compressionType(COMPRESSION_FAST),
 	m_reuseType(REUSE_OFF),
 	m_showReuseDialog(false),
-	m_useSafeImporting(true),
 	m_hashtries(0),
 	m_hunktries(0),
 	m_printFlags(0),
@@ -222,42 +221,24 @@ void Crinkler::RemoveUnreferencedHunks(Hunk* base)
 
 	// Hack to ensure that LoadLibrary & MessageBox is there to be used in the import code
 	Symbol* loadLibrary = symbol_map.FindSymbol("__imp__LoadLibraryA@4");
-	Symbol* messageBox = symbol_map.FindSymbol("__imp__MessageBoxA@16");
 	Symbol* dynamicInitializers = symbol_map.FindSymbol("__DynamicInitializers");
 	if(loadLibrary != NULL)
 		startHunks.push_back(loadLibrary->hunk);
-	if(m_useSafeImporting && !m_useTinyImport && messageBox != NULL)
-		startHunks.push_back(messageBox->hunk);
 	if(dynamicInitializers != NULL)
 		startHunks.push_back(dynamicInitializers->hunk);
 
 	m_hunkList.DeleteUnreferencedHunks(symbol_map, startHunks);
 }
 
-void Crinkler::LoadImportCode(bool use1kMode, bool useSafeImporting, bool useDllFallback, bool useRangeImport) {
+void Crinkler::LoadImportCode(bool use1kMode, bool useRangeImport) {
 	// Do imports
 	if (use1kMode){
 		Load(import1KObj, int(import1KObj_end - import1KObj), "Crinkler import");
 	} else {
-		if (useSafeImporting)
-			if (useDllFallback)
-				if (useRangeImport)
-					Load(importSafeFallbackRangeObj, int(importSafeFallbackRangeObj_end - importSafeFallbackRangeObj), "Crinkler import");
-				else
-					Load(importSafeFallbackObj, int(importSafeFallbackObj_end - importSafeFallbackObj), "Crinkler import");
-			else
-				if (useRangeImport)
-					Load(importSafeRangeObj, int(importSafeRangeObj_end - importSafeRangeObj), "Crinkler import");
-				else
-					Load(importSafeObj, int(importSafeObj_end - importSafeObj), "Crinkler import");
+		if (useRangeImport)
+			Load(importRangeObj, int(importRangeObj_end - importRangeObj), "Crinkler import");
 		else
-			if (useDllFallback)
-				Log::Error("", "DLL fallback cannot be used with unsafe importing");
-			else
-				if (useRangeImport)
-					Load(importRangeObj, int(importRangeObj_end - importRangeObj), "Crinkler import");
-				else
-					Load(importObj, int(importObj_end - importObj), "Crinkler import");
+			Load(importObj, int(importObj_end - importObj), "Crinkler import");
 	}
 }
 
@@ -1304,10 +1285,10 @@ void Crinkler::Link(const char* filename) {
 		if (m_useTinyImport)
 			ImportHandler::AddImportHunks1K(m_hunkList, (m_printFlags & PRINT_IMPORTS) != 0, hash_bits, max_dll_name_length);
 		else
-			ImportHandler::AddImportHunks4K(m_hunkList, hashHunk, header, entry->hunk, m_fallbackDlls, m_rangeDlls, (m_printFlags & PRINT_IMPORTS) != 0, usesRangeImport);
+			ImportHandler::AddImportHunks4K(m_hunkList, hashHunk, header, entry->hunk, m_rangeDlls, (m_printFlags & PRINT_IMPORTS) != 0, usesRangeImport);
 	}
 
-	LoadImportCode(m_useTinyImport, m_useSafeImporting, !m_fallbackDlls.empty(), usesRangeImport);
+	LoadImportCode(m_useTinyImport, usesRangeImport);
 
 	Symbol* importSymbol = m_hunkList.FindSymbol("_Import");
 
@@ -1708,12 +1689,6 @@ void Crinkler::PrintOptions(back_insert_iterator<vector<char>> out) {
 	}
 	for(const auto& p : m_replaceDlls) {
 		format_to(out, " /REPLACEDLL:{}={}", p.first, p.second);
-	}
-	for (const auto& p : m_fallbackDlls) {
-		format_to(out, " /FALLBACKDLL:{}={}", p.first, p.second);
-	}
-	if (!m_useTinyHeader && !m_useSafeImporting) {
-		format_to(out, " /UNSAFEIMPORT");
 	}
 	if (m_transform->GetDetransformer() != NULL) {
 		format_to(out, " /TRANSFORM:CALLS");

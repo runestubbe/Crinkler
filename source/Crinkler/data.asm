@@ -21,10 +21,6 @@ INCBIN header1KObj, "header22_1k.obj"
 
 INCBIN importObj, "import31.obj"
 INCBIN importRangeObj, "import31-range.obj"
-INCBIN importSafeObj, "import31-safe.obj"
-INCBIN importSafeRangeObj, "import31-safe-range.obj"
-INCBIN importSafeFallbackObj, "import31-safe-fallback.obj"
-INCBIN importSafeFallbackRangeObj, "import31-safe-fallback-range.obj"
 INCBIN import1KObj, "import20_1k.obj"
 
 INCBIN calltransObj, "calltrans.obj"
