@@ -90,14 +90,15 @@ AritDecode:
 ; Major subsystem version
 ; Minor subsystem version
 ; Reserved (Must be 0)
-	add		al, 0				; 04 00									;2
-	push	eax															;1
+	add		al, 0					; 04 00								;2
+	push	eax						; push p							;1
 	cmp		eax, strict dword 0											;5
 
 ; 4 bytes:
 ; Size of image
+	pop		ebx						; ebx = p							;1
 	jmp		short _AritDecode											;2
-	db		0x00														;1
+
 _VirtualSizeHighBytePtr:
 	db		0x01														;1
 
@@ -149,7 +150,7 @@ _DepackEntry:
 _DontInc:
 	push 	byte 0				; 6A ??									;2
 BaseProbPtrP0:
-	cmp		eax, strict dword 0											;5
+	mov		eax, strict dword 0											;5
 
 ; Data directories
 
@@ -161,10 +162,9 @@ BaseProbPtrP0:
 BaseProbPtrP1:
 	mov		edx, _ModelMask		; BA ?? ?? ?? ??						;5
 	mov		bl, 31														;2
-	and		eax, byte 0			; eax = 0								;3
 model_loop:
 	pusha																;1
-
+	add		al, 0				; 04 00*								;2
 ; 8 bytes:
 ; Import Table Size
 ; Resource Table RVA
@@ -209,15 +209,13 @@ _no_update:
 
 	mov		cl, byte 0			; Boost factor							;2
 BoostFactorPtrP:
-	mov		esi, esp													;2
+	lea		esi, [esp+8*4]												;4
 .add_loop:
-	add		dword [esi+9*4], edx										;3
-	nop																	;1
+	add		dword [esi+4], edx											;3
 	cmp		eax, strict dword 0											;5
-
-	jz		.loop
-	add		dword [esi+8*4], eax
-	test	edx, edx
+	jz		.loop														;2
+	add		dword [esi], eax											;2
+	test	edx, edx													;2
 .loop:
 	loope	.add_loop			; loop BOOST_FACTOR times, if c0*c1 = 0
 	popa
@@ -232,7 +230,6 @@ BoostFactorPtrP:
 DepackEndPositionP:
 	jmp		short _AritDecodeJumpPad
 _AritDecode:
-	pop		ebx					; ebx = p									;1
 	mul		esi					; edx = (x*p)>>32, eax = (x*p)&0xFFFFFFFF	;2
 	sub		esi, edx			; x -= ((x*p)>>32)							;2
 	add		eax, ebx			; cf = bit									;2

@@ -672,6 +672,7 @@ int Compress1k(const unsigned char* orgInputData, int inputSize, unsigned char* 
 	const uint32_t BLOCK_SIZE = 4096;
 	const uint32_t NUM_BLOCKS = 0x80000000u / BLOCK_SIZE;
 
+#if 1
 	concurrency::parallel_for<uint32_t>(
 		0,
 		NUM_BLOCKS,
@@ -701,7 +702,7 @@ int Compress1k(const unsigned char* orgInputData, int inputSize, unsigned char* 
 					state >>= 1;
 				}
 
-				state = libdivide::libdivide_u64_branchfree_do((uint64_t(state) << 32) + add, &entry.fast_d);
+				state = (uint32_t)libdivide::libdivide_u64_branchfree_do((uint64_t(state) << 32) + add, &entry.fast_d);
 
 			}
 		end:
@@ -720,6 +721,92 @@ int Compress1k(const unsigned char* orgInputData, int inputSize, unsigned char* 
 		BestResult& local_best = thread_best.local();
 		local_best = better_result(local_best, candidate);
 	});
+#else
+	concurrency::parallel_for<uint32_t>(
+		0,
+		NUM_BLOCKS,
+		[&](uint32_t block_index)
+	{
+		
+		uint32_t best_initial_state = 0x80000000u;
+		const uint32_t first_initial_state = 0x80000000u + block_index * BLOCK_SIZE;
+
+		struct FrontierEntry
+		{
+			uint32_t state;
+			uint32_t index_saving;
+		};
+
+		uint32_t frontier_size = BLOCK_SIZE;
+		FrontierEntry frontier[BLOCK_SIZE];
+		for (uint32_t i = 0; i < BLOCK_SIZE; i++)
+		{
+			frontier[i].state = first_initial_state + i;
+			frontier[i].index_saving = i;
+		}
+
+		uint32_t best_index_saving = 0;
+		for (const Entry& entry : entries)
+		{
+			const uint32_t add = entry.add;
+			const uint32_t div = entry.div;
+
+			uint32_t next_frontier_size = 0;
+			for(uint32_t i = 0; i < frontier_size; i++)
+			{
+				uint32_t state = frontier[i].state;
+				uint32_t index_saving = frontier[i].index_saving;
+#if 1
+				while (state >= div)
+				{
+					if ((state & 1) == 1)
+					{
+						goto end;
+					}
+					index_saving += 0x10000u;
+					state >>= 1;
+				}
+#else
+				if (state >= div)
+				{
+					int32_t state_lzcnt = 32 - _lzcnt_u32(state);
+					int32_t div_lzcnt = 32 - _lzcnt_u32(div);
+					int32_t shift = std::max(state_lzcnt - div_lzcnt, 0);
+					shift += (state >> shift) >= div;
+					if (state & ((1u << shift) - 1u))
+						goto end;
+					state >>= shift;
+				}
+#endif
+
+				state = libdivide::libdivide_u64_branchfree_do((uint64_t(state) << 32) + add, &entry.fast_d);
+				frontier[next_frontier_size].state = state;
+				frontier[next_frontier_size].index_saving = index_saving;
+				next_frontier_size++;
+			end:
+				if (index_saving > best_index_saving)
+				{
+					best_index_saving = index_saving;
+				}
+			}
+
+			if (next_frontier_size == 0)
+			{
+				break;
+			}
+			
+			frontier_size = next_frontier_size;
+		}
+		
+		const BestResult candidate{
+			(best_index_saving & 0xFFFFu) + first_initial_state,
+			best_index_saving >> 16
+		};
+
+		BestResult& local_best = thread_best.local();
+		local_best = better_result(local_best, candidate);
+	});
+#endif
 
 	const BestResult result =
 		thread_best.combine(
@@ -742,24 +829,20 @@ int Compress1k(const unsigned char* orgInputData, int inputSize, unsigned char* 
 			uint32_t c1 = entry.n[1] + b0;
 
 			uint64_t p = (uint64_t(c1) << 32) / (c0 + c1);
+			uint32_t div = bit ? p : (0u - p);
 
 			uint64_t total = 0x100000000ull;
-			uint64_t new_state;
-			if (bit)
-				new_state = (state * total + (total - 1)) / p;
-			else
-				new_state = (state * total) / (total - p);
-
-			while (new_state >= total)
+			
+			while (state >= div)
 			{
 				bitstack.push_back(state & 1);
 				state >>= 1;
-				if (bit)
-					new_state = (state * total + (total - 1)) / p;
-				else
-					new_state = (state * total) / (total - p);
 			}
-			state = uint32_t(new_state);
+
+			if (bit)
+				state = uint32_t(((uint64_t(state) << 32) + 0xFFFFFFFFu) / div);
+			else
+				state = uint32_t((uint64_t(state) << 32) / div);
 		}
 	}
 
@@ -770,7 +853,7 @@ int Compress1k(const unsigned char* orgInputData, int inputSize, unsigned char* 
 	
 	printf("State: %8x\n", state);
 
-	const int num_bits = bitstack.size();
+	const int num_bits = (int)bitstack.size();
 	for (int i = 0; i < num_bits; i++)
 	{
 		int bit = bitstack[num_bits - i - 1];
