@@ -79,7 +79,7 @@ DllSkipPtrP1:
 _ImportRange:
 	mov		esi, [ebx + 1ch]		; eax = address table RVA
 	add		esi, ebp				; eax = address table address
-	mov		ecx, [ebx + 18h]		; ecx = number of names
+	mov		ecx, [ebx + 14h]		; ecx = number of functions
 CopyFunctionRange:
 	lodsd
 	add		eax, ebp
