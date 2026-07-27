@@ -1304,14 +1304,14 @@ void Crinkler::Link(const char* filename) {
 
 	m_hunkList.RemoveHunk(importHunk);
 	m_hunkList.AddHunkFront(importHunk);
-	*(importHunk->GetPtr() + importHunk->FindSymbol("_DllSkipPtr")->value) = dllSkip;
 	importHunk->SetAlignmentBits(0);
 	importHunk->SetContinuation(dynamicInitializersHunk ? dynamicInitializersHunk->FindSymbol("__DynamicInitializers") : entry);
 	
-	if(m_useTinyImport)
-	{
+	if(m_useTinyImport) {
 		*(importHunk->GetPtr() + importHunk->FindSymbol("_HashShiftPtr")->value) = 32 - hash_bits;
 		*(importHunk->GetPtr() + importHunk->FindSymbol("_MaxNameLengthPtr")->value) = max_dll_name_length;
+	} else {
+		*(importHunk->GetPtr() + importHunk->FindSymbol("_DllSkipPtr")->value) = dllSkip;
 	}
 
 	// Truncate floats
