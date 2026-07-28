@@ -496,12 +496,14 @@ void Hunk::MarkHunkAsLibrary() {
 
 const string& Hunk::GetID() {
 	if (m_cached_id.empty()) {
+		// Pick the first non-section symbol, or the first symbol if there are only section symbols
 		Symbol *first = nullptr;
 		for (auto s : m_symbols) {
-			if (!(s.second->flags & SYMBOL_IS_SECTION)) {
-				if (first == nullptr || SymbolComparator(s.second, first)) {
-					first = s.second;
-				}
+			if (first == nullptr
+				|| ((first->flags ^ s.second->flags) & SYMBOL_IS_SECTION
+					? first->flags & SYMBOL_IS_SECTION
+					: SymbolComparator(s.second, first))) {
+				first = s.second;
 			}
 		}
 		string section_name;
