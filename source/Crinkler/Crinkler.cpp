@@ -1534,7 +1534,8 @@ void Crinkler::Link(const char* filename) {
 					parts[parts.GetNumParts() - 2].AddHunkBack(CreateExportTable(m_exports));
 				}
 				m_transform->LinkAndTransform(parts, importSymbol, CRINKLER_CODEBASE, &phase1, &phase1Untransformed, false);
-				int size = CompressParts4k(parts, phase1, data, maxsize, reuse->GetHashSize(), nullptr);
+				best_hashsize = reuse->GetHashSize();
+				size = CompressParts4k(parts, phase1, data, maxsize, best_hashsize, sizefill);
 				delete phase2;
 				phase2 = FinalLink(parts, header, nullptr, hashHunk, phase1, data, size, best_hashsize);
 			}
