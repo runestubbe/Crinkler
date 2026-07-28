@@ -110,27 +110,29 @@ const char *LoadDLL(const char *name) {
 	if(it != dllFileMap.end())
 		return it->second->GetPtr();
 	
-	vector<string> filepaths = FindFileInPath(strName.c_str(), GetEnv("PATH").c_str(), true);
-	if(filepaths.empty())
-	{
-		Log::Error("", "Cannot find DLL '%s'", strName.c_str());
-		return NULL;
+	for (const string& path : FindFileInPath(strName.c_str(), GetEnv("PATH").c_str(), true)) {
+		MemoryFile* mf = new MemoryFile(path.c_str());
+		const char* module = mf->GetPtr();
+		const IMAGE_DOS_HEADER* pDH = (const PIMAGE_DOS_HEADER)module;
+		const IMAGE_NT_HEADERS32* pNTH = (const PIMAGE_NT_HEADERS32)(module + pDH->e_lfanew);
+
+		if (pNTH->OptionalHeader.Magic != IMAGE_NT_OPTIONAL_HDR32_MAGIC) {
+			Log::Warning(path.c_str(), "Skipping 64-bit DLL");
+			continue;
+		}
+
+		const DWORD exportRVA = pNTH->OptionalHeader.DataDirectory[0].VirtualAddress;
+		if (exportRVA == 0) {
+			Log::Error(path.c_str(), "Missing export table in '%s'\n\n"
+				"If running under Wine, copy all imported DLL files from a real Windows to your Wine path.", strName.c_str());
+		}
+
+		dllFileMap[strName] = mf;
+		return module;
 	}
 
-	MemoryFile* mf = new MemoryFile(filepaths[0].c_str());
-	dllFileMap[strName] = mf;
-	const char* module = mf->GetPtr();
-
-	const IMAGE_DOS_HEADER* pDH = (const PIMAGE_DOS_HEADER)module;
-	const IMAGE_NT_HEADERS32* pNTH = (const PIMAGE_NT_HEADERS32)(module + pDH->e_lfanew);
-
-	const DWORD exportRVA = pNTH->OptionalHeader.DataDirectory[0].VirtualAddress;
-	if (exportRVA == 0) {
-		Log::Error("", "Missing export table in '%s'\n\n"
-			"If running under Wine, copy all imported DLL files from a real Windows to your Wine path.", strName.c_str());
-	}
-
-	return module;
+	Log::Error("", "Cannot find DLL '%s'", strName.c_str());
+	return nullptr;
 }
 
 static bool RunExecutable(const char* filename) {
