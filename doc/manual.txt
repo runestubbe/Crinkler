@@ -15,6 +15,7 @@ Mail:   authors@crinkler.net
 VERSION HISTORY
 ---------------
 30.07.26: 3.0b: Fixed reverting to reuse config producing broken executables.
+                Fixed report using old sizes when reverting to reuse config.
                 Fixed crash in reuse when a section has only section symbols.
                 Skip 64-bit DLLs found when searching the path for DLLs.
 
