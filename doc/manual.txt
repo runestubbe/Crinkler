@@ -4,7 +4,7 @@ CRINKLER - Compressing linker for Windows specialized for 4k intros
 Aske Simon Christensen "Blueberry/Loonies"
 Rune L. H. Stubbe "Mentor/TBC"
 
-Version 3.0a (May 9, 2026)
+Version 3.0b (July 30, 2026)
 
 Web:    http://crinkler.net/
 GitHub: https://github.com/runestubbe/Crinkler
@@ -14,6 +14,10 @@ Mail:   authors@crinkler.net
 
 VERSION HISTORY
 ---------------
+30.07.26: 3.0b: Fixed reverting to reuse config producing broken executables.
+                Fixed crash in reuse when a section has only section symbols.
+                Skip 64-bit DLLs found when searching the path for DLLs.
+
 09.05.26: 3.0a: Select at least one model to prevent crash in decompressor.
                 Fixed crash in model estimation for empty parts.
                 Changed /TEXTPART:AUTO to also require 500 bytes of non-text.
