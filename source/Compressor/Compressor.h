@@ -10,7 +10,7 @@ static const int MAX_CONTEXT_LENGTH =	8;		// Maximum size of context window
 static const int DEFAULT_BASEPROB	=	10;		// Default weight for trivial model
 static const int BIT_PRECISION		=	256;	// Number of units per bit
 
-enum CompressionType {COMPRESSION_INSTANT, COMPRESSION_FAST, COMPRESSION_SLOW, COMPRESSION_VERYSLOW};
+enum CompressionType : int {COMPRESSION_INSTANT, COMPRESSION_FAST, COMPRESSION_SLOW, COMPRESSION_VERYSLOW};
 
 typedef void	(ProgressCallback)(void* userData, int value, int max);
 

@@ -5,7 +5,7 @@
 #include <cstdio>
 
 class Compressor;
-enum CompressionType;
+enum CompressionType : int;
 
 static const int MAX_MODELS = 256;
 

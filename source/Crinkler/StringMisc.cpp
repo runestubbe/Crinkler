@@ -1,5 +1,6 @@
 #include "StringMisc.h"
 #include <algorithm>
+#include <cstring>
 
 using namespace std;
 

@@ -112,10 +112,10 @@ long long CompressionStateEvaluator::ChangeWeight(int modelIndex, int diffw) {
 			packed = model_package->prob[_IDX]; \
 			vsum_p_right = _mm_add_ps(vsum_p_right, _mm_mul_ps(_mm_castsi128_ps(_mm_unpacklo_epi16(vzero, packed)), vdiffw)); \
 			vsum_p_total = _mm_add_ps(vsum_p_total, _mm_mul_ps(_mm_castsi128_ps(_mm_unpackhi_epi16(vzero, packed)), vdiffw)); \
-			assert(vsum_p_total.m128_f32[0] < 16777216 * m_logScale); \
-			assert(vsum_p_total.m128_f32[1] < 16777216 * m_logScale); \
-			assert(vsum_p_total.m128_f32[2] < 16777216 * m_logScale); \
-			assert(vsum_p_total.m128_f32[3] < 16777216 * m_logScale); \
+			assert(((const float*)&vsum_p_total)[0] < 16777216 * m_logScale); \
+			assert(((const float*)&vsum_p_total)[1] < 16777216 * m_logScale); \
+			assert(((const float*)&vsum_p_total)[2] < 16777216 * m_logScale); \
+			assert(((const float*)&vsum_p_total)[3] < 16777216 * m_logScale); \
 			sum_package->prob[_IDX][0] = vsum_p_right; \
 			sum_package->prob[_IDX][1] = vsum_p_total; \
 			vprod_right = _mm_mul_ps(vprod_right, vsum_p_right); \

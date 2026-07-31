@@ -1115,8 +1115,10 @@ void Crinkler::Recompress(const char* input_filename, const char* output_filenam
 		DWORD* new_header_ptr = (DWORD*)header->GetPtr();
 		DWORD* old_header_ptr = (DWORD*)indata;
 
+		const DWORD HASH_PLACEHOLDER = 0x48534148;	// "HASH" in memory order
+
 		for(int i = 0; i < depacker_start / 4; i++) {
-			if(new_header_ptr[i] == 'HSAH')
+			if(new_header_ptr[i] == HASH_PLACEHOLDER)
 				new_header_ptr[i] = old_header_ptr[i];
 		}
 		header->SetRawSize(depacker_start);

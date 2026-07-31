@@ -89,8 +89,9 @@ ModelPredictions CompressionState::ApplyModel(const unsigned char* data, int bit
 			assert((*(int*)&p_right & 0xFFFF) == 0);
 			assert((*(int*)&p_total & 0xFFFF) == 0);
 
-			packages[numPackages].prob[bitpos_offset >> 2].m128i_u16[(bitpos_offset & 3)] = *(int*)&p_right >> 16;
-			packages[numPackages].prob[bitpos_offset >> 2].m128i_u16[4 + (bitpos_offset & 3)] = *(int*)&p_total >> 16;
+			unsigned short* prob_u16 = (unsigned short*)&packages[numPackages].prob[bitpos_offset >> 2];
+			prob_u16[(bitpos_offset & 3)] = *(int*)&p_right >> 16;
+			prob_u16[4 + (bitpos_offset & 3)] = *(int*)&p_total >> 16;
 		}
 		packageOffsets[numPackages] = idx;
 		if(package_needs_commit)

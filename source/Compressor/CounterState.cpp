@@ -2,6 +2,7 @@
 
 #include <memory>
 #include <cassert>
+#include <cstring>
 
 CounterState unsaturated_counter_states[1471];
 CounterState saturated_counter_states[1470];
