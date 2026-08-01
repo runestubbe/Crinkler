@@ -420,7 +420,7 @@ int Crinkler::EstimateModels(PartList& parts, Hunk* phase1, bool reestimate, boo
 
 void Crinkler::SetHeaderSaturation(Hunk* header) {
 	if (m_saturate) {
-		static const unsigned char saturateCode[] = { 0x75, 0x03, 0xFE, 0x0C, 0x1F };
+		static const unsigned char saturateCode[] = { 0x75, 0x02, 0xFE, 0x0F };
 		header->Insert(header->FindSymbol("_SaturatePtr")->value, saturateCode, sizeof(saturateCode));
 		*(header->GetPtr() + header->FindSymbol("_SaturateAdjust1Ptr")->value) += sizeof(saturateCode);
 		*(header->GetPtr() + header->FindSymbol("_SaturateAdjust2Ptr")->value) -= sizeof(saturateCode);

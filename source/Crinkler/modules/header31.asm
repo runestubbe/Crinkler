@@ -278,19 +278,20 @@ UpdateHash:
 	jg		short SkipUpdate
 SaturateAdjust1PtrP1:
 
-	; Half if > 1
-	shr		byte [edi + ebx], 1
+	; Halve wrong bit if > 1
+	add		edi, ebx
+	shr		byte [edi], 1
 	jnz		short .nz
-	rcl		byte [edi + ebx], 1
+	rcl		byte [edi], 1
 .nz:
 
 	; Inc correct bit
-	not		ebx
-	inc		byte [edi + ebx]
+	xor		edi, byte 1
+	inc		byte [edi]
 _SaturatePtr:
 ; Saturation code inserted here when the /SATURATE option is used:
 ;	jnz		.nowrap
-;	dec		byte [edi + ebx]
+;	dec		byte [edi]
 ;.nowrap:
 
 SkipUpdate:
