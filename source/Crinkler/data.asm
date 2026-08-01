@@ -15,7 +15,7 @@ incbin S
 _ %+ %1 %+ _end:
 %endmacro
 
-INCBIN headerObj, "header30.obj"
+INCBIN headerObj, "header31.obj"
 INCBIN headerCompatibilityObj, "header30_compatibility.obj"
 INCBIN header1KObj, "header22_1k.obj"
 

@@ -266,7 +266,7 @@
     <None Include="modules\import31.asm">
       <Filter>modules</Filter>
     </None>
-    <None Include="modules\header30.asm">
+    <None Include="modules\header31.asm">
       <Filter>modules</Filter>
     </None>
     <None Include="modules\import20_1k.asm">
