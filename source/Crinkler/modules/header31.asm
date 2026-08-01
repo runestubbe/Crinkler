@@ -250,48 +250,46 @@ _ClearHash:
 
 UpdateHash:
 	div		ecx
-	; edx = hash
-	lea		edi, [edi + edx*2]	; edi = hashTableEntry
+	; edx = hash, eax >= 0
+	lea		esi, [edi + edx*2]	; esi = hashTableEntry
 
 	; Calculate weight
 	mov		ecx, ebp			; ecx = weight
-	xor		eax, eax			; eax = 0
-	scasb
-	je		short .boost
-	add		[edi], al
-	jne		short .notboost
-.boost:
+	lodsb
+	mul		byte [esi]			; ax >= 0 since counters are not both big
+	dec		ax
+	jns		short .notboost
 	inc		ecx
 	inc		ecx
 .notboost:
 
 	; Add probs
+	cdq							; edx = 0
 .bits:
-	movzx	edx, byte [edi + eax]
-	shl		edx, cl
-	add		[esp + 8*4 + zero_offset + eax*4], edx
-	dec		eax
+	movzx	eax, byte [esi + edx]
+	shl		eax, cl
+	add		[esp + 8*4 + zero_offset + edx*4], eax
+	dec		edx
 	jp		short .bits
-	; eax = -1
 
 	test	ebx, ebx
 	jg		short SkipUpdate
 SaturateAdjust1PtrP1:
 
 	; Halve wrong bit if > 1
-	add		edi, ebx
-	shr		byte [edi], 1
+	add		esi, ebx
+	shr		byte [esi], 1
 	jnz		short .nz
-	rcl		byte [edi], 1
+	rcl		byte [esi], 1
 .nz:
 
 	; Inc correct bit
-	xor		edi, byte 1
-	inc		byte [edi]
+	xor		esi, byte 1
+	inc		byte [esi]
 _SaturatePtr:
 ; Saturation code inserted here when the /SATURATE option is used:
 ;	jnz		.nowrap
-;	dec		byte [edi]
+;	dec		byte [esi]
 ;.nowrap:
 
 SkipUpdate:
