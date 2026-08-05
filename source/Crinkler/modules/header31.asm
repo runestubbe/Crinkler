@@ -250,21 +250,21 @@ _ClearHash:
 
 UpdateHash:
 	div		ecx
-	; edx = hash, eax >= 0
+	; edx = hash, eax = 0000xxxx since hash size is big
 	lea		esi, [edi + edx*2]	; esi = hashTableEntry
+	cdq							; edx = 0
 
 	; Calculate weight
 	mov		ecx, ebp			; ecx = weight
 	lodsb
-	mul		byte [esi]			; ax >= 0 since counters are not both big
-	dec		ax
+	mul		byte [esi]			; ax = 0 if at least one weight is 0
+	dec		eax
 	jns		short .notboost
 	inc		ecx
 	inc		ecx
 .notboost:
 
 	; Add probs
-	cdq							; edx = 0
 .bits:
 	movzx	eax, byte [esi + edx]
 	shl		eax, cl
