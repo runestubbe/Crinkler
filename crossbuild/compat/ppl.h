@@ -8,10 +8,8 @@
 // This header is only on the include path for the MinGW cross build; the MSVC
 // build keeps using the real PPL.
 //
-// Like PPL, parallel_for runs on a persistent pool of worker threads. That
-// matters a great deal here: Crinkler calls parallel_for over small ranges
-// deep inside its model optimisation loop, so creating threads per call turns
-// a two-second compression into a four-minute one.
+// Like PPL, parallel_for runs on a persistent pool of worker threads, since
+// Crinkler dispatches a great many very short parallel regions.
 #pragma once
 
 #include <algorithm>
@@ -28,6 +26,7 @@
 #if defined(__x86_64__) || defined(__i386__) || defined(_M_IX86) || defined(_M_X64)
 #include <immintrin.h>
 #define CRINKLER_PPL_PAUSE() _mm_pause()
+#define CRINKLER_PPL_HAS_RDTSC 1
 #else
 #define CRINKLER_PPL_PAUSE() ((void)0)
 #endif
@@ -37,14 +36,27 @@ namespace detail {
 
 inline unsigned HardwareThreads()
 {
-	// CRINKLER_THREADS overrides the pool size. Useful under Wine, where the
-	// emulated cross-core traffic makes a wide pool a poor trade.
+	// CRINKLER_THREADS overrides the pool size.
 	if (const char* env = std::getenv("CRINKLER_THREADS")) {
 		int n = std::atoi(env);
 		if (n > 0) return (unsigned)n;
 	}
 	unsigned n = std::thread::hardware_concurrency();
 	return n ? n : 1;
+}
+
+// A cheap monotonic tick count. Only ratios of these matter, never their unit,
+// so the time stamp counter is preferable to a real clock: it is read inline,
+// where QueryPerformanceCounter is a call costly enough to swamp the regions
+// being measured.
+inline unsigned long long Ticks()
+{
+#ifdef CRINKLER_PPL_HAS_RDTSC
+	return __rdtsc();
+#else
+	return (unsigned long long)std::chrono::duration_cast<std::chrono::nanoseconds>(
+		std::chrono::steady_clock::now().time_since_epoch()).count();
+#endif
 }
 
 // True while this thread is inside a parallel region. Nested parallel_for
@@ -59,24 +71,62 @@ protected:
 	~Task() = default;
 };
 
+// Per-call-site record of what a region costs run inline versus handed to the
+// pool, so the choice can be measured rather than assumed. Which one wins
+// depends on how expensive the hand-off is, and that varies by orders of
+// magnitude between running natively and running under emulation.
+class RegionStats {
+	// Re-check the mode not in use this often, at a fixed rate: left unmeasured
+	// it goes stale, and a stale estimate wins comparisons it should lose,
+	// switching the call site into the slower mode until the next probe.
+	static constexpr unsigned PROBE_INTERVAL = 256;
+	static constexpr long long UNMEASURED = -1;
+
+	// Ticks per 1024 items; integral to keep the atomics lock-free everywhere.
+	// [0] is inline, [1] is pooled.
+	std::atomic<long long> m_cost[2];
+	std::atomic<unsigned> m_calls{0};
+
+public:
+	RegionStats()
+	{
+		m_cost[0].store(UNMEASURED, std::memory_order_relaxed);
+		m_cost[1].store(UNMEASURED, std::memory_order_relaxed);
+	}
+
+	bool ShouldDispatch()
+	{
+		long long inline_cost = m_cost[0].load(std::memory_order_relaxed);
+		long long pool_cost = m_cost[1].load(std::memory_order_relaxed);
+
+		if (pool_cost == UNMEASURED) return true;
+		if (inline_cost == UNMEASURED) return false;
+
+		bool pool_is_better = pool_cost < inline_cost;
+		unsigned n = m_calls.fetch_add(1, std::memory_order_relaxed);
+		if (n % PROBE_INTERVAL == 0) return !pool_is_better;  // Probe the other one.
+		return pool_is_better;
+	}
+
+	void Record(bool dispatched, long long count, unsigned long long elapsed)
+	{
+		long long cost = (long long)(elapsed * 1024 / (unsigned long long)count);
+		std::atomic<long long>& slot = m_cost[dispatched ? 1 : 0];
+		long long previous = slot.load(std::memory_order_relaxed);
+		// Exponential moving average, so one descheduled region cannot pin the
+		// decision for good.
+		slot.store(previous == UNMEASURED ? cost : (previous * 7 + cost) / 8,
+		           std::memory_order_relaxed);
+	}
+};
+
 class ThreadPool {
-	// Idle workers spin on the generation counter before going to sleep.
-	// Crinkler dispatches very short parallel regions from deep inside its
-	// optimisation loop, and a mutex/condvar handshake per dispatch costs far
-	// more than the region itself - especially under Wine.
+	// Idle workers spin on the generation counter before going to sleep, so
+	// that dispatching a region does not cost a mutex/condvar handshake.
 	static constexpr unsigned SPINS_BEFORE_SLEEPING = 4000;
-	// A region has to be big enough to pay for waking the pool. Crinkler's
-	// model optimisation dispatches ~170k regions of only 4-15 items each,
-	// where the wake-up handshake costs far more than the work; those run on
-	// the calling thread instead, which is what PPL effectively does too.
-	// Measured against Crinkler's own dispatch profile: regions of a few dozen
-	// items or fewer never repay the handshake, while the ones worth splitting
-	// (the model estimation loops) have hundreds.
-	static constexpr long long MIN_ITEMS_PER_WORKER = 2;
-	static constexpr long long MIN_REGION_ITEMS = 32;
-	// Work is claimed in blocks. One atomic per index would otherwise dominate
-	// the run time for the short regions Crinkler dispatches most often, while
-	// still leaving enough blocks per worker to even out uneven items.
+	// Work is claimed in blocks, so that short regions do not spend their whole
+	// run time on the shared atomic, with enough blocks per worker left to even
+	// out uneven items.
 	static constexpr long long BLOCKS_PER_WORKER = 4;
 
 	std::mutex m_mutex;
@@ -158,18 +208,31 @@ public:
 		for (std::thread& worker : m_workers) worker.join();
 	}
 
-	void Run(long long count, const Task& task)
+	void Run(long long count, const Task& task, RegionStats& stats)
 	{
 		if (count <= 0) return;
 
-		const long long dispatch_threshold = std::max(
-			MIN_REGION_ITEMS,
-			(long long)(m_workers.size() + 1) * MIN_ITEMS_PER_WORKER);
-		if (t_in_parallel || m_workers.empty() || count < dispatch_threshold) {
-			for (long long i = 0; i < count; i++) task.Run(i);
+		// A nested region has no pool to go to: the workers are already busy
+		// with the enclosing one.
+		if (t_in_parallel || m_workers.empty()) {
+			RunSerial(count, task);
 			return;
 		}
 
+		const bool dispatch = stats.ShouldDispatch();
+		const unsigned long long start = Ticks();
+		if (dispatch) RunDispatched(count, task); else RunSerial(count, task);
+		stats.Record(dispatch, count, Ticks() - start);
+	}
+
+private:
+	void RunSerial(long long count, const Task& task)
+	{
+		for (long long i = 0; i < count; i++) task.Run(i);
+	}
+
+	void RunDispatched(long long count, const Task& task)
+	{
 		m_task = &task;
 		m_count = count;
 		m_block = std::max<long long>(
@@ -194,6 +257,8 @@ public:
 		}
 		m_task = nullptr;
 	}
+
+public:
 };
 
 inline ThreadPool& Pool()
@@ -219,7 +284,10 @@ void parallel_for(Index first, Index last, const Function& body)
 		void Run(long long i) const override { body((Index)((long long)first + i)); }
 	} task(body, first);
 
-	detail::Pool().Run((long long)last - (long long)first, task);
+	// One instantiation per lambda type, so this is per call site.
+	static detail::RegionStats stats;
+
+	detail::Pool().Run((long long)last - (long long)first, task, stats);
 }
 
 class critical_section {

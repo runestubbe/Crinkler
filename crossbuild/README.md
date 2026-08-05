@@ -49,6 +49,8 @@ wine build/mingw-x64/Release/Crinkler/Crinkler.exe /OUT:out.exe /SUBSYSTEM:WINDO
 ```
 
 `CRINKLER_THREADS=<n>` caps the worker pool, which is useful when measuring.
+Note that Wine exaggerates threading costs enormously, so timings taken there
+say little about how the same binary performs on Windows.
 
 ## How settings are translated
 
@@ -106,10 +108,15 @@ untouched by them.
 
 - **`ppl.h`** - stand-in for the Microsoft Parallel Patterns Library, providing
   the `parallel_for`, `critical_section` and `combinable` that Crinkler uses, on
-  top of `std::thread`. It keeps a persistent worker pool and runs small regions
-  inline, both of which matter enormously: Crinkler's model optimisation
-  dispatches ~170k parallel regions of 4-15 items each, and a per-region
-  thread-wake handshake there costs far more than the work itself.
+  top of `std::thread`, over a persistent worker pool.
+
+  Crinkler dispatches a great many very short parallel regions, so whether
+  handing one to the pool beats running it on the calling thread decides a large
+  factor in total run time - and which wins depends on the cost of the hand-off,
+  which differs by orders of magnitude between running natively and running
+  under emulation. Each call site therefore keeps a moving average of what its
+  regions cost both ways, uses the cheaper, and re-checks the other at a fixed
+  rate so that neither estimate goes stale.
 - **`afxres.h`** - the MFC resource header Visual Studio's editor writes into
   generated `.rc` files; forwards to `winresrc.h`, which is all the script needs.
 - **`msvc_stubs.c`** - MSVC compiler-support routines referenced by the prebuilt
